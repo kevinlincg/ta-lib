@@ -1,0 +1,7 @@
+Preparing worktree (detached HEAD 43f9d5042)
+HEAD is now at 43f9d5042 Update dist package (from ubuntu-latest)
+=== Building ta_064_serve (frozen v0.6.4 differential oracle) ===
+  Creating v0.6.4 worktree $WORKDIR/ta-lib-064
+  ta_064_serve: rebuilt frozen libta-lib.a (-ffp-contract=off)
+  post-0.6.4 functions (skipped by the subset gate): CMF, CMOU, HMA, NVI, PVI, PVO, VWMA
+ta_064_serve: OK

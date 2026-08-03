@@ -1,0 +1,37 @@
+[C0] javac javac 17.0.20  dotnet 10.0.302
+[C0] restoring pristine tree
+[C0] generate
+[C0] generate ok
+[C0] only intended files changed
+[C0] regtest.py (build + servers + cross-language, all backends)
+[C0] regtest.py:   Abstract metadata parity: 168 functions checked, 0 failed
+[C0] regtest.py:   C: 161 passed, 0 failed, 7 skipped
+[C0] regtest.py:   Rust: 161 passed, 0 failed, 7 skipped
+[C0] regtest.py:   Java: 161 passed, 0 failed, 7 skipped
+[C0] regtest.py:   .NET: 161 passed, 0 failed, 7 skipped
+[C0] regtest.py: All 4 language(s) passed codegen verification
+[C0] regtest.py rc=0
+[C0] building ta_064_serve (frozen v0.6.4 oracle)
+[C0] ta_064_serve ok
+[C0] ta_regtest --xlang-hash rc=84
+[C0] --xlang-hash:   XLANG TOL MISMATCH TA_HT_TRENDMODE  C(golden) vs Java  shape=3 seed=1 n=240 range=[0,239]  params:
+[C0] --xlang-hash:   XLANG TOL MISMATCH TA_HT_TRENDMODE  C(golden) vs Java  shape=3 seed=1 n=240 range=[33,108]  params:
+[C0] --xlang-hash: golden cases: 210008   (in-process C library; 197881 with non-empty output = 94% non-vacuous)
+[C0] --xlang-hash: Rust: 211162 cases, 0 mismatch(es)
+[C0] --xlang-hash: Java: 211108 cases, 14 mismatch(es)
+[C0] --xlang-hash: FAIL — 14 output mismatch(es) + 0 input-port mismatch(es) across 1 function(s).
+[C0] ta_regtest --codegen rc=0
+[C0] --codegen:   WILLR                                    |PASS   (c-ref: 1755ns, .NET: 2370ns, 1.35x slower)
+[C0] --codegen:   WMA                                      /PASS   (c-ref: 455ns, .NET: 599ns, 1.32x slower)
+[C0] --codegen:   .NET: 161 passed, 0 failed, 7 skipped
+[C0] --codegen: All 4 language(s) passed codegen verification
+[C0] --codegen: │ Language │ Pass │ Fail │ Avg (ns)   │ vs C-ref       │
+[C0] --codegen: * All tests succeeded. Enjoy the library. *
+[C0] ta_regtest default rc=0
+[C0] default:   Variant parity: 168 functions x 31392 vectors, 31392 four-way comparisons (26832 with output), bit-identical
+[C0] default: * All tests succeeded. Enjoy the library. *
+[C0] ta_regtest --fuzz-064 rc=0
+[C0] --fuzz-064: comparisons: 171230   matches: 148119   benign(signed-zero): 30   cci-tolerated: 8434   fma-tolerated: 14647   failures: 0
+[C0] --fuzz-064: functions: 7 not-in-0.6.4 (skipped), 1 with benign-only diffs, 0 with real failures
+[C0] --fuzz-064: PASS — current library is bit-identical to v0.6.4 at period>=2 (benign signed-zero and authorized manifest tolerances aside; STOCHRSI excluded, issue #107).
+[C0] done

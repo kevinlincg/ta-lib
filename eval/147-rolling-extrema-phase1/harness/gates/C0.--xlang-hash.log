@@ -1,0 +1,29 @@
+
+ta_regtest V0.8.1 (Jul 31 2026 23:35:22) - Regression Tests of TA-Lib code
+
+
+=============================================
+Cross-language BITWISE parity gate (--xlang-hash)
+=============================================
+server up: Rust (pid=42029)
+server up: Java (pid=42030)
+
+Input-port self-check (fuzz_gen parity)...
+  input-port parity: OK (all seed servers reproduce fuzz_gen bit-for-bit)
+
+Output parity gate (168 function(s) x shapes x seeds x sizes x params x subranges)...
+  XLANG TOL MISMATCH TA_HT_TRENDMODE  C(golden) vs Java  shape=3 seed=1 n=120 range=[0,119]  params:
+    retCode 0/0  begIdx 63/63  nbElem 57/57  int out0[13] C=1 server=0
+  XLANG TOL MISMATCH TA_HT_TRENDMODE  C(golden) vs Java  shape=3 seed=1 n=240 range=[0,239]  params:
+    retCode 0/0  begIdx 63/63  nbElem 177/177  int out0[13] C=1 server=0
+  XLANG TOL MISMATCH TA_HT_TRENDMODE  C(golden) vs Java  shape=3 seed=1 n=240 range=[33,108]  params:
+    retCode 0/0  begIdx 63/63  nbElem 46/46  int out0[13] C=1 server=0
+
+---------------------------------------------
+golden cases: 210008   (in-process C library; 197881 with non-empty output = 94% non-vacuous)
+Rust: 211162 cases, 0 mismatch(es)
+Java: 211108 cases, 14 mismatch(es)
+  (10395 Java call(s) compared at the transcendental tolerance 1e-09; every other call is bitwise)
+  (54 Java HT_DCPHASE/HT_SINE call(s) skipped on the constant shape: atan2 phase of a null signal, ill-conditioned across libms — C==Rust bitwise there)
+param contract (#148): reject 436 batch + 436 lookback, sentinel 17658 batch + 218 lookback; 2308 lookback case(s) total
+FAIL — 14 output mismatch(es) + 0 input-port mismatch(es) across 1 function(s).

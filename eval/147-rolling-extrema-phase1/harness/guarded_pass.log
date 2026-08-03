@@ -1,0 +1,7 @@
+C0 done
+C2 done
+C9 done
+--- guarded prologue differences between candidates ---
+guardprol_C0.txt:       93 lines
+guardprol_C2.txt:      182 lines
+guardprol_C9.txt:       94 lines

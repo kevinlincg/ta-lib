@@ -1,0 +1,54 @@
+[C1] javac javac 17.0.20  dotnet 10.0.302
+[C1] restoring pristine tree
+[C1] installed max/midpoint = C1
+[C1] generate
+[C1] generate ok
+[C1] only intended files changed
+[C1] regtest.py (build + servers + cross-language, all backends)
+[C1] regtest.py:   Building Rust server... FAILED (exit 101)
+[C1] regtest.py: Error: 1 server build step(s) FAILED (see above). Refusing to exit 0 -- otherwise ta_regtest silently reuses stale server binaries and a real break reads as green.
+[C1] regtest.py rc=1
+[C1] ta_regtest --xlang-hash rc=84
+[C1] --xlang-hash:   XLANG MISMATCH TA_MIDPOINT  C(golden) vs Rust  shape=6 seed=1 n=120 range=[0,119]  params: optInTimePeriod=2
+[C1] --xlang-hash:   XLANG MISMATCH TA_MIDPOINT  C(golden) vs Rust  shape=6 seed=1 n=120 range=[21,47]  params: optInTimePeriod=2
+[C1] --xlang-hash: golden cases: 210008   (in-process C library; 197881 with non-empty output = 94% non-vacuous)
+[C1] --xlang-hash: Rust: 211162 cases, 69 mismatch(es)
+[C1] --xlang-hash: Java: 211108 cases, 14 mismatch(es)
+[C1] --xlang-hash: FAIL — 83 output mismatch(es) + 0 input-port mismatch(es) across 3 function(s).
+[C1] ta_regtest default rc=0
+[C1] default:   Variant parity: 168 functions x 31392 vectors, 31392 four-way comparisons (26832 with output), bit-identical
+[C1] default: * All tests succeeded. Enjoy the library. *
+[C1] ta_regtest --fuzz-064 rc=0
+[C1] --fuzz-064: comparisons: 171230   matches: 148069   benign(signed-zero): 80   cci-tolerated: 8434   fma-tolerated: 14647   failures: 0
+[C1] --fuzz-064: functions: 7 not-in-0.6.4 (skipped), 2 with benign-only diffs, 0 with real failures
+[C1] --fuzz-064: PASS — current library is bit-identical to v0.6.4 at period>=2 (benign signed-zero and authorized manifest tolerances aside; STOCHRSI excluded, issue #107).
+[C1] done
+[C1] javac javac 17.0.20  dotnet 10.0.302
+[C1] restoring pristine tree
+[C1] installed max/midpoint = C1
+[C1] generate
+[C1] generate ok
+[C1] only intended files changed
+[C1] regtest.py (build + servers + cross-language, all backends)
+[C1] regtest.py:   Abstract metadata parity: 168 functions checked, 0 failed
+[C1] regtest.py:   C: 161 passed, 0 failed, 7 skipped
+[C1] regtest.py:   Rust: 161 passed, 0 failed, 7 skipped
+[C1] regtest.py:   Java: 161 passed, 0 failed, 7 skipped
+[C1] regtest.py:   .NET: 161 passed, 0 failed, 7 skipped
+[C1] regtest.py: All 4 language(s) passed codegen verification
+[C1] regtest.py rc=0
+[C1] ta_regtest --xlang-hash rc=84
+[C1] --xlang-hash:   XLANG TOL MISMATCH TA_HT_TRENDMODE  C(golden) vs Java  shape=3 seed=1 n=240 range=[0,239]  params:
+[C1] --xlang-hash:   XLANG TOL MISMATCH TA_HT_TRENDMODE  C(golden) vs Java  shape=3 seed=1 n=240 range=[33,108]  params:
+[C1] --xlang-hash: golden cases: 210008   (in-process C library; 197881 with non-empty output = 94% non-vacuous)
+[C1] --xlang-hash: Rust: 211162 cases, 0 mismatch(es)
+[C1] --xlang-hash: Java: 211108 cases, 14 mismatch(es)
+[C1] --xlang-hash: FAIL — 14 output mismatch(es) + 0 input-port mismatch(es) across 1 function(s).
+[C1] ta_regtest default rc=0
+[C1] default:   Variant parity: 168 functions x 31392 vectors, 31392 four-way comparisons (26832 with output), bit-identical
+[C1] default: * All tests succeeded. Enjoy the library. *
+[C1] ta_regtest --fuzz-064 rc=0
+[C1] --fuzz-064: comparisons: 171230   matches: 148069   benign(signed-zero): 80   cci-tolerated: 8434   fma-tolerated: 14647   failures: 0
+[C1] --fuzz-064: functions: 7 not-in-0.6.4 (skipped), 2 with benign-only diffs, 0 with real failures
+[C1] --fuzz-064: PASS — current library is bit-identical to v0.6.4 at period>=2 (benign signed-zero and authorized manifest tolerances aside; STOCHRSI excluded, issue #107).
+[C1] done

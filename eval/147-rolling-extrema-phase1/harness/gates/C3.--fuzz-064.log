@@ -1,0 +1,54 @@
+
+ta_regtest V0.8.1 (Jul 31 2026 23:35:22) - Regression Tests of TA-Lib code
+
+
+=============================================
+Bit-exact differential fuzz vs released v0.6.4
+=============================================
+Oracle: ta_064_serve (pid=61115)
+
+  FMA-REBASELINE TA_ADOSC: 1793 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_APO: 254 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  TOLERATED TA_BBANDS: 2287 case(s) within 1e-09 vs 0.6.4 (authorized manifest bound)
+  TOLERATED TA_CCI: 18 case(s) within 1e-09 vs 0.6.4 (authorized manifest bound)
+  FMA-REBASELINE TA_DEMA: 304 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_HT_DCPERIOD: 209 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_HT_DCPHASE: 128 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_HT_PHASOR: 189 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_HT_SINE: 127 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  TOLERATED TA_IMI: 455 case(s) where v0.6.4 emitted NaN (x/0) and current returns the guarded 50 (authorized manifest)
+  FMA-REBASELINE TA_KAMA: 443 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  TOLERATED TA_LINEARREG: 861 case(s) within 1e-09 * max|input| vs 0.6.4 (authorized manifest bound)
+  TOLERATED TA_LINEARREG_ANGLE: 638 case(s) within 1e-09 * max|input| (capped) vs 0.6.4 (authorized manifest bound)
+  TOLERATED TA_LINEARREG_INTERCEPT: 765 case(s) within 1e-09 * max|input| vs 0.6.4 (authorized manifest bound)
+  TOLERATED TA_LINEARREG_SLOPE: 763 case(s) within 1e-09 * max|input| vs 0.6.4 (authorized manifest bound)
+  FMA-REBASELINE TA_MA: 340 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_MACD: 2117 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_MACDEXT: 1307 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_MACDFIX: 925 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_MAMA: 1020 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_MAVP: 329 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  BENIGN TA_MAX: 38 signed-zero case(s) (numerically equal, +0.0 vs -0.0)
+  BENIGN TA_MIDPOINT: 36 signed-zero case(s) (numerically equal, +0.0 vs -0.0)
+  FMA-REBASELINE TA_PPO: 257 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_SAR: 267 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_SAREXT: 970 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  TOLERATED TA_STDDEV: 875 case(s) within 1e-09 vs 0.6.4 (authorized manifest bound)
+  FMA-REBASELINE TA_STOCH: 1026 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_STOCHF: 510 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_T3: 1706 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_TEMA: 296 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  FMA-REBASELINE TA_TRIX: 130 case(s) within 1e-9 relative of v0.6.4 (explicit fma() adoption, PR #96)
+  TOLERATED TA_TSF: 891 case(s) within 1e-09 * max|input| vs 0.6.4 (authorized manifest bound)
+  TOLERATED TA_VAR: 881 case(s) within 1e-09 vs 0.6.4 (authorized manifest bound)
+
+---------------------------------------------
+comparisons: 171230   matches: 148073   benign(signed-zero): 76   cci-tolerated: 8434   fma-tolerated: 14647   failures: 0
+functions: 7 not-in-0.6.4 (skipped), 2 with benign-only diffs, 0 with real failures
+skipped: 1766 TRIX/NATR partial-range case(s) — fixed in 0.8.1, issue #98
+manifest-tolerated: 8434 case(s) under an authorized latest->0.6.4 entry (CCI #7 near-zero; LINEARREG family + TSF #103 sliding-sum; IMI #112 NaN->50.0)
+fma-rebaseline: 14647 case(s) within the 1e-9 relative FMA contract vs 0.6.4 (max observed 4.13e-11); one-time transition, re-freeze to hash-exact after the FMA-enabled release is tagged (PR #96)
+stochrsi-skipped: 1 STOCHRSI function(s) skipped entirely — intentionally diverges from 0.6.4 (issue #107); pinned by test_stoch.c
+post-freeze enums: 22 MAType value(s) > 8 excluded vs v0.6.4 (#139; covered current-vs-current by xlang-hash/stream/COMPOSITE)
+variance-skipped: 3179 VAR/STDDEV/BBANDS case(s) ill-conditioned for 0.6.4 (kappa > 1e+05, issue #118); every better-conditioned case was compared
+PASS — current library is bit-identical to v0.6.4 at period>=2 (benign signed-zero and authorized manifest tolerances aside; STOCHRSI excluded, issue #107).

@@ -1,0 +1,6 @@
+[C6] javac javac 17.0.20  dotnet 10.0.302
+[C6] restoring pristine tree
+[C6] installed max/midpoint = C6
+[C6] generate
+[C6] GENERATE FAILED — candidate ELIMINATED at the codegen gate
+[C6] error: MAX: streamable by analysis but the transition cannot be built: MAX: index variable `i` leaks into the transition body

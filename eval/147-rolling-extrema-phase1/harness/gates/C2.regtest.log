@@ -1,0 +1,1381 @@
+[  1%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ACOS.c.o
+[  1%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_AD.c.o
+[  1%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ACCBANDS.c.o
+[  1%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ADD.c.o
+[  1%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ADX.c.o
+[  1%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ADOSC.c.o
+[  1%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_APO.c.o
+[  3%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ADXR.c.o
+[  3%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_AROONOSC.c.o
+[  5%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ATAN.c.o
+[  5%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_AROON.c.o
+[  5%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_AVGDEV.c.o
+[  5%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ASIN.c.o
+[  5%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ATR.c.o
+[  7%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_BBANDS.c.o
+[  7%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_AVGPRICE.c.o
+[  7%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_BETA.c.o
+[  7%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_BOP.c.o
+[  7%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CCI.c.o
+[  7%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDL2CROWS.c.o
+[  9%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDL3BLACKCROWS.c.o
+[  9%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDL3INSIDE.c.o
+[  9%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDL3LINESTRIKE.c.o
+[  9%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDL3OUTSIDE.c.o
+[  9%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDL3STARSINSOUTH.c.o
+[ 11%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDL3WHITESOLDIERS.c.o
+[ 11%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLABANDONEDBABY.c.o
+[ 11%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLADVANCEBLOCK.c.o
+[ 11%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLBELTHOLD.c.o
+[ 13%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLBREAKAWAY.c.o
+[ 13%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLCLOSINGMARUBOZU.c.o
+[ 13%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLCONCEALBABYSWALL.c.o
+[ 13%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLCOUNTERATTACK.c.o
+[ 13%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLDARKCLOUDCOVER.c.o
+[ 15%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLDOJI.c.o
+[ 15%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLDOJISTAR.c.o
+[ 15%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLDRAGONFLYDOJI.c.o
+[ 15%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLENGULFING.c.o
+[ 16%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLEVENINGDOJISTAR.c.o
+[ 16%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLEVENINGSTAR.c.o
+[ 16%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLGAPSIDESIDEWHITE.c.o
+[ 16%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLGRAVESTONEDOJI.c.o
+[ 16%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHAMMER.c.o
+[ 18%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHANGINGMAN.c.o
+[ 18%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHARAMI.c.o
+[ 18%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHARAMICROSS.c.o
+[ 18%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHIGHWAVE.c.o
+[ 20%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHIKKAKE.c.o
+[ 20%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHIKKAKEMOD.c.o
+[ 20%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLHOMINGPIGEON.c.o
+[ 20%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLIDENTICAL3CROWS.c.o
+[ 20%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLINNECK.c.o
+[ 22%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLINVERTEDHAMMER.c.o
+[ 22%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLKICKING.c.o
+[ 22%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLKICKINGBYLENGTH.c.o
+[ 22%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLLADDERBOTTOM.c.o
+[ 22%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLLONGLINE.c.o
+[ 24%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLLONGLEGGEDDOJI.c.o
+[ 24%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLMARUBOZU.c.o
+[ 24%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLMATCHINGLOW.c.o
+[ 24%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLMATHOLD.c.o
+[ 26%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLMORNINGDOJISTAR.c.o
+[ 26%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLMORNINGSTAR.c.o
+[ 26%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLONNECK.c.o
+[ 26%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLPIERCING.c.o
+[ 28%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLRICKSHAWMAN.c.o
+[ 28%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLRISEFALL3METHODS.c.o
+[ 28%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLSEPARATINGLINES.c.o
+[ 28%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLSHOOTINGSTAR.c.o
+[ 28%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLSHORTLINE.c.o
+[ 30%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLSPINNINGTOP.c.o
+[ 30%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLSTALLEDPATTERN.c.o
+[ 30%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLSTICKSANDWICH.c.o
+[ 30%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLTAKURI.c.o
+[ 30%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLTASUKIGAP.c.o
+[ 32%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLTHRUSTING.c.o
+[ 32%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLTRISTAR.c.o
+[ 32%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLUNIQUE3RIVER.c.o
+[ 32%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLUPSIDEGAP2CROWS.c.o
+[ 33%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CDLXSIDEGAP3METHODS.c.o
+[ 33%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CEIL.c.o
+[ 33%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CMF.c.o
+[ 33%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CMO.c.o
+[ 33%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CMOU.c.o
+[ 35%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_CORREL.c.o
+[ 35%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_COS.c.o
+[ 35%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_COSH.c.o
+[ 35%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_DEMA.c.o
+[ 37%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_DIV.c.o
+[ 37%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_DX.c.o
+[ 37%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_EMA.c.o
+[ 37%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_EXP.c.o
+[ 37%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_FLOOR.c.o
+[ 39%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_HMA.c.o
+[ 39%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_HT_DCPHASE.c.o
+[ 39%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_HT_DCPERIOD.c.o
+[ 39%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_HT_PHASOR.c.o
+[ 41%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_HT_SINE.c.o
+[ 41%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_HT_TRENDLINE.c.o
+[ 41%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_HT_TRENDMODE.c.o
+[ 41%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_IMI.c.o
+[ 41%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_KAMA.c.o
+[ 43%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_LINEARREG.c.o
+[ 43%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_LINEARREG_ANGLE.c.o
+[ 43%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_LINEARREG_INTERCEPT.c.o
+[ 43%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_LINEARREG_SLOPE.c.o
+[ 45%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_LN.c.o
+[ 45%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_LOG10.c.o
+[ 45%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MA.c.o
+[ 45%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MACD.c.o
+[ 45%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MACDEXT.c.o
+[ 47%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MACDFIX.c.o
+[ 47%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MAMA.c.o
+[ 47%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MAVP.c.o
+[ 47%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MAX.c.o
+[ 47%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MAXINDEX.c.o
+[ 49%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MEDPRICE.c.o
+[ 49%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MFI.c.o
+[ 49%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MIDPOINT.c.o
+[ 49%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MIDPRICE.c.o
+[ 50%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MIN.c.o
+[ 50%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MININDEX.c.o
+[ 50%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MINMAX.c.o
+[ 50%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MINMAXINDEX.c.o
+[ 50%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MINUS_DI.c.o
+[ 52%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MINUS_DM.c.o
+[ 52%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MOM.c.o
+[ 52%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_MULT.c.o
+[ 52%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_NATR.c.o
+[ 54%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_NVI.c.o
+[ 54%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_OBV.c.o
+[ 54%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_PLUS_DI.c.o
+[ 54%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_PLUS_DM.c.o
+[ 54%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_PPO.c.o
+[ 56%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_PVI.c.o
+[ 56%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_PVO.c.o
+[ 56%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ROC.c.o
+[ 56%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ROCP.c.o
+[ 58%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ROCR.c.o
+[ 58%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ROCR100.c.o
+[ 58%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SAR.c.o
+[ 58%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_RSI.c.o
+[ 58%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SAREXT.c.o
+[ 60%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SIN.c.o
+[ 60%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SINH.c.o
+[ 60%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SMA.c.o
+[ 60%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SQRT.c.o
+[ 62%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_STDDEV.c.o
+[ 62%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_STOCH.c.o
+[ 62%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_STOCHF.c.o
+[ 62%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_STOCHRSI.c.o
+[ 62%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SUB.c.o
+[ 64%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_SUM.c.o
+[ 64%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_T3.c.o
+[ 64%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TAN.c.o
+[ 64%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TANH.c.o
+[ 66%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TEMA.c.o
+[ 66%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TRANGE.c.o
+[ 66%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TRIMA.c.o
+[ 66%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TRIX.c.o
+[ 66%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TSF.c.o
+[ 67%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_TYPPRICE.c.o
+[ 67%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_ULTOSC.c.o
+[ 67%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_VAR.c.o
+[ 67%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_VWMA.c.o
+[ 67%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_WCLPRICE.c.o
+[ 69%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_WILLR.c.o
+[ 69%] Building C object CMakeFiles/ta-lib-static.dir/src/ta_func/ta_WMA.c.o
+[ 71%] Linking C static library libta-lib.a
+[ 84%] Built target ta-lib-static
+[ 84%] Building C object CMakeFiles/ta_regtest.dir/src/tools/ta_regtest/ta_test_func/test_variants.c.o
+[ 84%] Building C object CMakeFiles/ta_regtest.dir/src/tools/ta_regtest/ta_test_func/test_cmf.c.o
+[ 86%] Building C object CMakeFiles/ta_regtest.dir/src/tools/ta_regtest/ta_test_func/test_mavp.c.o
+[ 86%] Linking C executable bin/ta_regtest
+[100%] Built target ta_regtest
+[100%] Built target ensure_ta_regtest_in_bin
+[100%] Built target ta-lib-static
+[100%] Linking C executable bin/ta_bench
+[100%] Built target ta_bench
+[ 97%] Built target ta-lib-static
+[100%] Linking C executable bin/ta_bench_direct
+[100%] Built target ta_bench_direct
+    Finished `release` profile [optimized] target(s) in 0.02s
+     Running `target/release/ta_codegen generate-servers`
+  C server -> $WORKDIR/ta-lib/ta_codegen/output/c/tools/ta_codegen_serve.c
+  Rust server -> $WORKDIR/ta-lib/ta_codegen/output/rust/tools/src/bin/ta_codegen_serve.rs
+  Java server -> $WORKDIR/ta-lib/ta_codegen/output/java/tools/TaCodegenServe.java
+  .NET server -> $WORKDIR/ta-lib/ta_codegen/output/dotnet/tools/TaCodegenServe.cs
+Server source files generated for 168 function(s).
+    Finished `release` profile [optimized] target(s) in 0.02s
+     Running `target/release/ta_codegen generate-bench --backend=c`
+  C bench -> $WORKDIR/ta-lib/ta_codegen/output/c/tools/ta_bench_cg.c
+  C stream bench -> $WORKDIR/ta-lib/ta_codegen/output/c/tools/ta_bench_stream.c
+    Finished `release` profile [optimized] target(s) in 0.02s
+     Running `target/release/ta_codegen build`
+  Building C server... OK
+  Building C bench... OK
+  Building C stream bench... OK
+   Compiling ta-lib v0.8.1 ($WORKDIR/ta-lib/ta_codegen/output/rust/library)
+   Compiling ta-lib-tools v0.8.1 ($WORKDIR/ta-lib/ta_codegen/output/rust/tools)
+    Finished `release` profile [optimized] target(s) in 1m 32s
+  Building Rust server... OK
+  Building Java server... OK
+  Building Java library (31 files)... OK
+  Checking Java javadoc (doclint)... OK
+BatchApiTest: ALL PASS (30 checks)
+  Running Java BatchApiTest... OK
+CoreApiTest: ALL PASS (38 checks)
+  Running Java CoreApiTest... OK
+MetadataTest: ALL PASS (896 checks)
+  Running Java MetadataTest... OK
+SMathOverflowTest: ALL PASS (4 checks)
+  Running Java SMathOverflowTest... OK
+StreamSmokeTest: ALL PASS
+  Running Java StreamSmokeTest... OK
+  Building shared library... OK
+  正在判斷要還原的專案...
+  所有專案都在最新狀態，可進行還原。
+  TaCodegenServe -> $WORKDIR/ta-lib/ta_codegen/output/dotnet/tools/bin/Release/net10.0/TaCodegenServe.dll
+  TaCodegenServe -> $WORKDIR/ta-lib/bin/ta_codegen_dotnet/
+  Building .NET server... OK
+
+ta_regtest V0.8.1 (Jul 31 2026 23:35:22) - Regression Tests of TA-Lib code
+
+Testing utility functions
+Testing Abstract interface
+In-place alias gate: 200 (input,output) pairs bitwise-verified
+Testing the TA functions
+         MATH,VECTOR,DCPERIOD/PHASE,TRENDLINE/MODE: Testing....-\|/-\done.
+                               All Moving Averages: Testing....-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|done.
+                        AROON,CORREL,BETA,MIDPRICE: Testing....-\|/-\|/-\done.
+                             CCI,WILLR,ULTOSC,NATR: Testing....-\|/-\|/done.
+                                      BOP,AVGPRICE: Testing....-\|done.
+                                           RSI,CMO: Testing....-\|/-done.
+                                               IMI: Testing....-\done.
+MIN,MAX,MININDEX,MAXINDEX,MINMAX,MINMAXINDEX,MIDPOINT: Testing....-\|/-\|/-\|/done.
+                                            PO,APO: Testing....-\|/-\|/done.
+                                 ADX,ADXR,DI,DM,DX: Testing....-\|/-\|/-\|/done.
+                                        SAR,SAREXT: Testing....-done.
+                             STOCH,STOCHF,STOCHRSI: Testing....-\|/-\|done.
+                                      MFI,AD,ADOSC: Testing....-\|/-\|/done.
+                                           NVI,PVI: Testing....-\|done.
+                                       PHASOR,SINE: Testing....-\|done.
+                                              TRIX: Testing....-\|/-done.
+                              MACD,MACDFIX,MACDEXT: Testing....-\|/done.
+                         MOM,ROC,ROCP,ROCR,ROCR100: Testing....-\|/-done.
+                                        TRANGE,ATR: Testing....-\|/done.
+                                        STDDEV,VAR: Testing....-\|done.
+                                            AVGDEV: Testing....-\done.
+                                            BBANDS: Testing....-\|/-\|/-\|/-done.
+                                  PERIOD1/BOUNDARY: Testing....-\|/-\done.
+                                     MAVP/GROUPING: Testing....-
+  MAVP grouping: 11 MAType(s) from the generated ta_abstract list, each shape at unstable 0 and 7
+done.
+                             MATH,ADD,SUB,MULT,DIV: Testing....-Testing single-precision (TA_S_) arithmetic overflow (PR #33)
+done.
+                                  All Candlesticks: Testing....-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\done.
+                        PVO,VWMA,CMF,HMA,COMPOSITE: Testing....-done.
+                                               CMF: Testing....-\done.
+                                              CMOU: Testing....-\done.
+                           UNGUARDED,TA_S_,VARIANT: Testing....-
+  Variant parity: 168 functions x 31392 vectors, 31392 four-way comparisons (26832 with output), bit-identical
+    (1 function(s) delegate guarded+unguarded to a shared _Private body: unguarded parity is structural for them)
+done.
+                  CDLDOJI,CANDLE,VARIANT,PRECISION: Testing....-
+  Candle precision (issue #138): CDLDOJI four-variant parity on a high/low span past the float ULP -- bit-identical (out=0)
+done.
+
+Warning: Code profiling not supported for this platform.
+
+* All tests succeeded. Enjoy the library. *
+
+ta_regtest V0.8.1 (Jul 31 2026 23:35:22) - Regression Tests of TA-Lib code
+
+Testing utility functions
+  (with server verification)
+Testing Abstract interface
+In-place alias gate: 200 (input,output) pairs bitwise-verified
+  Abstract server verification: all calls match C
+Testing Abstract metadata parity (Rust server vs C)
+  Abstract metadata parity: 168 functions checked, 0 failed
+Testing Abstract dynamic dispatch (Rust server vs C)
+Testing Abstract interface
+In-place alias gate: 200 (input,output) pairs bitwise-verified
+  Abstract server verification: all calls match C
+Testing Abstract metadata parity (Java server vs C)
+  Abstract metadata parity: 168 functions checked, 0 failed
+Testing Abstract dynamic dispatch (Java server vs C)
+Testing Abstract interface
+In-place alias gate: 200 (input,output) pairs bitwise-verified
+  Abstract server verification: all calls match C
+
+=============================================
+Codegen Multi-Language Verification
+=============================================
+Reference oracle: ta_ref_serve (pid=50851)
+
+Codegen verification: C
+---------------------------------------------
+  Server started (pid=50852)
+  ACCBANDS                                 -\|PASS   (c-ref: 3524ns, C: 1227ns, 2.87x faster)
+  ACOS                                     /PASS   (c-ref: 825ns, C: 605ns, 1.36x faster)
+  AD                                       -PASS   (c-ref: 316ns, C: 323ns, 1.02x slower)
+  ADD                                      \PASS   (c-ref: 196ns, C: 102ns, 1.92x faster)
+  ADOSC                                    |PASS   (c-ref: 821ns, C: 1331ns, 1.62x slower)
+  ADX                                      /PASS   (c-ref: 2072ns, C: 1978ns, 1.05x faster)
+  ADXR                                     -PASS   (c-ref: 14697ns, C: 13133ns, 1.12x faster)
+  APO                                      \PASS   (c-ref: 2308ns, C: 1464ns, 1.58x faster)
+  AROON                                    |/PASS   (c-ref: 1875ns, C: 1847ns, 1.02x faster)
+  AROONOSC                                 -PASS   (c-ref: 1723ns, C: 1864ns, 1.08x slower)
+  ASIN                                     \PASS   (c-ref: 809ns, C: 582ns, 1.39x faster)
+  ATAN                                     |PASS   (c-ref: 1501ns, C: 1523ns, 1.01x slower)
+  ATR                                      /PASS   (c-ref: 1529ns, C: 1176ns, 1.30x faster)
+  AVGDEV                                   -PASS   (c-ref: 3328ns, C: 3373ns, 1.01x slower)
+  AVGPRICE                                 \PASS   (c-ref: 120ns, C: 134ns, 1.12x slower)
+  BBANDS                                   |/-PASS   (c-ref: 1830ns, C: 1011ns, 1.81x faster)
+  BETA                                     \PASS   (c-ref: 949ns, C: 966ns, 1.02x slower)
+  BOP                                      |PASS   (c-ref: 267ns, C: 249ns, 1.07x faster)
+  CCI                                      /PASS   (c-ref: 4794ns, C: 4702ns, 1.02x faster)
+  CDL2CROWS                                -PASS   (c-ref: 1546ns, C: 1543ns, 1.00x faster)
+  CDL3BLACKCROWS                           \PASS   (c-ref: 1537ns, C: 1214ns, 1.27x faster)
+  CDL3INSIDE                               |PASS   (c-ref: 3249ns, C: 1441ns, 2.25x faster)
+  CDL3LINESTRIKE                           /PASS   (c-ref: 2118ns, C: 1898ns, 1.12x faster)
+  CDL3OUTSIDE                              -PASS   (c-ref: 1802ns, C: 1168ns, 1.54x faster)
+  CDL3STARSINSOUTH                         \PASS   (c-ref: 2309ns, C: 1964ns, 1.18x faster)
+  CDL3WHITESOLDIERS                        |PASS   (c-ref: 2977ns, C: 2980ns, 1.00x slower)
+  CDLABANDONEDBABY                         /PASS   (c-ref: 2442ns, C: 2991ns, 1.22x slower)
+  CDLADVANCEBLOCK                          -PASS   (c-ref: 3692ns, C: 4002ns, 1.08x slower)
+  CDLBELTHOLD                              \PASS   (c-ref: 3579ns, C: 2598ns, 1.38x faster)
+  CDLBREAKAWAY                             |PASS   (c-ref: 3301ns, C: 1743ns, 1.89x faster)
+  CDLCLOSINGMARUBOZU                       /PASS   (c-ref: 2676ns, C: 2968ns, 1.11x slower)
+  CDLCONCEALBABYSWALL                      -PASS   (c-ref: 1079ns, C: 1460ns, 1.35x slower)
+  CDLCOUNTERATTACK                         \PASS   (c-ref: 3376ns, C: 2441ns, 1.38x faster)
+  CDLDARKCLOUDCOVER                        |PASS   (c-ref: 1787ns, C: 2176ns, 1.22x slower)
+  CDLDOJI                                  /PASS   (c-ref: 789ns, C: 617ns, 1.28x faster)
+  CDLDOJISTAR                              -PASS   (c-ref: 2324ns, C: 3067ns, 1.32x slower)
+  CDLDRAGONFLYDOJI                         \PASS   (c-ref: 1616ns, C: 1644ns, 1.02x slower)
+  CDLENGULFING                             |PASS   (c-ref: 1483ns, C: 1508ns, 1.02x slower)
+  CDLEVENINGDOJISTAR                       /PASS   (c-ref: 2387ns, C: 1545ns, 1.54x faster)
+  CDLEVENINGSTAR                           -PASS   (c-ref: 3197ns, C: 1345ns, 2.38x faster)
+  CDLGAPSIDESIDEWHITE                      \PASS   (c-ref: 2268ns, C: 1713ns, 1.32x faster)
+  CDLGRAVESTONEDOJI                        |PASS   (c-ref: 1558ns, C: 1481ns, 1.05x faster)
+  CDLHAMMER                                /PASS   (c-ref: 3337ns, C: 4491ns, 1.35x slower)
+  CDLHANGINGMAN                            -PASS   (c-ref: 3344ns, C: 3361ns, 1.01x slower)
+  CDLHARAMI                                \PASS   (c-ref: 2510ns, C: 2339ns, 1.07x faster)
+  CDLHARAMICROSS                           |PASS   (c-ref: 2493ns, C: 3011ns, 1.21x slower)
+  CDLHIGHWAVE                              /PASS   (c-ref: 2623ns, C: 2473ns, 1.06x faster)
+  CDLHIKKAKE                               -PASS   (c-ref: 1246ns, C: 1323ns, 1.06x slower)
+  CDLHIKKAKEMOD                            \PASS   (c-ref: 1578ns, C: 1477ns, 1.07x faster)
+  CDLHOMINGPIGEON                          |PASS   (c-ref: 2144ns, C: 1759ns, 1.22x faster)
+  CDLIDENTICAL3CROWS                       /PASS   (c-ref: 2073ns, C: 1885ns, 1.10x faster)
+  CDLINNECK                                -PASS   (c-ref: 2293ns, C: 1951ns, 1.18x faster)
+  CDLINVERTEDHAMMER                        \PASS   (c-ref: 3002ns, C: 1614ns, 1.86x faster)
+  CDLKICKING                               |PASS   (c-ref: 3482ns, C: 3089ns, 1.13x faster)
+  CDLKICKINGBYLENGTH                       /PASS   (c-ref: 2864ns, C: 3560ns, 1.24x slower)
+  CDLLADDERBOTTOM                          -PASS   (c-ref: 1259ns, C: 1774ns, 1.41x slower)
+  CDLLONGLEGGEDDOJI                        \PASS   (c-ref: 1331ns, C: 1561ns, 1.17x slower)
+  CDLLONGLINE                              |PASS   (c-ref: 3217ns, C: 2769ns, 1.16x faster)
+  CDLMARUBOZU                              /PASS   (c-ref: 3926ns, C: 2656ns, 1.48x faster)
+  CDLMATCHINGLOW                           -PASS   (c-ref: 1689ns, C: 1220ns, 1.38x faster)
+  CDLMATHOLD                               \PASS   (c-ref: 2644ns, C: 1882ns, 1.40x faster)
+  CDLMORNINGDOJISTAR                       |PASS   (c-ref: 3320ns, C: 1666ns, 1.99x faster)
+  CDLMORNINGSTAR                           /PASS   (c-ref: 3380ns, C: 1439ns, 2.35x faster)
+  CDLONNECK                                -PASS   (c-ref: 1902ns, C: 1781ns, 1.07x faster)
+  CDLPIERCING                              \PASS   (c-ref: 2420ns, C: 1916ns, 1.26x faster)
+  CDLRICKSHAWMAN                           |PASS   (c-ref: 2131ns, C: 1637ns, 1.30x faster)
+  CDLRISEFALL3METHODS                      /PASS   (c-ref: 3081ns, C: 2329ns, 1.32x faster)
+  CDLSEPARATINGLINES                       -PASS   (c-ref: 2631ns, C: 3136ns, 1.19x slower)
+  CDLSHOOTINGSTAR                          \PASS   (c-ref: 3994ns, C: 1737ns, 2.30x faster)
+  CDLSHORTLINE                             |PASS   (c-ref: 3401ns, C: 3966ns, 1.17x slower)
+  CDLSPINNINGTOP                           /PASS   (c-ref: 2993ns, C: 1026ns, 2.92x faster)
+  CDLSTALLEDPATTERN                        -PASS   (c-ref: 2112ns, C: 2117ns, 1.00x slower)
+  CDLSTICKSANDWICH                         \PASS   (c-ref: 1197ns, C: 920ns, 1.30x faster)
+  CDLTAKURI                                |PASS   (c-ref: 1763ns, C: 1649ns, 1.07x faster)
+  CDLTASUKIGAP                             /PASS   (c-ref: 1569ns, C: 1537ns, 1.02x faster)
+  CDLTHRUSTING                             -PASS   (c-ref: 2617ns, C: 2048ns, 1.28x faster)
+  CDLTRISTAR                               \PASS   (c-ref: 1490ns, C: 1293ns, 1.15x faster)
+  CDLUNIQUE3RIVER                          |PASS   (c-ref: 2690ns, C: 2474ns, 1.09x faster)
+  CDLUPSIDEGAP2CROWS                       /PASS   (c-ref: 1834ns, C: 2179ns, 1.19x slower)
+  CDLXSIDEGAP3METHODS                      -PASS   (c-ref: 1029ns, C: 1103ns, 1.07x slower)
+  CEIL                                     \PASS   (c-ref: 73ns, C: 83ns, 1.14x slower)
+  CMO                                      |PASS   (c-ref: 1570ns, C: 1549ns, 1.01x faster)
+  CORREL                                   /PASS   (c-ref: 1004ns, C: 1577ns, 1.57x slower)
+  COS                                      -PASS   (c-ref: 2890ns, C: 2659ns, 1.09x faster)
+  COSH                                     \PASS   (c-ref: 1559ns, C: 1733ns, 1.11x slower)
+  DEMA                                     |PASS   (c-ref: 8242ns, C: 1290ns, 6.39x faster)
+  DIV                                      /PASS   (c-ref: 154ns, C: 139ns, 1.11x faster)
+  DX                                       -PASS   (c-ref: 1631ns, C: 1952ns, 1.20x slower)
+  EMA                                      \PASS   (c-ref: 657ns, C: 647ns, 1.02x faster)
+  EXP                                      |PASS   (c-ref: 1478ns, C: 1312ns, 1.13x faster)
+  FLOOR                                    /PASS   (c-ref: 204ns, C: 131ns, 1.56x faster)
+  HT_DCPERIOD                              -PASS   (c-ref: 10497ns, C: 10370ns, 1.01x faster)
+  HT_DCPHASE                               \PASS   (c-ref: 60919ns, C: 57176ns, 1.07x faster)
+  HT_PHASOR                                |/PASS   (c-ref: 10335ns, C: 10307ns, 1.00x faster)
+  HT_SINE                                  -\PASS   (c-ref: 62991ns, C: 62233ns, 1.01x faster)
+  HT_TRENDLINE                             |PASS   (c-ref: 12914ns, C: 17008ns, 1.32x slower)
+  HT_TRENDMODE                             /PASS   (c-ref: 66481ns, C: 68897ns, 1.04x slower)
+  IMI                                      -PASS   (c-ref: 10633ns, C: 12714ns, 1.20x slower)
+  KAMA                                     \PASS   (c-ref: 636ns, C: 1064ns, 1.67x slower)
+  LINEARREG                                |PASS   (c-ref: 2911ns, C: 900ns, 3.23x faster)
+  LINEARREG_ANGLE                          /PASS   (c-ref: 5195ns, C: 2614ns, 1.99x faster)
+  LINEARREG_INTERCEPT                      -PASS   (c-ref: 2591ns, C: 541ns, 4.79x faster)
+  LINEARREG_SLOPE                          \PASS   (c-ref: 2435ns, C: 616ns, 3.95x faster)
+  LN                                       |PASS   (c-ref: 1264ns, C: 1066ns, 1.19x faster)
+  LOG10                                    /PASS   (c-ref: 1140ns, C: 1283ns, 1.13x slower)
+  MA                                       -PASS   (c-ref: 488ns, C: 471ns, 1.04x faster)
+  MACD                                     \|/PASS   (c-ref: 3007ns, C: 1410ns, 2.13x faster)
+  MACDEXT                                  -\|PASS   (c-ref: 1826ns, C: 2099ns, 1.15x slower)
+  MACDFIX                                  /-\PASS   (c-ref: 2359ns, C: 1602ns, 1.47x faster)
+  MAMA                                     |/PASS   (c-ref: 12538ns, C: 14874ns, 1.19x slower)
+  MAVP                                     -PASS   (c-ref: 1571ns, C: 1268ns, 1.24x faster)
+  MAX                                      \PASS   (c-ref: 1034ns, C: 555ns, 1.86x faster)
+  MAXINDEX                                 |PASS   (c-ref: 1197ns, C: 1023ns, 1.17x faster)
+  MEDPRICE                                 /PASS   (c-ref: 124ns, C: 79ns, 1.57x faster)
+  MFI                                      -PASS   (c-ref: 1785ns, C: 1701ns, 1.05x faster)
+  MIDPOINT                                 \PASS   (c-ref: 11393ns, C: 963ns, 11.83x faster)
+  MIDPRICE                                 |PASS   (c-ref: 1453ns, C: 1420ns, 1.02x faster)
+  MIN                                      /PASS   (c-ref: 1038ns, C: 1016ns, 1.02x faster)
+  MININDEX                                 -PASS   (c-ref: 1114ns, C: 1032ns, 1.08x faster)
+  MINMAX                                   \|PASS   (c-ref: 2039ns, C: 2125ns, 1.04x slower)
+  MINMAXINDEX                              /-PASS   (c-ref: 2046ns, C: 2094ns, 1.02x slower)
+  MINUS_DI                                 \PASS   (c-ref: 1463ns, C: 1668ns, 1.14x slower)
+  MINUS_DM                                 |PASS   (c-ref: 1135ns, C: 1156ns, 1.02x slower)
+  MOM                                      /PASS   (c-ref: 125ns, C: 117ns, 1.07x faster)
+  MULT                                     -PASS   (c-ref: 109ns, C: 76ns, 1.43x faster)
+  NATR                                     \PASS   (c-ref: 2252ns, C: 1183ns, 1.90x faster)
+  OBV                                      |PASS   (c-ref: 808ns, C: 956ns, 1.18x slower)
+  PLUS_DI                                  /PASS   (c-ref: 1495ns, C: 1574ns, 1.05x slower)
+  PLUS_DM                                  -PASS   (c-ref: 1301ns, C: 1360ns, 1.05x slower)
+  PPO                                      \PASS   (c-ref: 1617ns, C: 2494ns, 1.54x slower)
+  ROC                                      |PASS   (c-ref: 241ns, C: 271ns, 1.12x slower)
+  ROCP                                     /PASS   (c-ref: 271ns, C: 234ns, 1.16x faster)
+  ROCR                                     -PASS   (c-ref: 254ns, C: 250ns, 1.02x faster)
+  ROCR100                                  \PASS   (c-ref: 265ns, C: 281ns, 1.06x slower)
+  RSI                                      |PASS   (c-ref: 1479ns, C: 1497ns, 1.01x slower)
+  SAR                                      /PASS   (c-ref: 1207ns, C: 1498ns, 1.24x slower)
+  SAREXT                                   -PASS   (c-ref: 1186ns, C: 1628ns, 1.37x slower)
+  SIN                                      \PASS   (c-ref: 2295ns, C: 2275ns, 1.01x faster)
+  SINH                                     |PASS   (c-ref: 1733ns, C: 1881ns, 1.09x slower)
+  SMA                                      /PASS   (c-ref: 454ns, C: 463ns, 1.02x slower)
+  SQRT                                     -PASS   (c-ref: 224ns, C: 185ns, 1.21x faster)
+  STDDEV                                   \PASS   (c-ref: 769ns, C: 1155ns, 1.50x slower)
+  STOCH                                    |/PASS   (c-ref: 4623ns, C: 5336ns, 1.15x slower)
+  STOCHF                                   -\PASS   (c-ref: 2645ns, C: 2677ns, 1.01x slower)
+  STOCHRSI                                 |/PASS
+  SUB                                      -PASS   (c-ref: 133ns, C: 146ns, 1.10x slower)
+  SUM                                      \PASS   (c-ref: 433ns, C: 435ns, 1.00x slower)
+  T3                                       |PASS   (c-ref: 916ns, C: 4019ns, 4.39x slower)
+  TAN                                      /PASS   (c-ref: 2178ns, C: 2222ns, 1.02x slower)
+  TANH                                     -PASS   (c-ref: 599ns, C: 648ns, 1.08x slower)
+  TEMA                                     \PASS   (c-ref: 2326ns, C: 1238ns, 1.88x faster)
+  TRANGE                                   |PASS   (c-ref: 174ns, C: 173ns, 1.01x faster)
+  TRIMA                                    /PASS   (c-ref: 663ns, C: 652ns, 1.02x faster)
+  TRIX                                     -PASS   (c-ref: 1873ns, C: 1171ns, 1.60x faster)
+  TSF                                      \PASS   (c-ref: 2731ns, C: 864ns, 3.16x faster)
+  TYPPRICE                                 |PASS   (c-ref: 148ns, C: 163ns, 1.10x slower)
+  ULTOSC                                   /PASS   (c-ref: 2441ns, C: 2646ns, 1.08x slower)
+  VAR                                      -PASS   (c-ref: 505ns, C: 824ns, 1.63x slower)
+  WCLPRICE                                 \PASS   (c-ref: 137ns, C: 553ns, 4.04x slower)
+  WILLR                                    |PASS   (c-ref: 1787ns, C: 1892ns, 1.06x slower)
+  WMA                                      /PASS   (c-ref: 452ns, C: 459ns, 1.02x slower)
+  Predicate parity (IS_ZERO family): 56 values x 3 builtins match the C macro
+  Unstable-period wildcard: set-all reaches EMA (ADOSC outBegIdx 14 at unstable 5, 9 at 0)
+  Ref differential sweep: 613 variants across 74 functions, all match ta_ref_serve
+  post-freeze enums: 24 MAType value(s) > 8 excluded vs ta_ref_serve (#139; covered current-vs-current by xlang-hash/stream/COMPOSITE)
+  Stream verify: 168 functions, 15596 legs bit-exact vs batch, 0 expected-reject probes, 0 without a stream
+  OpenAndFill verify: 168 functions, filled array == batch(0,n-1) bitwise
+
+  C: 161 passed, 0 failed, 7 skipped
+    no frozen-reference baseline (post-cutover): CMF,CMOU,HMA,NVI,PVI,PVO,VWMA  [sweep skipped 5; all still bitwise-gated by VARIANT]
+
+Codegen verification: Rust
+---------------------------------------------
+  Server started (pid=50918)
+  ACCBANDS                                 -\|PASS   (c-ref: 4277ns, Rust: 1294ns, 3.31x faster)
+  ACOS                                     /PASS   (c-ref: 642ns, Rust: 825ns, 1.29x slower)
+  AD                                       -PASS   (c-ref: 332ns, Rust: 471ns, 1.42x slower)
+  ADD                                      \PASS   (c-ref: 160ns, Rust: 140ns, 1.14x faster)
+  ADOSC                                    |PASS   (c-ref: 610ns, Rust: 1587ns, 2.60x slower)
+  ADX                                      /PASS   (c-ref: 1797ns, Rust: 1908ns, 1.06x slower)
+  ADXR                                     -PASS   (c-ref: 3812ns, Rust: 2311ns, 1.65x faster)
+  APO                                      \PASS   (c-ref: 1719ns, Rust: 1803ns, 1.05x slower)
+  AROON                                    |/PASS   (c-ref: 1750ns, Rust: 2542ns, 1.45x slower)
+  AROONOSC                                 -PASS   (c-ref: 2607ns, Rust: 2112ns, 1.23x faster)
+  ASIN                                     \PASS   (c-ref: 790ns, Rust: 859ns, 1.09x slower)
+  ATAN                                     |PASS   (c-ref: 1428ns, Rust: 1501ns, 1.05x slower)
+  ATR                                      /PASS   (c-ref: 1373ns, Rust: 1179ns, 1.16x faster)
+  AVGDEV                                   -PASS   (c-ref: 3257ns, Rust: 4346ns, 1.33x slower)
+  AVGPRICE                                 \PASS   (c-ref: 321ns, Rust: 144ns, 2.23x faster)
+  BBANDS                                   |/-PASS   (c-ref: 1192ns, Rust: 1036ns, 1.15x faster)
+  BETA                                     \PASS   (c-ref: 1022ns, Rust: 1421ns, 1.39x slower)
+  BOP                                      |PASS   (c-ref: 292ns, Rust: 490ns, 1.68x slower)
+  CCI                                      /PASS   (c-ref: 4764ns, Rust: 5059ns, 1.06x slower)
+  CDL2CROWS                                -PASS   (c-ref: 1883ns, Rust: 2135ns, 1.13x slower)
+  CDL3BLACKCROWS                           \PASS   (c-ref: 1944ns, Rust: 1799ns, 1.08x faster)
+  CDL3INSIDE                               |PASS   (c-ref: 3612ns, Rust: 6686ns, 1.85x slower)
+  CDL3LINESTRIKE                           /PASS   (c-ref: 2112ns, Rust: 1841ns, 1.15x faster)
+  CDL3OUTSIDE                              -PASS   (c-ref: 1877ns, Rust: 1401ns, 1.34x faster)
+  CDL3STARSINSOUTH                         \PASS   (c-ref: 2180ns, Rust: 2850ns, 1.31x slower)
+  CDL3WHITESOLDIERS                        |PASS   (c-ref: 3274ns, Rust: 4591ns, 1.40x slower)
+  CDLABANDONEDBABY                         /PASS   (c-ref: 3335ns, Rust: 2758ns, 1.21x faster)
+  CDLADVANCEBLOCK                          -PASS   (c-ref: 3676ns, Rust: 4912ns, 1.34x slower)
+  CDLBELTHOLD                              \PASS   (c-ref: 3525ns, Rust: 3182ns, 1.11x faster)
+  CDLBREAKAWAY                             |PASS   (c-ref: 2481ns, Rust: 1736ns, 1.43x faster)
+  CDLCLOSINGMARUBOZU                       /PASS   (c-ref: 2425ns, Rust: 3192ns, 1.32x slower)
+  CDLCONCEALBABYSWALL                      -PASS   (c-ref: 1194ns, Rust: 2024ns, 1.70x slower)
+  CDLCOUNTERATTACK                         \PASS   (c-ref: 2923ns, Rust: 3081ns, 1.05x slower)
+  CDLDARKCLOUDCOVER                        |PASS   (c-ref: 2343ns, Rust: 1955ns, 1.20x faster)
+  CDLDOJI                                  /PASS   (c-ref: 795ns, Rust: 1302ns, 1.64x slower)
+  CDLDOJISTAR                              -PASS   (c-ref: 2241ns, Rust: 2713ns, 1.21x slower)
+  CDLDRAGONFLYDOJI                         \PASS   (c-ref: 1510ns, Rust: 1963ns, 1.30x slower)
+  CDLENGULFING                             |PASS   (c-ref: 1557ns, Rust: 1676ns, 1.08x slower)
+  CDLEVENINGDOJISTAR                       /PASS   (c-ref: 3181ns, Rust: 1960ns, 1.62x faster)
+  CDLEVENINGSTAR                           -PASS   (c-ref: 2234ns, Rust: 1948ns, 1.15x faster)
+  CDLGAPSIDESIDEWHITE                      \PASS   (c-ref: 1898ns, Rust: 2878ns, 1.52x slower)
+  CDLGRAVESTONEDOJI                        |PASS   (c-ref: 1698ns, Rust: 1984ns, 1.17x slower)
+  CDLHAMMER                                /PASS   (c-ref: 4776ns, Rust: 4706ns, 1.01x faster)
+  CDLHANGINGMAN                            -PASS   (c-ref: 4443ns, Rust: 3547ns, 1.25x faster)
+  CDLHARAMI                                \PASS   (c-ref: 2488ns, Rust: 2701ns, 1.09x slower)
+  CDLHARAMICROSS                           |PASS   (c-ref: 2480ns, Rust: 2940ns, 1.19x slower)
+  CDLHIGHWAVE                              /PASS   (c-ref: 2557ns, Rust: 2611ns, 1.02x slower)
+  CDLHIKKAKE                               -PASS   (c-ref: 1197ns, Rust: 1484ns, 1.24x slower)
+  CDLHIKKAKEMOD                            \PASS   (c-ref: 1655ns, Rust: 1562ns, 1.06x faster)
+  CDLHOMINGPIGEON                          |PASS   (c-ref: 2011ns, Rust: 2006ns, 1.00x faster)
+  CDLIDENTICAL3CROWS                       /PASS   (c-ref: 1867ns, Rust: 2450ns, 1.31x slower)
+  CDLINNECK                                -PASS   (c-ref: 2113ns, Rust: 2554ns, 1.21x slower)
+  CDLINVERTEDHAMMER                        \PASS   (c-ref: 2792ns, Rust: 1933ns, 1.44x faster)
+  CDLKICKING                               |PASS   (c-ref: 3217ns, Rust: 3229ns, 1.00x slower)
+  CDLKICKINGBYLENGTH                       /PASS   (c-ref: 3660ns, Rust: 3248ns, 1.13x faster)
+  CDLLADDERBOTTOM                          -PASS   (c-ref: 1234ns, Rust: 1955ns, 1.58x slower)
+  CDLLONGLEGGEDDOJI                        \PASS   (c-ref: 1634ns, Rust: 1639ns, 1.00x slower)
+  CDLLONGLINE                              |PASS   (c-ref: 3920ns, Rust: 3472ns, 1.13x faster)
+  CDLMARUBOZU                              /PASS   (c-ref: 3130ns, Rust: 3275ns, 1.05x slower)
+  CDLMATCHINGLOW                           -PASS   (c-ref: 1723ns, Rust: 1815ns, 1.05x slower)
+  CDLMATHOLD                               \PASS   (c-ref: 2264ns, Rust: 1911ns, 1.18x faster)
+  CDLMORNINGDOJISTAR                       |PASS   (c-ref: 3152ns, Rust: 2234ns, 1.41x faster)
+  CDLMORNINGSTAR                           /PASS   (c-ref: 3063ns, Rust: 2203ns, 1.39x faster)
+  CDLONNECK                                -PASS   (c-ref: 2590ns, Rust: 2355ns, 1.10x faster)
+  CDLPIERCING                              \PASS   (c-ref: 1733ns, Rust: 2354ns, 1.36x slower)
+  CDLRICKSHAWMAN                           |PASS   (c-ref: 2235ns, Rust: 2188ns, 1.02x faster)
+  CDLRISEFALL3METHODS                      /PASS   (c-ref: 4151ns, Rust: 2670ns, 1.55x faster)
+  CDLSEPARATINGLINES                       -PASS   (c-ref: 3388ns, Rust: 3408ns, 1.01x slower)
+  CDLSHOOTINGSTAR                          \PASS   (c-ref: 2924ns, Rust: 2093ns, 1.40x faster)
+  CDLSHORTLINE                             |PASS   (c-ref: 3595ns, Rust: 3767ns, 1.05x slower)
+  CDLSPINNINGTOP                           /PASS   (c-ref: 2383ns, Rust: 1462ns, 1.63x faster)
+  CDLSTALLEDPATTERN                        -PASS   (c-ref: 2215ns, Rust: 3119ns, 1.41x slower)
+  CDLSTICKSANDWICH                         \PASS   (c-ref: 975ns, Rust: 1243ns, 1.27x slower)
+  CDLTAKURI                                |PASS   (c-ref: 1782ns, Rust: 2061ns, 1.16x slower)
+  CDLTASUKIGAP                             /PASS   (c-ref: 2410ns, Rust: 2299ns, 1.05x faster)
+  CDLTHRUSTING                             -PASS   (c-ref: 1882ns, Rust: 2517ns, 1.34x slower)
+  CDLTRISTAR                               \PASS   (c-ref: 1381ns, Rust: 1703ns, 1.23x slower)
+  CDLUNIQUE3RIVER                          |PASS   (c-ref: 2717ns, Rust: 4371ns, 1.61x slower)
+  CDLUPSIDEGAP2CROWS                       /PASS   (c-ref: 2063ns, Rust: 2070ns, 1.00x slower)
+  CDLXSIDEGAP3METHODS                      -PASS   (c-ref: 1807ns, Rust: 1483ns, 1.22x faster)
+  CEIL                                     \PASS   (c-ref: 70ns, Rust: 95ns, 1.36x slower)
+  CMO                                      |PASS   (c-ref: 1573ns, Rust: 1652ns, 1.05x slower)
+  CORREL                                   /PASS   (c-ref: 1599ns, Rust: 1173ns, 1.36x faster)
+  COS                                      -PASS   (c-ref: 2837ns, Rust: 2680ns, 1.06x faster)
+  COSH                                     \PASS   (c-ref: 1463ns, Rust: 1802ns, 1.23x slower)
+  DEMA                                     |PASS   (c-ref: 2203ns, Rust: 998ns, 2.21x faster)
+  DIV                                      /PASS   (c-ref: 141ns, Rust: 209ns, 1.48x slower)
+  DX                                       -PASS   (c-ref: 1837ns, Rust: 1817ns, 1.01x faster)
+  EMA                                      \PASS   (c-ref: 646ns, Rust: 645ns, 1.00x faster)
+  EXP                                      |PASS   (c-ref: 1120ns, Rust: 1249ns, 1.12x slower)
+  FLOOR                                    /PASS   (c-ref: 123ns, Rust: 107ns, 1.15x faster)
+  HT_DCPERIOD                              -PASS   (c-ref: 10540ns, Rust: 10626ns, 1.01x slower)
+  HT_DCPHASE                               \PASS   (c-ref: 60543ns, Rust: 61561ns, 1.02x slower)
+  HT_PHASOR                                |/PASS   (c-ref: 10326ns, Rust: 10095ns, 1.02x faster)
+  HT_SINE                                  -\PASS   (c-ref: 60635ns, Rust: 67786ns, 1.12x slower)
+  HT_TRENDLINE                             |PASS   (c-ref: 13110ns, Rust: 18095ns, 1.38x slower)
+  HT_TRENDMODE                             /PASS   (c-ref: 65616ns, Rust: 84022ns, 1.28x slower)
+  IMI                                      -PASS   (c-ref: 10597ns, Rust: 13760ns, 1.30x slower)
+  KAMA                                     \PASS   (c-ref: 647ns, Rust: 1276ns, 1.97x slower)
+  LINEARREG                                |PASS   (c-ref: 2942ns, Rust: 1315ns, 2.24x faster)
+  LINEARREG_ANGLE                          /PASS   (c-ref: 6693ns, Rust: 3893ns, 1.72x faster)
+  LINEARREG_INTERCEPT                      -PASS   (c-ref: 2826ns, Rust: 634ns, 4.46x faster)
+  LINEARREG_SLOPE                          \PASS   (c-ref: 2262ns, Rust: 631ns, 3.58x faster)
+  LN                                       |PASS   (c-ref: 1364ns, Rust: 1840ns, 1.35x slower)
+  LOG10                                    /PASS   (c-ref: 1125ns, Rust: 1014ns, 1.11x faster)
+  MA                                       -PASS   (c-ref: 508ns, Rust: 627ns, 1.23x slower)
+  MACD                                     \|/PASS   (c-ref: 6258ns, Rust: 1921ns, 3.26x faster)
+  MACDEXT                                  -\|PASS   (c-ref: 4018ns, Rust: 2213ns, 1.82x faster)
+  MACDFIX                                  /-\PASS   (c-ref: 3056ns, Rust: 2682ns, 1.14x faster)
+  MAMA                                     |/PASS   (c-ref: 14373ns, Rust: 15258ns, 1.06x slower)
+  MAVP                                     -PASS   (c-ref: 1480ns, Rust: 1561ns, 1.05x slower)
+  MAX                                      \PASS   (c-ref: 1195ns, Rust: 949ns, 1.26x faster)
+  MAXINDEX                                 |PASS   (c-ref: 937ns, Rust: 1096ns, 1.17x slower)
+  MEDPRICE                                 /PASS   (c-ref: 85ns, Rust: 99ns, 1.16x slower)
+  MFI                                      -PASS   (c-ref: 1640ns, Rust: 2135ns, 1.30x slower)
+  MIDPOINT                                 \PASS   (c-ref: 12077ns, Rust: 1450ns, 8.33x faster)
+  MIDPRICE                                 |PASS   (c-ref: 1454ns, Rust: 2230ns, 1.53x slower)
+  MIN                                      /PASS   (c-ref: 1147ns, Rust: 1099ns, 1.04x faster)
+  MININDEX                                 -PASS   (c-ref: 1082ns, Rust: 1203ns, 1.11x slower)
+  MINMAX                                   \|PASS   (c-ref: 2063ns, Rust: 2251ns, 1.09x slower)
+  MINMAXINDEX                              /-PASS   (c-ref: 2061ns, Rust: 2194ns, 1.06x slower)
+  MINUS_DI                                 \PASS   (c-ref: 1420ns, Rust: 1619ns, 1.14x slower)
+  MINUS_DM                                 |PASS   (c-ref: 1105ns, Rust: 1516ns, 1.37x slower)
+  MOM                                      /PASS   (c-ref: 99ns, Rust: 95ns, 1.04x faster)
+  MULT                                     -PASS   (c-ref: 108ns, Rust: 108ns, 1.00x faster)
+  NATR                                     \PASS   (c-ref: 1522ns, Rust: 1303ns, 1.17x faster)
+  OBV                                      |PASS   (c-ref: 702ns, Rust: 1022ns, 1.46x slower)
+  PLUS_DI                                  /PASS   (c-ref: 1659ns, Rust: 1666ns, 1.00x slower)
+  PLUS_DM                                  -PASS   (c-ref: 1118ns, Rust: 1437ns, 1.29x slower)
+  PPO                                      \PASS   (c-ref: 2345ns, Rust: 2050ns, 1.14x faster)
+  ROC                                      |PASS   (c-ref: 269ns, Rust: 447ns, 1.66x slower)
+  ROCP                                     /PASS   (c-ref: 243ns, Rust: 395ns, 1.63x slower)
+  ROCR                                     -PASS   (c-ref: 237ns, Rust: 282ns, 1.19x slower)
+  ROCR100                                  \PASS   (c-ref: 253ns, Rust: 267ns, 1.06x slower)
+  RSI                                      |PASS   (c-ref: 1468ns, Rust: 1427ns, 1.03x faster)
+  SAR                                      /PASS   (c-ref: 1215ns, Rust: 1565ns, 1.29x slower)
+  SAREXT                                   -PASS   (c-ref: 1225ns, Rust: 1740ns, 1.42x slower)
+  SIN                                      \PASS   (c-ref: 2484ns, Rust: 2658ns, 1.07x slower)
+  SINH                                     |PASS   (c-ref: 1847ns, Rust: 1451ns, 1.27x faster)
+  SMA                                      /PASS   (c-ref: 439ns, Rust: 448ns, 1.02x slower)
+  SQRT                                     -PASS   (c-ref: 184ns, Rust: 195ns, 1.06x slower)
+  STDDEV                                   \PASS   (c-ref: 641ns, Rust: 874ns, 1.36x slower)
+  STOCH                                    |/PASS   (c-ref: 4354ns, Rust: 4468ns, 1.03x slower)
+  STOCHF                                   -\PASS   (c-ref: 2729ns, Rust: 2724ns, 1.00x faster)
+  STOCHRSI                                 |/PASS
+  SUB                                      -PASS   (c-ref: 82ns, Rust: 108ns, 1.32x slower)
+  SUM                                      \PASS   (c-ref: 441ns, Rust: 438ns, 1.01x faster)
+  T3                                       |PASS   (c-ref: 905ns, Rust: 3872ns, 4.28x slower)
+  TAN                                      /PASS   (c-ref: 2569ns, Rust: 2269ns, 1.13x faster)
+  TANH                                     -PASS   (c-ref: 590ns, Rust: 611ns, 1.04x slower)
+  TEMA                                     \PASS   (c-ref: 2830ns, Rust: 1281ns, 2.21x faster)
+  TRANGE                                   |PASS   (c-ref: 177ns, Rust: 222ns, 1.25x slower)
+  TRIMA                                    /PASS   (c-ref: 645ns, Rust: 673ns, 1.04x slower)
+  TRIX                                     -PASS   (c-ref: 2818ns, Rust: 1534ns, 1.84x faster)
+  TSF                                      \PASS   (c-ref: 2887ns, Rust: 1218ns, 2.37x faster)
+  TYPPRICE                                 |PASS   (c-ref: 163ns, Rust: 198ns, 1.21x slower)
+  ULTOSC                                   /PASS   (c-ref: 2743ns, Rust: 2334ns, 1.18x faster)
+  VAR                                      -PASS   (c-ref: 566ns, Rust: 737ns, 1.30x slower)
+  WCLPRICE                                 \PASS   (c-ref: 146ns, Rust: 572ns, 3.92x slower)
+  WILLR                                    |PASS   (c-ref: 1760ns, Rust: 2090ns, 1.19x slower)
+  WMA                                      /PASS   (c-ref: 453ns, Rust: 575ns, 1.27x slower)
+  Predicate parity (IS_ZERO family): 56 values x 3 builtins match the C macro
+  Unstable-period wildcard: set-all reaches EMA (ADOSC outBegIdx 14 at unstable 5, 9 at 0)
+  NOTE [rust]: sweep Metastock pass skipped - no compatibility API in this language
+  Ref differential sweep: 539 variants across 74 functions, all match ta_ref_serve
+  post-freeze enums: 24 MAType value(s) > 8 excluded vs ta_ref_serve (#139; covered current-vs-current by xlang-hash/stream/COMPOSITE)
+  Fuzz-port self-check: 9/9 shapes bit-identical
+  NOTE [rust]: stream Metastock leg skipped - no compatibility API in this language
+  Stream verify: 168 functions, 13158 legs bit-exact vs batch, 0 expected-reject probes, 0 without a stream
+  OpenAndFill verify: 168 functions, filled array == batch(0,n-1) bitwise
+
+  Rust: 161 passed, 0 failed, 7 skipped
+
+Codegen verification: Java
+---------------------------------------------
+  Server started (pid=50968)
+  ACCBANDS                                 -\|PASS   (c-ref: 3030ns, Java: 29122ns, 9.61x slower)
+  ACOS                                     /PASS   (c-ref: 637ns, Java: 10846ns, 17.03x slower)
+  AD                                       -PASS   (c-ref: 303ns, Java: 8887ns, 29.33x slower)
+  ADD                                      \PASS   (c-ref: 83ns, Java: 3324ns, 40.05x slower)
+  ADOSC                                    |PASS   (c-ref: 564ns, Java: 13621ns, 24.15x slower)
+  ADX                                      /PASS   (c-ref: 2065ns, Java: 33253ns, 16.10x slower)
+  ADXR                                     -PASS   (c-ref: 3169ns, Java: 36386ns, 11.48x slower)
+  APO                                      \PASS   (c-ref: 1442ns, Java: 14454ns, 10.02x slower)
+  AROON                                    |/PASS   (c-ref: 2340ns, Java: 26834ns, 11.47x slower)
+  AROONOSC                                 -PASS   (c-ref: 1863ns, Java: 25162ns, 13.51x slower)
+  ASIN                                     \PASS   (c-ref: 573ns, Java: 12295ns, 21.46x slower)
+  ATAN                                     |PASS   (c-ref: 1553ns, Java: 15601ns, 10.05x slower)
+  ATR                                      /PASS   (c-ref: 1385ns, Java: 14501ns, 10.47x slower)
+  AVGDEV                                   -PASS   (c-ref: 3269ns, Java: 88099ns, 26.95x slower)
+  AVGPRICE                                 \PASS   (c-ref: 120ns, Java: 6329ns, 52.74x slower)
+  BBANDS                                   |/-PASS   (c-ref: 1465ns, Java: 22950ns, 15.67x slower)
+  BETA                                     \PASS   (c-ref: 1091ns, Java: 39357ns, 36.07x slower)
+  BOP                                      |PASS   (c-ref: 276ns, Java: 8036ns, 29.12x slower)
+  CCI                                      /PASS   (c-ref: 5547ns, Java: 89288ns, 16.10x slower)
+  CDL2CROWS                                -PASS   (c-ref: 1632ns, Java: 22441ns, 13.75x slower)
+  CDL3BLACKCROWS                           \PASS   (c-ref: 1544ns, Java: 45807ns, 29.67x slower)
+  CDL3INSIDE                               |PASS   (c-ref: 2429ns, Java: 48873ns, 20.12x slower)
+  CDL3LINESTRIKE                           /PASS   (c-ref: 1649ns, Java: 46318ns, 28.09x slower)
+  CDL3OUTSIDE                              -PASS   (c-ref: 1841ns, Java: 15726ns, 8.54x slower)
+  CDL3STARSINSOUTH                         \PASS   (c-ref: 1882ns, Java: 63286ns, 33.63x slower)
+  CDL3WHITESOLDIERS                        |PASS   (c-ref: 3258ns, Java: 89384ns, 27.44x slower)
+  CDLABANDONEDBABY                         /PASS   (c-ref: 2532ns, Java: 41565ns, 16.42x slower)
+  CDLADVANCEBLOCK                          -PASS   (c-ref: 3593ns, Java: 140647ns, 39.14x slower)
+  CDLBELTHOLD                              \PASS   (c-ref: 3478ns, Java: 29038ns, 8.35x slower)
+  CDLBREAKAWAY                             |PASS   (c-ref: 2342ns, Java: 29664ns, 12.67x slower)
+  CDLCLOSINGMARUBOZU                       /PASS   (c-ref: 2553ns, Java: 29939ns, 11.73x slower)
+  CDLCONCEALBABYSWALL                      -PASS   (c-ref: 1663ns, Java: 43036ns, 25.88x slower)
+  CDLCOUNTERATTACK                         \PASS   (c-ref: 3158ns, Java: 46573ns, 14.75x slower)
+  CDLDARKCLOUDCOVER                        |PASS   (c-ref: 1959ns, Java: 23023ns, 11.75x slower)
+  CDLDOJI                                  /PASS   (c-ref: 806ns, Java: 14941ns, 18.54x slower)
+  CDLDOJISTAR                              -PASS   (c-ref: 2942ns, Java: 28814ns, 9.79x slower)
+  CDLDRAGONFLYDOJI                         \PASS   (c-ref: 1783ns, Java: 28658ns, 16.07x slower)
+  CDLENGULFING                             |PASS   (c-ref: 1424ns, Java: 16897ns, 11.87x slower)
+  CDLEVENINGDOJISTAR                       /PASS   (c-ref: 2761ns, Java: 38097ns, 13.80x slower)
+  CDLEVENINGSTAR                           -PASS   (c-ref: 2416ns, Java: 37248ns, 15.42x slower)
+  CDLGAPSIDESIDEWHITE                      \PASS   (c-ref: 1700ns, Java: 62498ns, 36.76x slower)
+  CDLGRAVESTONEDOJI                        |PASS   (c-ref: 1788ns, Java: 28776ns, 16.09x slower)
+  CDLHAMMER                                /PASS   (c-ref: 3419ns, Java: 48872ns, 14.29x slower)
+  CDLHANGINGMAN                            -PASS   (c-ref: 3317ns, Java: 47557ns, 14.34x slower)
+  CDLHARAMI                                \PASS   (c-ref: 2274ns, Java: 56808ns, 24.98x slower)
+  CDLHARAMICROSS                           |PASS   (c-ref: 3171ns, Java: 32134ns, 10.13x slower)
+  CDLHIGHWAVE                              /PASS   (c-ref: 2843ns, Java: 35134ns, 12.36x slower)
+  CDLHIKKAKE                               -PASS   (c-ref: 1184ns, Java: 12954ns, 10.94x slower)
+  CDLHIKKAKEMOD                            \PASS   (c-ref: 1319ns, Java: 16599ns, 12.58x slower)
+  CDLHOMINGPIGEON                          |PASS   (c-ref: 1616ns, Java: 29864ns, 18.48x slower)
+  CDLIDENTICAL3CROWS                       /PASS   (c-ref: 2340ns, Java: 61272ns, 26.18x slower)
+  CDLINNECK                                -PASS   (c-ref: 1967ns, Java: 32050ns, 16.29x slower)
+  CDLINVERTEDHAMMER                        \PASS   (c-ref: 2890ns, Java: 52774ns, 18.26x slower)
+  CDLKICKING                               |PASS   (c-ref: 2999ns, Java: 59803ns, 19.94x slower)
+  CDLKICKINGBYLENGTH                       /PASS   (c-ref: 2709ns, Java: 61449ns, 22.68x slower)
+  CDLLADDERBOTTOM                          -PASS   (c-ref: 1697ns, Java: 21021ns, 12.39x slower)
+  CDLLONGLEGGEDDOJI                        \PASS   (c-ref: 1766ns, Java: 24479ns, 13.86x slower)
+  CDLLONGLINE                              |PASS   (c-ref: 3263ns, Java: 39679ns, 12.16x slower)
+  CDLMARUBOZU                              /PASS   (c-ref: 3059ns, Java: 29554ns, 9.66x slower)
+  CDLMATCHINGLOW                           -PASS   (c-ref: 1176ns, Java: 20968ns, 17.83x slower)
+  CDLMATHOLD                               \PASS   (c-ref: 3225ns, Java: 57679ns, 17.88x slower)
+  CDLMORNINGDOJISTAR                       |PASS   (c-ref: 3198ns, Java: 36744ns, 11.49x slower)
+  CDLMORNINGSTAR                           /PASS   (c-ref: 3370ns, Java: 38682ns, 11.48x slower)
+  CDLONNECK                                -PASS   (c-ref: 1866ns, Java: 32065ns, 17.18x slower)
+  CDLPIERCING                              \PASS   (c-ref: 2552ns, Java: 38528ns, 15.10x slower)
+  CDLRICKSHAWMAN                           |PASS   (c-ref: 2099ns, Java: 41799ns, 19.91x slower)
+  CDLRISEFALL3METHODS                      /PASS   (c-ref: 3138ns, Java: 71763ns, 22.87x slower)
+  CDLSEPARATINGLINES                       -PASS   (c-ref: 2695ns, Java: 37233ns, 13.82x slower)
+  CDLSHOOTINGSTAR                          \PASS   (c-ref: 3856ns, Java: 35645ns, 9.24x slower)
+  CDLSHORTLINE                             |PASS   (c-ref: 4480ns, Java: 41035ns, 9.16x slower)
+  CDLSPINNINGTOP                           /PASS   (c-ref: 2983ns, Java: 21614ns, 7.25x slower)
+  CDLSTALLEDPATTERN                        -PASS   (c-ref: 2053ns, Java: 66986ns, 32.63x slower)
+  CDLSTICKSANDWICH                         \PASS   (c-ref: 1717ns, Java: 20256ns, 11.80x slower)
+  CDLTAKURI                                |PASS   (c-ref: 1866ns, Java: 29590ns, 15.86x slower)
+  CDLTASUKIGAP                             /PASS   (c-ref: 2520ns, Java: 38930ns, 15.45x slower)
+  CDLTHRUSTING                             -PASS   (c-ref: 1763ns, Java: 32750ns, 18.58x slower)
+  CDLTRISTAR                               \PASS   (c-ref: 1412ns, Java: 18153ns, 12.86x slower)
+  CDLUNIQUE3RIVER                          |PASS   (c-ref: 2742ns, Java: 28983ns, 10.57x slower)
+  CDLUPSIDEGAP2CROWS                       /PASS   (c-ref: 2511ns, Java: 31446ns, 12.52x slower)
+  CDLXSIDEGAP3METHODS                      -PASS   (c-ref: 1186ns, Java: 17160ns, 14.47x slower)
+  CEIL                                     \PASS   (c-ref: 181ns, Java: 14282ns, 78.91x slower)
+  CMO                                      |PASS   (c-ref: 1606ns, Java: 15600ns, 9.71x slower)
+  CORREL                                   /PASS   (c-ref: 1133ns, Java: 19745ns, 17.43x slower)
+  COS                                      -PASS   (c-ref: 2769ns, Java: 7818ns, 2.82x slower)
+  COSH                                     \PASS   (c-ref: 2631ns, Java: 17440ns, 6.63x slower)
+  DEMA                                     |PASS   (c-ref: 1953ns, Java: 8732ns, 4.47x slower)
+  DIV                                      /PASS   (c-ref: 139ns, Java: 5256ns, 37.81x slower)
+  DX                                       -PASS   (c-ref: 2248ns, Java: 32365ns, 14.40x slower)
+  EMA                                      \PASS   (c-ref: 626ns, Java: 2272ns, 3.63x slower)
+  EXP                                      |PASS   (c-ref: 1402ns, Java: 6907ns, 4.93x slower)
+  FLOOR                                    /PASS   (c-ref: 77ns, Java: 15575ns, 202.27x slower)
+  HT_DCPERIOD                              -PASS   (c-ref: 10317ns, Java: 81356ns, 7.89x slower)
+  HT_DCPHASE                               \PASS   (c-ref: 61608ns, Java: 299480ns, 4.86x slower)
+  HT_PHASOR                                |/PASS   (c-ref: 10342ns, Java: 83742ns, 8.10x slower)
+  HT_SINE                                  -\PASS   (c-ref: 62101ns, Java: 308921ns, 4.97x slower)
+  HT_TRENDLINE                             |PASS   (c-ref: 11976ns, Java: 170692ns, 14.25x slower)
+  HT_TRENDMODE                             /PASS   (c-ref: 65989ns, Java: 422890ns, 6.41x slower)
+  IMI                                      -PASS   (c-ref: 10690ns, Java: 114733ns, 10.73x slower)
+  KAMA                                     \PASS   (c-ref: 650ns, Java: 19029ns, 29.28x slower)
+  LINEARREG                                |PASS   (c-ref: 2869ns, Java: 12692ns, 4.42x slower)
+  LINEARREG_ANGLE                          /PASS   (c-ref: 5883ns, Java: 16693ns, 2.84x slower)
+  LINEARREG_INTERCEPT                      -PASS   (c-ref: 2588ns, Java: 10216ns, 3.95x slower)
+  LINEARREG_SLOPE                          \PASS   (c-ref: 2251ns, Java: 8491ns, 3.77x slower)
+  LN                                       |PASS   (c-ref: 1528ns, Java: 7248ns, 4.74x slower)
+  LOG10                                    /PASS   (c-ref: 1022ns, Java: 7337ns, 7.18x slower)
+  MA                                       -PASS   (c-ref: 449ns, Java: 6881ns, 15.33x slower)
+  MACD                                     \|/PASS   (c-ref: 2303ns, Java: 12888ns, 5.60x slower)
+  MACDEXT                                  -\|PASS   (c-ref: 2376ns, Java: 25723ns, 10.83x slower)
+  MACDFIX                                  /-\PASS   (c-ref: 3181ns, Java: 13418ns, 4.22x slower)
+  MAMA                                     |/PASS   (c-ref: 14300ns, Java: 101777ns, 7.12x slower)
+  MAVP                                     -PASS   (c-ref: 2554ns, Java: 30476ns, 11.93x slower)
+  MAX                                      \PASS   (c-ref: 1095ns, Java: 15179ns, 13.86x slower)
+  MAXINDEX                                 |PASS   (c-ref: 1004ns, Java: 16665ns, 16.60x slower)
+  MEDPRICE                                 /PASS   (c-ref: 103ns, Java: 4314ns, 41.88x slower)
+  MFI                                      -PASS   (c-ref: 1652ns, Java: 23152ns, 14.01x slower)
+  MIDPOINT                                 \PASS   (c-ref: 11656ns, Java: 29747ns, 2.55x slower)
+  MIDPRICE                                 |PASS   (c-ref: 1469ns, Java: 70052ns, 47.69x slower)
+  MIN                                      /PASS   (c-ref: 1067ns, Java: 15085ns, 14.14x slower)
+  MININDEX                                 -PASS   (c-ref: 961ns, Java: 16631ns, 17.31x slower)
+  MINMAX                                   \|PASS   (c-ref: 2138ns, Java: 25681ns, 12.01x slower)
+  MINMAXINDEX                              /-PASS   (c-ref: 2037ns, Java: 23733ns, 11.65x slower)
+  MINUS_DI                                 \PASS   (c-ref: 1670ns, Java: 24769ns, 14.83x slower)
+  MINUS_DM                                 |PASS   (c-ref: 1254ns, Java: 11430ns, 9.11x slower)
+  MOM                                      /PASS   (c-ref: 123ns, Java: 3564ns, 28.98x slower)
+  MULT                                     -PASS   (c-ref: 85ns, Java: 3477ns, 40.91x slower)
+  NATR                                     \PASS   (c-ref: 1543ns, Java: 24323ns, 15.76x slower)
+  OBV                                      |PASS   (c-ref: 821ns, Java: 8164ns, 9.94x slower)
+  PLUS_DI                                  /PASS   (c-ref: 1683ns, Java: 24157ns, 14.35x slower)
+  PLUS_DM                                  -PASS   (c-ref: 1167ns, Java: 11215ns, 9.61x slower)
+  PPO                                      \PASS   (c-ref: 1628ns, Java: 11796ns, 7.25x slower)
+  ROC                                      |PASS   (c-ref: 315ns, Java: 8268ns, 26.25x slower)
+  ROCP                                     /PASS   (c-ref: 315ns, Java: 6172ns, 19.59x slower)
+  ROCR                                     -PASS   (c-ref: 272ns, Java: 5896ns, 21.68x slower)
+  ROCR100                                  \PASS   (c-ref: 238ns, Java: 7107ns, 29.86x slower)
+  RSI                                      |PASS   (c-ref: 1445ns, Java: 15772ns, 10.91x slower)
+  SAR                                      /PASS   (c-ref: 1576ns, Java: 16357ns, 10.38x slower)
+  SAREXT                                   -PASS   (c-ref: 1641ns, Java: 17740ns, 10.81x slower)
+  SIN                                      \PASS   (c-ref: 2780ns, Java: 8592ns, 3.09x slower)
+  SINH                                     |PASS   (c-ref: 1824ns, Java: 16145ns, 8.85x slower)
+  SMA                                      /PASS   (c-ref: 442ns, Java: 7344ns, 16.62x slower)
+  SQRT                                     -PASS   (c-ref: 228ns, Java: 4538ns, 19.90x slower)
+  STDDEV                                   \PASS   (c-ref: 645ns, Java: 19893ns, 30.84x slower)
+  STOCH                                    |/PASS   (c-ref: 4643ns, Java: 32121ns, 6.92x slower)
+  STOCHF                                   -\PASS   (c-ref: 4299ns, Java: 30886ns, 7.18x slower)
+  STOCHRSI                                 |/PASS
+  SUB                                      -PASS   (c-ref: 87ns, Java: 3950ns, 45.40x slower)
+  SUM                                      \PASS   (c-ref: 429ns, Java: 5743ns, 13.39x slower)
+  T3                                       |PASS   (c-ref: 898ns, Java: 21246ns, 23.66x slower)
+  TAN                                      /PASS   (c-ref: 2805ns, Java: 7656ns, 2.73x slower)
+  TANH                                     -PASS   (c-ref: 717ns, Java: 10592ns, 14.77x slower)
+  TEMA                                     \PASS   (c-ref: 1890ns, Java: 10783ns, 5.71x slower)
+  TRANGE                                   |PASS   (c-ref: 182ns, Java: 11869ns, 65.21x slower)
+  TRIMA                                    /PASS   (c-ref: 683ns, Java: 9595ns, 14.05x slower)
+  TRIX                                     -PASS   (c-ref: 3176ns, Java: 14547ns, 4.58x slower)
+  TSF                                      \PASS   (c-ref: 2916ns, Java: 12525ns, 4.30x slower)
+  TYPPRICE                                 |PASS   (c-ref: 139ns, Java: 4835ns, 34.78x slower)
+  ULTOSC                                   /PASS   (c-ref: 2549ns, Java: 75235ns, 29.52x slower)
+  VAR                                      -PASS   (c-ref: 483ns, Java: 15433ns, 31.95x slower)
+  WCLPRICE                                 \PASS   (c-ref: 115ns, Java: 6390ns, 55.57x slower)
+  WILLR                                    |PASS   (c-ref: 1764ns, Java: 27610ns, 15.65x slower)
+  WMA                                      /PASS   (c-ref: 493ns, Java: 8298ns, 16.83x slower)
+  Predicate parity (IS_ZERO family): 56 values x 3 builtins match the C macro
+  Unstable-period wildcard: set-all reaches EMA (ADOSC outBegIdx 14 at unstable 5, 9 at 0)
+  NOTE [java]: sweep Metastock pass skipped - no compatibility API in this language
+  Ref differential sweep: 539 variants across 74 functions, all match ta_ref_serve
+  post-freeze enums: 24 MAType value(s) > 8 excluded vs ta_ref_serve (#139; covered current-vs-current by xlang-hash/stream/COMPOSITE)
+  Fuzz-port self-check: 9/9 shapes bit-identical
+  NOTE [java]: stream Metastock leg skipped - no compatibility API in this language
+  Stream verify: 168 functions, 13158 legs bit-exact vs batch, 0 expected-reject probes, 0 without a stream
+  OpenAndFill verify: 168 functions, filled array == batch(0,n-1) bitwise
+
+  Java: 161 passed, 0 failed, 7 skipped
+
+Codegen verification: .NET
+---------------------------------------------
+  Server started (pid=51029)
+  ACCBANDS                                 -\|PASS   (c-ref: 2861ns, .NET: 1687ns, 1.70x faster)
+  ACOS                                     /PASS   (c-ref: 633ns, .NET: 1085ns, 1.71x slower)
+  AD                                       -PASS   (c-ref: 306ns, .NET: 1074ns, 3.51x slower)
+  ADD                                      \PASS   (c-ref: 110ns, .NET: 275ns, 2.50x slower)
+  ADOSC                                    |PASS   (c-ref: 545ns, .NET: 1627ns, 2.99x slower)
+  ADX                                      /PASS   (c-ref: 2408ns, .NET: 2169ns, 1.11x faster)
+  ADXR                                     -PASS   (c-ref: 2132ns, .NET: 2838ns, 1.33x slower)
+  APO                                      \PASS   (c-ref: 1507ns, .NET: 16163ns, 10.73x slower)
+  AROON                                    |/PASS   (c-ref: 1820ns, .NET: 2798ns, 1.54x slower)
+  AROONOSC                                 -PASS   (c-ref: 2494ns, .NET: 2550ns, 1.02x slower)
+  ASIN                                     \PASS   (c-ref: 652ns, .NET: 913ns, 1.40x slower)
+  ATAN                                     |PASS   (c-ref: 1447ns, .NET: 2809ns, 1.94x slower)
+  ATR                                      /PASS   (c-ref: 1392ns, .NET: 1377ns, 1.01x faster)
+  AVGDEV                                   -PASS   (c-ref: 3291ns, .NET: 3744ns, 1.14x slower)
+  AVGPRICE                                 \PASS   (c-ref: 120ns, .NET: 304ns, 2.53x slower)
+  BBANDS                                   |/-PASS   (c-ref: 1393ns, .NET: 1309ns, 1.06x faster)
+  BETA                                     \PASS   (c-ref: 979ns, .NET: 1227ns, 1.25x slower)
+  BOP                                      |PASS   (c-ref: 248ns, .NET: 522ns, 2.10x slower)
+  CCI                                      /PASS   (c-ref: 4858ns, .NET: 5249ns, 1.08x slower)
+  CDL2CROWS                                -PASS   (c-ref: 1541ns, .NET: 2437ns, 1.58x slower)
+  CDL3BLACKCROWS                           \PASS   (c-ref: 1934ns, .NET: 1934ns, 1.00x faster)
+  CDL3INSIDE                               |PASS   (c-ref: 2584ns, .NET: 2361ns, 1.09x faster)
+  CDL3LINESTRIKE                           /PASS   (c-ref: 2192ns, .NET: 1717ns, 1.28x faster)
+  CDL3OUTSIDE                              -PASS   (c-ref: 1197ns, .NET: 1660ns, 1.39x slower)
+  CDL3STARSINSOUTH                         \PASS   (c-ref: 2321ns, .NET: 2323ns, 1.00x slower)
+  CDL3WHITESOLDIERS                        |PASS   (c-ref: 3460ns, .NET: 2997ns, 1.15x faster)
+  CDLABANDONEDBABY                         /PASS   (c-ref: 3429ns, .NET: 3342ns, 1.03x faster)
+  CDLADVANCEBLOCK                          -PASS   (c-ref: 3061ns, .NET: 3700ns, 1.21x slower)
+  CDLBELTHOLD                              \PASS   (c-ref: 2553ns, .NET: 3201ns, 1.25x slower)
+  CDLBREAKAWAY                             |PASS   (c-ref: 3439ns, .NET: 2193ns, 1.57x faster)
+  CDLCLOSINGMARUBOZU                       /PASS   (c-ref: 3673ns, .NET: 3299ns, 1.11x faster)
+  CDLCONCEALBABYSWALL                      -PASS   (c-ref: 1185ns, .NET: 1445ns, 1.22x slower)
+  CDLCOUNTERATTACK                         \PASS   (c-ref: 2438ns, .NET: 2596ns, 1.06x slower)
+  CDLDARKCLOUDCOVER                        |PASS   (c-ref: 2408ns, .NET: 2160ns, 1.11x faster)
+  CDLDOJI                                  /PASS   (c-ref: 792ns, .NET: 876ns, 1.11x slower)
+  CDLDOJISTAR                              -PASS   (c-ref: 2322ns, .NET: 2906ns, 1.25x slower)
+  CDLDRAGONFLYDOJI                         \PASS   (c-ref: 1486ns, .NET: 2044ns, 1.38x slower)
+  CDLENGULFING                             |PASS   (c-ref: 1528ns, .NET: 1985ns, 1.30x slower)
+  CDLEVENINGDOJISTAR                       /PASS   (c-ref: 2574ns, .NET: 1897ns, 1.36x faster)
+  CDLEVENINGSTAR                           -PASS   (c-ref: 2480ns, .NET: 1860ns, 1.33x faster)
+  CDLGAPSIDESIDEWHITE                      \PASS   (c-ref: 1755ns, .NET: 2004ns, 1.14x slower)
+  CDLGRAVESTONEDOJI                        |PASS   (c-ref: 1625ns, .NET: 1707ns, 1.05x slower)
+  CDLHAMMER                                /PASS   (c-ref: 4743ns, .NET: 4823ns, 1.02x slower)
+  CDLHANGINGMAN                            -PASS   (c-ref: 4426ns, .NET: 3827ns, 1.16x faster)
+  CDLHARAMI                                \PASS   (c-ref: 3404ns, .NET: 2935ns, 1.16x faster)
+  CDLHARAMICROSS                           |PASS   (c-ref: 2587ns, .NET: 2872ns, 1.11x slower)
+  CDLHIGHWAVE                              /PASS   (c-ref: 2478ns, .NET: 3153ns, 1.27x slower)
+  CDLHIKKAKE                               -PASS   (c-ref: 1243ns, .NET: 1879ns, 1.51x slower)
+  CDLHIKKAKEMOD                            \PASS   (c-ref: 1178ns, .NET: 1675ns, 1.42x slower)
+  CDLHOMINGPIGEON                          |PASS   (c-ref: 1656ns, .NET: 1952ns, 1.18x slower)
+  CDLIDENTICAL3CROWS                       /PASS   (c-ref: 1919ns, .NET: 2184ns, 1.14x slower)
+  CDLINNECK                                -PASS   (c-ref: 2489ns, .NET: 2275ns, 1.09x faster)
+  CDLINVERTEDHAMMER                        \PASS   (c-ref: 2940ns, .NET: 1776ns, 1.66x faster)
+  CDLKICKING                               |PASS   (c-ref: 3414ns, .NET: 3425ns, 1.00x slower)
+  CDLKICKINGBYLENGTH                       /PASS   (c-ref: 2732ns, .NET: 3476ns, 1.27x slower)
+  CDLLADDERBOTTOM                          -PASS   (c-ref: 1043ns, .NET: 1692ns, 1.62x slower)
+  CDLLONGLEGGEDDOJI                        \PASS   (c-ref: 1334ns, .NET: 1675ns, 1.26x slower)
+  CDLLONGLINE                              |PASS   (c-ref: 2944ns, .NET: 3705ns, 1.26x slower)
+  CDLMARUBOZU                              /PASS   (c-ref: 3287ns, .NET: 3532ns, 1.07x slower)
+  CDLMATCHINGLOW                           -PASS   (c-ref: 1094ns, .NET: 1492ns, 1.36x slower)
+  CDLMATHOLD                               \PASS   (c-ref: 2672ns, .NET: 1797ns, 1.49x faster)
+  CDLMORNINGDOJISTAR                       |PASS   (c-ref: 2485ns, .NET: 1912ns, 1.30x faster)
+  CDLMORNINGSTAR                           /PASS   (c-ref: 3184ns, .NET: 2540ns, 1.25x faster)
+  CDLONNECK                                -PASS   (c-ref: 1931ns, .NET: 2797ns, 1.45x slower)
+  CDLPIERCING                              \PASS   (c-ref: 1940ns, .NET: 2476ns, 1.28x slower)
+  CDLRICKSHAWMAN                           |PASS   (c-ref: 2133ns, .NET: 2199ns, 1.03x slower)
+  CDLRISEFALL3METHODS                      /PASS   (c-ref: 5098ns, .NET: 2361ns, 2.16x faster)
+  CDLSEPARATINGLINES                       -PASS   (c-ref: 2772ns, .NET: 3617ns, 1.30x slower)
+  CDLSHOOTINGSTAR                          \PASS   (c-ref: 3862ns, .NET: 2164ns, 1.78x faster)
+  CDLSHORTLINE                             |PASS   (c-ref: 3936ns, .NET: 4130ns, 1.05x slower)
+  CDLSPINNINGTOP                           /PASS   (c-ref: 2569ns, .NET: 1731ns, 1.48x faster)
+  CDLSTALLEDPATTERN                        -PASS   (c-ref: 2505ns, .NET: 2501ns, 1.00x faster)
+  CDLSTICKSANDWICH                         \PASS   (c-ref: 1019ns, .NET: 1519ns, 1.49x slower)
+  CDLTAKURI                                |PASS   (c-ref: 2052ns, .NET: 1984ns, 1.03x faster)
+  CDLTASUKIGAP                             /PASS   (c-ref: 1710ns, .NET: 1992ns, 1.16x slower)
+  CDLTHRUSTING                             -PASS   (c-ref: 2594ns, .NET: 2561ns, 1.01x faster)
+  CDLTRISTAR                               \PASS   (c-ref: 1481ns, .NET: 1509ns, 1.02x slower)
+  CDLUNIQUE3RIVER                          |PASS   (c-ref: 2440ns, .NET: 2096ns, 1.16x faster)
+  CDLUPSIDEGAP2CROWS                       /PASS   (c-ref: 1900ns, .NET: 2503ns, 1.32x slower)
+  CDLXSIDEGAP3METHODS                      -PASS   (c-ref: 1119ns, .NET: 1523ns, 1.36x slower)
+  CEIL                                     \PASS   (c-ref: 68ns, .NET: 297ns, 4.37x slower)
+  CMO                                      |PASS   (c-ref: 1530ns, .NET: 1676ns, 1.10x slower)
+  CORREL                                   /PASS   (c-ref: 1027ns, .NET: 1289ns, 1.26x slower)
+  COS                                      -PASS   (c-ref: 2451ns, .NET: 2788ns, 1.14x slower)
+  COSH                                     \PASS   (c-ref: 2710ns, .NET: 3570ns, 1.32x slower)
+  DEMA                                     |PASS   (c-ref: 2730ns, .NET: 1231ns, 2.22x faster)
+  DIV                                      /PASS   (c-ref: 192ns, .NET: 472ns, 2.46x slower)
+  DX                                       -PASS   (c-ref: 1913ns, .NET: 1921ns, 1.00x slower)
+  EMA                                      \PASS   (c-ref: 629ns, .NET: 739ns, 1.17x slower)
+  EXP                                      |PASS   (c-ref: 1371ns, .NET: 1420ns, 1.04x slower)
+  FLOOR                                    /PASS   (c-ref: 140ns, .NET: 188ns, 1.34x slower)
+  HT_DCPERIOD                              -PASS   (c-ref: 10363ns, .NET: 10597ns, 1.02x slower)
+  HT_DCPHASE                               \PASS   (c-ref: 60188ns, .NET: 57764ns, 1.04x faster)
+  HT_PHASOR                                |/PASS   (c-ref: 10533ns, .NET: 10475ns, 1.01x faster)
+  HT_SINE                                  -\PASS   (c-ref: 61109ns, .NET: 62095ns, 1.02x slower)
+  HT_TRENDLINE                             |PASS   (c-ref: 12163ns, .NET: 17116ns, 1.41x slower)
+  HT_TRENDMODE                             /PASS   (c-ref: 66738ns, .NET: 69680ns, 1.04x slower)
+  IMI                                      -PASS   (c-ref: 11576ns, .NET: 13069ns, 1.13x slower)
+  KAMA                                     \PASS   (c-ref: 660ns, .NET: 1256ns, 1.90x slower)
+  LINEARREG                                |PASS   (c-ref: 2754ns, .NET: 1107ns, 2.49x faster)
+  LINEARREG_ANGLE                          /PASS   (c-ref: 5710ns, .NET: 2672ns, 2.14x faster)
+  LINEARREG_INTERCEPT                      -PASS   (c-ref: 2626ns, .NET: 920ns, 2.85x faster)
+  LINEARREG_SLOPE                          \PASS   (c-ref: 2385ns, .NET: 784ns, 3.04x faster)
+  LN                                       |PASS   (c-ref: 1113ns, .NET: 1149ns, 1.03x slower)
+  LOG10                                    /PASS   (c-ref: 919ns, .NET: 1181ns, 1.29x slower)
+  MA                                       -PASS   (c-ref: 452ns, .NET: 554ns, 1.23x slower)
+  MACD                                     \|/PASS   (c-ref: 2738ns, .NET: 1975ns, 1.39x faster)
+  MACDEXT                                  -\|PASS   (c-ref: 1830ns, .NET: 3686ns, 2.01x slower)
+  MACDFIX                                  /-\PASS   (c-ref: 3101ns, .NET: 2068ns, 1.50x faster)
+  MAMA                                     |/PASS   (c-ref: 12738ns, .NET: 17121ns, 1.34x slower)
+  MAVP                                     -PASS   (c-ref: 1233ns, .NET: 1769ns, 1.43x slower)
+  MAX                                      \PASS   (c-ref: 1188ns, .NET: 1644ns, 1.38x slower)
+  MAXINDEX                                 |PASS   (c-ref: 1214ns, .NET: 1197ns, 1.01x faster)
+  MEDPRICE                                 /PASS   (c-ref: 146ns, .NET: 369ns, 2.53x slower)
+  MFI                                      -PASS   (c-ref: 1816ns, .NET: 2493ns, 1.37x slower)
+  MIDPOINT                                 \PASS   (c-ref: 11360ns, .NET: 1893ns, 6.00x faster)
+  MIDPRICE                                 |PASS   (c-ref: 1464ns, .NET: 3830ns, 2.62x slower)
+  MIN                                      /PASS   (c-ref: 1043ns, .NET: 1177ns, 1.13x slower)
+  MININDEX                                 -PASS   (c-ref: 1057ns, .NET: 1272ns, 1.20x slower)
+  MINMAX                                   \|PASS   (c-ref: 2130ns, .NET: 2389ns, 1.12x slower)
+  MINMAXINDEX                              /-PASS   (c-ref: 2081ns, .NET: 2222ns, 1.07x slower)
+  MINUS_DI                                 \PASS   (c-ref: 1425ns, .NET: 1667ns, 1.17x slower)
+  MINUS_DM                                 |PASS   (c-ref: 1272ns, .NET: 1412ns, 1.11x slower)
+  MOM                                      /PASS   (c-ref: 109ns, .NET: 249ns, 2.28x slower)
+  MULT                                     -PASS   (c-ref: 76ns, .NET: 273ns, 3.59x slower)
+  NATR                                     \PASS   (c-ref: 1427ns, .NET: 1502ns, 1.05x slower)
+  OBV                                      |PASS   (c-ref: 977ns, .NET: 1436ns, 1.47x slower)
+  PLUS_DI                                  /PASS   (c-ref: 1594ns, .NET: 1769ns, 1.11x slower)
+  PLUS_DM                                  -PASS   (c-ref: 1336ns, .NET: 1539ns, 1.15x slower)
+  PPO                                      \PASS   (c-ref: 1615ns, .NET: 3692ns, 2.29x slower)
+  ROC                                      |PASS   (c-ref: 245ns, .NET: 465ns, 1.90x slower)
+  ROCP                                     /PASS   (c-ref: 295ns, .NET: 515ns, 1.75x slower)
+  ROCR                                     -PASS   (c-ref: 301ns, .NET: 480ns, 1.59x slower)
+  ROCR100                                  \PASS   (c-ref: 243ns, .NET: 436ns, 1.79x slower)
+  RSI                                      |PASS   (c-ref: 1435ns, .NET: 1766ns, 1.23x slower)
+  SAR                                      /PASS   (c-ref: 1363ns, .NET: 1904ns, 1.40x slower)
+  SAREXT                                   -PASS   (c-ref: 1615ns, .NET: 2673ns, 1.66x slower)
+  SIN                                      \PASS   (c-ref: 2550ns, .NET: 2991ns, 1.17x slower)
+  SINH                                     |PASS   (c-ref: 1610ns, .NET: 2355ns, 1.46x slower)
+  SMA                                      /PASS   (c-ref: 441ns, .NET: 529ns, 1.20x slower)
+  SQRT                                     -PASS   (c-ref: 211ns, .NET: 402ns, 1.91x slower)
+  STDDEV                                   \PASS   (c-ref: 743ns, .NET: 1407ns, 1.89x slower)
+  STOCH                                    |/PASS   (c-ref: 3800ns, .NET: 5094ns, 1.34x slower)
+  STOCHF                                   -\PASS   (c-ref: 2562ns, .NET: 4834ns, 1.89x slower)
+  STOCHRSI                                 |/PASS
+  SUB                                      -PASS   (c-ref: 112ns, .NET: 347ns, 3.10x slower)
+  SUM                                      \PASS   (c-ref: 433ns, .NET: 543ns, 1.25x slower)
+  T3                                       |PASS   (c-ref: 897ns, .NET: 4428ns, 4.94x slower)
+  TAN                                      /PASS   (c-ref: 2586ns, .NET: 2503ns, 1.03x faster)
+  TANH                                     -PASS   (c-ref: 634ns, .NET: 1045ns, 1.65x slower)
+  TEMA                                     \PASS   (c-ref: 2798ns, .NET: 1542ns, 1.81x faster)
+  TRANGE                                   |PASS   (c-ref: 166ns, .NET: 402ns, 2.42x slower)
+  TRIMA                                    /PASS   (c-ref: 658ns, .NET: 765ns, 1.16x slower)
+  TRIX                                     -PASS   (c-ref: 1794ns, .NET: 1817ns, 1.01x slower)
+  TSF                                      \PASS   (c-ref: 2744ns, .NET: 1261ns, 2.18x faster)
+  TYPPRICE                                 |PASS   (c-ref: 206ns, .NET: 300ns, 1.46x slower)
+  ULTOSC                                   /PASS   (c-ref: 2456ns, .NET: 2905ns, 1.18x slower)
+  VAR                                      -PASS   (c-ref: 501ns, .NET: 1240ns, 2.48x slower)
+  WCLPRICE                                 \PASS   (c-ref: 102ns, .NET: 799ns, 7.83x slower)
+  WILLR                                    |PASS   (c-ref: 1728ns, .NET: 2287ns, 1.32x slower)
+  WMA                                      /PASS   (c-ref: 487ns, .NET: 678ns, 1.39x slower)
+  Unstable-period wildcard: set-all reaches EMA (ADOSC outBegIdx 14 at unstable 5, 9 at 0)
+  Ref differential sweep: 613 variants across 74 functions, all match ta_ref_serve
+  post-freeze enums: 24 MAType value(s) > 8 excluded vs ta_ref_serve (#139; covered current-vs-current by xlang-hash/stream/COMPOSITE)
+  Stream verify: not supported by this server (stage 1 is C-only)
+
+  .NET: 161 passed, 0 failed, 7 skipped
+
+=============================================
+Codegen Results + Timing (avg ns/call)
+=============================================
+Function                 C-ref         C       ung      Rust       ung      Java       ung      .NET       ung
+ACCBANDS                  3524 [32m     1227[0m [32m     1243[0m [32m     1294[0m [32m     1168[0m [31m    29122[0m [31m    26865[0m [32m     1687[0m [32m     1294[0m
+ACOS                       825 [32m      605[0m [32m      614[0m       825 [32m      774[0m [31m    10846[0m [31m     6417[0m [31m     1085[0m [31m      845[0m
+AD                         316 [31m      323[0m [32m      303[0m [31m      471[0m [31m      553[0m [31m     8887[0m [31m     7919[0m [31m     1074[0m [31m      497[0m
+ADD                        196 [32m      102[0m [32m       91[0m [32m      140[0m [32m      125[0m [31m     3324[0m [31m     2910[0m [31m      275[0m [32m      174[0m
+ADOSC                      821 [31m     1331[0m [31m     1193[0m [31m     1587[0m [31m     1152[0m [31m    13621[0m [31m    11960[0m [31m     1627[0m [31m     1223[0m
+ADX                       2072 [32m     1978[0m [32m     2017[0m [32m     1908[0m [32m     1913[0m [31m    33253[0m [31m    29801[0m [31m     2169[0m [31m     2182[0m
+ADXR                     14697 [32m    13133[0m [32m     2081[0m [32m     2311[0m [32m     2272[0m [31m    36386[0m [31m    33945[0m [32m     2838[0m [32m     2120[0m
+APO                       2308 [32m     1464[0m [32m     1326[0m [32m     1803[0m [32m     1714[0m [31m    14454[0m [31m    11762[0m [31m    16163[0m [32m     1644[0m
+AROON                     1875 [32m     1847[0m [31m     2058[0m [31m     2542[0m [31m     2441[0m [31m    26834[0m [31m    22278[0m [31m     2798[0m [31m     2815[0m
+AROONOSC                  1723 [31m     1864[0m [31m     1934[0m [31m     2112[0m [31m     2045[0m [31m    25162[0m [31m    20909[0m [31m     2550[0m [31m     2408[0m
+ASIN                       809 [32m      582[0m [32m      597[0m [31m      859[0m [32m      702[0m [31m    12295[0m [31m     6589[0m [31m      913[0m [32m      697[0m
+ATAN                      1501 [31m     1523[0m [31m     1504[0m      1501 [32m     1439[0m [31m    15601[0m [31m     8895[0m [31m     2809[0m [31m     1562[0m
+ATR                       1529 [32m     1176[0m [32m     1173[0m [32m     1179[0m [32m     1197[0m [31m    14501[0m [31m    12694[0m [32m     1377[0m [32m     1312[0m
+AVGDEV                    3328 [31m     3373[0m [31m     3354[0m [31m     4346[0m [31m     4299[0m [31m    88099[0m [31m    83286[0m [31m     3744[0m [31m     3553[0m
+AVGPRICE                   120 [31m      134[0m [31m      131[0m [31m      144[0m [31m      129[0m [31m     6329[0m [31m     4727[0m [31m      304[0m [31m      211[0m
+BBANDS                    1830 [32m     1011[0m [32m      968[0m [32m     1036[0m [32m     1107[0m [31m    22950[0m [31m    21218[0m [32m     1309[0m [32m     1226[0m
+BETA                       949 [31m      966[0m [31m      997[0m [31m     1421[0m [31m     1419[0m [31m    39357[0m [31m    37376[0m [31m     1227[0m [31m     1091[0m
+BOP                        267 [32m      249[0m [32m      238[0m [31m      490[0m [31m      287[0m [31m     8036[0m [31m     5607[0m [31m      522[0m [31m      362[0m
+CCI                       4794 [32m     4702[0m [31m     4863[0m [31m     5059[0m [31m     4910[0m [31m    89288[0m [31m    84339[0m [31m     5249[0m [31m     4903[0m
+CDL2CROWS                 1546 [32m     1543[0m [31m     1585[0m [31m     2135[0m [31m     2179[0m [31m    22441[0m [31m    19412[0m [31m     2437[0m [31m     2060[0m
+CDL3BLACKCROWS            1537 [32m     1214[0m [32m     1048[0m [31m     1799[0m [31m     2255[0m [31m    45807[0m [31m    38267[0m [31m     1934[0m [31m     1644[0m
+CDL3INSIDE                3249 [32m     1441[0m [32m     1471[0m [31m     6686[0m [32m     2560[0m [31m    48873[0m [31m    40233[0m [32m     2361[0m [32m     2029[0m
+CDL3LINESTRIKE            2118 [32m     1898[0m [32m     1940[0m [32m     1841[0m [31m     2123[0m [31m    46318[0m [31m    37700[0m [32m     1717[0m [32m     1601[0m
+CDL3OUTSIDE               1802 [32m     1168[0m [32m     1133[0m [32m     1401[0m [32m     1483[0m [31m    15726[0m [31m    13751[0m [32m     1660[0m [32m     1423[0m
+CDL3STARSINSOUTH          2309 [32m     1964[0m [32m     1900[0m [31m     2850[0m [31m     3068[0m [31m    63286[0m [31m    59439[0m [31m     2323[0m [32m     2020[0m
+CDL3WHITESOLDIERS         2977 [31m     2980[0m [31m     3027[0m [31m     4591[0m [31m     5046[0m [31m    89384[0m [31m    84528[0m [31m     2997[0m [32m     2845[0m
+CDLABANDONEDBABY          2442 [31m     2991[0m [31m     2487[0m [31m     2758[0m [31m     3714[0m [31m    41565[0m [31m    37156[0m [31m     3342[0m [31m     3152[0m
+CDLADVANCEBLOCK           3692 [31m     4002[0m [31m     4103[0m [31m     4912[0m [31m     4905[0m [31m   140647[0m [31m   137365[0m [31m     3700[0m [32m     3375[0m
+CDLBELTHOLD               3579 [32m     2598[0m [32m     2388[0m [32m     3182[0m [32m     3137[0m [31m    29038[0m [31m    27881[0m [32m     3201[0m [32m     2886[0m
+CDLBREAKAWAY              3301 [32m     1743[0m [32m     1575[0m [32m     1736[0m [32m     1911[0m [31m    29664[0m [31m    26457[0m [32m     2193[0m [32m     1760[0m
+CDLCLOSINGMARUBOZU        2676 [31m     2968[0m [32m     2644[0m [31m     3192[0m [31m     3490[0m [31m    29939[0m [31m    26163[0m [31m     3299[0m [31m     2875[0m
+CDLCONCEALBABYSWALL       1079 [31m     1460[0m [31m     1582[0m [31m     2024[0m [31m     2845[0m [31m    43036[0m [31m    37621[0m [31m     1445[0m [31m     1351[0m
+CDLCOUNTERATTACK          3376 [32m     2441[0m [32m     2698[0m [32m     3081[0m [32m     3049[0m [31m    46573[0m [31m    40708[0m [32m     2596[0m [32m     2704[0m
+CDLDARKCLOUDCOVER         1787 [31m     2176[0m [31m     1945[0m [31m     1955[0m [31m     2069[0m [31m    23023[0m [31m    20454[0m [31m     2160[0m [31m     1942[0m
+CDLDOJI                    789 [32m      617[0m [32m      665[0m [31m     1302[0m [31m      873[0m [31m    14941[0m [31m    13423[0m [31m      876[0m [32m      720[0m
+CDLDOJISTAR               2324 [31m     3067[0m [31m     2870[0m [31m     2713[0m [31m     2649[0m [31m    28814[0m [31m    27106[0m [31m     2906[0m [31m     3024[0m
+CDLDRAGONFLYDOJI          1616 [31m     1644[0m [31m     1638[0m [31m     1963[0m [31m     1956[0m [31m    28658[0m [31m    24912[0m [31m     2044[0m [31m     1895[0m
+CDLENGULFING              1483 [31m     1508[0m [31m     1502[0m [31m     1676[0m [31m     1816[0m [31m    16897[0m [31m    15396[0m [31m     1985[0m [31m     1914[0m
+CDLEVENINGDOJISTAR        2387 [32m     1545[0m [32m     1704[0m [32m     1960[0m [32m     2284[0m [31m    38097[0m [31m    34759[0m [32m     1897[0m [32m     1819[0m
+CDLEVENINGSTAR            3197 [32m     1345[0m [32m     1387[0m [32m     1948[0m [32m     2446[0m [31m    37248[0m [31m    34778[0m [32m     1860[0m [32m     1820[0m
+CDLGAPSIDESIDEWHITE       2268 [32m     1713[0m [32m     1745[0m [31m     2878[0m [31m     3151[0m [31m    62498[0m [31m    51498[0m [32m     2004[0m [32m     2015[0m
+CDLGRAVESTONEDOJI         1558 [32m     1481[0m [32m     1362[0m [31m     1984[0m [31m     1948[0m [31m    28776[0m [31m    23618[0m [31m     1707[0m [31m     1686[0m
+CDLHAMMER                 3337 [31m     4491[0m [31m     4552[0m [31m     4706[0m [31m     5263[0m [31m    48872[0m [31m    45037[0m [31m     4823[0m [31m     4674[0m
+CDLHANGINGMAN             3344 [31m     3361[0m [31m     3562[0m [31m     3547[0m [31m     3944[0m [31m    47557[0m [31m    45309[0m [31m     3827[0m [31m     3686[0m
+CDLHARAMI                 2510 [32m     2339[0m [31m     2591[0m [31m     2701[0m [31m     2661[0m [31m    56808[0m [31m    37357[0m [31m     2935[0m [31m     2830[0m
+CDLHARAMICROSS            2493 [31m     3011[0m [31m     2958[0m [31m     2940[0m [31m     2730[0m [31m    32134[0m [31m    27564[0m [31m     2872[0m [31m     2610[0m
+CDLHIGHWAVE               2623 [32m     2473[0m [32m     2426[0m [32m     2611[0m [31m     2758[0m [31m    35134[0m [31m    32159[0m [31m     3153[0m [31m     2943[0m
+CDLHIKKAKE                1246 [31m     1323[0m [31m     1288[0m [31m     1484[0m [31m     1469[0m [31m    12954[0m [31m     9527[0m [31m     1879[0m [31m     1735[0m
+CDLHIKKAKEMOD             1578 [32m     1477[0m [32m     1348[0m [32m     1562[0m [31m     1934[0m [31m    16599[0m [31m    15041[0m [31m     1675[0m [31m     1640[0m
+CDLHOMINGPIGEON           2144 [32m     1759[0m [32m     1683[0m [32m     2006[0m [32m     2085[0m [31m    29864[0m [31m    27186[0m [32m     1952[0m [32m     1663[0m
+CDLIDENTICAL3CROWS        2073 [32m     1885[0m [32m     1795[0m [31m     2450[0m [31m     3363[0m [31m    61272[0m [31m    58648[0m [31m     2184[0m [31m     2212[0m
+CDLINNECK                 2293 [32m     1951[0m [32m     1943[0m [31m     2554[0m [31m     2609[0m [31m    32050[0m [31m    27472[0m [32m     2275[0m [32m     2268[0m
+CDLINVERTEDHAMMER         3002 [32m     1614[0m [32m     1610[0m [32m     1933[0m [32m     2154[0m [31m    52774[0m [31m    72437[0m [32m     1776[0m [32m     1619[0m
+CDLKICKING                3482 [32m     3089[0m [32m     2968[0m [32m     3229[0m [31m     3536[0m [31m    59803[0m [31m    54234[0m [32m     3425[0m [32m     2839[0m
+CDLKICKINGBYLENGTH        2864 [31m     3560[0m [31m    11276[0m [31m     3248[0m [31m     3888[0m [31m    61449[0m [31m    54338[0m [31m     3476[0m [31m     3381[0m
+CDLLADDERBOTTOM           1259 [31m     1774[0m [31m     1652[0m [31m     1955[0m [31m     2134[0m [31m    21021[0m [31m    17856[0m [31m     1692[0m [31m     1337[0m
+CDLLONGLEGGEDDOJI         1331 [31m     1561[0m [31m     1534[0m [31m     1639[0m [31m     1646[0m [31m    24479[0m [31m    21124[0m [31m     1675[0m [31m     1629[0m
+CDLLONGLINE               3217 [32m     2769[0m [32m     2775[0m [31m     3472[0m [32m     3044[0m [31m    39679[0m [31m    36808[0m [31m     3705[0m [32m     3144[0m
+CDLMARUBOZU               3926 [32m     2656[0m [32m     3282[0m [32m     3275[0m [32m     3032[0m [31m    29554[0m [31m    25578[0m [32m     3532[0m [32m     3139[0m
+CDLMATCHINGLOW            1689 [32m     1220[0m [32m     1405[0m [31m     1815[0m [31m     1923[0m [31m    20968[0m [31m    19081[0m [32m     1492[0m [32m     1345[0m
+CDLMATHOLD                2644 [32m     1882[0m [32m     1858[0m [32m     1911[0m [32m     2566[0m [31m    57679[0m [31m    50602[0m [32m     1797[0m [32m     1605[0m
+CDLMORNINGDOJISTAR        3320 [32m     1666[0m [32m     1774[0m [32m     2234[0m [32m     2502[0m [31m    36744[0m [31m    34737[0m [32m     1912[0m [32m     1665[0m
+CDLMORNINGSTAR            3380 [32m     1439[0m [32m     1581[0m [32m     2203[0m [32m     2578[0m [31m    38682[0m [31m    33350[0m [32m     2540[0m [32m     2775[0m
+CDLONNECK                 1902 [32m     1781[0m [32m     1737[0m [31m     2355[0m [31m     2838[0m [31m    32065[0m [31m    28095[0m [31m     2797[0m [31m     2520[0m
+CDLPIERCING               2420 [32m     1916[0m [32m     1786[0m [32m     2354[0m [31m     2538[0m [31m    38528[0m [31m    30313[0m [31m     2476[0m [32m     2129[0m
+CDLRICKSHAWMAN            2131 [32m     1637[0m [32m     1816[0m [31m     2188[0m [31m     2143[0m [31m    41799[0m [31m    37420[0m [31m     2199[0m [32m     1983[0m
+CDLRISEFALL3METHODS       3081 [32m     2329[0m [32m     2344[0m [32m     2670[0m [31m     3125[0m [31m    71763[0m [31m    63724[0m [32m     2361[0m [32m     2240[0m
+CDLSEPARATINGLINES        2631 [31m     3136[0m [31m     2795[0m [31m     3408[0m [31m     3765[0m [31m    37233[0m [31m    33182[0m [31m     3617[0m [31m     3234[0m
+CDLSHOOTINGSTAR           3994 [32m     1737[0m [32m     1696[0m [32m     2093[0m [32m     2462[0m [31m    35645[0m [31m    34242[0m [32m     2164[0m [32m     1772[0m
+CDLSHORTLINE              3401 [31m     3966[0m [31m     4171[0m [31m     3767[0m [31m     3451[0m [31m    41035[0m [31m    38401[0m [31m     4130[0m [31m     3565[0m
+CDLSPINNINGTOP            2993 [32m     1026[0m [32m     1249[0m [32m     1462[0m [32m     1450[0m [31m    21614[0m [31m    18996[0m [32m     1731[0m [32m     1642[0m
+CDLSTALLEDPATTERN         2112 [31m     2117[0m [32m     2053[0m [31m     3119[0m [31m     3291[0m [31m    66986[0m [31m    59978[0m [31m     2501[0m [31m     2305[0m
+CDLSTICKSANDWICH          1197 [32m      920[0m [32m      861[0m [31m     1243[0m [31m     1699[0m [31m    20256[0m [31m    16735[0m [31m     1519[0m [31m     1441[0m
+CDLTAKURI                 1763 [32m     1649[0m [32m     1697[0m [31m     2061[0m [31m     2161[0m [31m    29590[0m [31m    26698[0m [31m     1984[0m [31m     1888[0m
+CDLTASUKIGAP              1569 [32m     1537[0m [32m     1536[0m [31m     2299[0m [31m     2361[0m [31m    38930[0m [31m    35627[0m [31m     1992[0m [31m     1670[0m
+CDLTHRUSTING              2617 [32m     2048[0m [32m     2154[0m [32m     2517[0m [32m     2298[0m [31m    32750[0m [31m    28432[0m [32m     2561[0m [32m     2332[0m
+CDLTRISTAR                1490 [32m     1293[0m [32m     1366[0m [31m     1703[0m [31m     1647[0m [31m    18153[0m [31m    16182[0m [31m     1509[0m [32m     1365[0m
+CDLUNIQUE3RIVER           2690 [32m     2474[0m [32m     1822[0m [31m     4371[0m [31m     4817[0m [31m    28983[0m [31m    25637[0m [32m     2096[0m [32m     2003[0m
+CDLUPSIDEGAP2CROWS        1834 [31m     2179[0m [31m     1998[0m [31m     2070[0m [31m     2158[0m [31m    31446[0m [31m    28620[0m [31m     2503[0m [31m     2300[0m
+CDLXSIDEGAP3METHODS       1029 [31m     1103[0m [31m     1176[0m [31m     1483[0m [31m     1583[0m [31m    17160[0m [31m    13642[0m [31m     1523[0m [31m     1435[0m
+CEIL                        73 [31m       83[0m [31m       83[0m [31m       95[0m [31m       85[0m [31m    14282[0m [31m     7351[0m [31m      297[0m [31m      176[0m
+CMO                       1570 [32m     1549[0m [31m     1630[0m [31m     1652[0m [31m     1639[0m [31m    15600[0m [31m    12873[0m [31m     1676[0m [31m     1628[0m
+CORREL                    1004 [31m     1577[0m [31m     1586[0m [31m     1173[0m [31m     1015[0m [31m    19745[0m [31m    17464[0m [31m     1289[0m [31m     1151[0m
+COS                       2890 [32m     2659[0m [32m     2614[0m [32m     2680[0m [32m     2478[0m [31m     7818[0m [31m     5971[0m [32m     2788[0m [32m     2576[0m
+COSH                      1559 [31m     1733[0m [32m     1395[0m [31m     1802[0m [32m     1534[0m [31m    17440[0m [31m    10974[0m [31m     3570[0m [32m     1501[0m
+DEMA                      8242 [32m     1290[0m [32m     1052[0m [32m      998[0m [32m      931[0m [31m     8732[0m [32m     6114[0m [32m     1231[0m [32m     1110[0m
+DIV                        154 [32m      139[0m [32m      136[0m [31m      209[0m [31m      180[0m [31m     5256[0m [31m     2933[0m [31m      472[0m [31m      215[0m
+DX                        1631 [31m     1952[0m [31m     1911[0m [31m     1817[0m [31m     1745[0m [31m    32365[0m [31m    29002[0m [31m     1921[0m [31m     1860[0m
+EMA                        657 [32m      647[0m [32m      654[0m [32m      645[0m [32m      642[0m [31m     2272[0m [31m      889[0m [31m      739[0m [31m      699[0m
+EXP                       1478 [32m     1312[0m [32m     1058[0m [32m     1249[0m [32m     1137[0m [31m     6907[0m [31m     5387[0m [32m     1420[0m [32m     1206[0m
+FLOOR                      204 [32m      131[0m [32m       76[0m [32m      107[0m [32m       90[0m [31m    15575[0m [31m     7418[0m [32m      188[0m [32m      124[0m
+HT_DCPERIOD              10497 [32m    10370[0m [32m    10355[0m [31m    10626[0m [31m    10684[0m [31m    81356[0m [31m    75902[0m [31m    10597[0m [32m    10428[0m
+HT_DCPHASE               60919 [32m    57176[0m [32m    56983[0m [31m    61561[0m [31m    61210[0m [31m   299480[0m [31m   291062[0m [32m    57764[0m [32m    57657[0m
+HT_PHASOR                10335 [32m    10307[0m [32m    10021[0m [32m    10095[0m [32m     9981[0m [31m    83742[0m [31m    75526[0m [31m    10475[0m [32m    10106[0m
+HT_SINE                  62991 [32m    62233[0m [32m    61680[0m [31m    67786[0m [31m    66458[0m [31m   308921[0m [31m   300498[0m [32m    62095[0m [32m    61818[0m
+HT_TRENDLINE             12914 [31m    17008[0m [31m    16304[0m [31m    18095[0m [31m    17777[0m [31m   170692[0m [31m   168764[0m [31m    17116[0m [31m    17005[0m
+HT_TRENDMODE             66481 [31m    68897[0m [31m    68411[0m [31m    84022[0m [31m    77055[0m [31m   422890[0m [31m   412852[0m [31m    69680[0m [31m    69314[0m
+IMI                      10633 [31m    12714[0m [31m    10813[0m [31m    13760[0m [31m    11517[0m [31m   114733[0m [31m   108882[0m [31m    13069[0m [31m    12796[0m
+KAMA                       636 [31m     1064[0m [31m     1120[0m [31m     1276[0m [31m     1166[0m [31m    19029[0m [31m    16044[0m [31m     1256[0m [31m     1133[0m
+LINEARREG                 2911 [32m      900[0m [32m      891[0m [32m     1315[0m [32m      967[0m [31m    12692[0m [31m    10385[0m [32m     1107[0m [32m      995[0m
+LINEARREG_ANGLE           5195 [32m     2614[0m [32m     2385[0m [32m     3893[0m [32m     4715[0m [31m    16693[0m [31m    13322[0m [32m     2672[0m [32m     2448[0m
+LINEARREG_INTERCEPT       2591 [32m      541[0m [32m      575[0m [32m      634[0m [32m      610[0m [31m    10216[0m [31m     8507[0m [32m      920[0m [32m      651[0m
+LINEARREG_SLOPE           2435 [32m      616[0m [32m      614[0m [32m      631[0m [32m      572[0m [31m     8491[0m [31m     7597[0m [32m      784[0m [32m      598[0m
+LN                        1264 [32m     1066[0m [32m      970[0m [31m     1840[0m [32m     1043[0m [31m     7248[0m [31m     5202[0m [32m     1149[0m [32m     1062[0m
+LOG10                     1140 [31m     1283[0m [32m      953[0m [32m     1014[0m [32m      936[0m [31m     7337[0m [31m     5287[0m [31m     1181[0m [32m     1031[0m
+MA                         488 [32m      471[0m [32m      487[0m [31m      627[0m [31m      643[0m [31m     6881[0m [31m     5631[0m [31m      554[0m [31m      518[0m
+MACD                      3007 [32m     1410[0m [32m     1429[0m [32m     1921[0m [32m     1633[0m [31m    12888[0m [31m     9995[0m [32m     1975[0m [32m     1539[0m
+MACDEXT                   1826 [31m     2099[0m [32m     1600[0m [31m     2213[0m [31m     2309[0m [31m    25723[0m [31m    24573[0m [31m     3686[0m [31m     1871[0m
+MACDFIX                   2359 [32m     1602[0m [32m     1495[0m [31m     2682[0m [32m     2300[0m [31m    13418[0m [31m    10008[0m [32m     2068[0m [32m     1606[0m
+MAMA                     12538 [31m    14874[0m [31m    14774[0m [31m    15258[0m [31m    14694[0m [31m   101777[0m [31m    92518[0m [31m    17121[0m [31m    15871[0m
+MAVP                      1571 [32m     1268[0m [32m      929[0m [32m     1561[0m [32m     1530[0m [31m    30476[0m [31m    12721[0m [31m     1769[0m [32m     1073[0m
+MAX                       1034 [32m      555[0m [32m      552[0m [32m      949[0m [32m      691[0m [31m    15179[0m [31m    11770[0m [31m     1644[0m [32m      643[0m
+MAXINDEX                  1197 [32m     1023[0m [32m     1071[0m [32m     1096[0m [32m     1057[0m [31m    16665[0m [31m    11418[0m      1197 [31m     1291[0m
+MEDPRICE                   124 [32m       79[0m [32m       88[0m [32m       99[0m [32m       91[0m [31m     4314[0m [31m     3398[0m [31m      369[0m [31m      185[0m
+MFI                       1785 [32m     1701[0m [31m     1816[0m [31m     2135[0m [31m     1990[0m [31m    23152[0m [31m    19942[0m [31m     2493[0m [31m     2164[0m
+MIDPOINT                 11393 [32m      963[0m [32m      869[0m [32m     1450[0m [32m     1391[0m [31m    29747[0m [31m    24574[0m [32m     1893[0m [32m     1084[0m
+MIDPRICE                  1453 [32m     1420[0m [32m     1364[0m [31m     2230[0m [32m     1385[0m [31m    70052[0m [31m    67780[0m [31m     3830[0m [31m     1614[0m
+MIN                       1038 [32m     1016[0m [32m     1007[0m [31m     1099[0m [31m     1115[0m [31m    15085[0m [31m    12030[0m [31m     1177[0m [31m     1220[0m
+MININDEX                  1114 [32m     1032[0m [32m      992[0m [31m     1203[0m [31m     1227[0m [31m    16631[0m [31m    11988[0m [31m     1272[0m [32m     1031[0m
+MINMAX                    2039 [31m     2125[0m [31m     2083[0m [31m     2251[0m [31m     2171[0m [31m    25681[0m [31m    21148[0m [31m     2389[0m [31m     2291[0m
+MINMAXINDEX               2046 [31m     2094[0m [31m     2091[0m [31m     2194[0m [31m     2066[0m [31m    23733[0m [31m    21134[0m [31m     2222[0m [31m     2058[0m
+MINUS_DI                  1463 [31m     1668[0m [31m     1699[0m [31m     1619[0m [31m     1512[0m [31m    24769[0m [31m    20635[0m [31m     1667[0m [31m     1612[0m
+MINUS_DM                  1135 [31m     1156[0m [31m     1144[0m [31m     1516[0m [31m     1441[0m [31m    11430[0m [31m     9085[0m [31m     1412[0m [31m     1334[0m
+MOM                        125 [32m      117[0m [32m       89[0m [32m       95[0m [32m      115[0m [31m     3564[0m [31m     2879[0m [31m      249[0m [31m      195[0m
+MULT                       109 [32m       76[0m [32m       84[0m [32m      108[0m [32m       91[0m [31m     3477[0m [31m     2878[0m [31m      273[0m [31m      166[0m
+NATR                      2252 [32m     1183[0m [32m     1207[0m [32m     1303[0m [32m     1281[0m [31m    24323[0m [31m    20000[0m [32m     1502[0m [32m     1324[0m
+OBV                        808 [31m      956[0m [31m      898[0m [31m     1022[0m [31m      923[0m [31m     8164[0m [31m     6417[0m [31m     1436[0m [31m     1260[0m
+PLUS_DI                   1495 [31m     1574[0m [32m     1457[0m [31m     1666[0m [31m     1538[0m [31m    24157[0m [31m    24186[0m [31m     1769[0m [31m     1706[0m
+PLUS_DM                   1301 [31m     1360[0m [31m     1519[0m [31m     1437[0m [31m     1596[0m [31m    11215[0m [31m     8937[0m [31m     1539[0m [31m     1303[0m
+PPO                       1617 [31m     2494[0m [32m     1568[0m [31m     2050[0m [31m     1953[0m [31m    11796[0m [31m     7751[0m [31m     3692[0m [31m     1749[0m
+ROC                        241 [31m      271[0m [31m      249[0m [31m      447[0m [31m      295[0m [31m     8268[0m [31m     5051[0m [31m      465[0m [31m      375[0m
+ROCP                       271 [32m      234[0m [32m      242[0m [31m      395[0m [31m      303[0m [31m     6172[0m [31m     4638[0m [31m      515[0m [31m      301[0m
+ROCR                       254 [32m      250[0m [32m      238[0m [31m      282[0m [31m      313[0m [31m     5896[0m [31m     4176[0m [31m      480[0m [31m      333[0m
+ROCR100                    265 [31m      281[0m [31m      335[0m [31m      267[0m [32m      257[0m [31m     7107[0m [31m     4732[0m [31m      436[0m [31m      312[0m
+RSI                       1479 [31m     1497[0m [32m     1467[0m [32m     1427[0m [32m     1452[0m [31m    15772[0m [31m    13322[0m [31m     1766[0m [31m     1629[0m
+SAR                       1207 [31m     1498[0m [31m     1505[0m [31m     1565[0m [31m     1504[0m [31m    16357[0m [31m    13227[0m [31m     1904[0m [31m     1684[0m
+SAREXT                    1186 [31m     1628[0m [31m     1596[0m [31m     1740[0m [31m     1696[0m [31m    17740[0m [31m    13110[0m [31m     2673[0m [31m     1994[0m
+SIN                       2295 [32m     2275[0m [31m     2394[0m [31m     2658[0m [31m     2415[0m [31m     8592[0m [31m     6018[0m [31m     2991[0m [31m     2883[0m
+SINH                      1733 [31m     1881[0m [32m     1444[0m [32m     1451[0m [32m     1377[0m [31m    16145[0m [31m    10813[0m [31m     2355[0m [32m     1638[0m
+SMA                        454 [31m      463[0m [31m      467[0m [32m      448[0m [32m      443[0m [31m     7344[0m [31m      937[0m [31m      529[0m [31m      471[0m
+SQRT                       224 [32m      185[0m [32m      185[0m [32m      195[0m [32m      194[0m [31m     4538[0m [31m     3133[0m [31m      402[0m [31m      267[0m
+STDDEV                     769 [31m     1155[0m [31m      999[0m [31m      874[0m [31m      863[0m [31m    19893[0m [31m    20944[0m [31m     1407[0m [31m     1181[0m
+STOCH                     4623 [31m     5336[0m [32m     3417[0m [32m     4468[0m [32m     4122[0m [31m    32121[0m [31m    22941[0m [31m     5094[0m [32m     3497[0m
+STOCHF                    2645 [31m     2677[0m [32m     2428[0m [31m     2724[0m [32m     2439[0m [31m    30886[0m [31m    22522[0m [31m     4834[0m [31m     3043[0m
+STOCHRSI                  4054 [32m        0[0m        -- [32m        0[0m        -- [32m        0[0m        -- [32m        0[0m        --
+SUB                        133 [31m      146[0m [32m      103[0m [32m      108[0m [32m      126[0m [31m     3950[0m [31m     3222[0m [31m      347[0m [31m      182[0m
+SUM                        433 [31m      435[0m [32m      427[0m [31m      438[0m [31m      480[0m [31m     5743[0m [31m     3784[0m [31m      543[0m [31m      491[0m
+T3                         916 [31m     4019[0m [31m     4010[0m [31m     3872[0m [31m     4106[0m [31m    21246[0m [31m    20501[0m [31m     4428[0m [31m     4330[0m
+TAN                       2178 [31m     2222[0m [32m     2094[0m [31m     2269[0m [31m     2273[0m [31m     7656[0m [31m     6413[0m [31m     2503[0m [31m     2369[0m
+TANH                       599 [31m      648[0m [32m      581[0m [31m      611[0m [32m      584[0m [31m    10592[0m [31m     6219[0m [31m     1045[0m [31m      695[0m
+TEMA                      2326 [32m     1238[0m [32m     1125[0m [32m     1281[0m [32m     1229[0m [31m    10783[0m [31m    10544[0m [32m     1542[0m [32m     1459[0m
+TRANGE                     174 [32m      173[0m [32m      150[0m [31m      222[0m [31m      202[0m [31m    11869[0m [31m     9953[0m [31m      402[0m [31m      215[0m
+TRIMA                      663 [32m      652[0m [32m      647[0m [31m      673[0m [32m      648[0m [31m     9595[0m [31m     7940[0m [31m      765[0m [31m      724[0m
+TRIX                      1873 [32m     1171[0m [32m     1207[0m [32m     1534[0m [32m     1324[0m [31m    14547[0m [31m    10960[0m [32m     1817[0m [32m     1414[0m
+TSF                       2731 [32m      864[0m [32m      845[0m [32m     1218[0m [32m      969[0m [31m    12525[0m [31m    10082[0m [32m     1261[0m [32m      999[0m
+TYPPRICE                   148 [31m      163[0m [32m      146[0m [31m      198[0m [31m      203[0m [31m     4835[0m [31m     3976[0m [31m      300[0m [31m      215[0m
+ULTOSC                    2441 [31m     2646[0m [31m     2684[0m [32m     2334[0m [32m     2298[0m [31m    75235[0m [31m    74056[0m [31m     2905[0m [31m     2735[0m
+VAR                        505 [31m      824[0m [31m      859[0m [31m      737[0m [31m      705[0m [31m    15433[0m [31m    16465[0m [31m     1240[0m [31m     1034[0m
+WCLPRICE                   137 [31m      553[0m [31m      503[0m [31m      572[0m [31m      528[0m [31m     6390[0m [31m     4855[0m [31m      799[0m [31m      581[0m
+WILLR                     1787 [31m     1892[0m [31m     1876[0m [31m     2090[0m [31m     1949[0m [31m    27610[0m [31m    22561[0m [31m     2287[0m [31m     2182[0m
+WMA                        452 [31m      459[0m [31m      461[0m [31m      575[0m [31m      539[0m [31m     8298[0m [31m     6232[0m [31m      678[0m [31m      510[0m
+
+=============================================
+All 4 language(s) passed codegen verification
+=============================================
+
+JSONL: $WORKDIR/ta-lib/bin/ta_regtest_timing.jsonl
+Report: $WORKDIR/ta-lib/bin/ta_regtest_report.md
+
+┌──────────┬──────┬──────┬────────────┬────────────────┐
+│ Language │ Pass │ Fail │ Avg (ns)   │ vs C-ref       │
+├──────────┼──────┼──────┼────────────┼────────────────┤
+│ C-ref    │ 161  │ 0    │ 3442       │ baseline       │
+│ C        │ 161  │ 0    │ 3157       │ ≈ same       │
+│ Rust     │ 161  │ 0    │ 3517       │ ≈ same       │
+│ Java     │ 161  │ 0    │ 34978      │ 10.2× slower  │
+│ .NET     │ 161  │ 0    │ 3562       │ ≈ same       │
+└──────────┴──────┴──────┴────────────┴────────────────┘
+
+Warning: Code profiling not supported for this platform.
+
+* All tests succeeded. Enjoy the library. *
+=== Building ta_regtest + ta_bench ===
+=== Building ta_ref_serve (frozen reference oracle) ===
+  post-reference functions (skipped by the subset gate): CMF, CMOU, HMA, NVI, PVI, PVO, VWMA
+  ta_ref_serve: OK (from pinned-tag worktree)
+
+=== Regenerating server files ===
+
+=== Regenerating bench binary ===
+
+=== Compiling servers ===
+
+============================================================
+REGTEST — C reference tests (252 points, all ranges)
+============================================================
+
+============================================================
+REGTEST — cross-language codegen verification
+============================================================
+
+============================================================
+DIRECT BENCH — zero-overhead (direct function calls)
+============================================================
+ta_bench_direct: 100000 points, 200 iters, shape=randwalk seed=42 regime-period=14 trend-strength=0.50 (direct calls)
+
+  Running reference (libta-lib.a)...
+  168 functions timed
+  Running codegen (ta_bench_cg)...
+
+Function                  C-ref          C    Ratio
+--------                 ------     ------    -----
+ACCBANDS                 446834     443678    0.99x
+ACOS                     225871     214923    0.95x
+AD                       109691 [31m    582764[0m    5.31x
+ADD                       37905 [31m     45711[0m    1.21x
+ADOSC                    392881 [31m   1220185[0m    3.11x
+ADX                      809394 [31m   2635908[0m    3.26x
+ADXR                     838455 [31m   2239985[0m    2.67x
+APO                      542963     568729    1.05x
+AROON                    839151 [31m   1416722[0m    1.69x
+AROONOSC                 844682 [31m   1233748[0m    1.46x
+ASIN                     212775     214235    1.01x
+ATAN                     548416 [31m   1740970[0m    3.17x
+ATR                      473519     506532    1.07x
+AVGDEV                  1359627 [31m   1570491[0m    1.16x
+AVGPRICE                  61568 [31m     94116[0m    1.53x
+BBANDS                   415951 [31m   1280857[0m    3.08x
+BETA                     363254 [31m   1784004[0m    4.91x
+BOP                       88114 [31m    432494[0m    4.91x
+CCI                     1950691 [31m   4215827[0m    2.16x
+CDL2CROWS                824661 [31m   1024124[0m    1.24x
+CDL3BLACKCROWS           489947 [31m    607251[0m    1.24x
+CDL3INSIDE               544696 [31m    947364[0m    1.74x
+CDL3LINESTRIKE           560816 [31m    753947[0m    1.34x
+CDL3OUTSIDE              424631     442375    1.04x
+CDL3STARSINSOUTH         807478 [31m    957999[0m    1.19x
+CDL3WHITESOLDIERS       1242446    1164712    0.94x
+CDLABANDONEDBABY        1189783    1160415    0.98x
+CDLADVANCEBLOCK         1338119 [31m   1584345[0m    1.18x
+CDLBELTHOLD             1180258    1139420    0.97x
+CDLBREAKAWAY             684271     644201    0.94x
+CDLCLOSINGMARUBOZU      1182392    1138723    0.96x
+CDLCONCEALBABYSWALL      496008     484787    0.98x
+CDLCOUNTERATTACK        1156661    1097759    0.95x
+CDLDARKCLOUDCOVER        873973     807084    0.92x
+CDLDOJI                  255475     233887    0.92x
+CDLDOJISTAR             1080239    1065718    0.99x
+CDLDRAGONFLYDOJI         450560     414467    0.92x
+CDLENGULFING             499787     484056    0.97x
+CDLEVENINGDOJISTAR       617236     594236    0.96x
+CDLEVENINGSTAR           587204     587563    1.00x
+CDLGAPSIDESIDEWHITE      249531     249333    1.00x
+CDLGRAVESTONEDOJI        451445     415449    0.92x
+CDLHAMMER               1215939    1153469    0.95x
+CDLHANGINGMAN           1216674    1161800    0.95x
+CDLHARAMI               1218855    1190623    0.98x
+CDLHARAMICROSS          1096724    1083117    0.99x
+CDLHIGHWAVE             1061929    1066822    1.00x
+CDLHIKKAKE               517359     509958    0.99x
+CDLHIKKAKEMOD            553440     558566    1.01x
+CDLHOMINGPIGEON          726684     684514    0.94x
+CDLIDENTICAL3CROWS       879075     857785    0.98x
+CDLINNECK                894739     904297    1.01x
+CDLINVERTEDHAMMER        326008     324145    0.99x
+CDLKICKING              1141015    1188035    1.04x
+CDLKICKINGBYLENGTH      1129709    1201990    1.06x
+CDLLADDERBOTTOM          474974     459988    0.97x
+CDLLONGLEGGEDDOJI        447288     428890    0.96x
+CDLLONGLINE             1137461    1081261    0.95x
+CDLMARUBOZU             1102832    1040466    0.94x
+CDLMATCHINGLOW           459157     460795    1.00x
+CDLMATHOLD               606740     596304    0.98x
+CDLMORNINGDOJISTAR       621056     602354    0.97x
+CDLMORNINGSTAR           579473     581630    1.00x
+CDLONNECK                908851     876759    0.96x
+CDLPIERCING              924779     893560    0.97x
+CDLRICKSHAWMAN           523291     484078    0.93x
+CDLRISEFALL3METHODS      822260     815332    0.99x
+CDLSEPARATINGLINES       843524     834618    0.99x
+CDLSHOOTINGSTAR          326477     325595    1.00x
+CDLSHORTLINE            1174199    1170576    1.00x
+CDLSPINNINGTOP           141640     151202    1.07x
+CDLSTALLEDPATTERN        939927     890730    0.95x
+CDLSTICKSANDWICH         447784     427772    0.96x
+CDLTAKURI                527222     479605    0.91x
+CDLTASUKIGAP             497368     458218    0.92x
+CDLTHRUSTING             931129     886696    0.95x
+CDLTRISTAR               369862     356681    0.96x
+CDLUNIQUE3RIVER          530517     552952    1.04x
+CDLUPSIDEGAP2CROWS       982641     970728    0.99x
+CDLXSIDEGAP3METHODS      438144     407702    0.93x
+CEIL                      29566      29873    1.01x
+CMF                      209624     211266    1.01x
+CMO                      617027     621688    1.01x
+CMOU                     839394     852985    1.02x
+CORREL                   416516     414987    1.00x
+COS                      939377     936053    1.00x
+COSH                     461896     465079    1.01x
+DEMA                     360232     373093    1.04x
+DIV                       42825      42605    0.99x
+DX                       751422     737603    0.98x
+EMA                      255772     255955    1.00x
+EXP                      354603     354437    1.00x
+FLOOR                     28157      30172    1.07x
+HMA                      241438     244510    1.01x
+HT_DCPERIOD             4221635    4227295    1.00x
+HT_DCPHASE             27665421   27610428    1.00x
+HT_PHASOR               4066165    4081240    1.00x
+HT_SINE                29707137   29743148    1.00x
+HT_TRENDLINE            7125717 [31m   7898691[0m    1.11x
+HT_TRENDMODE           33203733   32693192    0.98x
+IMI                     5176413 [32m    655008[0m    0.13x
+KAMA                     425102     419635    0.99x
+LINEARREG                353519 [31m    567724[0m    1.61x
+LINEARREG_ANGLE          809811     747681    0.92x
+LINEARREG_INTERCEPT      211651 [31m    319444[0m    1.51x
+LINEARREG_SLOPE          193542 [31m    240649[0m    1.24x
+LN                       365580     356914    0.98x
+LOG10                    345500     344410    1.00x
+MA                       171281     171411    1.00x
+MACD                     540177     562920    1.04x
+MACDEXT                  612213     601630    0.98x
+MACDFIX                  575216     562701    0.98x
+MAMA                    5886868    5884459    1.00x
+MAVP                    1320571 [31m   5393188[0m    4.08x
+MAX                      128553     128039    1.00x
+MAXINDEX                 412035     400489    0.97x
+MEDPRICE                  40021      39503    0.99x
+MFI                      715404     713419    1.00x
+MIDPOINT                 214124     213390    1.00x
+MIDPRICE                 577744 [32m    289207[0m    0.50x
+MIN                      427381     425900    1.00x
+MININDEX                 427720     414286    0.97x
+MINMAX                   793029     761837    0.96x
+MINMAXINDEX              792226     766123    0.97x
+MINUS_DI                 569879     582563    1.02x
+MINUS_DM                 443779     445106    1.00x
+MOM                       28828 [31m     32554[0m    1.13x
+MULT                      38386      42131    1.10x
+NATR                     483124     476714    0.99x
+NVI                      395368     390255    0.99x
+OBV                      342957     330238    0.96x
+PLUS_DI                  586097     584905    1.00x
+PLUS_DM                  446230     449642    1.01x
+PPO                      600449     600835    1.00x
+PVI                      373713 [32m    316943[0m    0.85x
+PVO                      600357     601122    1.00x
+ROC                       87847      87355    0.99x
+ROCP                      86290      85430    0.99x
+ROCR                      86171      85364    0.99x
+ROCR100                   85765      85768    1.00x
+RSI                      576358     578573    1.00x
+SAR                      607443     597491    0.98x
+SAREXT                   641917     602506    0.94x
+SIN                      924552     920833    1.00x
+SINH                     471826     470882    1.00x
+SMA                      170810     171435    1.00x
+SQRT                      64082      64006    1.00x
+STDDEV                   382490     385847    1.01x
+STOCH                   1251538 [32m   1102222[0m    0.88x
+STOCHF                  1073453 [32m    941729[0m    0.88x
+STOCHRSI                1563792    1434311    0.92x
+SUB                       37853      38525    1.02x
+SUM                      170293     171137    1.00x
+T3                      1584249    1603920    1.01x
+TAN                      884251     882809    1.00x
+TANH                     250881     232202    0.93x
+TEMA                     511522     514566    1.01x
+TRANGE                    56096 [31m     61934[0m    1.10x
+TRIMA                    266707     268072    1.01x
+TRIX                     553320     514288    0.93x
+TSF                      333875 [31m    596746[0m    1.79x
+TYPPRICE                  50747      51020    1.01x
+ULTOSC                   817750     803057    0.98x
+VAR                      311996     319664    1.02x
+VWMA                     173480     171805    0.99x
+WCLPRICE                 184006     183600    1.00x
+WILLR                    781119     750433    0.96x
+WMA                      177689     176867    1.00x
+
+168 indicators benchmarked (100000 points, 200 iters, shape=randwalk, direct calls)
+(red >10% slower, green >10% faster than C-ref)

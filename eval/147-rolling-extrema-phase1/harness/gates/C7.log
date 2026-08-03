@@ -1,0 +1,9 @@
+[C7] javac javac 17.0.20  dotnet 10.0.302
+[C7] restoring pristine tree
+[C7] installed max/midpoint = C7
+[C7] generate
+
+thread 'main' (9817995) panicked at src/parser/c_source.rs:2039:22:
+Expected identifier, got Ampersand
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[C7] GENERATE FAILED — candidate ELIMINATED at the codegen gate
