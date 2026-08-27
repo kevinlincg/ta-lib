@@ -8647,51 +8647,129 @@ fn test_mama_nullable_fama_is_declinable_in_every_backend() {
 /// Neither copy is reachable from the other's tests: the shipped one is what
 /// `BatchApiTest` drives, the server one is what `--codegen` and `--xlang-hash`
 /// drive, and every server request hands `OpenAndFill` a full-length output, so
-/// a divergence in the bound itself is invisible to both. Compared on tokens,
-/// not on text: the two are indented differently on purpose.
+/// a divergence in the bound itself is invisible to both.
+///
+/// Compared on LEXEMES, not on text. The two are indented and wrapped
+/// differently on purpose, and only the shipped copy explains itself to a
+/// reader of the published API — so a comparison that counted whitespace or
+/// comment words would pin the layout and the prose rather than the code, and
+/// would have to be relaxed every time either copy is re-wrapped. Splitting on
+/// whitespace alone is not enough for that: it leaves `failed",` one token, so
+/// where one copy puts a comment or a line break before the comma the two
+/// streams differ over punctuation nobody moved.
 #[test]
 fn the_java_argument_helpers_agree_between_the_library_and_the_server() {
-    fn method(src: &str, sig: &str, what: &str) -> String {
-        let at = src
-            .find(sig)
-            .unwrap_or_else(|| panic!("{what}: `{sig}` not found"));
-        let mut depth = 0usize;
-        let mut end = at;
-        for (i, ch) in src[at..].char_indices() {
-            match ch {
-                '{' => depth += 1,
-                '}' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        end = at + i + 1;
+    /// The Java lexeme sequence: whitespace and comments dropped, string and
+    /// character literals kept whole (a `//` inside a message is not a comment,
+    /// and a brace inside one does not open a block), identifiers and numbers
+    /// one token each, every other character its own.
+    fn lexemes(src: &str) -> Vec<String> {
+        let c: Vec<char> = src.chars().collect();
+        let word = |ch: char| ch.is_alphanumeric() || ch == '_' || ch == '$';
+        let mut out: Vec<String> = Vec::new();
+        let mut i = 0usize;
+        while i < c.len() {
+            let ch = c[i];
+            if ch.is_whitespace() {
+                i += 1;
+            } else if ch == '/' && c.get(i + 1) == Some(&'/') {
+                while i < c.len() && c[i] != '\n' {
+                    i += 1;
+                }
+            } else if ch == '/' && c.get(i + 1) == Some(&'*') {
+                i += 2;
+                while i + 1 < c.len() && !(c[i] == '*' && c[i + 1] == '/') {
+                    i += 1;
+                }
+                i = (i + 2).min(c.len());
+            } else if ch == '"' || ch == '\'' {
+                let mut lit = String::from(ch);
+                i += 1;
+                while i < c.len() {
+                    if c[i] == '\\' && i + 1 < c.len() {
+                        lit.push(c[i]);
+                        lit.push(c[i + 1]);
+                        i += 2;
+                        continue;
+                    }
+                    lit.push(c[i]);
+                    i += 1;
+                    if c[i - 1] == ch {
                         break;
                     }
                 }
-                _ => {}
+                out.push(lit);
+            } else if word(ch) {
+                let mut w = String::new();
+                while i < c.len() && word(c[i]) {
+                    w.push(c[i]);
+                    i += 1;
+                }
+                out.push(w);
+            } else {
+                out.push(ch.to_string());
+                i += 1;
             }
         }
-        assert!(end > at, "{what}: `{sig}` has no body");
-        src[at..end].split_whitespace().collect::<Vec<_>>().join(" ")
+        out
+    }
+
+    fn method(src: &[String], sig: &[String], what: &str) -> String {
+        let at = src
+            .windows(sig.len())
+            .position(|w| w == sig)
+            .unwrap_or_else(|| panic!("{what}: `{}` not found", sig.join(" ")));
+        let mut depth = 0usize;
+        for (i, tok) in src[at..].iter().enumerate() {
+            if tok == "{" {
+                depth += 1;
+            } else if tok == "}" {
+                depth -= 1;
+                if depth == 0 {
+                    return src[at..=at + i].join(" ");
+                }
+            }
+        }
+        panic!("{what}: `{}` has no body", sig.join(" "))
     }
 
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let core = std::fs::read_to_string(
-        root.join("ta_codegen/output/java/library/src/main/java/io/github/talib/Core.java"),
-    )
-    .expect("the shipped Core.java");
-    let server =
-        std::fs::read_to_string(root.join("ta_codegen/output/java/tools/TaCodegenServe.java"))
-            .expect("the generated Java server");
+    let core = lexemes(
+        &std::fs::read_to_string(
+            root.join("ta_codegen/output/java/library/src/main/java/io/github/talib/Core.java"),
+        )
+        .expect("the shipped Core.java"),
+    );
+    let server = lexemes(
+        &std::fs::read_to_string(root.join("ta_codegen/output/java/tools/TaCodegenServe.java"))
+            .expect("the generated Java server"),
+    );
 
+    // Every helper the two files both define, not a sample of them. The four
+    // this gate started with left `checkLength` — where rule S5's rejection
+    // actually happens — and the `failure` code->exception mapping unpinned,
+    // and `failure` had in fact drifted: the shipped copy names the two causes
+    // of a `BadParam`, the server's copy said only "bad parameter" (#271 item 3).
+    //
+    // The three `requireLength` overloads are listed separately because they are
+    // separate methods; an overload can drift alone.
     for sig in [
+        "static RuntimeException failure(String funcName, RetCode retCode) {",
+        "static int clampedStart(String funcName, int startIdx, int lookback) {",
+        "static void requireLength(String funcName, String argName, double[] array, int required) {",
+        "static void requireLength(String funcName, String argName, float[] array, int required) {",
+        "static void requireLength(String funcName, String argName, int[] array, int required) {",
+        "static void checkLength(String funcName, String argName, int actual, int required) {",
+        "static void requireArgument(String funcName, String argName, Object argument) {",
         "static int openFillCount(String funcName, int historyLen, int lookback) {",
         "static void requireHistoryLength(String funcName, String argName, int actual, int historyLen) {",
         "static void requireHistory(String funcName, int historyLen) {",
         "static void requireIndexRange(String funcName, int startIdx, int endIdx) {",
     ] {
+        let sig_toks = lexemes(sig);
         assert_eq!(
-            method(&core, sig, "Core.java"),
-            method(&server, sig, "TaCodegenServe.java"),
+            method(&core, &sig_toks, "Core.java"),
+            method(&server, &sig_toks, "TaCodegenServe.java"),
             "the two copies of `{sig}` have drifted"
         );
     }

@@ -3269,7 +3269,11 @@ pub fn generate_java_server(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
     s.push_str("        switch (retCode) {\n");
     s.push_str("            case OutOfRangeStartIndex: return new TaLibIndexException(where + \"startIdx out of range\", retCode);\n");
     s.push_str("            case OutOfRangeEndIndex: return new TaLibIndexException(where + \"endIdx out of range\", retCode);\n");
-    s.push_str("            case BadParam: return new TaLibArgumentException(where + \"bad parameter\", retCode);\n");
+    // Names the two causes, exactly as the shipped `Core.java` names them --
+    // pinned by `the_java_argument_helpers_agree_between_the_library_and_the_server`.
+    // Kept on one line like its neighbours here; `Core.java` wraps it, and the
+    // gate compares lexemes, so the wrapping is free to differ.
+    s.push_str("            case BadParam: return new TaLibArgumentException(where + \"bad parameter (out-of-range optional parameter, or two \" + \"outputs sharing one array)\", retCode);\n");
     s.push_str("            case AllocErr: return new TaLibStateException(where + \"allocation failed\", retCode);\n");
     s.push_str("            case InternalError: return new TaLibStateException(where + \"internal error\", retCode);\n");
     s.push_str("            case InsufficientHistory: return new InsufficientHistoryException(where + \"history shorter than the lookback\");\n");
