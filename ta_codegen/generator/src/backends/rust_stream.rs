@@ -2,11 +2,12 @@
 //!
 //! For every YAML-declared streamable function this appends a
 //! `/**** Streaming API *****/` section to the generated per-function Rust
-//! file: an opaque `#[derive(Clone)]` handle (`<NAME>_Stream { core, state }`),
+//! file: an opaque `#[derive(Clone)]` handle (`<NAME>_Stream { state, out }`,
+//! plus a `cs` candle snapshot on the functions that read one — #274),
 //! a private state struct mirroring the C stream struct field-for-field, a
-//! `<NAME>_step_impl` transition method on `Core` (so batch rendering
-//! conventions — `self.candle_settings`, `self.compatibility`, lookback calls —
-//! work verbatim), a `pub(crate) <NAME>_OpenInternal(.., startIdx, ..)`
+//! `<NAME>_step_impl` associated function in the `impl Core` block (so batch
+//! rendering conventions — the candle unpacking, lookback calls — work
+//! verbatim), a `pub(crate) <NAME>_OpenInternal(.., startIdx, ..)`
 //! composition seam, the public `<NAME>_Open` / `<NAME>_OpenAndFill`
 //! constructors, and `update`/`peek` on the handle.
 //!
@@ -29,7 +30,7 @@
 //!   requires the rest to match that length (`Err(BadParam)` otherwise).
 
 use std::cell::Cell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
 
 use crate::helper_registry::HelperRegistry;
@@ -773,12 +774,117 @@ fn emit_handle_and_state_structs(
     emit_state_struct_from(o, func, &state_fields(func, model, typing))
 }
 
+// ---------------------------------------------------------------------------
+// The handle's candle-setting snapshot (#274)
+// ---------------------------------------------------------------------------
+//
+// A handle used to embed a whole `Core` by value — 280 bytes of unstable
+// periods, candle settings and compatibility — so the step could be a method on
+// it. Only the candle settings are ever read after Open: the unstable period
+// and the compatibility mode are consumed by the Open transcription, which runs
+// on the live `&Core` and never on the handle. So the handle carries exactly
+// the `CandleSetting`s its own function names, and nothing at all when it names
+// none — which is most of them.
+//
+// The set is derived from the function's whole stream source rather than from
+// the plan's steady statements, because every construction site has `func` and
+// only the two step emitters have the plan. Whole-body is a superset of what
+// the step reads (the steady statements are a slice of that body), so a step
+// can never want a setting the handle lacks — and `emit_step_body` asserts
+// exactly that containment, so a future narrowing of `stream_source` fails
+// generation rather than emitting a step that will not compile.
+
+/// The candlestick settings this function's handle carries.
+fn handle_candle_settings(func: &FuncDef) -> BTreeSet<String> {
+    crate::candle_settings::detect_candle_settings(func.stream_source())
+}
+
+/// The per-function snapshot type, e.g. `CDLDOJI_StreamCandles`. Only emitted
+/// when [`handle_candle_settings`] is non-empty.
+fn candles_type_name(func: &FuncDef) -> String {
+    format!("{}Candles", stream_type_name(func))
+}
+
+/// `cs: &<Snapshot>, ` — the step's leading parameter, empty when it reads no
+/// candle settings.
+fn step_candles_param(func: &FuncDef) -> String {
+    if handle_candle_settings(func).is_empty() {
+        String::new()
+    } else {
+        format!("cs: &{}, ", candles_type_name(func))
+    }
+}
+
+/// `&self.cs, ` — the matching argument at a step call site on the handle.
+fn step_candles_arg(func: &FuncDef) -> String {
+    if handle_candle_settings(func).is_empty() {
+        String::new()
+    } else {
+        "&self.cs, ".to_string()
+    }
+}
+
+/// `cs: <Snapshot> { .. }, ` — the snapshot taken at Open, where `self` is the
+/// `&Core` the constructor was called on. Empty when there is nothing to carry.
+fn handle_candles_init(func: &FuncDef) -> String {
+    let settings = handle_candle_settings(func);
+    if settings.is_empty() {
+        return String::new();
+    }
+    let fields: Vec<String> = settings
+        .iter()
+        .map(|s| {
+            let f = crate::candle_settings::rust_field_name(s);
+            format!("{f}: self.candle_settings.{f}")
+        })
+        .collect();
+    format!("cs: {} {{ {} }}, ", candles_type_name(func), fields.join(", "))
+}
+
+/// The snapshot struct declaration, ahead of the handle that owns one.
+fn emit_candles_struct(o: &mut String, func: &FuncDef) {
+    let settings = handle_candle_settings(func);
+    if settings.is_empty() {
+        return;
+    }
+    let ty = candles_type_name(func);
+    let n = func.name.to_uppercase();
+    let mut fields = String::new();
+    for s in &settings {
+        let f = crate::candle_settings::rust_field_name(s);
+        let _ = writeln!(fields, "    /// `TA_{s}`, as it stood when the stream was opened.");
+        let _ = writeln!(fields, "    {f}: CandleSetting,");
+    }
+    let _ = writeln!(
+        o,
+        "/// The candlestick settings {n}'s per-bar step reads, snapshotted at Open.\n\
+         ///\n\
+         /// A stream is pinned to the settings in force when it was opened — the same\n\
+         /// rule the batch API follows within one call — so the handle carries these\n\
+         /// by value instead of a whole [`Core`] (#274). Changing a setting on the\n\
+         /// `Core` afterwards does not reach an already-open handle.\n\
+         #[derive(Debug, Clone, Copy)]\n\
+         struct {ty} {{\n{fields}}}\n"
+    );
+}
+
 /// The public opaque handle struct (identical for every tier).
 fn emit_handle_struct(o: &mut String, func: &FuncDef) {
     let handle = stream_type_name(func);
     let state = state_type_name(func);
     let sn = snake(func);
     let n = func.name.to_uppercase();
+    emit_candles_struct(o, func);
+    let carries = !handle_candle_settings(func).is_empty();
+    let cs_field = if carries {
+        format!(
+            "\x20   /// The candle settings this stream was opened under.\n\
+             \x20   cs: {},\n",
+            candles_type_name(func)
+        )
+    } else {
+        String::new()
+    };
     let _ = writeln!(
         o,
         "/// Live {n} stream: one value per closed bar, bit-identical to [`Core::{sn}`]\n\
@@ -789,20 +895,21 @@ fn emit_handle_struct(o: &mut String, func: &FuncDef) {
          #[must_use = \"a stream does nothing unless updated; dropping it closes the stream\"]\n\
          #[derive(Debug, Clone)]\n\
          #[doc(alias = \"TA_{n}_Stream\")]\n\
-         pub struct {handle} {{\n    core: Core,\n    state: {state},\n\
+         pub struct {handle} {{\n{cs_field}    state: {state},\n\
          \x20   /// The bars this handle has produced a value for — see [`Self::out_range`].\n\
          \x20   out: OutRange,\n}}\n"
     );
     // The handle's half of the scratch restore: only a handle embedded in
     // another handle's state (a composed sub, a dispatch arm, a period bank
     // slot) reaches it, so most functions never call their own.
+    let cs_restore = if carries { "        self.cs = src.cs;\n" } else { "" };
     let _ = writeln!(
         o,
         "#[allow(dead_code)]\nimpl {handle} {{\n\
          \x20   /// Overwrite from `src`, reusing this handle's buffers instead of\n\
          \x20   /// allocating new ones. See `{state}::restore_from`.\n\
          \x20   pub(crate) fn restore_from(&mut self, src: &Self) {{\n\
-         \x20       self.core.clone_from(&src.core);\n\
+         {cs_restore}\
          \x20       self.state.restore_from(&src.state);\n\
          \x20       self.out = src.out;\n\
          \x20   }}\n}}\n"
@@ -822,7 +929,8 @@ fn field_owns_heap(rty: &str) -> bool {
 struct StateShape {
     /// `Vec<f64>` fields: the rings, windows and CIRCBUFs.
     buffers: usize,
-    /// Sub-handles and the dispatch sub-enum: each owns a `Core` and a state.
+    /// Sub-handles and the dispatch sub-enum: each owns a state (and, since
+    /// #274, at most a candle snapshot — no longer a whole `Core`).
     subs: usize,
     /// A period bank: one `Vec` plus a sub-handle per slot, so its clone is
     /// unbounded in the number of allocations and never a candidate for the
@@ -1126,9 +1234,15 @@ fn emit_step_sig(o: &mut String, func: &FuncDef, fallible: bool) {
     // statements (the period-1 identity arm), which a `Result` return would not
     // typecheck.
     let ret = if fallible { " -> Result<(), RetCode>" } else { "" };
+    // Associated, not a method: since #274 a step reads nothing from `Core`
+    // beyond the candle settings its handle already snapshotted, so it takes
+    // that snapshot (or no such parameter at all) instead of `&self`. It stays
+    // in the `impl Core` block, which is what keeps it private to the module
+    // exactly as before.
+    let cs_param = step_candles_param(func);
     let _ = writeln!(
         o,
-        "    fn {sn}_step_impl(&self, sp: &mut {state}{params}){ret} {{"
+        "    fn {sn}_step_impl({cs_param}sp: &mut {state}{params}){ret} {{"
     );
 }
 
@@ -1206,13 +1320,33 @@ fn emit_step_body(
             helpers, counter,
         ));
     }
-    // Candle settings are read where batch reads them (from the immutable Core
-    // snapshot in the handle — `self` here is that Core).
+    // Candle settings are read where batch reads them, but from the handle's
+    // own snapshot rather than a whole embedded `Core` (#274).
     let step_settings = crate::candle_settings::detect_candle_settings(&model.steady_stmts);
     if !step_settings.is_empty() {
-        o.push_str(&crate::candle_settings::emit_rust_unpacking(&step_settings, indent));
+        assert_candles_carried(func, &step_settings);
+        o.push_str(&crate::candle_settings::emit_rust_unpacking_from(&step_settings, indent, "cs"));
     }
     o.push_str(&body);
+}
+
+/// The containment the handle's snapshot rests on: everything a step body reads
+/// must be something [`handle_candle_settings`] decided to carry.
+///
+/// Cheap, but not vacuous — it is the only thing standing between a narrowed
+/// derivation and a generated step that names a field its handle does not have.
+/// Failing here names the function and the setting; failing in `rustc` names a
+/// generated file nobody edits.
+fn assert_candles_carried(func: &FuncDef, used: &BTreeSet<String>) {
+    let carried = handle_candle_settings(func);
+    for s in used {
+        assert!(
+            carried.contains(s),
+            "{}: step reads candle setting `{s}`, which the handle does not carry \
+             (carried: {carried:?}) — handle_candle_settings has been narrowed too far",
+            func.name
+        );
+    }
 }
 
 /// The identity short-circuit at the top of a dual-mode step, above the mode
@@ -1683,10 +1817,11 @@ fn emit_capture_and_publish(
     extra_fields: &str,
 ) {
     let handle = stream_type_name(func);
+    let cs_init = handle_candles_init(func);
     let _ = writeln!(o, "\n        // Capture the live batch state into the handle.");
     emit_capture(o, func, model, scalars, typing, registry, helpers, counter, extra_fields);
     // The core publishes only the handle; the scalar wrapper reads its sink.
-    let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+    let _ = writeln!(o, "        Ok({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
 }
 
 
@@ -1833,6 +1968,7 @@ fn emit_identity_fast_path(
 ) {
     let Some(idp) = &model.identity else { return };
     let handle = stream_type_name(func);
+    let cs_init = handle_candles_init(func);
     let state = state_type_name(func);
     let sn = snake(func);
     let opt_real_params: Vec<String> = func
@@ -1884,7 +2020,7 @@ fn emit_identity_fast_path(
     let _ = writeln!(o, "            }}");
     let _ = writeln!(
         o,
-        "            return Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});"
+        "            return Ok({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});"
     );
     let _ = writeln!(o, "        }}");
 }
@@ -2347,6 +2483,9 @@ fn emit_update_and_peek(o: &mut String, func: &FuncDef, shape: StateShape, step_
         let _ = write!(out_refs, ", &mut {}", out.name);
     }
     let ret = open_value_tuple_names(func);
+    // The step is an associated function since #274, so the handle hands it its
+    // own candle snapshot (or nothing, when it reads none) in place of `&self`.
+    let cs_arg = step_candles_arg(func);
     let reuse = shape.scratch_pays();
     // The sub-stream tiers' steps are fallible (their sub `update` is); the
     // self-contained ones cannot fail and return `()`.
@@ -2360,9 +2499,10 @@ fn emit_update_and_peek(o: &mut String, func: &FuncDef, shape: StateShape, step_
     //
     // The retention that buys: one handle copy per (thread, function actually
     // peeked), held until the thread ends, sized to the largest handle that
-    // thread peeked and keeping that handle's `Core` alive. Dropping every
-    // stream handle does not release it. Bounded and small per entry, but a
-    // long-lived pool thread that peeked a wide `MAVP` bank holds that bank.
+    // thread peeked. Dropping every stream handle does not release it. Bounded
+    // and small per entry since #274 — the retained copy is the state's buffers
+    // and a candle snapshot, no longer a whole `Core` — but a long-lived pool
+    // thread that peeked a wide `MAVP` bank still holds that bank.
     if reuse {
         let _ = writeln!(
             o,
@@ -2402,7 +2542,7 @@ fn emit_update_and_peek(o: &mut String, func: &FuncDef, shape: StateShape, step_
     o.push_str(&out_decls);
     let _ = writeln!(
         o,
-        "        self.core.{sn}_step_impl(&mut self.state, {fwd_bars}{out_refs}){step_try};"
+        "        Core::{sn}_step_impl({cs_arg}&mut self.state, {fwd_bars}{out_refs}){step_try};"
     );
     // After the step, so a rejected bar (non-finite here, or a sub-stream's
     // reject through `?`) leaves the range exactly where it was. `peek` runs the
@@ -2548,7 +2688,7 @@ fn emit_update_and_peek(o: &mut String, func: &FuncDef, shape: StateShape, step_
     }
     let _ = writeln!(
         o,
-        "            self.core.{sn}_step_impl(&mut self.state, {step_args}){step_try};"
+        "            Core::{sn}_step_impl({cs_arg}&mut self.state, {step_args}){step_try};"
     );
     let _ = writeln!(
         o,
@@ -2979,6 +3119,7 @@ fn emit_dispatch(
     let _ = counter;
     let sn = snake(func);
     let handle = stream_type_name(func);
+    let cs_init = handle_candles_init(func);
     let state = state_type_name(func);
     let sub_enum = sub_enum_name(func);
     let inputs = streaming::input_array_names(func);
@@ -3170,17 +3311,17 @@ fn emit_dispatch(
                     };
                     let _ = writeln!(
                         o,
-                        "            return Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, {value}));"
+                        "            return Ok(({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, {value}));"
                     );
                 }
                 OutMode::Fill => {
                     let _ = writeln!(
                         o,
-                        "            return Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }}));"
+                        "            return Ok(({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }}));"
                     );
                 }
                 OutMode::FillInternal => {
-                    let _ = writeln!(o, "            return Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});");
+                    let _ = writeln!(o, "            return Ok({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});");
                 }
             }
             let _ = writeln!(o, "        }}");
@@ -3313,13 +3454,13 @@ fn emit_dispatch(
         match mode {
             OutMode::Core => unreachable!("dispatch tier is exempt from the merge"),
             OutMode::Scalar => {
-                let _ = writeln!(o, "        Ok(({handle} {{ core: self.clone(), state, out: subRange }}, value))");
+                let _ = writeln!(o, "        Ok(({handle} {{ {cs_init}state, out: subRange }}, value))");
             }
             OutMode::Fill => {
-                let _ = writeln!(o, "        Ok(({handle} {{ core: self.clone(), state, out: fillRange }}, fillRange))");
+                let _ = writeln!(o, "        Ok(({handle} {{ {cs_init}state, out: fillRange }}, fillRange))");
             }
             OutMode::FillInternal => {
-                let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+                let _ = writeln!(o, "        Ok({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
             }
         }
         let _ = writeln!(o, "    }}\n");
@@ -3355,6 +3496,7 @@ fn emit_period_bank(
 ) {
     let _ = (registry, helpers);
     let handle = stream_type_name(func);
+    let cs_init = handle_candles_init(func);
     let state = state_type_name(func);
     let callee = plan.callee.to_uppercase();
     let callee = callee.as_str();
@@ -3465,7 +3607,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
     let _ = writeln!(
         o,
-        "        Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: subStart, count: historyLen - subStart }} }}, lastValue_{out}))"
+        "        Ok(({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: subStart, count: historyLen - subStart }} }}, lastValue_{out}))"
     );
     let _ = writeln!(o, "    }}\n");
 
@@ -3515,7 +3657,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
     let _ = writeln!(
         o,
-        "        Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }} }}, OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }}))"
+        "        Ok(({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }} }}, OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }}))"
     );
     let _ = writeln!(o, "    }}\n");
     let _ = writeln!(o, "}}\n");
@@ -3821,7 +3963,8 @@ fn emit_composed_step(
         }
         let step_settings = crate::candle_settings::detect_candle_settings(&model.steady_stmts);
         if !step_settings.is_empty() {
-            o.push_str(&crate::candle_settings::emit_rust_unpacking(&step_settings, 8));
+            assert_candles_carried(func, &step_settings);
+            o.push_str(&crate::candle_settings::emit_rust_unpacking_from(&step_settings, 8, "cs"));
         }
         o.push_str(&body);
         let series = cp.series.clone().expect("producer plan carries a series");
@@ -3974,6 +4117,7 @@ fn emit_composed_open(
 ) {
     // The composed fill/scratch path hardcodes f64 Vecs (mirrors C's assert).
     let handle = stream_type_name(func);
+    let cs_init = handle_candles_init(func);
     let state = state_type_name(func);
     let sn = snake(func);
     let opt_real_params: Vec<String> = func
@@ -4203,7 +4347,7 @@ fn emit_composed_open(
                     let _ = writeln!(o, "        }}");
                 }
             }
-            let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+            let _ = writeln!(o, "        Ok({handle} {{ {cs_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
         }
     }
     let _ = writeln!(o, "    }}\n");

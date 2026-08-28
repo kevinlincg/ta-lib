@@ -421,6 +421,20 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candlestick settings CDLDOJISTAR's per-bar step reads, snapshotted at Open.
+///
+/// A stream is pinned to the settings in force when it was opened — the same
+/// rule the batch API follows within one call — so the handle carries these
+/// by value instead of a whole [`Core`] (#274). Changing a setting on the
+/// `Core` afterwards does not reach an already-open handle.
+#[derive(Debug, Clone, Copy)]
+struct CDLDOJISTAR_StreamCandles {
+    /// `TA_BodyDoji`, as it stood when the stream was opened.
+    body_doji: CandleSetting,
+    /// `TA_BodyLong`, as it stood when the stream was opened.
+    body_long: CandleSetting,
+}
+
 /// Live CDLDOJISTAR stream: one value per closed bar, bit-identical to [`Core::CDLDOJISTAR`]
 /// over the same series. Open with [`Core::CDLDOJISTAR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -430,7 +444,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLDOJISTAR_Stream")]
 pub struct CDLDOJISTAR_Stream {
-    core: Core,
+    /// The candle settings this stream was opened under.
+    cs: CDLDOJISTAR_StreamCandles,
     state: CDLDOJISTAR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -441,7 +456,7 @@ impl CDLDOJISTAR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLDOJISTAR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.cs = src.cs;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -491,19 +506,19 @@ impl CDLDOJISTAR_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLDOJISTAR_step_impl(&self, sp: &mut CDLDOJISTAR_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLDOJISTAR_step_impl(cs: &CDLDOJISTAR_StreamCandles, sp: &mut CDLDOJISTAR_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyDoji_rangeType: i32 = self.candle_settings.body_doji.range_type as i32;
+        let BodyDoji_rangeType: i32 = cs.body_doji.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyDoji_avgPeriod: i32 = self.candle_settings.body_doji.avg_period;
+        let BodyDoji_avgPeriod: i32 = cs.body_doji.avg_period;
         #[allow(non_snake_case)]
-        let BodyDoji_factor: f64 = self.candle_settings.body_doji.factor;
+        let BodyDoji_factor: f64 = cs.body_doji.factor;
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = cs.body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = self.candle_settings.body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = cs.body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = self.candle_settings.body_long.factor;
+        let BodyLong_factor: f64 = cs.body_long.factor;
         if sp.ringCap_BodyDojiTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyDoji_rangeType {
@@ -865,7 +880,7 @@ impl Core {
             ringCap_BodyLongTrailingIdx: cap_BodyLongTrailingIdx as usize,
             ring_BodyLongTrailingIdx_derived,
         };
-        Ok(CDLDOJISTAR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLDOJISTAR_Stream { cs: CDLDOJISTAR_StreamCandles { body_doji: self.candle_settings.body_doji, body_long: self.candle_settings.body_long }, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLDOJISTAR_Open`] (composition seam).
@@ -988,7 +1003,7 @@ impl CDLDOJISTAR_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLDOJISTAR_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLDOJISTAR_step_impl(&self.cs, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1021,7 +1036,7 @@ impl CDLDOJISTAR_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLDOJISTAR_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLDOJISTAR_step_impl(&self.cs, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

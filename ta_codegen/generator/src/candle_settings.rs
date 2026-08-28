@@ -214,24 +214,47 @@ pub fn emit_c_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
 /// generated candle-range comparisons run on — the same shape as Java's
 /// `.ordinal()` and C#'s `(int)` cast below.
 pub fn emit_rust_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
+    emit_rust_unpacking_from(settings, indent, "self.candle_settings")
+}
+
+/// [`emit_rust_unpacking`] against an arbitrary base expression.
+///
+/// The batch bodies and the Open regions run on a `&Core`, so their base is
+/// `self.candle_settings`. A stream *step* no longer has one: since #274 the
+/// handle carries only the `CandleSetting`s its own step reads, so the step's
+/// base is the snapshot struct it is handed (`cs`). Both spell the same field
+/// names — `CandleSettings` and the per-function snapshot agree on them by
+/// construction — so only the base differs.
+pub fn emit_rust_unpacking_from(
+    settings: &BTreeSet<String>,
+    indent: usize,
+    base: &str,
+) -> String {
     let pad = " ".repeat(indent);
     let mut out = String::new();
     for setting in settings {
         let snake = pascal_to_snake_case(setting);
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_rangeType: i32 = self.candle_settings.{snake}.range_type as i32;\n"
+             {pad}let {setting}_rangeType: i32 = {base}.{snake}.range_type as i32;\n"
         ));
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_avgPeriod: i32 = self.candle_settings.{snake}.avg_period;\n"
+             {pad}let {setting}_avgPeriod: i32 = {base}.{snake}.avg_period;\n"
         ));
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_factor: f64 = self.candle_settings.{snake}.factor;\n"
+             {pad}let {setting}_factor: f64 = {base}.{snake}.factor;\n"
         ));
     }
     out
+}
+
+/// The snake-case field name a candle setting takes in `CandleSettings` and in
+/// a per-function step snapshot (`BodyLong` → `body_long`).
+#[must_use]
+pub fn rust_field_name(setting: &str) -> String {
+    pascal_to_snake_case(setting)
 }
 
 /// Emit Java unpacking lines for the given candle settings.

@@ -514,6 +514,22 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candlestick settings CDLEVENINGDOJISTAR's per-bar step reads, snapshotted at Open.
+///
+/// A stream is pinned to the settings in force when it was opened — the same
+/// rule the batch API follows within one call — so the handle carries these
+/// by value instead of a whole [`Core`] (#274). Changing a setting on the
+/// `Core` afterwards does not reach an already-open handle.
+#[derive(Debug, Clone, Copy)]
+struct CDLEVENINGDOJISTAR_StreamCandles {
+    /// `TA_BodyDoji`, as it stood when the stream was opened.
+    body_doji: CandleSetting,
+    /// `TA_BodyLong`, as it stood when the stream was opened.
+    body_long: CandleSetting,
+    /// `TA_BodyShort`, as it stood when the stream was opened.
+    body_short: CandleSetting,
+}
+
 /// Live CDLEVENINGDOJISTAR stream: one value per closed bar, bit-identical to [`Core::CDLEVENINGDOJISTAR`]
 /// over the same series. Open with [`Core::CDLEVENINGDOJISTAR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -523,7 +539,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLEVENINGDOJISTAR_Stream")]
 pub struct CDLEVENINGDOJISTAR_Stream {
-    core: Core,
+    /// The candle settings this stream was opened under.
+    cs: CDLEVENINGDOJISTAR_StreamCandles,
     state: CDLEVENINGDOJISTAR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -534,7 +551,7 @@ impl CDLEVENINGDOJISTAR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLEVENINGDOJISTAR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.cs = src.cs;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -602,25 +619,25 @@ impl CDLEVENINGDOJISTAR_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLEVENINGDOJISTAR_step_impl(&self, sp: &mut CDLEVENINGDOJISTAR_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLEVENINGDOJISTAR_step_impl(cs: &CDLEVENINGDOJISTAR_StreamCandles, sp: &mut CDLEVENINGDOJISTAR_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyDoji_rangeType: i32 = self.candle_settings.body_doji.range_type as i32;
+        let BodyDoji_rangeType: i32 = cs.body_doji.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyDoji_avgPeriod: i32 = self.candle_settings.body_doji.avg_period;
+        let BodyDoji_avgPeriod: i32 = cs.body_doji.avg_period;
         #[allow(non_snake_case)]
-        let BodyDoji_factor: f64 = self.candle_settings.body_doji.factor;
+        let BodyDoji_factor: f64 = cs.body_doji.factor;
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = cs.body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = self.candle_settings.body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = cs.body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = self.candle_settings.body_long.factor;
+        let BodyLong_factor: f64 = cs.body_long.factor;
         #[allow(non_snake_case)]
-        let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
+        let BodyShort_rangeType: i32 = cs.body_short.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyShort_avgPeriod: i32 = self.candle_settings.body_short.avg_period;
+        let BodyShort_avgPeriod: i32 = cs.body_short.avg_period;
         #[allow(non_snake_case)]
-        let BodyShort_factor: f64 = self.candle_settings.body_short.factor;
+        let BodyShort_factor: f64 = cs.body_short.factor;
         if sp.ringCap_BodyDojiTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyDoji_rangeType {
@@ -1140,7 +1157,7 @@ impl Core {
             ringCap_BodyShortTrailingIdx: cap_BodyShortTrailingIdx as usize,
             ring_BodyShortTrailingIdx_derived,
         };
-        Ok(CDLEVENINGDOJISTAR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLEVENINGDOJISTAR_Stream { cs: CDLEVENINGDOJISTAR_StreamCandles { body_doji: self.candle_settings.body_doji, body_long: self.candle_settings.body_long, body_short: self.candle_settings.body_short }, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLEVENINGDOJISTAR_Open`] (composition seam).
@@ -1263,7 +1280,7 @@ impl CDLEVENINGDOJISTAR_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLEVENINGDOJISTAR_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLEVENINGDOJISTAR_step_impl(&self.cs, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1296,7 +1313,7 @@ impl CDLEVENINGDOJISTAR_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLEVENINGDOJISTAR_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLEVENINGDOJISTAR_step_impl(&self.cs, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

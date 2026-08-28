@@ -590,6 +590,24 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candlestick settings CDL3STARSINSOUTH's per-bar step reads, snapshotted at Open.
+///
+/// A stream is pinned to the settings in force when it was opened — the same
+/// rule the batch API follows within one call — so the handle carries these
+/// by value instead of a whole [`Core`] (#274). Changing a setting on the
+/// `Core` afterwards does not reach an already-open handle.
+#[derive(Debug, Clone, Copy)]
+struct CDL3STARSINSOUTH_StreamCandles {
+    /// `TA_BodyLong`, as it stood when the stream was opened.
+    body_long: CandleSetting,
+    /// `TA_BodyShort`, as it stood when the stream was opened.
+    body_short: CandleSetting,
+    /// `TA_ShadowLong`, as it stood when the stream was opened.
+    shadow_long: CandleSetting,
+    /// `TA_ShadowVeryShort`, as it stood when the stream was opened.
+    shadow_very_short: CandleSetting,
+}
+
 /// Live CDL3STARSINSOUTH stream: one value per closed bar, bit-identical to [`Core::CDL3STARSINSOUTH`]
 /// over the same series. Open with [`Core::CDL3STARSINSOUTH_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -599,7 +617,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL3STARSINSOUTH_Stream")]
 pub struct CDL3STARSINSOUTH_Stream {
-    core: Core,
+    /// The candle settings this stream was opened under.
+    cs: CDL3STARSINSOUTH_StreamCandles,
     state: CDL3STARSINSOUTH_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -610,7 +629,7 @@ impl CDL3STARSINSOUTH_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL3STARSINSOUTH_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.cs = src.cs;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -690,32 +709,32 @@ impl CDL3STARSINSOUTH_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDL3STARSINSOUTH_step_impl(&self, sp: &mut CDL3STARSINSOUTH_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDL3STARSINSOUTH_step_impl(cs: &CDL3STARSINSOUTH_StreamCandles, sp: &mut CDL3STARSINSOUTH_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = cs.body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = self.candle_settings.body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = cs.body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = self.candle_settings.body_long.factor;
+        let BodyLong_factor: f64 = cs.body_long.factor;
         #[allow(non_snake_case)]
-        let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
+        let BodyShort_rangeType: i32 = cs.body_short.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyShort_avgPeriod: i32 = self.candle_settings.body_short.avg_period;
+        let BodyShort_avgPeriod: i32 = cs.body_short.avg_period;
         #[allow(non_snake_case)]
-        let BodyShort_factor: f64 = self.candle_settings.body_short.factor;
+        let BodyShort_factor: f64 = cs.body_short.factor;
         #[allow(non_snake_case)]
-        let ShadowLong_rangeType: i32 = self.candle_settings.shadow_long.range_type as i32;
+        let ShadowLong_rangeType: i32 = cs.shadow_long.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowLong_avgPeriod: i32 = self.candle_settings.shadow_long.avg_period;
+        let ShadowLong_avgPeriod: i32 = cs.shadow_long.avg_period;
         #[allow(non_snake_case)]
-        let ShadowLong_factor: f64 = self.candle_settings.shadow_long.factor;
+        let ShadowLong_factor: f64 = cs.shadow_long.factor;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_rangeType: i32 = self.candle_settings.shadow_very_short.range_type as i32;
+        let ShadowVeryShort_rangeType: i32 = cs.shadow_very_short.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_avgPeriod: i32 = self.candle_settings.shadow_very_short.avg_period;
+        let ShadowVeryShort_avgPeriod: i32 = cs.shadow_very_short.avg_period;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_factor: f64 = self.candle_settings.shadow_very_short.factor;
+        let ShadowVeryShort_factor: f64 = cs.shadow_very_short.factor;
         let mut _candlerange_0: f64;
         match BodyLong_rangeType {
             0 => {
@@ -1345,7 +1364,7 @@ impl Core {
             ringLag_ShadowVeryShortTrailingIdx: capLag_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDL3STARSINSOUTH_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDL3STARSINSOUTH_Stream { cs: CDL3STARSINSOUTH_StreamCandles { body_long: self.candle_settings.body_long, body_short: self.candle_settings.body_short, shadow_long: self.candle_settings.shadow_long, shadow_very_short: self.candle_settings.shadow_very_short }, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL3STARSINSOUTH_Open`] (composition seam).
@@ -1468,7 +1487,7 @@ impl CDL3STARSINSOUTH_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDL3STARSINSOUTH_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDL3STARSINSOUTH_step_impl(&self.cs, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1501,7 +1520,7 @@ impl CDL3STARSINSOUTH_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDL3STARSINSOUTH_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDL3STARSINSOUTH_step_impl(&self.cs, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -380,6 +380,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candlestick settings CDL3LINESTRIKE's per-bar step reads, snapshotted at Open.
+///
+/// A stream is pinned to the settings in force when it was opened — the same
+/// rule the batch API follows within one call — so the handle carries these
+/// by value instead of a whole [`Core`] (#274). Changing a setting on the
+/// `Core` afterwards does not reach an already-open handle.
+#[derive(Debug, Clone, Copy)]
+struct CDL3LINESTRIKE_StreamCandles {
+    /// `TA_Near`, as it stood when the stream was opened.
+    near: CandleSetting,
+}
+
 /// Live CDL3LINESTRIKE stream: one value per closed bar, bit-identical to [`Core::CDL3LINESTRIKE`]
 /// over the same series. Open with [`Core::CDL3LINESTRIKE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -389,7 +401,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL3LINESTRIKE_Stream")]
 pub struct CDL3LINESTRIKE_Stream {
-    core: Core,
+    /// The candle settings this stream was opened under.
+    cs: CDL3LINESTRIKE_StreamCandles,
     state: CDL3LINESTRIKE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -400,7 +413,7 @@ impl CDL3LINESTRIKE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL3LINESTRIKE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.cs = src.cs;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -460,14 +473,14 @@ impl CDL3LINESTRIKE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDL3LINESTRIKE_step_impl(&self, sp: &mut CDL3LINESTRIKE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDL3LINESTRIKE_step_impl(cs: &CDL3LINESTRIKE_StreamCandles, sp: &mut CDL3LINESTRIKE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
-        let Near_rangeType: i32 = self.candle_settings.near.range_type as i32;
+        let Near_rangeType: i32 = cs.near.range_type as i32;
         #[allow(non_snake_case)]
-        let Near_avgPeriod: i32 = self.candle_settings.near.avg_period;
+        let Near_avgPeriod: i32 = cs.near.avg_period;
         #[allow(non_snake_case)]
-        let Near_factor: f64 = self.candle_settings.near.factor;
+        let Near_factor: f64 = cs.near.factor;
         let mut _candlerange_0: f64;
         match Near_rangeType {
             0 => {
@@ -722,7 +735,7 @@ impl Core {
             ringLag_NearTrailingIdx: capLag_NearTrailingIdx as usize,
             ring_NearTrailingIdx_derived,
         };
-        Ok(CDL3LINESTRIKE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDL3LINESTRIKE_Stream { cs: CDL3LINESTRIKE_StreamCandles { near: self.candle_settings.near }, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL3LINESTRIKE_Open`] (composition seam).
@@ -837,7 +850,7 @@ impl CDL3LINESTRIKE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDL3LINESTRIKE_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDL3LINESTRIKE_step_impl(&self.cs, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -870,7 +883,7 @@ impl CDL3LINESTRIKE_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDL3LINESTRIKE_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDL3LINESTRIKE_step_impl(&self.cs, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -547,6 +547,24 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candlestick settings CDLHAMMER's per-bar step reads, snapshotted at Open.
+///
+/// A stream is pinned to the settings in force when it was opened — the same
+/// rule the batch API follows within one call — so the handle carries these
+/// by value instead of a whole [`Core`] (#274). Changing a setting on the
+/// `Core` afterwards does not reach an already-open handle.
+#[derive(Debug, Clone, Copy)]
+struct CDLHAMMER_StreamCandles {
+    /// `TA_BodyShort`, as it stood when the stream was opened.
+    body_short: CandleSetting,
+    /// `TA_Near`, as it stood when the stream was opened.
+    near: CandleSetting,
+    /// `TA_ShadowLong`, as it stood when the stream was opened.
+    shadow_long: CandleSetting,
+    /// `TA_ShadowVeryShort`, as it stood when the stream was opened.
+    shadow_very_short: CandleSetting,
+}
+
 /// Live CDLHAMMER stream: one value per closed bar, bit-identical to [`Core::CDLHAMMER`]
 /// over the same series. Open with [`Core::CDLHAMMER_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -556,7 +574,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLHAMMER_Stream")]
 pub struct CDLHAMMER_Stream {
-    core: Core,
+    /// The candle settings this stream was opened under.
+    cs: CDLHAMMER_StreamCandles,
     state: CDLHAMMER_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -567,7 +586,7 @@ impl CDLHAMMER_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLHAMMER_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.cs = src.cs;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -633,31 +652,31 @@ impl CDLHAMMER_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLHAMMER_step_impl(&self, sp: &mut CDLHAMMER_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLHAMMER_step_impl(cs: &CDLHAMMER_StreamCandles, sp: &mut CDLHAMMER_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
+        let BodyShort_rangeType: i32 = cs.body_short.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyShort_avgPeriod: i32 = self.candle_settings.body_short.avg_period;
+        let BodyShort_avgPeriod: i32 = cs.body_short.avg_period;
         #[allow(non_snake_case)]
-        let BodyShort_factor: f64 = self.candle_settings.body_short.factor;
+        let BodyShort_factor: f64 = cs.body_short.factor;
         #[allow(non_snake_case)]
-        let Near_rangeType: i32 = self.candle_settings.near.range_type as i32;
+        let Near_rangeType: i32 = cs.near.range_type as i32;
         #[allow(non_snake_case)]
-        let Near_avgPeriod: i32 = self.candle_settings.near.avg_period;
+        let Near_avgPeriod: i32 = cs.near.avg_period;
         #[allow(non_snake_case)]
-        let Near_factor: f64 = self.candle_settings.near.factor;
+        let Near_factor: f64 = cs.near.factor;
         #[allow(non_snake_case)]
-        let ShadowLong_rangeType: i32 = self.candle_settings.shadow_long.range_type as i32;
+        let ShadowLong_rangeType: i32 = cs.shadow_long.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowLong_avgPeriod: i32 = self.candle_settings.shadow_long.avg_period;
+        let ShadowLong_avgPeriod: i32 = cs.shadow_long.avg_period;
         #[allow(non_snake_case)]
-        let ShadowLong_factor: f64 = self.candle_settings.shadow_long.factor;
+        let ShadowLong_factor: f64 = cs.shadow_long.factor;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_rangeType: i32 = self.candle_settings.shadow_very_short.range_type as i32;
+        let ShadowVeryShort_rangeType: i32 = cs.shadow_very_short.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_avgPeriod: i32 = self.candle_settings.shadow_very_short.avg_period;
+        let ShadowVeryShort_avgPeriod: i32 = cs.shadow_very_short.avg_period;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_factor: f64 = self.candle_settings.shadow_very_short.factor;
+        let ShadowVeryShort_factor: f64 = cs.shadow_very_short.factor;
         if sp.ringCap_BodyTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyShort_rangeType {
@@ -1287,7 +1306,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLHAMMER_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLHAMMER_Stream { cs: CDLHAMMER_StreamCandles { body_short: self.candle_settings.body_short, near: self.candle_settings.near, shadow_long: self.candle_settings.shadow_long, shadow_very_short: self.candle_settings.shadow_very_short }, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLHAMMER_Open`] (composition seam).
@@ -1410,7 +1429,7 @@ impl CDLHAMMER_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLHAMMER_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLHAMMER_step_impl(&self.cs, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1443,7 +1462,7 @@ impl CDLHAMMER_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLHAMMER_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLHAMMER_step_impl(&self.cs, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

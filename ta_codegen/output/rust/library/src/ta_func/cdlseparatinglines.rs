@@ -484,6 +484,22 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candlestick settings CDLSEPARATINGLINES's per-bar step reads, snapshotted at Open.
+///
+/// A stream is pinned to the settings in force when it was opened — the same
+/// rule the batch API follows within one call — so the handle carries these
+/// by value instead of a whole [`Core`] (#274). Changing a setting on the
+/// `Core` afterwards does not reach an already-open handle.
+#[derive(Debug, Clone, Copy)]
+struct CDLSEPARATINGLINES_StreamCandles {
+    /// `TA_BodyLong`, as it stood when the stream was opened.
+    body_long: CandleSetting,
+    /// `TA_Equal`, as it stood when the stream was opened.
+    equal: CandleSetting,
+    /// `TA_ShadowVeryShort`, as it stood when the stream was opened.
+    shadow_very_short: CandleSetting,
+}
+
 /// Live CDLSEPARATINGLINES stream: one value per closed bar, bit-identical to [`Core::CDLSEPARATINGLINES`]
 /// over the same series. Open with [`Core::CDLSEPARATINGLINES_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -493,7 +509,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLSEPARATINGLINES_Stream")]
 pub struct CDLSEPARATINGLINES_Stream {
-    core: Core,
+    /// The candle settings this stream was opened under.
+    cs: CDLSEPARATINGLINES_StreamCandles,
     state: CDLSEPARATINGLINES_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -504,7 +521,7 @@ impl CDLSEPARATINGLINES_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLSEPARATINGLINES_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.cs = src.cs;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -564,25 +581,25 @@ impl CDLSEPARATINGLINES_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLSEPARATINGLINES_step_impl(&self, sp: &mut CDLSEPARATINGLINES_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLSEPARATINGLINES_step_impl(cs: &CDLSEPARATINGLINES_StreamCandles, sp: &mut CDLSEPARATINGLINES_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = cs.body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = self.candle_settings.body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = cs.body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = self.candle_settings.body_long.factor;
+        let BodyLong_factor: f64 = cs.body_long.factor;
         #[allow(non_snake_case)]
-        let Equal_rangeType: i32 = self.candle_settings.equal.range_type as i32;
+        let Equal_rangeType: i32 = cs.equal.range_type as i32;
         #[allow(non_snake_case)]
-        let Equal_avgPeriod: i32 = self.candle_settings.equal.avg_period;
+        let Equal_avgPeriod: i32 = cs.equal.avg_period;
         #[allow(non_snake_case)]
-        let Equal_factor: f64 = self.candle_settings.equal.factor;
+        let Equal_factor: f64 = cs.equal.factor;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_rangeType: i32 = self.candle_settings.shadow_very_short.range_type as i32;
+        let ShadowVeryShort_rangeType: i32 = cs.shadow_very_short.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_avgPeriod: i32 = self.candle_settings.shadow_very_short.avg_period;
+        let ShadowVeryShort_avgPeriod: i32 = cs.shadow_very_short.avg_period;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_factor: f64 = self.candle_settings.shadow_very_short.factor;
+        let ShadowVeryShort_factor: f64 = cs.shadow_very_short.factor;
         if sp.ringCap_BodyLongTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyLong_rangeType {
@@ -1064,7 +1081,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLSEPARATINGLINES_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLSEPARATINGLINES_Stream { cs: CDLSEPARATINGLINES_StreamCandles { body_long: self.candle_settings.body_long, equal: self.candle_settings.equal, shadow_very_short: self.candle_settings.shadow_very_short }, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLSEPARATINGLINES_Open`] (composition seam).
@@ -1187,7 +1204,7 @@ impl CDLSEPARATINGLINES_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLSEPARATINGLINES_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLSEPARATINGLINES_step_impl(&self.cs, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1220,7 +1237,7 @@ impl CDLSEPARATINGLINES_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLSEPARATINGLINES_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLSEPARATINGLINES_step_impl(&self.cs, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

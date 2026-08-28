@@ -734,6 +734,26 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candlestick settings CDLADVANCEBLOCK's per-bar step reads, snapshotted at Open.
+///
+/// A stream is pinned to the settings in force when it was opened — the same
+/// rule the batch API follows within one call — so the handle carries these
+/// by value instead of a whole [`Core`] (#274). Changing a setting on the
+/// `Core` afterwards does not reach an already-open handle.
+#[derive(Debug, Clone, Copy)]
+struct CDLADVANCEBLOCK_StreamCandles {
+    /// `TA_BodyLong`, as it stood when the stream was opened.
+    body_long: CandleSetting,
+    /// `TA_Far`, as it stood when the stream was opened.
+    far: CandleSetting,
+    /// `TA_Near`, as it stood when the stream was opened.
+    near: CandleSetting,
+    /// `TA_ShadowLong`, as it stood when the stream was opened.
+    shadow_long: CandleSetting,
+    /// `TA_ShadowShort`, as it stood when the stream was opened.
+    shadow_short: CandleSetting,
+}
+
 /// Live CDLADVANCEBLOCK stream: one value per closed bar, bit-identical to [`Core::CDLADVANCEBLOCK`]
 /// over the same series. Open with [`Core::CDLADVANCEBLOCK_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -743,7 +763,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLADVANCEBLOCK_Stream")]
 pub struct CDLADVANCEBLOCK_Stream {
-    core: Core,
+    /// The candle settings this stream was opened under.
+    cs: CDLADVANCEBLOCK_StreamCandles,
     state: CDLADVANCEBLOCK_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -754,7 +775,7 @@ impl CDLADVANCEBLOCK_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLADVANCEBLOCK_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.cs = src.cs;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -846,38 +867,38 @@ impl CDLADVANCEBLOCK_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLADVANCEBLOCK_step_impl(&self, sp: &mut CDLADVANCEBLOCK_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLADVANCEBLOCK_step_impl(cs: &CDLADVANCEBLOCK_StreamCandles, sp: &mut CDLADVANCEBLOCK_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = cs.body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = self.candle_settings.body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = cs.body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = self.candle_settings.body_long.factor;
+        let BodyLong_factor: f64 = cs.body_long.factor;
         #[allow(non_snake_case)]
-        let Far_rangeType: i32 = self.candle_settings.far.range_type as i32;
+        let Far_rangeType: i32 = cs.far.range_type as i32;
         #[allow(non_snake_case)]
-        let Far_avgPeriod: i32 = self.candle_settings.far.avg_period;
+        let Far_avgPeriod: i32 = cs.far.avg_period;
         #[allow(non_snake_case)]
-        let Far_factor: f64 = self.candle_settings.far.factor;
+        let Far_factor: f64 = cs.far.factor;
         #[allow(non_snake_case)]
-        let Near_rangeType: i32 = self.candle_settings.near.range_type as i32;
+        let Near_rangeType: i32 = cs.near.range_type as i32;
         #[allow(non_snake_case)]
-        let Near_avgPeriod: i32 = self.candle_settings.near.avg_period;
+        let Near_avgPeriod: i32 = cs.near.avg_period;
         #[allow(non_snake_case)]
-        let Near_factor: f64 = self.candle_settings.near.factor;
+        let Near_factor: f64 = cs.near.factor;
         #[allow(non_snake_case)]
-        let ShadowLong_rangeType: i32 = self.candle_settings.shadow_long.range_type as i32;
+        let ShadowLong_rangeType: i32 = cs.shadow_long.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowLong_avgPeriod: i32 = self.candle_settings.shadow_long.avg_period;
+        let ShadowLong_avgPeriod: i32 = cs.shadow_long.avg_period;
         #[allow(non_snake_case)]
-        let ShadowLong_factor: f64 = self.candle_settings.shadow_long.factor;
+        let ShadowLong_factor: f64 = cs.shadow_long.factor;
         #[allow(non_snake_case)]
-        let ShadowShort_rangeType: i32 = self.candle_settings.shadow_short.range_type as i32;
+        let ShadowShort_rangeType: i32 = cs.shadow_short.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowShort_avgPeriod: i32 = self.candle_settings.shadow_short.avg_period;
+        let ShadowShort_avgPeriod: i32 = cs.shadow_short.avg_period;
         #[allow(non_snake_case)]
-        let ShadowShort_factor: f64 = self.candle_settings.shadow_short.factor;
+        let ShadowShort_factor: f64 = cs.shadow_short.factor;
         let mut _candlerange_0: f64;
         match BodyLong_rangeType {
             0 => {
@@ -1650,7 +1671,7 @@ impl Core {
             ringLag_ShadowShortTrailingIdx: capLag_ShadowShortTrailingIdx as usize,
             ring_ShadowShortTrailingIdx_derived,
         };
-        Ok(CDLADVANCEBLOCK_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLADVANCEBLOCK_Stream { cs: CDLADVANCEBLOCK_StreamCandles { body_long: self.candle_settings.body_long, far: self.candle_settings.far, near: self.candle_settings.near, shadow_long: self.candle_settings.shadow_long, shadow_short: self.candle_settings.shadow_short }, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLADVANCEBLOCK_Open`] (composition seam).
@@ -1773,7 +1794,7 @@ impl CDLADVANCEBLOCK_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLADVANCEBLOCK_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLADVANCEBLOCK_step_impl(&self.cs, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1806,7 +1827,7 @@ impl CDLADVANCEBLOCK_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLADVANCEBLOCK_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLADVANCEBLOCK_step_impl(&self.cs, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

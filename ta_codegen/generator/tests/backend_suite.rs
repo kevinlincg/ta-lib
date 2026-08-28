@@ -9535,8 +9535,10 @@ fn the_transition_tier_is_step_impl_in_every_backend() {
         (
             "rust",
             &rust,
-            "fn SMA_step_impl(&self, sp: &mut SMA_StreamState,",
-            &["self.core.SMA_step_impl(&mut self.state,"],
+            // Associated, not a method, since #274: SMA reads no candle
+            // setting, so its step takes the state and nothing else.
+            "fn SMA_step_impl(sp: &mut SMA_StreamState,",
+            &["Core::SMA_step_impl(&mut self.state,"],
             "step_internal",
         ),
         (
@@ -9567,6 +9569,112 @@ fn the_transition_tier_is_step_impl_in_every_backend() {
         // Paired with the positives above: this is the word the rename retired,
         // so it discriminates only while the positives hold.
         assert!(!src.contains(retired), "{lang}: `{retired}` is the retired spelling");
+    }
+}
+
+/// A Rust stream handle carries the candle settings its own step reads, and
+/// nothing else out of `Core` (#274).
+///
+/// The handle used to embed a whole `Core` by value so the step could be a
+/// method on it. Every one of the 176 handles therefore paid for the unstable
+/// periods, the compatibility mode and all eleven candle settings — none of
+/// which a step reads; Open consumes them, on the live `&Core`. `peek` runs the
+/// step on a *copy* of the handle, so it paid that again per call.
+///
+/// Three things must hold together for the replacement to be sound, and each
+/// leg below fails on its own:
+///
+/// 1. A function whose step reads no setting carries no snapshot at all, and
+///    its step takes the state as its first parameter. This is where the bytes
+///    actually go — 119 of the 176 handles.
+/// 2. A function whose step reads settings carries exactly those, as fields of
+///    its own snapshot type, and its step body reads them through `cs`.
+/// 3. **The batch body still reads the live `Core`.** That is the control, and
+///    it is not decoration: legs 1 and 2 only say the *step* changed base, and
+///    a change that rewrote batch to read a snapshot too — losing batch's
+///    "settings as of this call" semantics — satisfies both of them. This leg
+///    is the only thing here that goes red on it.
+#[test]
+fn a_rust_stream_handle_carries_only_the_candle_settings_its_step_reads() {
+    let registry = make_registry();
+    let helpers = HelperRegistry::empty();
+    let marker = ta_codegen_lib::backends::rust_stream::SECTION_MARKER;
+
+    // The step body alone: from its signature to the first close at that indent.
+    let step_body = |stream: &str, sig: &str| -> String {
+        let at = stream
+            .find(sig)
+            .unwrap_or_else(|| panic!("no step signature `{sig}`"));
+        let rest = &stream[at..];
+        let end = rest.find("\n    }\n").expect("step body must close");
+        rest[..end].to_string()
+    };
+
+    // --- Leg 1: no settings read => nothing carried -------------------------
+    let (sma, sma_enums) = load_indicator("sma");
+    let sma_src = backends::rust_lang::generate(&sma, &sma_enums, &registry, &helpers);
+    let (_, sma_stream) = sma_src.split_once(marker).expect("sma streams");
+    assert!(
+        !sma_stream.contains("core: Core,"),
+        "SMA_Stream must not embed a Core"
+    );
+    assert!(
+        !sma_stream.contains("_StreamCandles"),
+        "SMA reads no candle setting, so it must carry no snapshot type"
+    );
+    assert!(
+        sma_stream.contains("fn SMA_step_impl(sp: &mut SMA_StreamState,"),
+        "SMA's step takes the state first and nothing before it"
+    );
+
+    // --- Leg 2: settings read => exactly those carried, read through `cs` ----
+    // CDLADVANCEBLOCK reads five of the eleven, which is what makes "exactly
+    // those" a real count rather than a tautology on a one-setting pattern.
+    let (cdl, cdl_enums) = load_indicator("cdladvanceblock");
+    let cdl_src = backends::rust_lang::generate(&cdl, &cdl_enums, &registry, &helpers);
+    let (cdl_batch, cdl_stream) = cdl_src.split_once(marker).expect("cdladvanceblock streams");
+    assert!(
+        !cdl_stream.contains("core: Core,"),
+        "CDLADVANCEBLOCK_Stream must not embed a Core either"
+    );
+    let decl_at = cdl_stream
+        .find("struct CDLADVANCEBLOCK_StreamCandles {")
+        .expect("a snapshot type");
+    let decl = &cdl_stream[decl_at..][..cdl_stream[decl_at..].find("\n}\n").unwrap()];
+    let carried: Vec<&str> = decl
+        .lines()
+        .filter_map(|l| l.trim().strip_suffix(": CandleSetting,"))
+        .collect();
+    assert_eq!(
+        carried,
+        ["body_long", "far", "near", "shadow_long", "shadow_short"],
+        "the snapshot carries exactly the five settings CDLADVANCEBLOCK names"
+    );
+    assert!(
+        cdl_stream.contains("    cs: CDLADVANCEBLOCK_StreamCandles,"),
+        "the handle holds the snapshot by value"
+    );
+    let step = step_body(
+        cdl_stream,
+        "fn CDLADVANCEBLOCK_step_impl(cs: &CDLADVANCEBLOCK_StreamCandles,",
+    );
+    for f in &carried {
+        assert!(
+            step.contains(&format!("cs.{f}.")),
+            "the step reads `{f}` through the snapshot"
+        );
+    }
+    assert!(
+        !step.contains("self.candle_settings"),
+        "the step has no Core to read settings from"
+    );
+
+    // --- Leg 3 (control): batch still reads the live Core -------------------
+    for f in &carried {
+        assert!(
+            cdl_batch.contains(&format!("self.candle_settings.{f}.")),
+            "the batch body still reads `{f}` off the Core it was called on"
+        );
     }
 }
 
