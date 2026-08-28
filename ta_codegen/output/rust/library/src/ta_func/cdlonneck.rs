@@ -417,6 +417,13 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct CDLONNECK_StreamConfig {
+    cs_body_long: CandleSetting,
+    cs_equal: CandleSetting,
+}
+
 /// Live CDLONNECK stream: one value per closed bar, bit-identical to [`Core::CDLONNECK`]
 /// over the same series. Open with [`Core::CDLONNECK_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -426,10 +433,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLONNECK_Stream")]
 pub struct CDLONNECK_Stream {
-    /// The `BodyLong` setting this stream was opened with.
-    cs_body_long: CandleSetting,
-    /// The `Equal` setting this stream was opened with.
-    cs_equal: CandleSetting,
+    /// What this stream was opened with: read by every step, written by none.
+    config: CDLONNECK_StreamConfig,
     state: CDLONNECK_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -440,8 +445,7 @@ impl CDLONNECK_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLONNECK_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.cs_body_long = src.cs_body_long;
-        self.cs_equal = src.cs_equal;
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -495,19 +499,19 @@ impl CDLONNECK_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLONNECK_step_impl(sp: &mut CDLONNECK_StreamState, cs_body_long: &CandleSetting, cs_equal: &CandleSetting, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLONNECK_step_impl(sp: &mut CDLONNECK_StreamState, cfg: &CDLONNECK_StreamConfig, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = cs_body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = cfg.cs_body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = cs_body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = cfg.cs_body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = cs_body_long.factor;
+        let BodyLong_factor: f64 = cfg.cs_body_long.factor;
         #[allow(non_snake_case)]
-        let Equal_rangeType: i32 = cs_equal.range_type as i32;
+        let Equal_rangeType: i32 = cfg.cs_equal.range_type as i32;
         #[allow(non_snake_case)]
-        let Equal_avgPeriod: i32 = cs_equal.avg_period;
+        let Equal_avgPeriod: i32 = cfg.cs_equal.avg_period;
         #[allow(non_snake_case)]
-        let Equal_factor: f64 = cs_equal.factor;
+        let Equal_factor: f64 = cfg.cs_equal.factor;
         let mut _candlerange_0: f64;
         match BodyLong_rangeType {
             0 => {
@@ -842,7 +846,11 @@ impl Core {
             ringLag_EqualTrailingIdx: capLag_EqualTrailingIdx as usize,
             ring_EqualTrailingIdx_derived,
         };
-        Ok(CDLONNECK_Stream { cs_body_long: self.candle_settings.body_long, cs_equal: self.candle_settings.equal, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = CDLONNECK_StreamConfig {
+            cs_body_long: self.candle_settings.body_long,
+            cs_equal: self.candle_settings.equal,
+        };
+        Ok(CDLONNECK_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLONNECK_Open`] (composition seam).
@@ -965,7 +973,7 @@ impl CDLONNECK_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        Core::CDLONNECK_step_impl(&mut self.state, &self.cs_body_long, &self.cs_equal, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLONNECK_step_impl(&mut self.state, &self.config, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -998,7 +1006,7 @@ impl CDLONNECK_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::CDLONNECK_step_impl(&mut self.state, &self.cs_body_long, &self.cs_equal, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLONNECK_step_impl(&mut self.state, &self.config, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -365,6 +365,15 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct STOCHRSI_StreamConfig {
+    optInTimePeriod: i32,
+    optInFastK_Period: i32,
+    optInFastD_Period: i32,
+    optInFastD_MAType: MAType,
+}
+
 /// Live STOCHRSI stream: one value per closed bar, bit-identical to [`Core::STOCHRSI`]
 /// over the same series. Open with [`Core::STOCHRSI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -374,6 +383,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_STOCHRSI_Stream")]
 pub struct STOCHRSI_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: STOCHRSI_StreamConfig,
     state: STOCHRSI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -384,6 +395,7 @@ impl STOCHRSI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `STOCHRSI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -392,10 +404,6 @@ impl STOCHRSI_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct STOCHRSI_StreamState {
-    optInTimePeriod: i32,
-    optInFastK_Period: i32,
-    optInFastD_Period: i32,
-    optInFastD_MAType: MAType,
     sub0: RSI_Stream,
     sub1: STOCHF_Stream,
 }
@@ -405,10 +413,6 @@ impl STOCHRSI_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
-        self.optInFastK_Period = src.optInFastK_Period;
-        self.optInFastD_Period = src.optInFastD_Period;
-        self.optInFastD_MAType = src.optInFastD_MAType;
         self.sub0.restore_from(&src.sub0);
         self.sub1.restore_from(&src.sub1);
     }
@@ -421,7 +425,7 @@ impl STOCHRSI_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn STOCHRSI_step_impl(sp: &mut STOCHRSI_StreamState, inReal: f64, outFastK: &mut f64, outFastD: &mut f64) -> Result<(), RetCode> {
+    fn STOCHRSI_step_impl(sp: &mut STOCHRSI_StreamState, cfg: &STOCHRSI_StreamConfig, inReal: f64, outFastK: &mut f64, outFastD: &mut f64) -> Result<(), RetCode> {
         let mut cur_tempRSIBuffer: f64 = 0.0_f64;
         let mut cur_outFastK: f64 = 0.0_f64;
         let mut cur_outFastD: f64 = 0.0_f64;
@@ -557,12 +561,14 @@ impl Core {
             return Err(RetCode::InsufficientHistory);
         }
         let state = STOCHRSI_StreamState {
+            sub0,
+            sub1,
+        };
+        let config = STOCHRSI_StreamConfig {
             optInTimePeriod,
             optInFastK_Period,
             optInFastD_Period,
             optInFastD_MAType,
-            sub0,
-            sub1,
         };
         if outStride != 1 && *outNBElement > 0 {
             let last_sc_outFastK = sc_outFastK[*outNBElement - 1];
@@ -572,7 +578,7 @@ impl Core {
             let last_sc_outFastD = sc_outFastD[*outNBElement - 1];
             outFastD[0] = last_sc_outFastD;
         }
-        Ok(STOCHRSI_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(STOCHRSI_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::STOCHRSI_Open`] (composition seam).
@@ -694,7 +700,7 @@ impl STOCHRSI_Stream {
         }
         let mut outFastK: f64 = 0.0_f64;
         let mut outFastD: f64 = 0.0_f64;
-        Core::STOCHRSI_step_impl(&mut self.state, inReal, &mut outFastK, &mut outFastD)?;
+        Core::STOCHRSI_step_impl(&mut self.state, &self.config, inReal, &mut outFastK, &mut outFastD)?;
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -727,7 +733,7 @@ impl STOCHRSI_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::STOCHRSI_step_impl(&mut self.state, inReal[i], &mut outFastK[i], &mut outFastD[i])?;
+            Core::STOCHRSI_step_impl(&mut self.state, &self.config, inReal[i], &mut outFastK[i], &mut outFastD[i])?;
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

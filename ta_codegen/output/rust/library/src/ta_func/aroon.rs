@@ -334,6 +334,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct AROON_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live AROON stream: one value per closed bar, bit-identical to [`Core::AROON`]
 /// over the same series. Open with [`Core::AROON_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -343,6 +349,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_AROON_Stream")]
 pub struct AROON_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: AROON_StreamConfig,
     state: AROON_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -353,6 +361,7 @@ impl AROON_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `AROON_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -361,7 +370,6 @@ impl AROON_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct AROON_StreamState {
-    optInTimePeriod: i32,
     lowest: f64,
     highest: f64,
     factor: f64,
@@ -380,7 +388,6 @@ impl AROON_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.lowest = src.lowest;
         self.highest = src.highest;
         self.factor = src.factor;
@@ -402,7 +409,7 @@ impl AROON_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn AROON_step_impl(sp: &mut AROON_StreamState, inHigh: f64, inLow: f64, outAroonDown: &mut f64, outAroonUp: &mut f64) {
+    fn AROON_step_impl(sp: &mut AROON_StreamState, cfg: &AROON_StreamConfig, inHigh: f64, inLow: f64, outAroonDown: &mut f64, outAroonUp: &mut f64) {
         let mut tmp: f64 = 0.0_f64;
         if sp.today >= 1073741824 {
             let rebaseShift: i32 = sp.trailingIdx & !sp.xMask;
@@ -450,8 +457,8 @@ impl Core {
         }
         // Note: Do not forget that input and output buffer can be the same,
         //       so writing to the output is the last thing being done here.
-        (*outAroonUp) = sp.factor * (((sp.optInTimePeriod - (sp.today - sp.highestIdx))) as f64);
-        (*outAroonDown) = sp.factor * (((sp.optInTimePeriod - (sp.today - sp.lowestIdx))) as f64);
+        (*outAroonUp) = sp.factor * (((cfg.optInTimePeriod - (sp.today - sp.highestIdx))) as f64);
+        (*outAroonDown) = sp.factor * (((cfg.optInTimePeriod - (sp.today - sp.lowestIdx))) as f64);
         sp.trailingIdx += 1;
         sp.today += 1;
     }
@@ -590,7 +597,6 @@ impl Core {
             }
         }
         let state = AROON_StreamState {
-            optInTimePeriod,
             lowest,
             highest,
             factor,
@@ -603,7 +609,10 @@ impl Core {
             x_inHigh,
             x_inLow,
         };
-        Ok(AROON_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = AROON_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(AROON_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::AROON_Open`] (composition seam).
@@ -729,7 +738,7 @@ impl AROON_Stream {
         }
         let mut outAroonDown: f64 = 0.0_f64;
         let mut outAroonUp: f64 = 0.0_f64;
-        Core::AROON_step_impl(&mut self.state, inHigh, inLow, &mut outAroonDown, &mut outAroonUp);
+        Core::AROON_step_impl(&mut self.state, &self.config, inHigh, inLow, &mut outAroonDown, &mut outAroonUp);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -762,7 +771,7 @@ impl AROON_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::AROON_step_impl(&mut self.state, inHigh[i], inLow[i], &mut outAroonDown[i], &mut outAroonUp[i]);
+            Core::AROON_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], &mut outAroonDown[i], &mut outAroonUp[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

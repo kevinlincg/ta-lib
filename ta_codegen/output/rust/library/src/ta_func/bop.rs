@@ -244,6 +244,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct BOP_StreamConfig {
+}
+
 /// Live BOP stream: one value per closed bar, bit-identical to [`Core::BOP`]
 /// over the same series. Open with [`Core::BOP_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -253,6 +258,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_BOP_Stream")]
 pub struct BOP_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: BOP_StreamConfig,
     state: BOP_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -263,6 +270,7 @@ impl BOP_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `BOP_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -288,7 +296,7 @@ impl BOP_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn BOP_step_impl(sp: &mut BOP_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
+    fn BOP_step_impl(sp: &mut BOP_StreamState, cfg: &BOP_StreamConfig, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         // BOP is a fraction of the bar's own range, so it is scale-free and the
         // divisor only has to be positive. An exact test, not the fixed
@@ -352,7 +360,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = BOP_StreamState {
         };
-        Ok(BOP_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = BOP_StreamConfig {
+        };
+        Ok(BOP_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::BOP_Open`] (composition seam).
@@ -467,7 +477,7 @@ impl BOP_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::BOP_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outReal);
+        Core::BOP_step_impl(&mut self.state, &self.config, inOpen, inHigh, inLow, inClose, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -500,7 +510,7 @@ impl BOP_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::BOP_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
+            Core::BOP_step_impl(&mut self.state, &self.config, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

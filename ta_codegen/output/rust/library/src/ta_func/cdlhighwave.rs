@@ -412,6 +412,13 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct CDLHIGHWAVE_StreamConfig {
+    cs_body_short: CandleSetting,
+    cs_shadow_very_long: CandleSetting,
+}
+
 /// Live CDLHIGHWAVE stream: one value per closed bar, bit-identical to [`Core::CDLHIGHWAVE`]
 /// over the same series. Open with [`Core::CDLHIGHWAVE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -421,10 +428,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLHIGHWAVE_Stream")]
 pub struct CDLHIGHWAVE_Stream {
-    /// The `BodyShort` setting this stream was opened with.
-    cs_body_short: CandleSetting,
-    /// The `ShadowVeryLong` setting this stream was opened with.
-    cs_shadow_very_long: CandleSetting,
+    /// What this stream was opened with: read by every step, written by none.
+    config: CDLHIGHWAVE_StreamConfig,
     state: CDLHIGHWAVE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -435,8 +440,7 @@ impl CDLHIGHWAVE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLHIGHWAVE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.cs_body_short = src.cs_body_short;
-        self.cs_shadow_very_long = src.cs_shadow_very_long;
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -478,19 +482,19 @@ impl CDLHIGHWAVE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLHIGHWAVE_step_impl(sp: &mut CDLHIGHWAVE_StreamState, cs_body_short: &CandleSetting, cs_shadow_very_long: &CandleSetting, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLHIGHWAVE_step_impl(sp: &mut CDLHIGHWAVE_StreamState, cfg: &CDLHIGHWAVE_StreamConfig, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyShort_rangeType: i32 = cs_body_short.range_type as i32;
+        let BodyShort_rangeType: i32 = cfg.cs_body_short.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyShort_avgPeriod: i32 = cs_body_short.avg_period;
+        let BodyShort_avgPeriod: i32 = cfg.cs_body_short.avg_period;
         #[allow(non_snake_case)]
-        let BodyShort_factor: f64 = cs_body_short.factor;
+        let BodyShort_factor: f64 = cfg.cs_body_short.factor;
         #[allow(non_snake_case)]
-        let ShadowVeryLong_rangeType: i32 = cs_shadow_very_long.range_type as i32;
+        let ShadowVeryLong_rangeType: i32 = cfg.cs_shadow_very_long.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowVeryLong_avgPeriod: i32 = cs_shadow_very_long.avg_period;
+        let ShadowVeryLong_avgPeriod: i32 = cfg.cs_shadow_very_long.avg_period;
         #[allow(non_snake_case)]
-        let ShadowVeryLong_factor: f64 = cs_shadow_very_long.factor;
+        let ShadowVeryLong_factor: f64 = cfg.cs_shadow_very_long.factor;
         if sp.ringCap_BodyTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyShort_rangeType {
@@ -835,7 +839,11 @@ impl Core {
             ringCap_ShadowTrailingIdx: cap_ShadowTrailingIdx as usize,
             ring_ShadowTrailingIdx_derived,
         };
-        Ok(CDLHIGHWAVE_Stream { cs_body_short: self.candle_settings.body_short, cs_shadow_very_long: self.candle_settings.shadow_very_long, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = CDLHIGHWAVE_StreamConfig {
+            cs_body_short: self.candle_settings.body_short,
+            cs_shadow_very_long: self.candle_settings.shadow_very_long,
+        };
+        Ok(CDLHIGHWAVE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLHIGHWAVE_Open`] (composition seam).
@@ -958,7 +966,7 @@ impl CDLHIGHWAVE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        Core::CDLHIGHWAVE_step_impl(&mut self.state, &self.cs_body_short, &self.cs_shadow_very_long, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLHIGHWAVE_step_impl(&mut self.state, &self.config, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -991,7 +999,7 @@ impl CDLHIGHWAVE_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::CDLHIGHWAVE_step_impl(&mut self.state, &self.cs_body_short, &self.cs_shadow_very_long, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLHIGHWAVE_step_impl(&mut self.state, &self.config, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

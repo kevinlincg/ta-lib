@@ -9023,7 +9023,7 @@ fn test_synth10_two_nullable_outputs_are_declinable_at_update_and_fill() {
         );
     }
     assert!(
-        rust.contains("SYNTH10_step_impl(&mut self.state, inReal[i], slot_outFirstOptional, &mut outRequired[i], slot_outSecondOptional);"),
+        rust.contains("SYNTH10_step_impl(&mut self.state, &self.config, inReal[i], slot_outFirstOptional, &mut outRequired[i], slot_outSecondOptional);"),
         "Rust: the step takes a slot per declinable output and the array for the required one"
     );
 
@@ -13141,7 +13141,8 @@ fn every_declared_input_is_checked_in_every_backend() {
 
 
 /// A stream handle carries exactly the candlestick settings its own step reads,
-/// and no `Core` (issue #274).
+/// and no `Core` (issue #274) — on its `config`, since #276 split the handle
+/// into the invariants a step reads and the state it writes.
 ///
 /// The three rows are the three cases, and each is a control on the others: a
 /// step that reads one setting, a step that reads five, and a step that reads
@@ -13174,6 +13175,7 @@ fn a_stream_handle_carries_only_the_settings_its_step_reads() {
         let (func, enums) = load_indicator(name);
         assert!(func.streaming, "{name} must carry the `stream` flag");
         let rust = backends::rust_lang::generate(&func, &enums, &registry, &helpers);
+        let upper = name.to_uppercase();
 
         let start = rust
             .find(&format!("pub struct {handle} {{"))
@@ -13184,44 +13186,139 @@ fn a_stream_handle_carries_only_the_settings_its_step_reads() {
             !body.contains("core: Core,"),
             "{name}: {handle} still embeds a whole Core"
         );
+        // The settings sit on the config half, never loose on the handle.
         assert_eq!(
             body.matches(": CandleSetting,").count(),
+            0,
+            "{name}: {handle} carries a setting outside its config\n{body}"
+        );
+
+        let cfg_start = rust
+            .find(&format!("struct {upper}_StreamConfig {{"))
+            .unwrap_or_else(|| panic!("{name}: no {upper}_StreamConfig definition"));
+        let cfg_body =
+            &rust[cfg_start..cfg_start + rust[cfg_start..].find("\n}").expect("struct end")];
+        assert_eq!(
+            cfg_body.matches(": CandleSetting,").count(),
             settings.len(),
-            "{name}: {handle} carries the wrong number of settings\n{body}"
+            "{name}: the config carries the wrong number of settings\n{cfg_body}"
         );
         for field in settings {
             assert!(
-                body.contains(&format!("{field}: CandleSetting,")),
-                "{name}: {handle} is missing {field}"
+                cfg_body.contains(&format!("{field}: CandleSetting,")),
+                "{name}: the config is missing {field}"
             );
         }
 
-        // The step takes them as parameters — it has no receiver to read them
-        // through — and the call site hands over the handle's own fields.
-        let params: String = settings
-            .iter()
-            .map(|f| format!(", {f}: &CandleSetting"))
-            .collect();
-        let args: String = settings.iter().map(|f| format!("&self.{f}, ")).collect();
-        let upper = name.to_uppercase();
+        // The step reads them through its `&Config` — it has no receiver to
+        // read them through — and the call site hands over the live config.
         assert!(
             rust.contains(&format!(
-                "fn {upper}_step_impl(sp: &mut {upper}_StreamState{params},"
+                "fn {upper}_step_impl(sp: &mut {upper}_StreamState, cfg: &{upper}_StreamConfig,"
             )),
-            "{name}: step signature does not take exactly its settings"
+            "{name}: step signature does not take its state and config apart"
         );
         assert!(
             rust.contains(&format!(
-                "Core::{upper}_step_impl(&mut self.state, {args}"
+                "Core::{upper}_step_impl(&mut self.state, &self.config, "
             )),
-            "{name}: `update` does not hand the step its settings"
+            "{name}: `update` does not hand the step its config"
         );
     }
 }
 
-/// A step unpacks its candle settings from its own parameters; only the batch
-/// and `Open` tiers, which run on a `Core` receiver, read `self.candle_settings`
-/// (issue #274).
+/// A stream handle's two halves are disjoint over the WHOLE corpus: everything
+/// a step writes lives on `<N>_StreamState`, everything it only reads on
+/// `<N>_StreamConfig` (issue #276).
+///
+/// Swept rather than sampled, because the split is a property of every tier —
+/// the loop tier, the dual-mode step, the dispatch enum, the period bank and
+/// the composed pipeline each build their field list in their own place, and a
+/// tier that kept its params on the state would compile and run correctly
+/// while paying exactly the copy this removes. Only a sweep sees that.
+///
+/// The three counts at the end are what stops the sweep passing vacuously: a
+/// harness that loaded nothing, generated nothing, or emitted a config no step
+/// reads would satisfy every assertion above and fail here.
+#[test]
+fn a_stream_state_carries_nothing_a_step_only_reads() {
+    let registry = make_registry();
+    let helpers = make_helpers();
+
+    // The body of `struct <name> {` .. `\n}`, or None when it is not declared.
+    fn struct_body<'a>(src: &'a str, decl: &str) -> Option<&'a str> {
+        let at = src.find(decl)?;
+        let rest = &src[at..];
+        Some(&rest[..rest.find("\n}")?])
+    }
+
+    let mut swept = 0_usize;
+    let mut invariants = 0_usize;
+    let mut steps_reading_config = 0_usize;
+
+    for name in discover_indicators() {
+        let Some((func, enums)) = try_load_indicator(&name) else {
+            continue;
+        };
+        if !func.streaming {
+            continue;
+        }
+        let rust = backends::rust_lang::generate(&func, &enums, &registry, &helpers);
+        let upper = func.name.to_uppercase();
+        let state = struct_body(&rust, &format!("struct {upper}_StreamState {{"))
+            .unwrap_or_else(|| panic!("{name}: no {upper}_StreamState"));
+        let config = struct_body(&rust, &format!("struct {upper}_StreamConfig {{"))
+            .unwrap_or_else(|| panic!("{name}: no {upper}_StreamConfig"));
+        swept += 1;
+
+        let reads: Vec<String> = func
+            .optional_inputs
+            .iter()
+            .map(|p| p.name.clone())
+            .chain(func.private_extra_params.iter().map(|(n, _)| n.clone()))
+            .collect();
+        for field in &reads {
+            assert!(
+                !state.contains(&format!("\n    {field}: ")),
+                "{name}: {upper}_StreamState still carries the invariant `{field}`\n{state}"
+            );
+            assert!(
+                config.contains(&format!("\n    {field}: ")),
+                "{name}: {upper}_StreamConfig is missing `{field}`\n{config}"
+            );
+            invariants += 1;
+        }
+
+        assert!(
+            rust.contains(&format!(
+                "fn {upper}_step_impl(sp: &mut {upper}_StreamState, cfg: &{upper}_StreamConfig"
+            )),
+            "{name}: the step does not take its state and config as two references"
+        );
+        if let Some(step) = struct_body(&rust, &format!("fn {upper}_step_impl(")) {
+            if step.contains("cfg.") {
+                steps_reading_config += 1;
+            }
+        }
+    }
+
+    // 176 streaming functions, 133 invariants moved off their state, 106 steps
+    // that read one. The floors are those numbers: the corpus may grow, never
+    // shrink past what this was written against.
+    assert!(swept >= 176, "the streaming corpus shrank: swept {swept}");
+    assert!(
+        invariants >= 133,
+        "too few invariants relocated to make this a test: {invariants}"
+    );
+    assert!(
+        steps_reading_config >= 106,
+        "a config nothing reads is not the split this pins: {steps_reading_config}"
+    );
+}
+
+/// A step unpacks its candle settings from the config it is handed; only the
+/// batch and `Open` tiers, which run on a `Core` receiver, read
+/// `self.candle_settings` (issues #274, #276).
 #[test]
 fn a_stream_step_reads_candle_settings_from_its_parameters() {
     let registry = make_registry();
@@ -13235,8 +13332,8 @@ fn a_stream_step_reads_candle_settings_from_its_parameters() {
     let step_body = &rust[step..step + rust[step..].find("\n    }").expect("step end")];
 
     assert!(
-        step_body.contains("let BodyDoji_rangeType: i32 = cs_body_doji.range_type as i32;"),
-        "the step must unpack from its parameter\n{step_body}"
+        step_body.contains("let BodyDoji_rangeType: i32 = cfg.cs_body_doji.range_type as i32;"),
+        "the step must unpack from the config it is handed\n{step_body}"
     );
     assert!(
         !step_body.contains("self.candle_settings"),

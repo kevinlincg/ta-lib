@@ -637,6 +637,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct HT_SINE_StreamConfig {
+}
+
 /// Live HT_SINE stream: one value per closed bar, bit-identical to [`Core::HT_SINE`]
 /// over the same series. Open with [`Core::HT_SINE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -646,6 +651,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_HT_SINE_Stream")]
 pub struct HT_SINE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: HT_SINE_StreamConfig,
     state: HT_SINE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -656,6 +663,7 @@ impl HT_SINE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `HT_SINE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -785,7 +793,7 @@ impl HT_SINE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn HT_SINE_step_impl(sp: &mut HT_SINE_StreamState, inReal: f64, outSine: &mut f64, outLeadSine: &mut f64) {
+    fn HT_SINE_step_impl(sp: &mut HT_SINE_StreamState, cfg: &HT_SINE_StreamConfig, inReal: f64, outSine: &mut f64, outLeadSine: &mut f64) {
         let mut i: usize = 0_usize;
         let mut tempReal: f64 = 0.0_f64;
         let mut tempReal2: f64 = 0.0_f64;
@@ -1477,7 +1485,9 @@ impl Core {
             cbSize_smoothPrice: cbSize_smoothPrice,
             cb_smoothPrice: smoothPrice,
         };
-        Ok(HT_SINE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = HT_SINE_StreamConfig {
+        };
+        Ok(HT_SINE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::HT_SINE_Open`] (composition seam).
@@ -1599,7 +1609,7 @@ impl HT_SINE_Stream {
         }
         let mut outSine: f64 = 0.0_f64;
         let mut outLeadSine: f64 = 0.0_f64;
-        Core::HT_SINE_step_impl(&mut self.state, inReal, &mut outSine, &mut outLeadSine);
+        Core::HT_SINE_step_impl(&mut self.state, &self.config, inReal, &mut outSine, &mut outLeadSine);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1632,7 +1642,7 @@ impl HT_SINE_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::HT_SINE_step_impl(&mut self.state, inReal[i], &mut outSine[i], &mut outLeadSine[i]);
+            Core::HT_SINE_step_impl(&mut self.state, &self.config, inReal[i], &mut outSine[i], &mut outLeadSine[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

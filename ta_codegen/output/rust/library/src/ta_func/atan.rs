@@ -208,6 +208,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct ATAN_StreamConfig {
+}
+
 /// Live ATAN stream: one value per closed bar, bit-identical to [`Core::ATAN`]
 /// over the same series. Open with [`Core::ATAN_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -217,6 +222,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ATAN_Stream")]
 pub struct ATAN_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: ATAN_StreamConfig,
     state: ATAN_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -227,6 +234,7 @@ impl ATAN_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ATAN_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -252,7 +260,7 @@ impl ATAN_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn ATAN_step_impl(sp: &mut ATAN_StreamState, inReal: f64, outReal: &mut f64) {
+    fn ATAN_step_impl(sp: &mut ATAN_StreamState, cfg: &ATAN_StreamConfig, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).atan();
     }
 
@@ -294,7 +302,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = ATAN_StreamState {
         };
-        Ok(ATAN_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = ATAN_StreamConfig {
+        };
+        Ok(ATAN_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ATAN_Open`] (composition seam).
@@ -399,7 +409,7 @@ impl ATAN_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::ATAN_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::ATAN_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -432,7 +442,7 @@ impl ATAN_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::ATAN_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::ATAN_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

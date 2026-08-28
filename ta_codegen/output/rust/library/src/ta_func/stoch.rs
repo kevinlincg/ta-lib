@@ -538,6 +538,16 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct STOCH_StreamConfig {
+    optInFastK_Period: i32,
+    optInSlowK_Period: i32,
+    optInSlowK_MAType: MAType,
+    optInSlowD_Period: i32,
+    optInSlowD_MAType: MAType,
+}
+
 /// Live STOCH stream: one value per closed bar, bit-identical to [`Core::STOCH`]
 /// over the same series. Open with [`Core::STOCH_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -547,6 +557,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_STOCH_Stream")]
 pub struct STOCH_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: STOCH_StreamConfig,
     state: STOCH_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -557,6 +569,7 @@ impl STOCH_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `STOCH_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -565,11 +578,6 @@ impl STOCH_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct STOCH_StreamState {
-    optInFastK_Period: i32,
-    optInSlowK_Period: i32,
-    optInSlowK_MAType: MAType,
-    optInSlowD_Period: i32,
-    optInSlowD_MAType: MAType,
     lowest: f64,
     highest: f64,
     diff: f64,
@@ -591,11 +599,6 @@ impl STOCH_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInFastK_Period = src.optInFastK_Period;
-        self.optInSlowK_Period = src.optInSlowK_Period;
-        self.optInSlowK_MAType = src.optInSlowK_MAType;
-        self.optInSlowD_Period = src.optInSlowD_Period;
-        self.optInSlowD_MAType = src.optInSlowD_MAType;
         self.lowest = src.lowest;
         self.highest = src.highest;
         self.diff = src.diff;
@@ -620,7 +623,7 @@ impl STOCH_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn STOCH_step_impl(sp: &mut STOCH_StreamState, inHigh: f64, inLow: f64, inClose: f64, outSlowK: &mut f64, outSlowD: &mut f64) -> Result<(), RetCode> {
+    fn STOCH_step_impl(sp: &mut STOCH_StreamState, cfg: &STOCH_StreamConfig, inHigh: f64, inLow: f64, inClose: f64, outSlowK: &mut f64, outSlowD: &mut f64) -> Result<(), RetCode> {
         let mut tmp: f64 = 0.0_f64;
         let mut cur_tempBuffer: f64 = 0.0_f64;
         let mut cur_outSlowD: f64 = 0.0_f64;
@@ -970,11 +973,6 @@ impl Core {
             }
         }
         let state = STOCH_StreamState {
-            optInFastK_Period,
-            optInSlowK_Period,
-            optInSlowK_MAType,
-            optInSlowD_Period,
-            optInSlowD_MAType,
             lowest,
             highest,
             diff,
@@ -990,6 +988,13 @@ impl Core {
             sub0,
             sub1,
         };
+        let config = STOCH_StreamConfig {
+            optInFastK_Period,
+            optInSlowK_Period,
+            optInSlowK_MAType,
+            optInSlowD_Period,
+            optInSlowD_MAType,
+        };
         if outStride != 1 && *outNBElement > 0 {
             let last_sc_outSlowK = sc_outSlowK[*outNBElement - 1];
             outSlowK[0] = last_sc_outSlowK;
@@ -998,7 +1003,7 @@ impl Core {
             let last_sc_outSlowD = sc_outSlowD[*outNBElement - 1];
             outSlowD[0] = last_sc_outSlowD;
         }
-        Ok(STOCH_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(STOCH_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::STOCH_Open`] (composition seam).
@@ -1127,7 +1132,7 @@ impl STOCH_Stream {
         }
         let mut outSlowK: f64 = 0.0_f64;
         let mut outSlowD: f64 = 0.0_f64;
-        Core::STOCH_step_impl(&mut self.state, inHigh, inLow, inClose, &mut outSlowK, &mut outSlowD)?;
+        Core::STOCH_step_impl(&mut self.state, &self.config, inHigh, inLow, inClose, &mut outSlowK, &mut outSlowD)?;
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1160,7 +1165,7 @@ impl STOCH_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::STOCH_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outSlowK[i], &mut outSlowD[i])?;
+            Core::STOCH_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], inClose[i], &mut outSlowK[i], &mut outSlowD[i])?;
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

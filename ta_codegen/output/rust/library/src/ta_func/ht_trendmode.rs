@@ -707,6 +707,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct HT_TRENDMODE_StreamConfig {
+}
+
 /// Live HT_TRENDMODE stream: one value per closed bar, bit-identical to [`Core::HT_TRENDMODE`]
 /// over the same series. Open with [`Core::HT_TRENDMODE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -716,6 +721,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_HT_TRENDMODE_Stream")]
 pub struct HT_TRENDMODE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: HT_TRENDMODE_StreamConfig,
     state: HT_TRENDMODE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -726,6 +733,7 @@ impl HT_TRENDMODE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `HT_TRENDMODE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -873,7 +881,7 @@ impl HT_TRENDMODE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn HT_TRENDMODE_step_impl(sp: &mut HT_TRENDMODE_StreamState, inReal: f64, outInteger: &mut i32) {
+    fn HT_TRENDMODE_step_impl(sp: &mut HT_TRENDMODE_StreamState, cfg: &HT_TRENDMODE_StreamConfig, inReal: f64, outInteger: &mut i32) {
         let mut i: usize = 0_usize;
         let mut j: usize = 0_usize;
         let mut tempReal: f64 = 0.0_f64;
@@ -1721,7 +1729,9 @@ impl Core {
             cbSize_smoothPrice: cbSize_smoothPrice,
             cb_smoothPrice: smoothPrice,
         };
-        Ok(HT_TRENDMODE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = HT_TRENDMODE_StreamConfig {
+        };
+        Ok(HT_TRENDMODE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::HT_TRENDMODE_Open`] (composition seam).
@@ -1834,7 +1844,7 @@ impl HT_TRENDMODE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        Core::HT_TRENDMODE_step_impl(&mut self.state, inReal, &mut outInteger);
+        Core::HT_TRENDMODE_step_impl(&mut self.state, &self.config, inReal, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1867,7 +1877,7 @@ impl HT_TRENDMODE_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::HT_TRENDMODE_step_impl(&mut self.state, inReal[i], &mut outInteger[i]);
+            Core::HT_TRENDMODE_step_impl(&mut self.state, &self.config, inReal[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

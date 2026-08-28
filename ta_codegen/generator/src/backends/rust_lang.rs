@@ -6239,11 +6239,18 @@ fn expr_returns_usize(expr: &Expr) -> bool {
 
 /// Check if a variable name is an IntArray (i32 element array).
 /// These should NOT be wrapped with T::ta_from_i32() when assigned to.
-/// Strip the stream-state field prefix so name-keyed inference helpers see the
-/// batch-local name (`sp.optInTimePeriod` types exactly like `optInTimePeriod`).
-/// A no-op for every batch name (none contain a dot).
+/// Strip the stream handle's field prefix so name-keyed inference helpers see
+/// the batch-local name (`sp.optInTimePeriod` and `cfg.optInTimePeriod` both
+/// type exactly like `optInTimePeriod`). A no-op for every batch name (none
+/// contain a dot).
+///
+/// Both prefixes, because #276 split the handle: what a step writes reaches it
+/// through `sp`, what it only reads through `cfg`. Typing must not depend on
+/// which side of that split a field landed on.
 pub(crate) fn strip_state_prefix(name: &str) -> &str {
-    name.strip_prefix("sp.").unwrap_or(name)
+    name.strip_prefix("sp.")
+        .or_else(|| name.strip_prefix("cfg."))
+        .unwrap_or(name)
 }
 
 fn is_int_array_var(name: &str) -> bool {

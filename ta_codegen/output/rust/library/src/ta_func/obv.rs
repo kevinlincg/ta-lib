@@ -228,6 +228,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct OBV_StreamConfig {
+}
+
 /// Live OBV stream: one value per closed bar, bit-identical to [`Core::OBV`]
 /// over the same series. Open with [`Core::OBV_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -237,6 +242,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_OBV_Stream")]
 pub struct OBV_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: OBV_StreamConfig,
     state: OBV_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -247,6 +254,7 @@ impl OBV_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `OBV_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -276,7 +284,7 @@ impl OBV_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn OBV_step_impl(sp: &mut OBV_StreamState, inReal: f64, inVolume: f64, outReal: &mut f64) {
+    fn OBV_step_impl(sp: &mut OBV_StreamState, cfg: &OBV_StreamConfig, inReal: f64, inVolume: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         tempReal = inReal;
         if tempReal > sp.prevReal {
@@ -339,7 +347,9 @@ impl Core {
             prevReal,
             prevOBV,
         };
-        Ok(OBV_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = OBV_StreamConfig {
+        };
+        Ok(OBV_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::OBV_Open`] (composition seam).
@@ -450,7 +460,7 @@ impl OBV_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::OBV_step_impl(&mut self.state, inReal, inVolume, &mut outReal);
+        Core::OBV_step_impl(&mut self.state, &self.config, inReal, inVolume, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -483,7 +493,7 @@ impl OBV_Stream {
             if !inReal[i].is_finite() || !inVolume[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::OBV_step_impl(&mut self.state, inReal[i], inVolume[i], &mut outReal[i]);
+            Core::OBV_step_impl(&mut self.state, &self.config, inReal[i], inVolume[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

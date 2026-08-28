@@ -499,6 +499,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct TRIMA_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live TRIMA stream: one value per closed bar, bit-identical to [`Core::TRIMA`]
 /// over the same series. Open with [`Core::TRIMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -508,6 +514,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TRIMA_Stream")]
 pub struct TRIMA_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: TRIMA_StreamConfig,
     state: TRIMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -518,6 +526,7 @@ impl TRIMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TRIMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -526,7 +535,6 @@ impl TRIMA_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct TRIMA_StreamState {
-    optInTimePeriod: i32,
     numerator: f64,
     numeratorSub: f64,
     numeratorAdd: f64,
@@ -545,7 +553,6 @@ impl TRIMA_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.numerator = src.numerator;
         self.numeratorSub = src.numeratorSub;
         self.numeratorAdd = src.numeratorAdd;
@@ -567,8 +574,8 @@ impl TRIMA_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn TRIMA_step_impl(sp: &mut TRIMA_StreamState, inReal: f64, outReal: &mut f64) {
-        if sp.optInTimePeriod % 2 == 1 {
+    fn TRIMA_step_impl(sp: &mut TRIMA_StreamState, cfg: &TRIMA_StreamConfig, inReal: f64, outReal: &mut f64) {
+        if cfg.optInTimePeriod % 2 == 1 {
             if sp.ringCap_middleIdx == 0 {
                 sp.ring_middleIdx_inReal[0] = inReal;
             }
@@ -876,7 +883,6 @@ impl Core {
             ring_trailingIdx_inReal[..cap_trailingIdx as usize]
                 .copy_from_slice(&inReal[historyLen - cap_trailingIdx as usize..]);
             let state = TRIMA_StreamState {
-                optInTimePeriod,
                 numerator,
                 numeratorSub,
                 numeratorAdd,
@@ -889,7 +895,10 @@ impl Core {
                 ringCap_trailingIdx: cap_trailingIdx as usize,
                 ring_trailingIdx_inReal,
             };
-            Ok(TRIMA_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            let config = TRIMA_StreamConfig {
+                optInTimePeriod,
+            };
+            Ok(TRIMA_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         } else {
             let mut lookbackTotal: usize = 0_usize;
             let mut numerator: f64 = 0.0_f64;
@@ -1084,7 +1093,6 @@ impl Core {
             ring_trailingIdx_inReal[..cap_trailingIdx as usize]
                 .copy_from_slice(&inReal[historyLen - cap_trailingIdx as usize..]);
             let state = TRIMA_StreamState {
-                optInTimePeriod,
                 numerator,
                 numeratorSub,
                 numeratorAdd,
@@ -1097,7 +1105,10 @@ impl Core {
                 ringCap_trailingIdx: cap_trailingIdx as usize,
                 ring_trailingIdx_inReal,
             };
-            Ok(TRIMA_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            let config = TRIMA_StreamConfig {
+                optInTimePeriod,
+            };
+            Ok(TRIMA_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         }
     }
 
@@ -1211,7 +1222,7 @@ impl TRIMA_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::TRIMA_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::TRIMA_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1244,7 +1255,7 @@ impl TRIMA_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::TRIMA_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::TRIMA_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

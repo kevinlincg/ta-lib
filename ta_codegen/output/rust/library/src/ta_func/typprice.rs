@@ -224,6 +224,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct TYPPRICE_StreamConfig {
+}
+
 /// Live TYPPRICE stream: one value per closed bar, bit-identical to [`Core::TYPPRICE`]
 /// over the same series. Open with [`Core::TYPPRICE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -233,6 +238,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TYPPRICE_Stream")]
 pub struct TYPPRICE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: TYPPRICE_StreamConfig,
     state: TYPPRICE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -243,6 +250,7 @@ impl TYPPRICE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TYPPRICE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -268,7 +276,7 @@ impl TYPPRICE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn TYPPRICE_step_impl(sp: &mut TYPPRICE_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
+    fn TYPPRICE_step_impl(sp: &mut TYPPRICE_StreamState, cfg: &TYPPRICE_StreamConfig, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         (*outReal) = (inHigh + inLow + inClose) / 3.0;
     }
 
@@ -310,7 +318,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = TYPPRICE_StreamState {
         };
-        Ok(TYPPRICE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = TYPPRICE_StreamConfig {
+        };
+        Ok(TYPPRICE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::TYPPRICE_Open`] (composition seam).
@@ -422,7 +432,7 @@ impl TYPPRICE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::TYPPRICE_step_impl(&mut self.state, inHigh, inLow, inClose, &mut outReal);
+        Core::TYPPRICE_step_impl(&mut self.state, &self.config, inHigh, inLow, inClose, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -455,7 +465,7 @@ impl TYPPRICE_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::TYPPRICE_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
+            Core::TYPPRICE_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

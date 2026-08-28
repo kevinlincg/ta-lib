@@ -205,6 +205,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct TAN_StreamConfig {
+}
+
 /// Live TAN stream: one value per closed bar, bit-identical to [`Core::TAN`]
 /// over the same series. Open with [`Core::TAN_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -214,6 +219,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TAN_Stream")]
 pub struct TAN_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: TAN_StreamConfig,
     state: TAN_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -224,6 +231,7 @@ impl TAN_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TAN_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -249,7 +257,7 @@ impl TAN_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn TAN_step_impl(sp: &mut TAN_StreamState, inReal: f64, outReal: &mut f64) {
+    fn TAN_step_impl(sp: &mut TAN_StreamState, cfg: &TAN_StreamConfig, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).tan();
     }
 
@@ -290,7 +298,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = TAN_StreamState {
         };
-        Ok(TAN_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = TAN_StreamConfig {
+        };
+        Ok(TAN_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::TAN_Open`] (composition seam).
@@ -395,7 +405,7 @@ impl TAN_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::TAN_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::TAN_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -428,7 +438,7 @@ impl TAN_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::TAN_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::TAN_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

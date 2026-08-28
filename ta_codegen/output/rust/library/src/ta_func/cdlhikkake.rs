@@ -323,6 +323,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct CDLHIKKAKE_StreamConfig {
+}
+
 /// Live CDLHIKKAKE stream: one value per closed bar, bit-identical to [`Core::CDLHIKKAKE`]
 /// over the same series. Open with [`Core::CDLHIKKAKE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -332,6 +337,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLHIKKAKE_Stream")]
 pub struct CDLHIKKAKE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: CDLHIKKAKE_StreamConfig,
     state: CDLHIKKAKE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -342,6 +349,7 @@ impl CDLHIKKAKE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLHIKKAKE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -383,7 +391,7 @@ impl CDLHIKKAKE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLHIKKAKE_step_impl(sp: &mut CDLHIKKAKE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLHIKKAKE_step_impl(sp: &mut CDLHIKKAKE_StreamState, cfg: &CDLHIKKAKE_StreamConfig, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         if sp.lag1_inHigh < sp.lag2_inHigh &&
            sp.lag1_inLow > sp.lag2_inLow &&   // 1st + 2nd: lower high and higher low
            (inHigh < sp.lag1_inHigh && inLow < sp.lag1_inLow || inHigh > sp.lag1_inHigh && inLow > sp.lag1_inLow) // (bull) 3rd: lower high and lower low (bear) 3rd: higher high and higher low
@@ -533,7 +541,9 @@ impl Core {
             lag1_inLow: inLow[historyLen - 1],
             lag2_inLow: inLow[historyLen - 2],
         };
-        Ok(CDLHIKKAKE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = CDLHIKKAKE_StreamConfig {
+        };
+        Ok(CDLHIKKAKE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLHIKKAKE_Open`] (composition seam).
@@ -648,7 +658,7 @@ impl CDLHIKKAKE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        Core::CDLHIKKAKE_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLHIKKAKE_step_impl(&mut self.state, &self.config, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -681,7 +691,7 @@ impl CDLHIKKAKE_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::CDLHIKKAKE_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLHIKKAKE_step_impl(&mut self.state, &self.config, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

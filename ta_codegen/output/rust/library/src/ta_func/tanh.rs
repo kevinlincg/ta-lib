@@ -205,6 +205,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct TANH_StreamConfig {
+}
+
 /// Live TANH stream: one value per closed bar, bit-identical to [`Core::TANH`]
 /// over the same series. Open with [`Core::TANH_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -214,6 +219,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TANH_Stream")]
 pub struct TANH_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: TANH_StreamConfig,
     state: TANH_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -224,6 +231,7 @@ impl TANH_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TANH_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -249,7 +257,7 @@ impl TANH_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn TANH_step_impl(sp: &mut TANH_StreamState, inReal: f64, outReal: &mut f64) {
+    fn TANH_step_impl(sp: &mut TANH_StreamState, cfg: &TANH_StreamConfig, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).tanh();
     }
 
@@ -290,7 +298,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = TANH_StreamState {
         };
-        Ok(TANH_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = TANH_StreamConfig {
+        };
+        Ok(TANH_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::TANH_Open`] (composition seam).
@@ -395,7 +405,7 @@ impl TANH_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::TANH_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::TANH_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -428,7 +438,7 @@ impl TANH_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::TANH_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::TANH_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

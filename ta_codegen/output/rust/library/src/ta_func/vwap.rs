@@ -378,6 +378,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct VWAP_StreamConfig {
+}
+
 /// Live VWAP stream: one value per closed bar, bit-identical to [`Core::VWAP`]
 /// over the same series. Open with [`Core::VWAP_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -387,6 +392,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_VWAP_Stream")]
 pub struct VWAP_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: VWAP_StreamConfig,
     state: VWAP_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -397,6 +404,7 @@ impl VWAP_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `VWAP_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -428,7 +436,7 @@ impl VWAP_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn VWAP_step_impl(sp: &mut VWAP_StreamState, inHigh: f64, inLow: f64, inClose: f64, inVolume: f64, outReal: &mut f64) {
+    fn VWAP_step_impl(sp: &mut VWAP_StreamState, cfg: &VWAP_StreamConfig, inHigh: f64, inLow: f64, inClose: f64, inVolume: f64, outReal: &mut f64) {
         let mut typPrice: f64 = 0.0_f64;
         let mut volume: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
@@ -655,7 +663,9 @@ impl Core {
             sumV,
             vwap,
         };
-        Ok(VWAP_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = VWAP_StreamConfig {
+        };
+        Ok(VWAP_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::VWAP_Open`] (composition seam).
@@ -770,7 +780,7 @@ impl VWAP_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::VWAP_step_impl(&mut self.state, inHigh, inLow, inClose, inVolume, &mut outReal);
+        Core::VWAP_step_impl(&mut self.state, &self.config, inHigh, inLow, inClose, inVolume, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -803,7 +813,7 @@ impl VWAP_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() || !inVolume[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::VWAP_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], inVolume[i], &mut outReal[i]);
+            Core::VWAP_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], inClose[i], inVolume[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

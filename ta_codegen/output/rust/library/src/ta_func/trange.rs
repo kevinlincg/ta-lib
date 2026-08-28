@@ -277,6 +277,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct TRANGE_StreamConfig {
+}
+
 /// Live TRANGE stream: one value per closed bar, bit-identical to [`Core::TRANGE`]
 /// over the same series. Open with [`Core::TRANGE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -286,6 +291,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TRANGE_Stream")]
 pub struct TRANGE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: TRANGE_StreamConfig,
     state: TRANGE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -296,6 +303,7 @@ impl TRANGE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TRANGE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -323,7 +331,7 @@ impl TRANGE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn TRANGE_step_impl(sp: &mut TRANGE_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
+    fn TRANGE_step_impl(sp: &mut TRANGE_StreamState, cfg: &TRANGE_StreamConfig, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         let mut val2: f64 = 0.0_f64;
         let mut val3: f64 = 0.0_f64;
         let mut greatest: f64 = 0.0_f64;
@@ -430,7 +438,9 @@ impl Core {
         let state = TRANGE_StreamState {
             lag1_inClose: inClose[historyLen - 1],
         };
-        Ok(TRANGE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = TRANGE_StreamConfig {
+        };
+        Ok(TRANGE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::TRANGE_Open`] (composition seam).
@@ -542,7 +552,7 @@ impl TRANGE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::TRANGE_step_impl(&mut self.state, inHigh, inLow, inClose, &mut outReal);
+        Core::TRANGE_step_impl(&mut self.state, &self.config, inHigh, inLow, inClose, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -575,7 +585,7 @@ impl TRANGE_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::TRANGE_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
+            Core::TRANGE_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

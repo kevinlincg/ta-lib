@@ -272,6 +272,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct SMA_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live SMA stream: one value per closed bar, bit-identical to [`Core::SMA`]
 /// over the same series. Open with [`Core::SMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -281,6 +287,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_SMA_Stream")]
 pub struct SMA_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: SMA_StreamConfig,
     state: SMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -291,6 +299,7 @@ impl SMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `SMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -299,7 +308,6 @@ impl SMA_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct SMA_StreamState {
-    optInTimePeriod: i32,
     periodTotal: f64,
     ringPos_trailingIdx: usize,
     ringCap_trailingIdx: usize,
@@ -311,7 +319,6 @@ impl SMA_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.periodTotal = src.periodTotal;
         self.ringPos_trailingIdx = src.ringPos_trailingIdx;
         self.ringCap_trailingIdx = src.ringCap_trailingIdx;
@@ -326,7 +333,7 @@ impl SMA_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn SMA_step_impl(sp: &mut SMA_StreamState, inReal: f64, outReal: &mut f64) {
+    fn SMA_step_impl(sp: &mut SMA_StreamState, cfg: &SMA_StreamConfig, inReal: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         if sp.ringCap_trailingIdx == 0 {
             sp.ring_trailingIdx_inReal[0] = inReal;
@@ -334,7 +341,7 @@ impl Core {
         sp.periodTotal += inReal as f64;
         tempReal = sp.periodTotal;
         sp.periodTotal -= sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] as f64;
-        (*outReal) = tempReal / (sp.optInTimePeriod as f64);
+        (*outReal) = tempReal / (cfg.optInTimePeriod as f64);
         sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] = inReal;
         sp.ringPos_trailingIdx = sp.ringPos_trailingIdx + 1;
         if sp.ringPos_trailingIdx >= sp.ringCap_trailingIdx {
@@ -426,13 +433,15 @@ impl Core {
         ring_trailingIdx_inReal[..cap_trailingIdx as usize]
             .copy_from_slice(&inReal[historyLen - cap_trailingIdx as usize..]);
         let state = SMA_StreamState {
-            optInTimePeriod,
             periodTotal,
             ringPos_trailingIdx: 0_usize,
             ringCap_trailingIdx: cap_trailingIdx as usize,
             ring_trailingIdx_inReal,
         };
-        Ok(SMA_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = SMA_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(SMA_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::SMA_Open`] (composition seam).
@@ -537,7 +546,7 @@ impl SMA_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::SMA_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::SMA_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -570,7 +579,7 @@ impl SMA_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::SMA_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::SMA_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -257,6 +257,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct WCLPRICE_StreamConfig {
+}
+
 /// Live WCLPRICE stream: one value per closed bar, bit-identical to [`Core::WCLPRICE`]
 /// over the same series. Open with [`Core::WCLPRICE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -266,6 +271,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_WCLPRICE_Stream")]
 pub struct WCLPRICE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: WCLPRICE_StreamConfig,
     state: WCLPRICE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -276,6 +283,7 @@ impl WCLPRICE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `WCLPRICE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -301,7 +309,7 @@ impl WCLPRICE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn WCLPRICE_step_impl(sp: &mut WCLPRICE_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
+    fn WCLPRICE_step_impl(sp: &mut WCLPRICE_StreamState, cfg: &WCLPRICE_StreamConfig, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         (*outReal) = ((inClose as f64).mul_add(2.0, inHigh + inLow)) / 4.0;
     }
 
@@ -343,7 +351,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = WCLPRICE_StreamState {
         };
-        Ok(WCLPRICE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = WCLPRICE_StreamConfig {
+        };
+        Ok(WCLPRICE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::WCLPRICE_Open`] (composition seam).
@@ -455,7 +465,7 @@ impl WCLPRICE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::WCLPRICE_step_impl(&mut self.state, inHigh, inLow, inClose, &mut outReal);
+        Core::WCLPRICE_step_impl(&mut self.state, &self.config, inHigh, inLow, inClose, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -488,7 +498,7 @@ impl WCLPRICE_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::WCLPRICE_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
+            Core::WCLPRICE_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

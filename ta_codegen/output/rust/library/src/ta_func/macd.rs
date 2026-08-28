@@ -517,6 +517,14 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct MACD_StreamConfig {
+    optInFastPeriod: i32,
+    optInSlowPeriod: i32,
+    optInSignalPeriod: i32,
+}
+
 /// Live MACD stream: one value per closed bar, bit-identical to [`Core::MACD`]
 /// over the same series. Open with [`Core::MACD_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -526,6 +534,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MACD_Stream")]
 pub struct MACD_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: MACD_StreamConfig,
     state: MACD_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -536,6 +546,7 @@ impl MACD_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MACD_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -544,9 +555,6 @@ impl MACD_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct MACD_StreamState {
-    optInFastPeriod: i32,
-    optInSlowPeriod: i32,
-    optInSignalPeriod: i32,
     prevFast: f64,
     prevSlow: f64,
     prevSignal: f64,
@@ -560,9 +568,6 @@ impl MACD_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInFastPeriod = src.optInFastPeriod;
-        self.optInSlowPeriod = src.optInSlowPeriod;
-        self.optInSignalPeriod = src.optInSignalPeriod;
         self.prevFast = src.prevFast;
         self.prevSlow = src.prevSlow;
         self.prevSignal = src.prevSignal;
@@ -579,14 +584,14 @@ impl MACD_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn MACD_step_impl(sp: &mut MACD_StreamState, inReal: f64, outMACD: &mut f64, outMACDSignal: &mut f64, outMACDHist: &mut f64) {
+    fn MACD_step_impl(sp: &mut MACD_StreamState, cfg: &MACD_StreamConfig, inReal: f64, outMACD: &mut f64, outMACDSignal: &mut f64, outMACDHist: &mut f64) {
         let mut macdValue: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
         tempReal = inReal;
         sp.prevFast = (tempReal - sp.prevFast as f64).mul_add(sp.fastK, sp.prevFast);
         sp.prevSlow = (tempReal - sp.prevSlow as f64).mul_add(sp.slowK, sp.prevSlow);
         macdValue = sp.prevFast - sp.prevSlow;
-        if sp.optInSignalPeriod == 1 {
+        if cfg.optInSignalPeriod == 1 {
             sp.prevSignal = macdValue;
         } else {
             sp.prevSignal = (macdValue - sp.prevSignal as f64).mul_add(sp.signalK, sp.prevSignal);
@@ -810,9 +815,6 @@ impl Core {
 
         // Capture the live batch state into the handle.
         let state = MACD_StreamState {
-            optInFastPeriod,
-            optInSlowPeriod,
-            optInSignalPeriod,
             prevFast,
             prevSlow,
             prevSignal,
@@ -820,7 +822,12 @@ impl Core {
             fastK,
             signalK,
         };
-        Ok(MACD_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = MACD_StreamConfig {
+            optInFastPeriod,
+            optInSlowPeriod,
+            optInSignalPeriod,
+        };
+        Ok(MACD_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MACD_Open`] (composition seam).
@@ -946,7 +953,7 @@ impl MACD_Stream {
         let mut outMACD: f64 = 0.0_f64;
         let mut outMACDSignal: f64 = 0.0_f64;
         let mut outMACDHist: f64 = 0.0_f64;
-        Core::MACD_step_impl(&mut self.state, inReal, &mut outMACD, &mut outMACDSignal, &mut outMACDHist);
+        Core::MACD_step_impl(&mut self.state, &self.config, inReal, &mut outMACD, &mut outMACDSignal, &mut outMACDHist);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -979,7 +986,7 @@ impl MACD_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::MACD_step_impl(&mut self.state, inReal[i], &mut outMACD[i], &mut outMACDSignal[i], &mut outMACDHist[i]);
+            Core::MACD_step_impl(&mut self.state, &self.config, inReal[i], &mut outMACD[i], &mut outMACDSignal[i], &mut outMACDHist[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

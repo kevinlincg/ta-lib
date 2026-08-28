@@ -382,6 +382,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct ACCBANDS_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live ACCBANDS stream: one value per closed bar, bit-identical to [`Core::ACCBANDS`]
 /// over the same series. Open with [`Core::ACCBANDS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -391,6 +397,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ACCBANDS_Stream")]
 pub struct ACCBANDS_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: ACCBANDS_StreamConfig,
     state: ACCBANDS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -401,6 +409,7 @@ impl ACCBANDS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ACCBANDS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -409,7 +418,6 @@ impl ACCBANDS_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct ACCBANDS_StreamState {
-    optInTimePeriod: i32,
     periodTotalUpper: f64,
     periodTotalMiddle: f64,
     periodTotalLower: f64,
@@ -425,7 +433,6 @@ impl ACCBANDS_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.periodTotalUpper = src.periodTotalUpper;
         self.periodTotalMiddle = src.periodTotalMiddle;
         self.periodTotalLower = src.periodTotalLower;
@@ -444,7 +451,7 @@ impl ACCBANDS_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn ACCBANDS_step_impl(sp: &mut ACCBANDS_StreamState, inHigh: f64, inLow: f64, inClose: f64, outRealUpperBand: &mut f64, outRealMiddleBand: &mut f64, outRealLowerBand: &mut f64) {
+    fn ACCBANDS_step_impl(sp: &mut ACCBANDS_StreamState, cfg: &ACCBANDS_StreamConfig, inHigh: f64, inLow: f64, inClose: f64, outRealUpperBand: &mut f64, outRealMiddleBand: &mut f64, outRealLowerBand: &mut f64) {
         let mut tempUpper: f64 = 0.0_f64;
         let mut tempMiddle: f64 = 0.0_f64;
         let mut tempLower: f64 = 0.0_f64;
@@ -481,9 +488,9 @@ impl Core {
         }
         sp.periodTotalMiddle -= sp.ring_trailingIdx_inClose[sp.ringPos_trailingIdx];
         // Write the three bands.
-        (*outRealUpperBand) = tempUpper / (sp.optInTimePeriod as f64);
-        (*outRealMiddleBand) = tempMiddle / (sp.optInTimePeriod as f64);
-        (*outRealLowerBand) = tempLower / (sp.optInTimePeriod as f64);
+        (*outRealUpperBand) = tempUpper / (cfg.optInTimePeriod as f64);
+        (*outRealMiddleBand) = tempMiddle / (cfg.optInTimePeriod as f64);
+        (*outRealLowerBand) = tempLower / (cfg.optInTimePeriod as f64);
         sp.ring_trailingIdx_inHigh[sp.ringPos_trailingIdx] = inHigh;
         sp.ring_trailingIdx_inLow[sp.ringPos_trailingIdx] = inLow;
         sp.ring_trailingIdx_inClose[sp.ringPos_trailingIdx] = inClose;
@@ -644,7 +651,6 @@ impl Core {
         ring_trailingIdx_inClose[..cap_trailingIdx as usize]
             .copy_from_slice(&inClose[historyLen - cap_trailingIdx as usize..]);
         let state = ACCBANDS_StreamState {
-            optInTimePeriod,
             periodTotalUpper,
             periodTotalMiddle,
             periodTotalLower,
@@ -654,7 +660,10 @@ impl Core {
             ring_trailingIdx_inLow,
             ring_trailingIdx_inClose,
         };
-        Ok(ACCBANDS_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = ACCBANDS_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(ACCBANDS_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ACCBANDS_Open`] (composition seam).
@@ -795,7 +804,7 @@ impl ACCBANDS_Stream {
         let mut outRealUpperBand: f64 = 0.0_f64;
         let mut outRealMiddleBand: f64 = 0.0_f64;
         let mut outRealLowerBand: f64 = 0.0_f64;
-        Core::ACCBANDS_step_impl(&mut self.state, inHigh, inLow, inClose, &mut outRealUpperBand, &mut outRealMiddleBand, &mut outRealLowerBand);
+        Core::ACCBANDS_step_impl(&mut self.state, &self.config, inHigh, inLow, inClose, &mut outRealUpperBand, &mut outRealMiddleBand, &mut outRealLowerBand);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -828,7 +837,7 @@ impl ACCBANDS_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::ACCBANDS_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outRealUpperBand[i], &mut outRealMiddleBand[i], &mut outRealLowerBand[i]);
+            Core::ACCBANDS_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], inClose[i], &mut outRealUpperBand[i], &mut outRealMiddleBand[i], &mut outRealLowerBand[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

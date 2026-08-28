@@ -212,6 +212,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct LN_StreamConfig {
+}
+
 /// Live LN stream: one value per closed bar, bit-identical to [`Core::LN`]
 /// over the same series. Open with [`Core::LN_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -221,6 +226,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_LN_Stream")]
 pub struct LN_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: LN_StreamConfig,
     state: LN_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -231,6 +238,7 @@ impl LN_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `LN_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -256,7 +264,7 @@ impl LN_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn LN_step_impl(sp: &mut LN_StreamState, inReal: f64, outReal: &mut f64) {
+    fn LN_step_impl(sp: &mut LN_StreamState, cfg: &LN_StreamConfig, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).ln();
     }
 
@@ -297,7 +305,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = LN_StreamState {
         };
-        Ok(LN_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = LN_StreamConfig {
+        };
+        Ok(LN_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::LN_Open`] (composition seam).
@@ -402,7 +412,7 @@ impl LN_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::LN_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::LN_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -435,7 +445,7 @@ impl LN_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::LN_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::LN_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -211,6 +211,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct LOG10_StreamConfig {
+}
+
 /// Live LOG10 stream: one value per closed bar, bit-identical to [`Core::LOG10`]
 /// over the same series. Open with [`Core::LOG10_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -220,6 +225,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_LOG10_Stream")]
 pub struct LOG10_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: LOG10_StreamConfig,
     state: LOG10_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -230,6 +237,7 @@ impl LOG10_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `LOG10_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -255,7 +263,7 @@ impl LOG10_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn LOG10_step_impl(sp: &mut LOG10_StreamState, inReal: f64, outReal: &mut f64) {
+    fn LOG10_step_impl(sp: &mut LOG10_StreamState, cfg: &LOG10_StreamConfig, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).log10();
     }
 
@@ -296,7 +304,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = LOG10_StreamState {
         };
-        Ok(LOG10_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = LOG10_StreamConfig {
+        };
+        Ok(LOG10_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::LOG10_Open`] (composition seam).
@@ -401,7 +411,7 @@ impl LOG10_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::LOG10_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::LOG10_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -434,7 +444,7 @@ impl LOG10_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::LOG10_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::LOG10_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

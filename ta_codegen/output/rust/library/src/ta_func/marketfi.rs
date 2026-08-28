@@ -266,6 +266,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct MARKETFI_StreamConfig {
+}
+
 /// Live MARKETFI stream: one value per closed bar, bit-identical to [`Core::MARKETFI`]
 /// over the same series. Open with [`Core::MARKETFI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -275,6 +280,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MARKETFI_Stream")]
 pub struct MARKETFI_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: MARKETFI_StreamConfig,
     state: MARKETFI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -285,6 +292,7 @@ impl MARKETFI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MARKETFI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -310,7 +318,7 @@ impl MARKETFI_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn MARKETFI_step_impl(sp: &mut MARKETFI_StreamState, inHigh: f64, inLow: f64, inVolume: f64, outReal: &mut f64) {
+    fn MARKETFI_step_impl(sp: &mut MARKETFI_StreamState, cfg: &MARKETFI_StreamConfig, inHigh: f64, inLow: f64, inVolume: f64, outReal: &mut f64) {
         // A zero-volume bar would divide by zero. Neither reference guards
         // it -- they emit +/-Inf, or NaN when the range is zero too -- but
         // issue #112 settled that a successful call never emits NaN or Inf,
@@ -390,7 +398,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = MARKETFI_StreamState {
         };
-        Ok(MARKETFI_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = MARKETFI_StreamConfig {
+        };
+        Ok(MARKETFI_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MARKETFI_Open`] (composition seam).
@@ -502,7 +512,7 @@ impl MARKETFI_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::MARKETFI_step_impl(&mut self.state, inHigh, inLow, inVolume, &mut outReal);
+        Core::MARKETFI_step_impl(&mut self.state, &self.config, inHigh, inLow, inVolume, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -535,7 +545,7 @@ impl MARKETFI_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inVolume[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::MARKETFI_step_impl(&mut self.state, inHigh[i], inLow[i], inVolume[i], &mut outReal[i]);
+            Core::MARKETFI_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], inVolume[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

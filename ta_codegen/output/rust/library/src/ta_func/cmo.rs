@@ -446,6 +446,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct CMO_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live CMO stream: one value per closed bar, bit-identical to [`Core::CMO`]
 /// over the same series. Open with [`Core::CMO_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -455,6 +461,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CMO_Stream")]
 pub struct CMO_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: CMO_StreamConfig,
     state: CMO_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -465,6 +473,7 @@ impl CMO_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CMO_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -473,7 +482,6 @@ impl CMO_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct CMO_StreamState {
-    optInTimePeriod: i32,
     prevGain: f64,
     prevLoss: f64,
     prevValue: f64,
@@ -484,7 +492,6 @@ impl CMO_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.prevGain = src.prevGain;
         self.prevLoss = src.prevLoss;
         self.prevValue = src.prevValue;
@@ -498,25 +505,25 @@ impl CMO_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CMO_step_impl(sp: &mut CMO_StreamState, inReal: f64, outReal: &mut f64) {
+    fn CMO_step_impl(sp: &mut CMO_StreamState, cfg: &CMO_StreamConfig, inReal: f64, outReal: &mut f64) {
         let mut tempValue1: f64 = 0.0_f64;
         let mut tempValue2: f64 = 0.0_f64;
-        if sp.optInTimePeriod == 1 {
+        if cfg.optInTimePeriod == 1 {
             (*outReal) = inReal;
             return;
         }
         tempValue1 = inReal;
         tempValue2 = tempValue1 - sp.prevValue;
         sp.prevValue = tempValue1;
-        sp.prevLoss *= ((sp.optInTimePeriod - 1) as f64);
-        sp.prevGain *= ((sp.optInTimePeriod - 1) as f64);
+        sp.prevLoss *= ((cfg.optInTimePeriod - 1) as f64);
+        sp.prevGain *= ((cfg.optInTimePeriod - 1) as f64);
         if tempValue2 < 0_f64 {
             sp.prevLoss -= tempValue2;
         } else {
             sp.prevGain += tempValue2;
         }
-        sp.prevLoss /= ((sp.optInTimePeriod) as f64);
-        sp.prevGain /= ((sp.optInTimePeriod) as f64);
+        sp.prevLoss /= ((cfg.optInTimePeriod) as f64);
+        sp.prevGain /= ((cfg.optInTimePeriod) as f64);
         tempValue1 = sp.prevGain + sp.prevLoss;
         if tempValue1 > 0.0 {
             (*outReal) = 100.0 * ((sp.prevGain - sp.prevLoss) / tempValue1);
@@ -558,7 +565,6 @@ impl Core {
                 return Err(RetCode::InsufficientHistory);
             }
             let state = CMO_StreamState {
-                optInTimePeriod: optInTimePeriod,
                 prevGain: 0.0_f64,
                 prevLoss: 0.0_f64,
                 prevValue: 0.0_f64,
@@ -574,7 +580,10 @@ impl Core {
                     fillIdx += 1;
                 }
             }
-            return Ok(CMO_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
+            let config = CMO_StreamConfig {
+                optInTimePeriod,
+            };
+            return Ok(CMO_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
         }
         let mut outIdx: usize = 0_usize;
         let mut today: usize = 0_usize;
@@ -761,12 +770,14 @@ impl Core {
 
         // Capture the live batch state into the handle.
         let state = CMO_StreamState {
-            optInTimePeriod,
             prevGain,
             prevLoss,
             prevValue,
         };
-        Ok(CMO_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = CMO_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(CMO_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CMO_Open`] (composition seam).
@@ -871,7 +882,7 @@ impl CMO_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::CMO_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::CMO_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -904,7 +915,7 @@ impl CMO_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::CMO_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::CMO_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

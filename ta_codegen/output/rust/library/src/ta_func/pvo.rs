@@ -331,6 +331,14 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct PVO_StreamConfig {
+    optInFastPeriod: i32,
+    optInSlowPeriod: i32,
+    optInMAType: MAType,
+}
+
 /// Live PVO stream: one value per closed bar, bit-identical to [`Core::PVO`]
 /// over the same series. Open with [`Core::PVO_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -340,6 +348,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_PVO_Stream")]
 pub struct PVO_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: PVO_StreamConfig,
     state: PVO_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -350,6 +360,7 @@ impl PVO_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `PVO_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -358,9 +369,6 @@ impl PVO_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct PVO_StreamState {
-    optInFastPeriod: i32,
-    optInSlowPeriod: i32,
-    optInMAType: MAType,
     sub0: MA_Stream,
     sub1: MA_Stream,
 }
@@ -370,9 +378,6 @@ impl PVO_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInFastPeriod = src.optInFastPeriod;
-        self.optInSlowPeriod = src.optInSlowPeriod;
-        self.optInMAType = src.optInMAType;
         self.sub0.restore_from(&src.sub0);
         self.sub1.restore_from(&src.sub1);
     }
@@ -385,7 +390,7 @@ impl PVO_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn PVO_step_impl(sp: &mut PVO_StreamState, inVolume: f64, outReal: &mut f64) -> Result<(), RetCode> {
+    fn PVO_step_impl(sp: &mut PVO_StreamState, cfg: &PVO_StreamConfig, inVolume: f64, outReal: &mut f64) -> Result<(), RetCode> {
         let mut tempReal: f64 = 0.0_f64;
         let mut cur_tempBuffer: f64 = 0.0_f64;
         let mut cur_outReal: f64 = 0.0_f64;
@@ -508,17 +513,19 @@ impl Core {
             return Err(RetCode::InsufficientHistory);
         }
         let state = PVO_StreamState {
+            sub0,
+            sub1,
+        };
+        let config = PVO_StreamConfig {
             optInFastPeriod,
             optInSlowPeriod,
             optInMAType,
-            sub0,
-            sub1,
         };
         if outStride != 1 && *outNBElement > 0 {
             let last_sc_outReal = sc_outReal[*outNBElement - 1];
             outReal[0] = last_sc_outReal;
         }
-        Ok(PVO_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(PVO_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::PVO_Open`] (composition seam).
@@ -633,7 +640,7 @@ impl PVO_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::PVO_step_impl(&mut self.state, inVolume, &mut outReal)?;
+        Core::PVO_step_impl(&mut self.state, &self.config, inVolume, &mut outReal)?;
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -666,7 +673,7 @@ impl PVO_Stream {
             if !inVolume[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::PVO_step_impl(&mut self.state, inVolume[i], &mut outReal[i])?;
+            Core::PVO_step_impl(&mut self.state, &self.config, inVolume[i], &mut outReal[i])?;
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

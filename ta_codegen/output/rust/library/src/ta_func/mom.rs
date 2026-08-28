@@ -276,6 +276,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct MOM_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live MOM stream: one value per closed bar, bit-identical to [`Core::MOM`]
 /// over the same series. Open with [`Core::MOM_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -285,6 +291,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MOM_Stream")]
 pub struct MOM_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: MOM_StreamConfig,
     state: MOM_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -295,6 +303,7 @@ impl MOM_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MOM_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -303,7 +312,6 @@ impl MOM_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct MOM_StreamState {
-    optInTimePeriod: i32,
     ringPos_trailingIdx: usize,
     ringCap_trailingIdx: usize,
     ring_trailingIdx_inReal: Vec<f64>,
@@ -314,7 +322,6 @@ impl MOM_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.ringPos_trailingIdx = src.ringPos_trailingIdx;
         self.ringCap_trailingIdx = src.ringCap_trailingIdx;
         self.ring_trailingIdx_inReal.clone_from(&src.ring_trailingIdx_inReal);
@@ -328,7 +335,7 @@ impl MOM_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn MOM_step_impl(sp: &mut MOM_StreamState, inReal: f64, outReal: &mut f64) {
+    fn MOM_step_impl(sp: &mut MOM_StreamState, cfg: &MOM_StreamConfig, inReal: f64, outReal: &mut f64) {
         if sp.ringCap_trailingIdx == 0 {
             sp.ring_trailingIdx_inReal[0] = inReal;
         }
@@ -433,12 +440,14 @@ impl Core {
         ring_trailingIdx_inReal[..cap_trailingIdx as usize]
             .copy_from_slice(&inReal[historyLen - cap_trailingIdx as usize..]);
         let state = MOM_StreamState {
-            optInTimePeriod,
             ringPos_trailingIdx: 0_usize,
             ringCap_trailingIdx: cap_trailingIdx as usize,
             ring_trailingIdx_inReal,
         };
-        Ok(MOM_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = MOM_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(MOM_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MOM_Open`] (composition seam).
@@ -543,7 +552,7 @@ impl MOM_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::MOM_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::MOM_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -576,7 +585,7 @@ impl MOM_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::MOM_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::MOM_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

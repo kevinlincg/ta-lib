@@ -427,6 +427,12 @@ impl Core {
 
 /* Using midprice_ALT1 for TA_ALT={STREAM,ALL_LANGUAGES} */
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct MIDPRICE_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live MIDPRICE stream: one value per closed bar, bit-identical to [`Core::MIDPRICE`]
 /// over the same series. Open with [`Core::MIDPRICE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -436,6 +442,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MIDPRICE_Stream")]
 pub struct MIDPRICE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: MIDPRICE_StreamConfig,
     state: MIDPRICE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -446,6 +454,7 @@ impl MIDPRICE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MIDPRICE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -454,7 +463,6 @@ impl MIDPRICE_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct MIDPRICE_StreamState {
-    optInTimePeriod: i32,
     lowest: f64,
     highest: f64,
     trailingIdx: i32,
@@ -472,7 +480,6 @@ impl MIDPRICE_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.lowest = src.lowest;
         self.highest = src.highest;
         self.trailingIdx = src.trailingIdx;
@@ -493,7 +500,7 @@ impl MIDPRICE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn MIDPRICE_step_impl(sp: &mut MIDPRICE_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
+    fn MIDPRICE_step_impl(sp: &mut MIDPRICE_StreamState, cfg: &MIDPRICE_StreamConfig, inHigh: f64, inLow: f64, outReal: &mut f64) {
         let mut tmpLow: f64 = 0.0_f64;
         let mut tmpHigh: f64 = 0.0_f64;
         if sp.today >= 1073741824 {
@@ -691,7 +698,6 @@ impl Core {
             }
         }
         let state = MIDPRICE_StreamState {
-            optInTimePeriod,
             lowest,
             highest,
             trailingIdx: (trailingIdx) as i32,
@@ -703,7 +709,10 @@ impl Core {
             x_inHigh,
             x_inLow,
         };
-        Ok(MIDPRICE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = MIDPRICE_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(MIDPRICE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MIDPRICE_Open`] (composition seam).
@@ -820,7 +829,7 @@ impl MIDPRICE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::MIDPRICE_step_impl(&mut self.state, inHigh, inLow, &mut outReal);
+        Core::MIDPRICE_step_impl(&mut self.state, &self.config, inHigh, inLow, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -853,7 +862,7 @@ impl MIDPRICE_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::MIDPRICE_step_impl(&mut self.state, inHigh[i], inLow[i], &mut outReal[i]);
+            Core::MIDPRICE_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

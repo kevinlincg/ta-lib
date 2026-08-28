@@ -380,6 +380,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct CDL3LINESTRIKE_StreamConfig {
+    cs_near: CandleSetting,
+}
+
 /// Live CDL3LINESTRIKE stream: one value per closed bar, bit-identical to [`Core::CDL3LINESTRIKE`]
 /// over the same series. Open with [`Core::CDL3LINESTRIKE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -389,8 +395,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL3LINESTRIKE_Stream")]
 pub struct CDL3LINESTRIKE_Stream {
-    /// The `Near` setting this stream was opened with.
-    cs_near: CandleSetting,
+    /// What this stream was opened with: read by every step, written by none.
+    config: CDL3LINESTRIKE_StreamConfig,
     state: CDL3LINESTRIKE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -401,7 +407,7 @@ impl CDL3LINESTRIKE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL3LINESTRIKE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.cs_near = src.cs_near;
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -461,14 +467,14 @@ impl CDL3LINESTRIKE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDL3LINESTRIKE_step_impl(sp: &mut CDL3LINESTRIKE_StreamState, cs_near: &CandleSetting, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDL3LINESTRIKE_step_impl(sp: &mut CDL3LINESTRIKE_StreamState, cfg: &CDL3LINESTRIKE_StreamConfig, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
-        let Near_rangeType: i32 = cs_near.range_type as i32;
+        let Near_rangeType: i32 = cfg.cs_near.range_type as i32;
         #[allow(non_snake_case)]
-        let Near_avgPeriod: i32 = cs_near.avg_period;
+        let Near_avgPeriod: i32 = cfg.cs_near.avg_period;
         #[allow(non_snake_case)]
-        let Near_factor: f64 = cs_near.factor;
+        let Near_factor: f64 = cfg.cs_near.factor;
         let mut _candlerange_0: f64;
         match Near_rangeType {
             0 => {
@@ -723,7 +729,10 @@ impl Core {
             ringLag_NearTrailingIdx: capLag_NearTrailingIdx as usize,
             ring_NearTrailingIdx_derived,
         };
-        Ok(CDL3LINESTRIKE_Stream { cs_near: self.candle_settings.near, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = CDL3LINESTRIKE_StreamConfig {
+            cs_near: self.candle_settings.near,
+        };
+        Ok(CDL3LINESTRIKE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL3LINESTRIKE_Open`] (composition seam).
@@ -838,7 +847,7 @@ impl CDL3LINESTRIKE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        Core::CDL3LINESTRIKE_step_impl(&mut self.state, &self.cs_near, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDL3LINESTRIKE_step_impl(&mut self.state, &self.config, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -871,7 +880,7 @@ impl CDL3LINESTRIKE_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::CDL3LINESTRIKE_step_impl(&mut self.state, &self.cs_near, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDL3LINESTRIKE_step_impl(&mut self.state, &self.config, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

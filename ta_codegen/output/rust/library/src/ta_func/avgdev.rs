@@ -259,6 +259,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct AVGDEV_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live AVGDEV stream: one value per closed bar, bit-identical to [`Core::AVGDEV`]
 /// over the same series. Open with [`Core::AVGDEV_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -268,6 +274,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_AVGDEV_Stream")]
 pub struct AVGDEV_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: AVGDEV_StreamConfig,
     state: AVGDEV_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -278,6 +286,7 @@ impl AVGDEV_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `AVGDEV_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -286,7 +295,6 @@ impl AVGDEV_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct AVGDEV_StreamState {
-    optInTimePeriod: i32,
     winPos_i: usize,
     winCap_i: usize,
     win_i_inReal: Vec<f64>,
@@ -297,7 +305,6 @@ impl AVGDEV_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.winPos_i = src.winPos_i;
         self.winCap_i = src.winCap_i;
         self.win_i_inReal.clone_from(&src.win_i_inReal);
@@ -311,26 +318,26 @@ impl AVGDEV_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn AVGDEV_step_impl(sp: &mut AVGDEV_StreamState, inReal: f64, outReal: &mut f64) {
+    fn AVGDEV_step_impl(sp: &mut AVGDEV_StreamState, cfg: &AVGDEV_StreamConfig, inReal: f64, outReal: &mut f64) {
         let mut todaySum: f64 = 0.0_f64;
         let mut todayDev: f64 = 0.0_f64;
         let mut i: usize = 0_usize;
         sp.win_i_inReal[sp.winPos_i] = inReal;
         todaySum = 0.0;
-        // for( i = 0; i < ((sp.optInTimePeriod) as usize); i += 1 )
+        // for( i = 0; i < ((cfg.optInTimePeriod) as usize); i += 1 )
         i = 0;
-        while i < ((sp.optInTimePeriod) as usize) {
+        while i < ((cfg.optInTimePeriod) as usize) {
             todaySum += sp.win_i_inReal[((if sp.winPos_i + sp.winCap_i - i >= sp.winCap_i { sp.winPos_i + sp.winCap_i - i - sp.winCap_i } else { sp.winPos_i + sp.winCap_i - i })) as usize];
             i += 1;
         }
         todayDev = 0.0;
-        // for( i = 0; i < ((sp.optInTimePeriod) as usize); i += 1 )
+        // for( i = 0; i < ((cfg.optInTimePeriod) as usize); i += 1 )
         i = 0;
-        while i < ((sp.optInTimePeriod) as usize) {
-            todayDev += (sp.win_i_inReal[((if sp.winPos_i + sp.winCap_i - i >= sp.winCap_i { sp.winPos_i + sp.winCap_i - i - sp.winCap_i } else { sp.winPos_i + sp.winCap_i - i })) as usize] - todaySum / ((sp.optInTimePeriod) as f64)).abs();
+        while i < ((cfg.optInTimePeriod) as usize) {
+            todayDev += (sp.win_i_inReal[((if sp.winPos_i + sp.winCap_i - i >= sp.winCap_i { sp.winPos_i + sp.winCap_i - i - sp.winCap_i } else { sp.winPos_i + sp.winCap_i - i })) as usize] - todaySum / ((cfg.optInTimePeriod) as f64)).abs();
             i += 1;
         }
-        (*outReal) = todayDev / ((sp.optInTimePeriod) as f64);
+        (*outReal) = todayDev / ((cfg.optInTimePeriod) as f64);
         sp.winPos_i = sp.winPos_i + 1;
         if sp.winPos_i >= sp.winCap_i {
             sp.winPos_i = 0;
@@ -412,12 +419,14 @@ impl Core {
         let mut win_i_inReal: Vec<f64> = vec![0.0_f64; cap_i as usize];
         win_i_inReal.copy_from_slice(&inReal[historyLen - cap_i as usize..]);
         let state = AVGDEV_StreamState {
-            optInTimePeriod,
             winPos_i: 0_usize,
             winCap_i: cap_i as usize,
             win_i_inReal,
         };
-        Ok(AVGDEV_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = AVGDEV_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(AVGDEV_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::AVGDEV_Open`] (composition seam).
@@ -522,7 +531,7 @@ impl AVGDEV_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::AVGDEV_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::AVGDEV_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -555,7 +564,7 @@ impl AVGDEV_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::AVGDEV_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::AVGDEV_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

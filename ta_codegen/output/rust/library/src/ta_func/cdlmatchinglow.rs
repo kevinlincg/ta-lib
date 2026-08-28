@@ -349,6 +349,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct CDLMATCHINGLOW_StreamConfig {
+    cs_equal: CandleSetting,
+}
+
 /// Live CDLMATCHINGLOW stream: one value per closed bar, bit-identical to [`Core::CDLMATCHINGLOW`]
 /// over the same series. Open with [`Core::CDLMATCHINGLOW_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -358,8 +364,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLMATCHINGLOW_Stream")]
 pub struct CDLMATCHINGLOW_Stream {
-    /// The `Equal` setting this stream was opened with.
-    cs_equal: CandleSetting,
+    /// What this stream was opened with: read by every step, written by none.
+    config: CDLMATCHINGLOW_StreamConfig,
     state: CDLMATCHINGLOW_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -370,7 +376,7 @@ impl CDLMATCHINGLOW_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLMATCHINGLOW_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.cs_equal = src.cs_equal;
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -414,13 +420,13 @@ impl CDLMATCHINGLOW_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLMATCHINGLOW_step_impl(sp: &mut CDLMATCHINGLOW_StreamState, cs_equal: &CandleSetting, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLMATCHINGLOW_step_impl(sp: &mut CDLMATCHINGLOW_StreamState, cfg: &CDLMATCHINGLOW_StreamConfig, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let Equal_rangeType: i32 = cs_equal.range_type as i32;
+        let Equal_rangeType: i32 = cfg.cs_equal.range_type as i32;
         #[allow(non_snake_case)]
-        let Equal_avgPeriod: i32 = cs_equal.avg_period;
+        let Equal_avgPeriod: i32 = cfg.cs_equal.avg_period;
         #[allow(non_snake_case)]
-        let Equal_factor: f64 = cs_equal.factor;
+        let Equal_factor: f64 = cfg.cs_equal.factor;
         let mut _candlerange_0: f64;
         match Equal_rangeType {
             0 => {
@@ -632,7 +638,10 @@ impl Core {
             ringLag_EqualTrailingIdx: capLag_EqualTrailingIdx as usize,
             ring_EqualTrailingIdx_derived,
         };
-        Ok(CDLMATCHINGLOW_Stream { cs_equal: self.candle_settings.equal, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = CDLMATCHINGLOW_StreamConfig {
+            cs_equal: self.candle_settings.equal,
+        };
+        Ok(CDLMATCHINGLOW_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLMATCHINGLOW_Open`] (composition seam).
@@ -747,7 +756,7 @@ impl CDLMATCHINGLOW_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        Core::CDLMATCHINGLOW_step_impl(&mut self.state, &self.cs_equal, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLMATCHINGLOW_step_impl(&mut self.state, &self.config, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -780,7 +789,7 @@ impl CDLMATCHINGLOW_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::CDLMATCHINGLOW_step_impl(&mut self.state, &self.cs_equal, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLMATCHINGLOW_step_impl(&mut self.state, &self.config, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

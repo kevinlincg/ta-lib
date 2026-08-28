@@ -411,6 +411,13 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct VAR_StreamConfig {
+    optInTimePeriod: i32,
+    optInNbDev: f64,
+}
+
 /// Live VAR stream: one value per closed bar, bit-identical to [`Core::VAR`]
 /// over the same series. Open with [`Core::VAR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -420,6 +427,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_VAR_Stream")]
 pub struct VAR_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: VAR_StreamConfig,
     state: VAR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -430,6 +439,7 @@ impl VAR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `VAR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -438,8 +448,6 @@ impl VAR_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct VAR_StreamState {
-    optInTimePeriod: i32,
-    optInNbDev: f64,
     shift: f64,
     periodTotal1: f64,
     periodTotal2: f64,
@@ -459,8 +467,6 @@ impl VAR_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
-        self.optInNbDev = src.optInNbDev;
         self.shift = src.shift;
         self.periodTotal1 = src.periodTotal1;
         self.periodTotal2 = src.periodTotal2;
@@ -483,7 +489,7 @@ impl VAR_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn VAR_step_impl(sp: &mut VAR_StreamState, inReal: f64, outReal: &mut f64) {
+    fn VAR_step_impl(sp: &mut VAR_StreamState, cfg: &VAR_StreamConfig, inReal: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         let mut meanValue1: f64 = 0.0_f64;
         let mut variance: f64 = 0.0_f64;
@@ -522,7 +528,7 @@ impl Core {
         // reseeding it every bar. Guarantees a non-negative output.
         sp.barsSinceReseed -= 1;
         if variance < 0.000001 * (sp.periodTotal2 * sp.invPeriod) || tempReal > 1000000.0 * sp.periodTotal2 || sp.barsSinceReseed <= 0 {
-            sp.barsSinceReseed = (32 * sp.optInTimePeriod) as usize;
+            sp.barsSinceReseed = (32 * cfg.optInTimePeriod) as usize;
             sp.windowStart = sp.i - ((sp.nbInitialElementNeeded) as i32);
             tempReal = 0.0;
             // for( sp.j = sp.windowStart; sp.j <= sp.i; sp.j += 1 )
@@ -820,8 +826,6 @@ impl Core {
             }
         }
         let state = VAR_StreamState {
-            optInTimePeriod,
-            optInNbDev,
             shift,
             periodTotal1,
             periodTotal2,
@@ -835,7 +839,11 @@ impl Core {
             xMask: (physX - 1) as i32,
             x_inReal,
         };
-        Ok(VAR_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = VAR_StreamConfig {
+            optInTimePeriod,
+            optInNbDev,
+        };
+        Ok(VAR_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::VAR_Open`] (composition seam).
@@ -940,7 +948,7 @@ impl VAR_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::VAR_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::VAR_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -973,7 +981,7 @@ impl VAR_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::VAR_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::VAR_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

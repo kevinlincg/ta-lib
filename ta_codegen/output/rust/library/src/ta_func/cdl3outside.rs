@@ -275,6 +275,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct CDL3OUTSIDE_StreamConfig {
+}
+
 /// Live CDL3OUTSIDE stream: one value per closed bar, bit-identical to [`Core::CDL3OUTSIDE`]
 /// over the same series. Open with [`Core::CDL3OUTSIDE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -284,6 +289,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL3OUTSIDE_Stream")]
 pub struct CDL3OUTSIDE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: CDL3OUTSIDE_StreamConfig,
     state: CDL3OUTSIDE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -294,6 +301,7 @@ impl CDL3OUTSIDE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL3OUTSIDE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -327,7 +335,7 @@ impl CDL3OUTSIDE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDL3OUTSIDE_step_impl(sp: &mut CDL3OUTSIDE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDL3OUTSIDE_step_impl(sp: &mut CDL3OUTSIDE_StreamState, cfg: &CDL3OUTSIDE_StreamConfig, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         if (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && sp.lag1_inClose > sp.lag2_inOpen && sp.lag1_inOpen < sp.lag2_inClose && inClose > sp.lag1_inClose || (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && sp.lag1_inOpen > sp.lag2_inClose && sp.lag1_inClose < sp.lag2_inOpen && inClose < sp.lag1_inClose {
             // white engulfs black
             // third candle higher
@@ -420,7 +428,9 @@ impl Core {
             lag1_inClose: inClose[historyLen - 1],
             lag2_inClose: inClose[historyLen - 2],
         };
-        Ok(CDL3OUTSIDE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = CDL3OUTSIDE_StreamConfig {
+        };
+        Ok(CDL3OUTSIDE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL3OUTSIDE_Open`] (composition seam).
@@ -535,7 +545,7 @@ impl CDL3OUTSIDE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        Core::CDL3OUTSIDE_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDL3OUTSIDE_step_impl(&mut self.state, &self.config, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -568,7 +578,7 @@ impl CDL3OUTSIDE_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::CDL3OUTSIDE_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDL3OUTSIDE_step_impl(&mut self.state, &self.config, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

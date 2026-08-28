@@ -464,6 +464,17 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct MACDEXT_StreamConfig {
+    optInFastPeriod: i32,
+    optInFastMAType: MAType,
+    optInSlowPeriod: i32,
+    optInSlowMAType: MAType,
+    optInSignalPeriod: i32,
+    optInSignalMAType: MAType,
+}
+
 /// Live MACDEXT stream: one value per closed bar, bit-identical to [`Core::MACDEXT`]
 /// over the same series. Open with [`Core::MACDEXT_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -473,6 +484,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MACDEXT_Stream")]
 pub struct MACDEXT_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: MACDEXT_StreamConfig,
     state: MACDEXT_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -483,6 +496,7 @@ impl MACDEXT_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MACDEXT_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -491,12 +505,6 @@ impl MACDEXT_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct MACDEXT_StreamState {
-    optInFastPeriod: i32,
-    optInFastMAType: MAType,
-    optInSlowPeriod: i32,
-    optInSlowMAType: MAType,
-    optInSignalPeriod: i32,
-    optInSignalMAType: MAType,
     sub0: MA_Stream,
     sub1: MA_Stream,
     sub2: MA_Stream,
@@ -507,12 +515,6 @@ impl MACDEXT_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInFastPeriod = src.optInFastPeriod;
-        self.optInFastMAType = src.optInFastMAType;
-        self.optInSlowPeriod = src.optInSlowPeriod;
-        self.optInSlowMAType = src.optInSlowMAType;
-        self.optInSignalPeriod = src.optInSignalPeriod;
-        self.optInSignalMAType = src.optInSignalMAType;
         self.sub0.restore_from(&src.sub0);
         self.sub1.restore_from(&src.sub1);
         self.sub2.restore_from(&src.sub2);
@@ -526,7 +528,7 @@ impl MACDEXT_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn MACDEXT_step_impl(sp: &mut MACDEXT_StreamState, inReal: f64, outMACD: &mut f64, outMACDSignal: &mut f64, outMACDHist: &mut f64) -> Result<(), RetCode> {
+    fn MACDEXT_step_impl(sp: &mut MACDEXT_StreamState, cfg: &MACDEXT_StreamConfig, inReal: f64, outMACD: &mut f64, outMACDSignal: &mut f64, outMACDHist: &mut f64) -> Result<(), RetCode> {
         let mut cur_slowMABuffer: f64 = 0.0_f64;
         let mut cur_fastMABuffer: f64 = 0.0_f64;
         let mut cur_outMACDSignal: f64 = 0.0_f64;
@@ -711,15 +713,17 @@ impl Core {
             return Err(RetCode::InsufficientHistory);
         }
         let state = MACDEXT_StreamState {
+            sub0,
+            sub1,
+            sub2,
+        };
+        let config = MACDEXT_StreamConfig {
             optInFastPeriod,
             optInFastMAType,
             optInSlowPeriod,
             optInSlowMAType,
             optInSignalPeriod,
             optInSignalMAType,
-            sub0,
-            sub1,
-            sub2,
         };
         if outStride != 1 && *outNBElement > 0 {
             let last_sc_outMACD = sc_outMACD[*outNBElement - 1];
@@ -733,7 +737,7 @@ impl Core {
             let last_sc_outMACDHist = sc_outMACDHist[*outNBElement - 1];
             outMACDHist[0] = last_sc_outMACDHist;
         }
-        Ok(MACDEXT_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(MACDEXT_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MACDEXT_Open`] (composition seam).
@@ -867,7 +871,7 @@ impl MACDEXT_Stream {
         let mut outMACD: f64 = 0.0_f64;
         let mut outMACDSignal: f64 = 0.0_f64;
         let mut outMACDHist: f64 = 0.0_f64;
-        Core::MACDEXT_step_impl(&mut self.state, inReal, &mut outMACD, &mut outMACDSignal, &mut outMACDHist)?;
+        Core::MACDEXT_step_impl(&mut self.state, &self.config, inReal, &mut outMACD, &mut outMACDSignal, &mut outMACDHist)?;
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -900,7 +904,7 @@ impl MACDEXT_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::MACDEXT_step_impl(&mut self.state, inReal[i], &mut outMACD[i], &mut outMACDSignal[i], &mut outMACDHist[i])?;
+            Core::MACDEXT_step_impl(&mut self.state, &self.config, inReal[i], &mut outMACD[i], &mut outMACDSignal[i], &mut outMACDHist[i])?;
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

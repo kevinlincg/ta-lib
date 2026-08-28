@@ -212,6 +212,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct ACOS_StreamConfig {
+}
+
 /// Live ACOS stream: one value per closed bar, bit-identical to [`Core::ACOS`]
 /// over the same series. Open with [`Core::ACOS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -221,6 +226,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ACOS_Stream")]
 pub struct ACOS_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: ACOS_StreamConfig,
     state: ACOS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -231,6 +238,7 @@ impl ACOS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ACOS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -256,7 +264,7 @@ impl ACOS_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn ACOS_step_impl(sp: &mut ACOS_StreamState, inReal: f64, outReal: &mut f64) {
+    fn ACOS_step_impl(sp: &mut ACOS_StreamState, cfg: &ACOS_StreamConfig, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).acos();
     }
 
@@ -297,7 +305,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = ACOS_StreamState {
         };
-        Ok(ACOS_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = ACOS_StreamConfig {
+        };
+        Ok(ACOS_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ACOS_Open`] (composition seam).
@@ -402,7 +412,7 @@ impl ACOS_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::ACOS_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::ACOS_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -435,7 +445,7 @@ impl ACOS_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::ACOS_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::ACOS_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

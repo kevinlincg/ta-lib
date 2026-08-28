@@ -400,6 +400,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct LINEARREG_SLOPE_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live LINEARREG_SLOPE stream: one value per closed bar, bit-identical to [`Core::LINEARREG_SLOPE`]
 /// over the same series. Open with [`Core::LINEARREG_SLOPE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -409,6 +415,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_LINEARREG_SLOPE_Stream")]
 pub struct LINEARREG_SLOPE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: LINEARREG_SLOPE_StreamConfig,
     state: LINEARREG_SLOPE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -419,6 +427,7 @@ impl LINEARREG_SLOPE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `LINEARREG_SLOPE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -427,7 +436,6 @@ impl LINEARREG_SLOPE_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct LINEARREG_SLOPE_StreamState {
-    optInTimePeriod: i32,
     lookbackTotal: usize,
     trailingIdx: i32,
     SumX: f64,
@@ -448,7 +456,6 @@ impl LINEARREG_SLOPE_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.lookbackTotal = src.lookbackTotal;
         self.trailingIdx = src.trailingIdx;
         self.SumX = src.SumX;
@@ -472,7 +479,7 @@ impl LINEARREG_SLOPE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn LINEARREG_SLOPE_step_impl(sp: &mut LINEARREG_SLOPE_StreamState, inReal: f64, outReal: &mut f64) {
+    fn LINEARREG_SLOPE_step_impl(sp: &mut LINEARREG_SLOPE_StreamState, cfg: &LINEARREG_SLOPE_StreamConfig, inReal: f64, outReal: &mut f64) {
         let mut windowStart: usize = 0_usize;
         let mut tempValue1: f64 = 0.0_f64;
         let mut tempValue2: f64 = 0.0_f64;
@@ -484,7 +491,7 @@ impl Core {
             sp.j -= rebaseShift;
         }
         sp.x_inReal[(sp.today & sp.xMask) as usize] = inReal;
-        weightedTrailing = (sp.optInTimePeriod as f64) * sp.trailingValue;
+        weightedTrailing = (cfg.optInTimePeriod as f64) * sp.trailingValue;
         sp.SumXY = sp.SumXY + sp.SumY - weightedTrailing;
         sp.SumY = sp.SumY - sp.trailingValue + sp.x_inReal[(sp.today & sp.xMask) as usize];
         sp.sumAbs = sp.sumAbs - (sp.trailingValue).abs() + (sp.x_inReal[(sp.today & sp.xMask) as usize]).abs();
@@ -548,7 +555,7 @@ impl Core {
         // to at least lookbackTotal.
         sp.barsSinceReseed -= 1;
         if sp.barsSinceReseed <= 0 || (weightedTrailing).abs() > 100.0 * sp.sumAbs {
-            sp.barsSinceReseed = (32 * sp.optInTimePeriod) as usize;
+            sp.barsSinceReseed = (32 * cfg.optInTimePeriod) as usize;
             windowStart = (sp.today - ((sp.lookbackTotal) as i32)) as usize;
             sp.SumY = 0.0;
             sp.SumXY = 0.0;
@@ -567,7 +574,7 @@ impl Core {
         }
         sp.trailingValue = sp.x_inReal[(sp.trailingIdx & sp.xMask) as usize];
         sp.trailingIdx += 1;
-        (*outReal) = (((sp.optInTimePeriod) as f64) * sp.SumXY - sp.SumX * sp.SumY) / sp.Divisor;
+        (*outReal) = (((cfg.optInTimePeriod) as f64) * sp.SumXY - sp.SumX * sp.SumY) / sp.Divisor;
         sp.today += 1;
     }
 
@@ -782,7 +789,6 @@ impl Core {
             }
         }
         let state = LINEARREG_SLOPE_StreamState {
-            optInTimePeriod,
             lookbackTotal,
             trailingIdx: (trailingIdx) as i32,
             SumX,
@@ -797,7 +803,10 @@ impl Core {
             xMask: (physX - 1) as i32,
             x_inReal,
         };
-        Ok(LINEARREG_SLOPE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = LINEARREG_SLOPE_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(LINEARREG_SLOPE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::LINEARREG_SLOPE_Open`] (composition seam).
@@ -902,7 +911,7 @@ impl LINEARREG_SLOPE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::LINEARREG_SLOPE_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::LINEARREG_SLOPE_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -935,7 +944,7 @@ impl LINEARREG_SLOPE_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::LINEARREG_SLOPE_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::LINEARREG_SLOPE_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -285,6 +285,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct ROCP_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live ROCP stream: one value per closed bar, bit-identical to [`Core::ROCP`]
 /// over the same series. Open with [`Core::ROCP_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -294,6 +300,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ROCP_Stream")]
 pub struct ROCP_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: ROCP_StreamConfig,
     state: ROCP_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -304,6 +312,7 @@ impl ROCP_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ROCP_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -312,7 +321,6 @@ impl ROCP_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct ROCP_StreamState {
-    optInTimePeriod: i32,
     ringPos_trailingIdx: usize,
     ringCap_trailingIdx: usize,
     ring_trailingIdx_inReal: Vec<f64>,
@@ -323,7 +331,6 @@ impl ROCP_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.ringPos_trailingIdx = src.ringPos_trailingIdx;
         self.ringCap_trailingIdx = src.ringCap_trailingIdx;
         self.ring_trailingIdx_inReal.clone_from(&src.ring_trailingIdx_inReal);
@@ -337,7 +344,7 @@ impl ROCP_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn ROCP_step_impl(sp: &mut ROCP_StreamState, inReal: f64, outReal: &mut f64) {
+    fn ROCP_step_impl(sp: &mut ROCP_StreamState, cfg: &ROCP_StreamConfig, inReal: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         if sp.ringCap_trailingIdx == 0 {
             sp.ring_trailingIdx_inReal[0] = inReal;
@@ -453,12 +460,14 @@ impl Core {
         ring_trailingIdx_inReal[..cap_trailingIdx as usize]
             .copy_from_slice(&inReal[historyLen - cap_trailingIdx as usize..]);
         let state = ROCP_StreamState {
-            optInTimePeriod,
             ringPos_trailingIdx: 0_usize,
             ringCap_trailingIdx: cap_trailingIdx as usize,
             ring_trailingIdx_inReal,
         };
-        Ok(ROCP_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = ROCP_StreamConfig {
+            optInTimePeriod,
+        };
+        Ok(ROCP_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ROCP_Open`] (composition seam).
@@ -563,7 +572,7 @@ impl ROCP_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::ROCP_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::ROCP_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -596,7 +605,7 @@ impl ROCP_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::ROCP_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::ROCP_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

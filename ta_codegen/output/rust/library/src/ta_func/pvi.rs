@@ -268,6 +268,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct PVI_StreamConfig {
+}
+
 /// Live PVI stream: one value per closed bar, bit-identical to [`Core::PVI`]
 /// over the same series. Open with [`Core::PVI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -277,6 +282,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_PVI_Stream")]
 pub struct PVI_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: PVI_StreamConfig,
     state: PVI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -287,6 +294,7 @@ impl PVI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `PVI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -318,7 +326,7 @@ impl PVI_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn PVI_step_impl(sp: &mut PVI_StreamState, inClose: f64, inVolume: f64, outReal: &mut f64) {
+    fn PVI_step_impl(sp: &mut PVI_StreamState, cfg: &PVI_StreamConfig, inClose: f64, inVolume: f64, outReal: &mut f64) {
         let mut tempClose: f64 = 0.0_f64;
         let mut tempVolume: f64 = 0.0_f64;
         let mut tempPVI: f64 = 0.0_f64;
@@ -424,7 +432,9 @@ impl Core {
             prevClose,
             prevVolume,
         };
-        Ok(PVI_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = PVI_StreamConfig {
+        };
+        Ok(PVI_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::PVI_Open`] (composition seam).
@@ -537,7 +547,7 @@ impl PVI_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::PVI_step_impl(&mut self.state, inClose, inVolume, &mut outReal);
+        Core::PVI_step_impl(&mut self.state, &self.config, inClose, inVolume, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -570,7 +580,7 @@ impl PVI_Stream {
             if !inClose[i].is_finite() || !inVolume[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::PVI_step_impl(&mut self.state, inClose[i], inVolume[i], &mut outReal[i]);
+            Core::PVI_step_impl(&mut self.state, &self.config, inClose[i], inVolume[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

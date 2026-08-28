@@ -444,6 +444,14 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct AC_StreamConfig {
+    optInFastPeriod: i32,
+    optInSlowPeriod: i32,
+    optInSignalPeriod: i32,
+}
+
 /// Live AC stream: one value per closed bar, bit-identical to [`Core::AC`]
 /// over the same series. Open with [`Core::AC_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -453,6 +461,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_AC_Stream")]
 pub struct AC_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: AC_StreamConfig,
     state: AC_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -463,6 +473,7 @@ impl AC_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `AC_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -471,9 +482,6 @@ impl AC_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct AC_StreamState {
-    optInFastPeriod: i32,
-    optInSlowPeriod: i32,
-    optInSignalPeriod: i32,
     sumFast: f64,
     sumSlow: f64,
     sumSignal: f64,
@@ -494,9 +502,6 @@ impl AC_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInFastPeriod = src.optInFastPeriod;
-        self.optInSlowPeriod = src.optInSlowPeriod;
-        self.optInSignalPeriod = src.optInSignalPeriod;
         self.sumFast = src.sumFast;
         self.sumSlow = src.sumSlow;
         self.sumSignal = src.sumSignal;
@@ -520,7 +525,7 @@ impl AC_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn AC_step_impl(sp: &mut AC_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
+    fn AC_step_impl(sp: &mut AC_StreamState, cfg: &AC_StreamConfig, inHigh: f64, inLow: f64, outReal: &mut f64) {
         let mut medianPrice: f64 = 0.0_f64;
         let mut osc: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
@@ -535,7 +540,7 @@ impl Core {
         sp.sumSlow += medianPrice;
         // Snapshot the oscillator before either total drops its trailing bar,
         // mirroring the add-new / snapshot / subtract-old order of TA_SMA.
-        osc = sp.sumFast / (sp.optInFastPeriod as f64) - sp.sumSlow / (sp.optInSlowPeriod as f64);
+        osc = sp.sumFast / (cfg.optInFastPeriod as f64) - sp.sumSlow / (cfg.optInSlowPeriod as f64);
         sp.sumFast -= sp.ring_trailingFastIdx_derived[sp.ringPos_trailingFastIdx];
         sp.sumSlow -= sp.ring_trailingSlowIdx_derived[sp.ringPos_trailingSlowIdx];
         // Today's oscillator enters the signal window at its own slot, and the
@@ -544,7 +549,7 @@ impl Core {
         // overwrite the newest value rather than the oldest one.
         sp.cb_oscBuffer[sp.oscBuffer_Idx] = osc;
         sp.sumSignal += osc;
-        tempReal = osc - sp.sumSignal / (sp.optInSignalPeriod as f64);
+        tempReal = osc - sp.sumSignal / (cfg.optInSignalPeriod as f64);
         sp.oscBuffer_Idx = sp.oscBuffer_Idx + 1;
         if sp.oscBuffer_Idx > sp.maxIdx_oscBuffer {
             sp.oscBuffer_Idx = 0;
@@ -785,9 +790,6 @@ impl Core {
             return Err(RetCode::InternalError);
         }
         let state = AC_StreamState {
-            optInFastPeriod,
-            optInSlowPeriod,
-            optInSignalPeriod,
             sumFast,
             sumSlow,
             sumSignal,
@@ -802,7 +804,12 @@ impl Core {
             cbSize_oscBuffer: cbSize_oscBuffer,
             cb_oscBuffer: oscBuffer,
         };
-        Ok(AC_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = AC_StreamConfig {
+            optInFastPeriod,
+            optInSlowPeriod,
+            optInSignalPeriod,
+        };
+        Ok(AC_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::AC_Open`] (composition seam).
@@ -919,7 +926,7 @@ impl AC_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::AC_step_impl(&mut self.state, inHigh, inLow, &mut outReal);
+        Core::AC_step_impl(&mut self.state, &self.config, inHigh, inLow, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -952,7 +959,7 @@ impl AC_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::AC_step_impl(&mut self.state, inHigh[i], inLow[i], &mut outReal[i]);
+            Core::AC_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

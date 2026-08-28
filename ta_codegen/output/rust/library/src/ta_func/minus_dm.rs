@@ -433,6 +433,12 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct MINUS_DM_StreamConfig {
+    optInTimePeriod: i32,
+}
+
 /// Live MINUS_DM stream: one value per closed bar, bit-identical to [`Core::MINUS_DM`]
 /// over the same series. Open with [`Core::MINUS_DM_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -442,6 +448,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MINUS_DM_Stream")]
 pub struct MINUS_DM_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: MINUS_DM_StreamConfig,
     state: MINUS_DM_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -452,6 +460,7 @@ impl MINUS_DM_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MINUS_DM_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -460,7 +469,6 @@ impl MINUS_DM_Stream {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
 struct MINUS_DM_StreamState {
-    optInTimePeriod: i32,
     prevHigh: f64,
     prevLow: f64,
     prevMinusDM: f64,
@@ -471,7 +479,6 @@ impl MINUS_DM_StreamState {
     /// Overwrite every field from `src`, reusing this value's buffers
     /// instead of allocating new ones — `peek`'s scratch restore.
     fn restore_from(&mut self, src: &Self) {
-        self.optInTimePeriod = src.optInTimePeriod;
         self.prevHigh = src.prevHigh;
         self.prevLow = src.prevLow;
         self.prevMinusDM = src.prevMinusDM;
@@ -485,8 +492,8 @@ impl MINUS_DM_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn MINUS_DM_step_impl(sp: &mut MINUS_DM_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
-        if sp.optInTimePeriod <= 1 {
+    fn MINUS_DM_step_impl(sp: &mut MINUS_DM_StreamState, cfg: &MINUS_DM_StreamConfig, inHigh: f64, inLow: f64, outReal: &mut f64) {
+        if cfg.optInTimePeriod <= 1 {
             let mut tempReal: f64 = 0.0_f64;
             let mut diffP: f64 = 0.0_f64;
             let mut diffM: f64 = 0.0_f64;
@@ -518,10 +525,10 @@ impl Core {
             sp.prevLow = tempReal;
             if diffM > 0_f64 && diffP < diffM {
                 // Case 2 and 4: +DM=0,-DM=diffM
-                sp.prevMinusDM = sp.prevMinusDM - sp.prevMinusDM / ((sp.optInTimePeriod) as f64) + diffM;
+                sp.prevMinusDM = sp.prevMinusDM - sp.prevMinusDM / ((cfg.optInTimePeriod) as f64) + diffM;
             } else {
                 // Case 1,3,5 and 7
-                sp.prevMinusDM = sp.prevMinusDM - sp.prevMinusDM / ((sp.optInTimePeriod) as f64);
+                sp.prevMinusDM = sp.prevMinusDM - sp.prevMinusDM / ((cfg.optInTimePeriod) as f64);
             }
             (*outReal) = sp.prevMinusDM;
         }
@@ -677,12 +684,14 @@ impl Core {
 
             // Capture the live batch state into the handle.
             let state = MINUS_DM_StreamState {
-                optInTimePeriod,
                 prevHigh,
                 prevLow,
                 prevMinusDM,
             };
-            Ok(MINUS_DM_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            let config = MINUS_DM_StreamConfig {
+                optInTimePeriod,
+            };
+            Ok(MINUS_DM_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         } else {
             let mut today: usize = 0_usize;
             let mut lookbackTotal: usize = 0_usize;
@@ -847,12 +856,14 @@ impl Core {
 
             // Capture the live batch state into the handle.
             let state = MINUS_DM_StreamState {
-                optInTimePeriod,
                 prevHigh,
                 prevLow,
                 prevMinusDM,
             };
-            Ok(MINUS_DM_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            let config = MINUS_DM_StreamConfig {
+                optInTimePeriod,
+            };
+            Ok(MINUS_DM_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         }
     }
 
@@ -962,7 +973,7 @@ impl MINUS_DM_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::MINUS_DM_step_impl(&mut self.state, inHigh, inLow, &mut outReal);
+        Core::MINUS_DM_step_impl(&mut self.state, &self.config, inHigh, inLow, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -995,7 +1006,7 @@ impl MINUS_DM_Stream {
             if !inHigh[i].is_finite() || !inLow[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::MINUS_DM_step_impl(&mut self.state, inHigh[i], inLow[i], &mut outReal[i]);
+            Core::MINUS_DM_step_impl(&mut self.state, &self.config, inHigh[i], inLow[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

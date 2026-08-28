@@ -205,6 +205,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct COSH_StreamConfig {
+}
+
 /// Live COSH stream: one value per closed bar, bit-identical to [`Core::COSH`]
 /// over the same series. Open with [`Core::COSH_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -214,6 +219,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_COSH_Stream")]
 pub struct COSH_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: COSH_StreamConfig,
     state: COSH_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -224,6 +231,7 @@ impl COSH_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `COSH_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -249,7 +257,7 @@ impl COSH_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn COSH_step_impl(sp: &mut COSH_StreamState, inReal: f64, outReal: &mut f64) {
+    fn COSH_step_impl(sp: &mut COSH_StreamState, cfg: &COSH_StreamConfig, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).cosh();
     }
 
@@ -290,7 +298,9 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = COSH_StreamState {
         };
-        Ok(COSH_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = COSH_StreamConfig {
+        };
+        Ok(COSH_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::COSH_Open`] (composition seam).
@@ -395,7 +405,7 @@ impl COSH_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::COSH_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::COSH_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -428,7 +438,7 @@ impl COSH_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::COSH_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::COSH_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

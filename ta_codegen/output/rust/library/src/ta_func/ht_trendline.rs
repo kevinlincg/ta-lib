@@ -598,6 +598,11 @@ impl Core {
 }
 /**** Streaming API *****/
 
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct HT_TRENDLINE_StreamConfig {
+}
+
 /// Live HT_TRENDLINE stream: one value per closed bar, bit-identical to [`Core::HT_TRENDLINE`]
 /// over the same series. Open with [`Core::HT_TRENDLINE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -607,6 +612,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_HT_TRENDLINE_Stream")]
 pub struct HT_TRENDLINE_Stream {
+    /// What this stream was opened with: read by every step, written by none.
+    config: HT_TRENDLINE_StreamConfig,
     state: HT_TRENDLINE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -617,6 +624,7 @@ impl HT_TRENDLINE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `HT_TRENDLINE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
+        self.config.clone_from(&src.config);
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -744,7 +752,7 @@ impl HT_TRENDLINE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn HT_TRENDLINE_step_impl(sp: &mut HT_TRENDLINE_StreamState, inReal: f64, outReal: &mut f64) {
+    fn HT_TRENDLINE_step_impl(sp: &mut HT_TRENDLINE_StreamState, cfg: &HT_TRENDLINE_StreamConfig, inReal: f64, outReal: &mut f64) {
         let mut i: usize = 0_usize;
         let mut tempReal: f64 = 0.0_f64;
         let mut tempReal2: f64 = 0.0_f64;
@@ -1385,7 +1393,9 @@ impl Core {
             winCap_i: cap_i as usize,
             win_i_inReal,
         };
-        Ok(HT_TRENDLINE_Stream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        let config = HT_TRENDLINE_StreamConfig {
+        };
+        Ok(HT_TRENDLINE_Stream { config, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::HT_TRENDLINE_Open`] (composition seam).
@@ -1498,7 +1508,7 @@ impl HT_TRENDLINE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
-        Core::HT_TRENDLINE_step_impl(&mut self.state, inReal, &mut outReal);
+        Core::HT_TRENDLINE_step_impl(&mut self.state, &self.config, inReal, &mut outReal);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1531,7 +1541,7 @@ impl HT_TRENDLINE_Stream {
             if !inReal[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            Core::HT_TRENDLINE_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
+            Core::HT_TRENDLINE_step_impl(&mut self.state, &self.config, inReal[i], &mut outReal[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }
