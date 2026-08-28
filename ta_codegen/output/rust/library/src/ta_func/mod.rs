@@ -84,6 +84,8 @@ mod scratch_election;
 mod stream_finite;
 #[cfg(test)]
 mod stream_out_range;
+#[cfg(test)]
+mod stream_handle_core;
 
 // Generated test-only modules.
 #[cfg(test)]

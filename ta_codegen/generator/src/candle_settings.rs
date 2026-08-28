@@ -203,6 +203,41 @@ pub fn emit_c_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
     out
 }
 
+/// Where a Rust body reads its candle settings from.
+///
+/// The two forms differ only in the receiver path; the locals they bind, and
+/// therefore every expression rendered against them, are identical.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum RustSource {
+    /// `self.candle_settings.<snake>` — the batch and `Open` tiers, which run
+    /// as methods on `Core` and so have the whole settings block to hand.
+    OnCore,
+    /// A by-value `CandleSetting` parameter named `<snake>` — the streaming
+    /// step, which is an associated function carrying no `Core` at all
+    /// (issue #274).
+    ByParam,
+}
+
+impl RustSource {
+    /// The expression a setting's three properties are read off.
+    fn path(self, setting: &str) -> String {
+        let snake = pascal_to_snake_case(setting);
+        match self {
+            Self::OnCore => format!("self.candle_settings.{snake}"),
+            Self::ByParam => snake,
+        }
+    }
+}
+
+/// The field/parameter name a narrowed handle stores one setting under.
+///
+/// Shared with `backends::rust_stream`, so the handle field, the step
+/// parameter and [`RustSource::ByParam`]'s read path cannot drift apart.
+#[must_use]
+pub fn rust_field_name(setting: &str) -> String {
+    pascal_to_snake_case(setting)
+}
+
 /// Emit Rust unpacking lines for the given candle settings.
 ///
 /// ```rust,ignore
@@ -213,22 +248,26 @@ pub fn emit_c_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
 /// `range_type` is a `RangeType` enum in the crate, cast to the `i32` the
 /// generated candle-range comparisons run on — the same shape as Java's
 /// `.ordinal()` and C#'s `(int)` cast below.
-pub fn emit_rust_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
+pub fn emit_rust_unpacking(
+    settings: &BTreeSet<String>,
+    indent: usize,
+    from: RustSource,
+) -> String {
     let pad = " ".repeat(indent);
     let mut out = String::new();
     for setting in settings {
-        let snake = pascal_to_snake_case(setting);
+        let base = from.path(setting);
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_rangeType: i32 = self.candle_settings.{snake}.range_type as i32;\n"
+             {pad}let {setting}_rangeType: i32 = {base}.range_type as i32;\n"
         ));
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_avgPeriod: i32 = self.candle_settings.{snake}.avg_period;\n"
+             {pad}let {setting}_avgPeriod: i32 = {base}.avg_period;\n"
         ));
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_factor: f64 = self.candle_settings.{snake}.factor;\n"
+             {pad}let {setting}_factor: f64 = {base}.factor;\n"
         ));
     }
     out
@@ -413,7 +452,7 @@ mod tests {
     fn rust_unpacking_emits_correct_code() {
         let mut settings = BTreeSet::new();
         settings.insert("BodyLong".to_string());
-        let code = emit_rust_unpacking(&settings, 8);
+        let code = emit_rust_unpacking(&settings, 8, RustSource::OnCore);
         // The whole line, cast included: `range_type` is a `RangeType` enum, so
         // a substring stopping at the field name passes with the cast missing —
         // which would not compile.
@@ -423,6 +462,33 @@ mod tests {
         assert!(code.contains("self.candle_settings.body_long.avg_period"));
         assert!(code.contains("self.candle_settings.body_long.factor"));
         assert!(code.contains("#[allow(non_snake_case)]"));
+    }
+
+    #[test]
+    fn rust_by_param_unpacking_reads_the_parameter_not_a_core() {
+        let mut settings = BTreeSet::new();
+        settings.insert("BodyLong".to_string());
+        let code = emit_rust_unpacking(&settings, 8, RustSource::ByParam);
+        // The step tier has no `Core` receiver (#274): the read must go to the
+        // by-value parameter, and the locals it binds must be spelled exactly as
+        // the `OnCore` form spells them, since the same rendered body reads them.
+        assert!(code.contains("let BodyLong_rangeType: i32 = body_long.range_type as i32;"));
+        assert!(code.contains("let BodyLong_avgPeriod: i32 = body_long.avg_period;"));
+        assert!(code.contains("let BodyLong_factor: f64 = body_long.factor;"));
+        assert!(!code.contains("self."));
+        // Same locals, same order, same count — only the receiver differs.
+        let on_core = emit_rust_unpacking(&settings, 8, RustSource::OnCore);
+        assert_eq!(code.lines().count(), on_core.lines().count());
+    }
+
+    #[test]
+    fn rust_field_name_matches_the_by_param_read_path() {
+        // The handle field, the step parameter and the read path are one name.
+        assert_eq!(rust_field_name("ShadowVeryShort"), "shadow_very_short");
+        let mut settings = BTreeSet::new();
+        settings.insert("ShadowVeryShort".to_string());
+        let code = emit_rust_unpacking(&settings, 0, RustSource::ByParam);
+        assert!(code.contains(&format!("= {}.avg_period;", rust_field_name("ShadowVeryShort"))));
     }
 
     #[test]

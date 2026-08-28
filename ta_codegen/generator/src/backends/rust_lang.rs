@@ -1,7 +1,7 @@
 use std::cell::Cell;
 use std::collections::HashMap;
 
-use crate::candle_settings::{detect_candle_settings, emit_rust_unpacking};
+use crate::candle_settings::{detect_candle_settings, emit_rust_unpacking, RustSource};
 use crate::helper_registry::{hoist_block_helpers, try_inline_expr, HelperRegistry};
 use crate::ir::{
     BinOp, CircBuf, CircBufLayout, EnumDef, Expr, FuncDef, LookbackExpr, OptInput, Output,
@@ -1217,7 +1217,7 @@ fn gen_guarded_func(
         // Candle settings unpacking
         let candle_used = detect_candle_settings(&func.body);
         if !candle_used.is_empty() {
-            out.push_str(&emit_rust_unpacking(&candle_used, 8));
+            out.push_str(&emit_rust_unpacking(&candle_used, 8, RustSource::OnCore));
         }
 
         // Body-assigned vars (for skipping VarDecl inits that get overwritten)
@@ -1507,7 +1507,7 @@ fn gen_private_func_inner(
     // Emit candle settings unpacking (only for referenced settings)
     let candle_used = detect_candle_settings(&func.body);
     if !candle_used.is_empty() {
-        out.push_str(&emit_rust_unpacking(&candle_used, 8));
+        out.push_str(&emit_rust_unpacking(&candle_used, 8, RustSource::OnCore));
     }
 
     // Collect output array names for cast insertion
@@ -4753,7 +4753,7 @@ fn render_lookback_code(
     // Emit candle settings unpacking for lookback body
     let candle_used = detect_candle_settings(stmts);
     if !candle_used.is_empty() {
-        out.push_str(&emit_rust_unpacking(&candle_used, 8));
+        out.push_str(&emit_rust_unpacking(&candle_used, 8, RustSource::OnCore));
     }
 
     let inline_counter = Cell::new(0);

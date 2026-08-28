@@ -6,7 +6,7 @@
 //! - Logic vs guarded validation checks
 //! - Indicator-specific feature tests (unstable period, enums, etc.)
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
 use ta_codegen_lib::backends;
 use ta_codegen_lib::helper_registry::HelperRegistry;
@@ -9535,8 +9535,10 @@ fn the_transition_tier_is_step_impl_in_every_backend() {
         (
             "rust",
             &rust,
-            "fn SMA_step_impl(&self, sp: &mut SMA_StreamState,",
-            &["self.core.SMA_step_impl(&mut self.state,"],
+            // No `&self`: SMA's step reads nothing from `Core`, so the handle
+            // stores none of it and the step is an associated function (#274).
+            "fn SMA_step_impl(sp: &mut SMA_StreamState,",
+            &["Core::SMA_step_impl(&mut self.state,"],
             "step_internal",
         ),
         (
@@ -13136,3 +13138,114 @@ fn every_declared_input_is_checked_in_every_backend() {
     assert_eq!(pairs, 7, "the seven never-indexed legs of #260");
 }
 
+
+/// A Rust stream handle carries exactly the `CandleSetting`s its own step
+/// reads, and no `Core` (issue #274).
+///
+/// Corpus-wide and structural, because that is the only place it is visible.
+/// A field nobody reads has no runtime behaviour, so every value gate in the
+/// tree — `ta_regtest`, `--xlang-hash`, the crate's own value modules — passes
+/// whether the handle carries 280 bytes of `Core` or none of it. What can be
+/// checked here is the shape, in both directions:
+///
+/// * no handle declares a `core: Core` field, and no step takes `&self`;
+/// * the settings the struct declares are EXACTLY the settings the step body
+///   unpacks — a superset wastes the bytes this change exists to remove, a
+///   subset does not compile.
+///
+/// The two-sided equality is what makes it a gate rather than a direction.
+/// Its own control is the census at the end: the corpus must contain both a
+/// handle that carries settings and a handle that carries none. Drop that and
+/// "emit no settings, ever" and "emit the whole block, always" each satisfy
+/// one half of the equality on a corpus that happens to be uniform.
+#[test]
+fn a_rust_stream_handle_carries_only_the_settings_its_step_reads() {
+    let registry = make_registry();
+    let helpers = make_helpers();
+    let (mut with_settings, mut without, mut scanned) = (0usize, 0usize, 0usize);
+
+    for name in discover_indicators() {
+        let Some((func, enums)) = try_load_indicator(&name) else {
+            continue;
+        };
+        if !func.streaming || !backends::rust_stream::emits_stream(&func, &registry) {
+            continue;
+        }
+        let src = backends::rust_stream::generate(&func, &enums, &registry, &helpers);
+        scanned += 1;
+
+        assert!(
+            !src.contains("    core: Core,"),
+            "{name}: the handle still embeds a whole Core"
+        );
+        assert!(
+            !src.contains("_step_impl(&self,"),
+            "{name}: the step still takes a Core receiver"
+        );
+        assert!(
+            !src.contains("core: self.clone()"),
+            "{name}: a construction site still clones the Core into the handle"
+        );
+
+        // Declared on the handle: `    <field>: CandleSetting,`.
+        let declared: BTreeSet<String> = src
+            .lines()
+            .filter_map(|l| l.trim().strip_suffix(": CandleSetting,"))
+            .map(str::to_string)
+            .collect();
+        // Read by the step: the unpacking binds `= <field>.range_type as i32;`.
+        let read: BTreeSet<String> = src
+            .lines()
+            .filter_map(|l| l.trim().strip_suffix(".range_type as i32;"))
+            .filter_map(|l| l.rsplit_once("= ").map(|(_, f)| f.to_string()))
+            .filter(|f| !f.contains('.'))
+            .collect();
+        assert_eq!(
+            declared, read,
+            "{name}: the handle's settings must be exactly the ones its step unpacks"
+        );
+
+        // Every declared field is also stored at Open and restored on a copy,
+        // or the snapshot is not one.
+        for field in &declared {
+            assert!(
+                src.contains(&format!("{field}: self.candle_settings.{field}")),
+                "{name}: `{field}` is declared but never stored at Open"
+            );
+            assert!(
+                src.contains(&format!("self.{field} = src.{field};")),
+                "{name}: `{field}` is declared but `restore_from` drops it"
+            );
+            assert!(
+                src.contains(&format!("Core::{}_step_impl(self.{field},", func.name.to_uppercase()))
+                    || src.contains(&format!("self.{field}, ")),
+                "{name}: `{field}` is declared but never passed to the step"
+            );
+        }
+
+        if declared.is_empty() {
+            without += 1;
+        } else {
+            with_settings += 1;
+        }
+    }
+
+    assert!(scanned > 100, "the sweep must reach the whole stream corpus, saw {scanned}");
+    assert!(
+        with_settings > 0,
+        "control: some handle must carry a setting, or the equality above is satisfied by \
+         emitting none at all"
+    );
+    assert!(
+        without > 0,
+        "control: some handle must carry none, or the equality above is satisfied by emitting \
+         the whole settings block everywhere"
+    );
+    // The narrowing is worth doing because most handles need nothing: if that
+    // ever inverts, the uniform-`CandleSettings` fallback is the cheaper shape.
+    assert!(
+        without > with_settings,
+        "expected most handles to read nothing from Core; got {without} bare vs {with_settings} \
+         carrying settings"
+    );
+}

@@ -2,11 +2,11 @@
 //!
 //! For every YAML-declared streamable function this appends a
 //! `/**** Streaming API *****/` section to the generated per-function Rust
-//! file: an opaque `#[derive(Clone)]` handle (`<NAME>_Stream { core, state }`),
-//! a private state struct mirroring the C stream struct field-for-field, a
-//! `<NAME>_step_impl` transition method on `Core` (so batch rendering
-//! conventions — `self.candle_settings`, `self.compatibility`, lookback calls —
-//! work verbatim), a `pub(crate) <NAME>_OpenInternal(.., startIdx, ..)`
+//! file: an opaque `#[derive(Clone)]` handle (`<NAME>_Stream { state, out }`,
+//! plus one `CandleSetting` field per setting its step reads — see
+//! [`handle_settings`]), a private state struct mirroring the C stream struct
+//! field-for-field, a `<NAME>_step_impl` transition associated function on
+//! `Core`, a `pub(crate) <NAME>_OpenInternal(.., startIdx, ..)`
 //! composition seam, the public `<NAME>_Open` / `<NAME>_OpenAndFill`
 //! constructors, and `update`/`peek` on the handle.
 //!
@@ -15,6 +15,14 @@
 //! captures the still-live locals into the handle; the per-bar step is
 //! `streaming::build_transition` rendered through the same walkers. No
 //! expression text is hand-built outside the shared renderers.
+//!
+//! `Open` is a `Core` method, so the batch conventions the transcription is
+//! written against — `self.candle_settings`, `self.compatibility`, lookback
+//! calls — hold there verbatim. The step is where they cannot: it runs off a
+//! handle that no longer carries a `Core` (#274), so the settings its body
+//! reads arrive as by-value parameters and bind the same locals under the same
+//! names (`candle_settings::RustSource`). Nothing else in a step body ever
+//! reached `self`.
 //!
 //! Deliberate simplifications vs the C emitter (see design spec):
 //! - `peek(&self)` = `update` on a scratch copy of the state. No `peekMode`
@@ -29,7 +37,7 @@
 //!   requires the rest to match that length (`Err(BadParam)` otherwise).
 
 use std::cell::Cell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
 
 use crate::helper_registry::HelperRegistry;
@@ -490,21 +498,25 @@ pub fn generate(
     if let Some(m) = func.alt_marker(crate::ir::Tier::Stream, crate::ir::Lang::Rust) {
         let _ = writeln!(o, "/* {m} */\n");
     }
+    // One derivation, handed to every tier: the handle's fields, the step's
+    // parameters and the call sites' arguments are all rendered from it, so
+    // they cannot disagree about what this handle carries (#274).
+    let settings = handle_settings(&plan);
     match &plan {
         StreamPlan::Loop(model) => {
-            emit_loop(&mut o, func, model, enums, registry, helpers, &counter);
+            emit_loop(&mut o, func, model, enums, registry, helpers, &counter, &settings);
         }
         StreamPlan::DualMode(dmp) => {
-            emit_dual_mode(&mut o, func, dmp, enums, registry, helpers, &counter);
+            emit_dual_mode(&mut o, func, dmp, enums, registry, helpers, &counter, &settings);
         }
         StreamPlan::Dispatch(dp) => {
-            emit_dispatch(&mut o, func, dp, enums, registry, helpers, &counter);
+            emit_dispatch(&mut o, func, dp, enums, registry, helpers, &counter, &settings);
         }
         StreamPlan::PeriodBank(pb) => {
-            emit_period_bank(&mut o, func, pb, registry, helpers, enums);
+            emit_period_bank(&mut o, func, pb, registry, helpers, enums, &settings);
         }
         StreamPlan::Composed(cp) => {
-            emit_composed(&mut o, func, cp, enums, registry, helpers, &counter);
+            emit_composed(&mut o, func, cp, enums, registry, helpers, &counter, &settings);
         }
     }
 
@@ -523,20 +535,23 @@ fn emit_loop(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     let typing = build_typing(func, model);
-    let shape = emit_handle_and_state_structs(o, func, model, &typing);
+    let shape = emit_handle_and_state_structs(o, func, model, &typing, settings);
 
     let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
-    emit_step(o, func, model, &typing, enums, registry, helpers, counter);
-    emit_open_internal(o, func, model, &typing, model.body, enums, registry, helpers, counter);
+    emit_step(o, func, model, &typing, enums, registry, helpers, counter, settings);
+    emit_open_internal(
+        o, func, model, &typing, model.body, enums, registry, helpers, counter, settings,
+    );
     emit_open_internal_wrapper(o, func, model);
     emit_open_wrapper(o, func, enums);
     emit_open_and_fill_wrapper(o, func, enums);
     emit_open_and_fill_internal_wrapper(o, func);
     let _ = writeln!(o, "}}\n");
 
-    emit_update_and_peek(o, func, shape, false);
+    emit_update_and_peek(o, func, shape, false, settings);
     emit_trait_pin(o, func);
 }
 
@@ -760,6 +775,102 @@ fn scale_by_stride(idx: Expr) -> Expr {
 }
 
 // ---------------------------------------------------------------------------
+// What a handle carries of its `Core` (issue #274)
+// ---------------------------------------------------------------------------
+
+/// The `CandleSetting`s a handle must carry: exactly the ones its own
+/// `_step_impl` body reads.
+///
+/// A handle used to embed the whole `Core` by value — 280 bytes, of which a
+/// step reads at most five 16-byte settings and usually nothing at all. The
+/// unstable period and the compatibility mode are consumed at `Open` (they set
+/// the lookback) and never consulted again, and the step is the only thing the
+/// stored copy ever fed: a sub-handle is driven through its own public
+/// `update`, not through a sub `_step_impl`, so there is no forwarding to
+/// arrange.
+///
+/// The slices scanned here are *the same* `steady_stmts` the step emitters hand
+/// to `emit_rust_unpacking`, which is what keeps the field set and the unpacked
+/// set from drifting: widen one and the other widens with it. Dispatch and
+/// period-bank steps carry no transcribed body at all — they only advance
+/// sub-handles — so they read nothing.
+fn handle_settings(plan: &StreamPlan) -> BTreeSet<String> {
+    use crate::candle_settings::detect_candle_settings;
+    match plan {
+        StreamPlan::Loop(model) => detect_candle_settings(&model.steady_stmts),
+        StreamPlan::DualMode(dmp) => {
+            let mut s = detect_candle_settings(&dmp.mode_a.steady_stmts);
+            s.extend(detect_candle_settings(&dmp.mode_b.steady_stmts));
+            s
+        }
+        StreamPlan::Composed(cp) => cp
+            .producer
+            .as_ref()
+            .map(|m| detect_candle_settings(&m.steady_stmts))
+            .unwrap_or_default(),
+        StreamPlan::Dispatch(_) | StreamPlan::PeriodBank(_) => BTreeSet::new(),
+    }
+}
+
+/// The handle's settings fields, as struct declaration lines.
+fn settings_field_decls(settings: &BTreeSet<String>) -> String {
+    let mut out = String::new();
+    for setting in settings {
+        let field = crate::candle_settings::rust_field_name(setting);
+        let _ = write!(
+            out,
+            "    /// The `{setting}` setting this stream was opened under.\n    {field}: CandleSetting,\n"
+        );
+    }
+    out
+}
+
+/// `<field>: self.candle_settings.<field>, ` for each setting — the handle
+/// initializer fragment used at every construction site, all of which sit in a
+/// `Core` method and so can read the block directly.
+fn settings_field_inits(settings: &BTreeSet<String>) -> String {
+    let mut out = String::new();
+    for setting in settings {
+        let field = crate::candle_settings::rust_field_name(setting);
+        let _ = write!(out, "{field}: self.candle_settings.{field}, ");
+    }
+    out
+}
+
+/// `self.<field> = src.<field>;` for each setting — `restore_from`'s share of
+/// the settings. `CandleSetting` is `Copy`, so this is a plain assignment where
+/// the whole-`Core` version called `clone_from`.
+fn settings_restore(settings: &BTreeSet<String>) -> String {
+    let mut out = String::new();
+    for setting in settings {
+        let field = crate::candle_settings::rust_field_name(setting);
+        let _ = writeln!(out, "        self.{field} = src.{field};");
+    }
+    out
+}
+
+/// `<field>: CandleSetting, ` — the step signature's leading parameters.
+fn settings_params(settings: &BTreeSet<String>) -> String {
+    let mut out = String::new();
+    for setting in settings {
+        let field = crate::candle_settings::rust_field_name(setting);
+        let _ = write!(out, "{field}: CandleSetting, ");
+    }
+    out
+}
+
+/// `self.<field>, ` — the step call site's leading arguments, read off the
+/// handle.
+fn settings_args(settings: &BTreeSet<String>) -> String {
+    let mut out = String::new();
+    for setting in settings {
+        let field = crate::candle_settings::rust_field_name(setting);
+        let _ = write!(out, "self.{field}, ");
+    }
+    out
+}
+
+// ---------------------------------------------------------------------------
 // Structs
 // ---------------------------------------------------------------------------
 
@@ -768,17 +879,19 @@ fn emit_handle_and_state_structs(
     func: &FuncDef,
     model: &StreamModel,
     typing: &Typing,
+    settings: &BTreeSet<String>,
 ) -> StateShape {
-    emit_handle_struct(o, func);
+    emit_handle_struct(o, func, settings);
     emit_state_struct_from(o, func, &state_fields(func, model, typing))
 }
 
 /// The public opaque handle struct (identical for every tier).
-fn emit_handle_struct(o: &mut String, func: &FuncDef) {
+fn emit_handle_struct(o: &mut String, func: &FuncDef, settings: &BTreeSet<String>) {
     let handle = stream_type_name(func);
     let state = state_type_name(func);
     let sn = snake(func);
     let n = func.name.to_uppercase();
+    let settings_fields = settings_field_decls(settings);
     let _ = writeln!(
         o,
         "/// Live {n} stream: one value per closed bar, bit-identical to [`Core::{sn}`]\n\
@@ -789,20 +902,21 @@ fn emit_handle_struct(o: &mut String, func: &FuncDef) {
          #[must_use = \"a stream does nothing unless updated; dropping it closes the stream\"]\n\
          #[derive(Debug, Clone)]\n\
          #[doc(alias = \"TA_{n}_Stream\")]\n\
-         pub struct {handle} {{\n    core: Core,\n    state: {state},\n\
+         pub struct {handle} {{\n{settings_fields}    state: {state},\n\
          \x20   /// The bars this handle has produced a value for — see [`Self::out_range`].\n\
          \x20   out: OutRange,\n}}\n"
     );
     // The handle's half of the scratch restore: only a handle embedded in
     // another handle's state (a composed sub, a dispatch arm, a period bank
     // slot) reaches it, so most functions never call their own.
+    let settings_restore = settings_restore(settings);
     let _ = writeln!(
         o,
         "#[allow(dead_code)]\nimpl {handle} {{\n\
          \x20   /// Overwrite from `src`, reusing this handle's buffers instead of\n\
          \x20   /// allocating new ones. See `{state}::restore_from`.\n\
          \x20   pub(crate) fn restore_from(&mut self, src: &Self) {{\n\
-         \x20       self.core.clone_from(&src.core);\n\
+         {settings_restore}\
          \x20       self.state.restore_from(&src.state);\n\
          \x20       self.out = src.out;\n\
          \x20   }}\n}}\n"
@@ -1090,7 +1204,7 @@ fn finite_bar_check(func: &FuncDef, indent: &str) -> String {
 }
 
 
-/// `fn <NAME>_step_impl(&self, sp: &mut State, <bars>, <&mut outs>)`.
+/// `fn <NAME>_step_impl(<settings>, sp: &mut State, <bars>, <&mut outs>)`.
 #[allow(clippy::too_many_arguments)]
 fn emit_step(
     o: &mut String,
@@ -1101,8 +1215,9 @@ fn emit_step(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
-    emit_step_sig(o, func, false);
+    emit_step_sig(o, func, false, settings);
     let ctx = build_step_ctx(func, &[model], typing);
     emit_step_body(o, func, model, typing, &ctx, enums, registry, helpers, counter, 8);
     emit_step_end(o, false);
@@ -1110,9 +1225,15 @@ fn emit_step(
 
 /// The step signature line, shared by every tier (dispatch/period-bank steps
 /// hand-roll their bodies but keep the identical surface).
-fn emit_step_sig(o: &mut String, func: &FuncDef, fallible: bool) {
+fn emit_step_sig(
+    o: &mut String,
+    func: &FuncDef,
+    fallible: bool,
+    settings: &BTreeSet<String>,
+) {
     let sn = snake(func);
     let state = state_type_name(func);
+    let lead = settings_params(settings);
     let mut params = String::new();
     for bar in streaming::input_array_names(func) {
         let _ = write!(params, ", {bar}: f64");
@@ -1126,9 +1247,13 @@ fn emit_step_sig(o: &mut String, func: &FuncDef, fallible: bool) {
     // statements (the period-1 identity arm), which a `Result` return would not
     // typecheck.
     let ret = if fallible { " -> Result<(), RetCode>" } else { "" };
+    // No `&self`: the handle no longer carries a `Core` to be the receiver
+    // (#274). What the body reads of it arrives as the leading by-value
+    // `CandleSetting` parameters, so the step stays an associated function of
+    // `Core` — same name, same call graph, one fewer 280-byte copy per handle.
     let _ = writeln!(
         o,
-        "    fn {sn}_step_impl(&self, sp: &mut {state}{params}){ret} {{"
+        "    fn {sn}_step_impl({lead}sp: &mut {state}{params}){ret} {{"
     );
 }
 
@@ -1206,11 +1331,15 @@ fn emit_step_body(
             helpers, counter,
         ));
     }
-    // Candle settings are read where batch reads them (from the immutable Core
-    // snapshot in the handle — `self` here is that Core).
+    // Candle settings bind the same locals batch binds, off the by-value
+    // parameters the handle stored at Open instead of a whole `Core` (#274).
     let step_settings = crate::candle_settings::detect_candle_settings(&model.steady_stmts);
     if !step_settings.is_empty() {
-        o.push_str(&crate::candle_settings::emit_rust_unpacking(&step_settings, indent));
+        o.push_str(&crate::candle_settings::emit_rust_unpacking(
+            &step_settings,
+            indent,
+            crate::candle_settings::RustSource::ByParam,
+        ));
     }
     o.push_str(&body);
 }
@@ -1391,13 +1520,16 @@ fn emit_open_internal(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     emit_open_sig(o, func, OutMode::Core);
     emit_open_validation_head(o, func, OutMode::Core, enums);
     emit_open_inits(o, func, &model.outputs, typing, registry, helpers);
 
     let fields = state_fields(func, model, typing);
-    emit_identity_fast_path(o, func, model, &fields, typing, registry, helpers, counter);
+    emit_identity_fast_path(
+        o, func, model, &fields, typing, registry, helpers, counter, settings,
+    );
 
     // --- transcribed batch body --------------------------------------------
     let open_body = build_open_body_rust(model, body);
@@ -1406,7 +1538,7 @@ fn emit_open_internal(
     );
 
     emit_capture_and_publish(
-        o, func, model, &model.state, typing, registry, helpers, counter, "",
+        o, func, model, &model.state, typing, registry, helpers, counter, "", settings,
     );
     let _ = writeln!(o, "    }}\n");
 }
@@ -1681,12 +1813,14 @@ fn emit_capture_and_publish(
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
     extra_fields: &str,
+    settings: &BTreeSet<String>,
 ) {
     let handle = stream_type_name(func);
+    let settings_init = settings_field_inits(settings);
     let _ = writeln!(o, "\n        // Capture the live batch state into the handle.");
     emit_capture(o, func, model, scalars, typing, registry, helpers, counter, extra_fields);
     // The core publishes only the handle; the scalar wrapper reads its sink.
-    let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+    let _ = writeln!(o, "        Ok({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
 }
 
 
@@ -1761,7 +1895,7 @@ fn emit_open_region(
 
     let candle_used = crate::candle_settings::detect_candle_settings(body);
     if !candle_used.is_empty() {
-        o.push_str(&crate::candle_settings::emit_rust_unpacking(&candle_used, 8));
+        o.push_str(&crate::candle_settings::emit_rust_unpacking(&candle_used, 8, crate::candle_settings::RustSource::OnCore));
     }
 
     // VarDecl initializations (skipped when the body reassigns the same var).
@@ -1830,9 +1964,11 @@ fn emit_identity_fast_path(
     registry: &Registry,
     helpers: &HelperRegistry,
     _counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     let Some(idp) = &model.identity else { return };
     let handle = stream_type_name(func);
+    let settings_init = settings_field_inits(settings);
     let state = state_type_name(func);
     let sn = snake(func);
     let opt_real_params: Vec<String> = func
@@ -1884,7 +2020,7 @@ fn emit_identity_fast_path(
     let _ = writeln!(o, "            }}");
     let _ = writeln!(
         o,
-        "            return Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});"
+        "            return Ok({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});"
     );
     let _ = writeln!(o, "        }}");
 }
@@ -2319,7 +2455,16 @@ fn stream_doctest(
 }
 
 #[allow(clippy::too_many_lines)]
-fn emit_update_and_peek(o: &mut String, func: &FuncDef, shape: StateShape, step_fallible: bool) {
+fn emit_update_and_peek(
+    o: &mut String,
+    func: &FuncDef,
+    shape: StateShape,
+    step_fallible: bool,
+    settings: &BTreeSet<String>,
+) {
+    // The step is an associated function now, so the settings it needs are read
+    // off the handle at the call rather than out of a stored `Core` (#274).
+    let settings_args = settings_args(settings);
     let sn = snake(func);
     let n = func.name.to_uppercase();
     let handle = stream_type_name(func);
@@ -2402,7 +2547,7 @@ fn emit_update_and_peek(o: &mut String, func: &FuncDef, shape: StateShape, step_
     o.push_str(&out_decls);
     let _ = writeln!(
         o,
-        "        self.core.{sn}_step_impl(&mut self.state, {fwd_bars}{out_refs}){step_try};"
+        "        Core::{sn}_step_impl({settings_args}&mut self.state, {fwd_bars}{out_refs}){step_try};"
     );
     // After the step, so a rejected bar (non-finite here, or a sub-stream's
     // reject through `?`) leaves the range exactly where it was. `peek` runs the
@@ -2548,7 +2693,7 @@ fn emit_update_and_peek(o: &mut String, func: &FuncDef, shape: StateShape, step_
     }
     let _ = writeln!(
         o,
-        "            self.core.{sn}_step_impl(&mut self.state, {step_args}){step_try};"
+        "            Core::{sn}_step_impl({settings_args}&mut self.state, {step_args}){step_try};"
     );
     let _ = writeln!(
         o,
@@ -2771,6 +2916,7 @@ fn emit_dual_mode(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     let ma = &dmp.mode_a;
     let mb = &dmp.mode_b;
@@ -2793,7 +2939,7 @@ fn emit_dual_mode(
     let fields_b = state_fields_from(func, mb, &typing, &union_scalars);
     let union_fields = dual_union_fields(func, &fields_a, &fields_b);
 
-    emit_handle_struct(o, func);
+    emit_handle_struct(o, func, settings);
     let shape = emit_state_struct_from(o, func, &union_fields);
 
     let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
@@ -2805,7 +2951,7 @@ fn emit_dual_mode(
         .filter(|p| p.param_type == ParamType::Real)
         .map(|p| p.name.clone())
         .collect();
-    emit_step_sig(o, func, false);
+    emit_step_sig(o, func, false, settings);
     let ctx = build_step_ctx(func, &[ma, mb], &typing);
     // Identity (HMA period 1) short-circuits ahead of the predicate, as it does
     // in the batch and in Open: it is a property of the function, not of a mode.
@@ -2819,14 +2965,16 @@ fn emit_dual_mode(
     let _ = writeln!(o, "        }}");
     emit_step_end(o, false);
 
-    emit_dual_open(o, func, dmp, &typing, &union_scalars, enums, registry, helpers, counter);
+    emit_dual_open(
+        o, func, dmp, &typing, &union_scalars, enums, registry, helpers, counter, settings,
+    );
     emit_open_internal_wrapper(o, func, ma);
     emit_open_wrapper(o, func, enums);
     emit_open_and_fill_wrapper(o, func, enums);
     emit_open_and_fill_internal_wrapper(o, func);
     let _ = writeln!(o, "}}\n");
 
-    emit_update_and_peek(o, func, shape, false);
+    emit_update_and_peek(o, func, shape, false, settings);
     emit_trait_pin(o, func);
 }
 
@@ -2845,6 +2993,7 @@ fn emit_dual_open(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     let ma = &dmp.mode_a;
     let mb = &dmp.mode_b;
@@ -2869,7 +3018,9 @@ fn emit_dual_open(
     // ABOVE the mode predicate, so which arm the predicate would have picked is
     // moot.
     let union_fields = dual_union_fields(func, &fields_a, &fields_b);
-    emit_identity_fast_path(o, func, ma, &union_fields, typing, registry, helpers, counter);
+    emit_identity_fast_path(
+        o, func, ma, &union_fields, typing, registry, helpers, counter, settings,
+    );
     let _ = writeln!(o, "        if {pred} {{");
     for (k, arm) in [ma, mb].into_iter().enumerate() {
         if k == 1 {
@@ -2889,7 +3040,10 @@ fn emit_dual_open(
         emit_open_region(&mut s, func, arm, typing, &open_body, enums, registry, helpers, counter, &[]);
         let (own, other) = if k == 0 { (&fields_a, &fields_b) } else { (&fields_b, &fields_a) };
         let complement = dual_complement_literal(own, other);
-        emit_capture_and_publish(&mut s, func, arm, union_scalars, typing, registry, helpers, counter, &complement);
+        emit_capture_and_publish(
+            &mut s, func, arm, union_scalars, typing, registry, helpers, counter, &complement,
+            settings,
+        );
         o.push_str(&indent_block(&s, 4));
     }
     let _ = writeln!(o, "        }}");
@@ -2975,8 +3129,10 @@ fn emit_dispatch(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     let _ = counter;
+    let settings_init = settings_field_inits(settings);
     let sn = snake(func);
     let handle = stream_type_name(func);
     let state = state_type_name(func);
@@ -2995,7 +3151,7 @@ fn emit_dispatch(
     let lb_call = format!("self.{sn}_Lookback({lb_args})?");
 
     // --- structs + sub enum -------------------------------------------------
-    emit_handle_struct(o, func);
+    emit_handle_struct(o, func, settings);
     let mut state_fields: Vec<(String, String, String)> = func
         .optional_inputs
         .iter()
@@ -3053,7 +3209,7 @@ fn emit_dispatch(
     let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
 
     // --- step ---------------------------------------------------------------
-    emit_step_sig(o, func, true);
+    emit_step_sig(o, func, true, settings);
     if let Some(idp) = &dp.identity {
         let cond = params_on_state(func, &idp.condition);
         let cond = render_expr(&cond, &ctx, &[], registry, helpers);
@@ -3170,17 +3326,17 @@ fn emit_dispatch(
                     };
                     let _ = writeln!(
                         o,
-                        "            return Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, {value}));"
+                        "            return Ok(({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, {value}));"
                     );
                 }
                 OutMode::Fill => {
                     let _ = writeln!(
                         o,
-                        "            return Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }}));"
+                        "            return Ok(({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }}));"
                     );
                 }
                 OutMode::FillInternal => {
-                    let _ = writeln!(o, "            return Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});");
+                    let _ = writeln!(o, "            return Ok({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});");
                 }
             }
             let _ = writeln!(o, "        }}");
@@ -3313,13 +3469,13 @@ fn emit_dispatch(
         match mode {
             OutMode::Core => unreachable!("dispatch tier is exempt from the merge"),
             OutMode::Scalar => {
-                let _ = writeln!(o, "        Ok(({handle} {{ core: self.clone(), state, out: subRange }}, value))");
+                let _ = writeln!(o, "        Ok(({handle} {{ {settings_init}state, out: subRange }}, value))");
             }
             OutMode::Fill => {
-                let _ = writeln!(o, "        Ok(({handle} {{ core: self.clone(), state, out: fillRange }}, fillRange))");
+                let _ = writeln!(o, "        Ok(({handle} {{ {settings_init}state, out: fillRange }}, fillRange))");
             }
             OutMode::FillInternal => {
-                let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+                let _ = writeln!(o, "        Ok({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
             }
         }
         let _ = writeln!(o, "    }}\n");
@@ -3329,7 +3485,7 @@ fn emit_dispatch(
     }
     let _ = writeln!(o, "}}\n");
 
-    emit_update_and_peek(o, func, shape, true);
+    emit_update_and_peek(o, func, shape, true, settings);
     emit_trait_pin(o, func);
 }
 
@@ -3352,8 +3508,10 @@ fn emit_period_bank(
     registry: &Registry,
     helpers: &HelperRegistry,
     enums: &HashMap<String, EnumDef>,
+    settings: &BTreeSet<String>,
 ) {
     let _ = (registry, helpers);
+    let settings_init = settings_field_inits(settings);
     let handle = stream_type_name(func);
     let state = state_type_name(func);
     let callee = plan.callee.to_uppercase();
@@ -3387,7 +3545,7 @@ fn emit_period_bank(
     let open_opts = opts_of(&format!("{min} + (bankIdx as i32)"));
 
     // --- structs ------------------------------------------------------------
-    emit_handle_struct(o, func);
+    emit_handle_struct(o, func, settings);
     let mut state_fields: Vec<(String, String, String)> = func
         .optional_inputs
         .iter()
@@ -3410,7 +3568,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
 
     // --- step: advance ALL slots, output the clamped-period slot ------------
-    emit_step_sig(o, func, true);
+    emit_step_sig(o, func, true, settings);
     let _ = writeln!(o, "        let mut cp: i32 = {period} as i32;");
     let _ = writeln!(o, "        if cp < sp.{min} {{");
     let _ = writeln!(o, "            cp = sp.{min};");
@@ -3465,7 +3623,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
     let _ = writeln!(
         o,
-        "        Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: subStart, count: historyLen - subStart }} }}, lastValue_{out}))"
+        "        Ok(({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: subStart, count: historyLen - subStart }} }}, lastValue_{out}))"
     );
     let _ = writeln!(o, "    }}\n");
 
@@ -3515,12 +3673,12 @@ fn emit_period_bank(
     let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
     let _ = writeln!(
         o,
-        "        Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }} }}, OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }}))"
+        "        Ok(({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }} }}, OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }}))"
     );
     let _ = writeln!(o, "    }}\n");
     let _ = writeln!(o, "}}\n");
 
-    emit_update_and_peek(o, func, shape, true);
+    emit_update_and_peek(o, func, shape, true, settings);
     emit_trait_pin(o, func);
 }
 
@@ -3766,8 +3924,9 @@ fn emit_composed_step(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
-    emit_step_sig(o, func, true);
+    emit_step_sig(o, func, true, settings);
     let cur_scalars = composed_cur_scalars(cp, inputs, outputs);
     let ctx = composed_step_ctx(func, cp, typing, &cur_scalars);
 
@@ -3821,7 +3980,11 @@ fn emit_composed_step(
         }
         let step_settings = crate::candle_settings::detect_candle_settings(&model.steady_stmts);
         if !step_settings.is_empty() {
-            o.push_str(&crate::candle_settings::emit_rust_unpacking(&step_settings, 8));
+            o.push_str(&crate::candle_settings::emit_rust_unpacking(
+                &step_settings,
+                8,
+                crate::candle_settings::RustSource::ByParam,
+            ));
         }
         o.push_str(&body);
         let series = cp.series.clone().expect("producer plan carries a series");
@@ -3971,8 +4134,10 @@ fn emit_composed_open(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     // The composed fill/scratch path hardcodes f64 Vecs (mirrors C's assert).
+    let settings_init = settings_field_inits(settings);
     let handle = stream_type_name(func);
     let state = state_type_name(func);
     let sn = snake(func);
@@ -4203,7 +4368,7 @@ fn emit_composed_open(
                     let _ = writeln!(o, "        }}");
                 }
             }
-            let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+            let _ = writeln!(o, "        Ok({handle} {{ {settings_init}state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
         }
     }
     let _ = writeln!(o, "    }}\n");
@@ -4275,7 +4440,7 @@ fn emit_composed_region(
 
     let candle_used = crate::candle_settings::detect_candle_settings(body);
     if !candle_used.is_empty() {
-        o.push_str(&crate::candle_settings::emit_rust_unpacking(&candle_used, 8));
+        o.push_str(&crate::candle_settings::emit_rust_unpacking(&candle_used, 8, crate::candle_settings::RustSource::OnCore));
     }
 
     let body_assigned: HashSet<String> = body
@@ -4339,6 +4504,7 @@ fn emit_composed(
     registry: &Registry,
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
+    settings: &BTreeSet<String>,
 ) {
     let inputs = streaming::input_array_names(func);
     let outputs: Vec<String> = func.outputs.iter().map(|x| x.name.clone()).collect();
@@ -4370,7 +4536,7 @@ fn emit_composed(
     }
 
     // --- handle + state struct ---------------------------------------------
-    emit_handle_struct(o, func);
+    emit_handle_struct(o, func, settings);
     let mut fields: Vec<(String, String, String)> = if let Some(model) = &cp.producer {
         state_fields(func, model, &typing)
     } else {
@@ -4410,10 +4576,10 @@ fn emit_composed(
     // --- impl Core ----------------------------------------------------------
     let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
     emit_composed_step(
-        o, func, cp, &typing, &inputs, &outputs, enums, registry, helpers, counter,
+        o, func, cp, &typing, &inputs, &outputs, enums, registry, helpers, counter, settings,
     );
     emit_composed_open(
-        o, func, cp, &typing, &outputs, enums, registry, helpers, counter,
+        o, func, cp, &typing, &outputs, enums, registry, helpers, counter, settings,
     );
     emit_open_internal_wrapper_named(o, func, &outputs);
     emit_open_wrapper(o, func, enums);
@@ -4421,6 +4587,6 @@ fn emit_composed(
     emit_open_and_fill_internal_wrapper(o, func);
     let _ = writeln!(o, "}}\n");
 
-    emit_update_and_peek(o, func, shape, true);
+    emit_update_and_peek(o, func, shape, true, settings);
     emit_trait_pin(o, func);
 }

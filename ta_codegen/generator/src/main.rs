@@ -2262,12 +2262,25 @@ fn csharp_test_tfms(test_dir: &Path) -> Vec<String> {
 /// #241). All are listed in the Rust backend's `clean_keep`, so `generate` never
 /// deletes them.
 const RUST_TEMPLATE_MODULES: &[&str] =
-    &["types", "div_zero", "scratch_election", "stream_finite", "stream_out_range"];
+    &[
+    "types",
+    "div_zero",
+    "scratch_election",
+    "stream_finite",
+    "stream_out_range",
+    "stream_handle_core",
+];
 
 /// Of [`RUST_TEMPLATE_MODULES`], the ones that exist only for `cargo test` and so
 /// are declared `#[cfg(test)]` in the generated `mod.rs`.
 const RUST_TEST_ONLY_MODULES: &[&str] =
-    &["div_zero", "scratch_election", "stream_finite", "stream_out_range"];
+    &[
+    "div_zero",
+    "scratch_election",
+    "stream_finite",
+    "stream_out_range",
+    "stream_handle_core",
+];
 
 /// `#[cfg(test)]` modules that `generate` WRITES into `src/ta_func/` rather than
 /// copying from `templates/rust/` — the phantom-I/O sweep, whose two probes per

@@ -657,7 +657,14 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL3WHITESOLDIERS_Stream")]
 pub struct CDL3WHITESOLDIERS_Stream {
-    core: Core,
+    /// The `BodyShort` setting this stream was opened under.
+    body_short: CandleSetting,
+    /// The `Far` setting this stream was opened under.
+    far: CandleSetting,
+    /// The `Near` setting this stream was opened under.
+    near: CandleSetting,
+    /// The `ShadowVeryShort` setting this stream was opened under.
+    shadow_very_short: CandleSetting,
     state: CDL3WHITESOLDIERS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -668,7 +675,10 @@ impl CDL3WHITESOLDIERS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL3WHITESOLDIERS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.body_short = src.body_short;
+        self.far = src.far;
+        self.near = src.near;
+        self.shadow_very_short = src.shadow_very_short;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -748,32 +758,32 @@ impl CDL3WHITESOLDIERS_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDL3WHITESOLDIERS_step_impl(&self, sp: &mut CDL3WHITESOLDIERS_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDL3WHITESOLDIERS_step_impl(body_short: CandleSetting, far: CandleSetting, near: CandleSetting, shadow_very_short: CandleSetting, sp: &mut CDL3WHITESOLDIERS_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
-        let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
+        let BodyShort_rangeType: i32 = body_short.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyShort_avgPeriod: i32 = self.candle_settings.body_short.avg_period;
+        let BodyShort_avgPeriod: i32 = body_short.avg_period;
         #[allow(non_snake_case)]
-        let BodyShort_factor: f64 = self.candle_settings.body_short.factor;
+        let BodyShort_factor: f64 = body_short.factor;
         #[allow(non_snake_case)]
-        let Far_rangeType: i32 = self.candle_settings.far.range_type as i32;
+        let Far_rangeType: i32 = far.range_type as i32;
         #[allow(non_snake_case)]
-        let Far_avgPeriod: i32 = self.candle_settings.far.avg_period;
+        let Far_avgPeriod: i32 = far.avg_period;
         #[allow(non_snake_case)]
-        let Far_factor: f64 = self.candle_settings.far.factor;
+        let Far_factor: f64 = far.factor;
         #[allow(non_snake_case)]
-        let Near_rangeType: i32 = self.candle_settings.near.range_type as i32;
+        let Near_rangeType: i32 = near.range_type as i32;
         #[allow(non_snake_case)]
-        let Near_avgPeriod: i32 = self.candle_settings.near.avg_period;
+        let Near_avgPeriod: i32 = near.avg_period;
         #[allow(non_snake_case)]
-        let Near_factor: f64 = self.candle_settings.near.factor;
+        let Near_factor: f64 = near.factor;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_rangeType: i32 = self.candle_settings.shadow_very_short.range_type as i32;
+        let ShadowVeryShort_rangeType: i32 = shadow_very_short.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_avgPeriod: i32 = self.candle_settings.shadow_very_short.avg_period;
+        let ShadowVeryShort_avgPeriod: i32 = shadow_very_short.avg_period;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_factor: f64 = self.candle_settings.shadow_very_short.factor;
+        let ShadowVeryShort_factor: f64 = shadow_very_short.factor;
         if sp.ringCap_BodyShortTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyShort_rangeType {
@@ -1438,7 +1448,7 @@ impl Core {
             ringLag_ShadowVeryShortTrailingIdx: capLag_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDL3WHITESOLDIERS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDL3WHITESOLDIERS_Stream { body_short: self.candle_settings.body_short, far: self.candle_settings.far, near: self.candle_settings.near, shadow_very_short: self.candle_settings.shadow_very_short, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL3WHITESOLDIERS_Open`] (composition seam).
@@ -1561,7 +1571,7 @@ impl CDL3WHITESOLDIERS_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDL3WHITESOLDIERS_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDL3WHITESOLDIERS_step_impl(self.body_short, self.far, self.near, self.shadow_very_short, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1594,7 +1604,7 @@ impl CDL3WHITESOLDIERS_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDL3WHITESOLDIERS_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDL3WHITESOLDIERS_step_impl(self.body_short, self.far, self.near, self.shadow_very_short, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }
