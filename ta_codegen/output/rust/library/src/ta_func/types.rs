@@ -279,9 +279,13 @@ pub enum CandleSettingType {
 /// # Ok::<(), ta_lib::RetCode>(())
 /// ```
 ///
-/// To change a setting, build a new `Core` — cloning is cheap (it is a small
-/// `[i32; N]` array plus two small fields). [`Core::to_builder`] seeds a builder
-/// from an existing `Core` for clone-and-modify.
+/// To change a setting, build a new `Core` — it is plain data, an `[i32; N]`
+/// array plus the candle settings and the compatibility mode, so a clone is a
+/// memcpy of a few hundred bytes with no allocation.
+/// [`Core::to_builder`] seeds a builder from an existing `Core` for
+/// clone-and-modify. A stream handle does **not** hold one: it captures at
+/// `Open` exactly the settings its per-bar step reads, which is usually nothing
+/// at all (#274), so opening a stream per symbol costs nothing per `Core`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Core {
     /// Unstable period for each function identified by [`FuncUnstId`].

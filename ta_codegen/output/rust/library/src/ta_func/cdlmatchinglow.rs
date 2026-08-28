@@ -358,7 +358,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLMATCHINGLOW_Stream")]
 pub struct CDLMATCHINGLOW_Stream {
-    core: Core,
+    equal: CandleSetting,
     state: CDLMATCHINGLOW_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -369,7 +369,7 @@ impl CDLMATCHINGLOW_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLMATCHINGLOW_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.equal = src.equal;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -413,13 +413,13 @@ impl CDLMATCHINGLOW_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLMATCHINGLOW_step_impl(&self, sp: &mut CDLMATCHINGLOW_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLMATCHINGLOW_step_impl(equal: CandleSetting, sp: &mut CDLMATCHINGLOW_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let Equal_rangeType: i32 = self.candle_settings.equal.range_type as i32;
+        let Equal_rangeType: i32 = equal.range_type as i32;
         #[allow(non_snake_case)]
-        let Equal_avgPeriod: i32 = self.candle_settings.equal.avg_period;
+        let Equal_avgPeriod: i32 = equal.avg_period;
         #[allow(non_snake_case)]
-        let Equal_factor: f64 = self.candle_settings.equal.factor;
+        let Equal_factor: f64 = equal.factor;
         let mut _candlerange_0: f64;
         match Equal_rangeType {
             0 => {
@@ -631,7 +631,7 @@ impl Core {
             ringLag_EqualTrailingIdx: capLag_EqualTrailingIdx as usize,
             ring_EqualTrailingIdx_derived,
         };
-        Ok(CDLMATCHINGLOW_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLMATCHINGLOW_Stream { equal: self.candle_settings.equal, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLMATCHINGLOW_Open`] (composition seam).
@@ -746,7 +746,7 @@ impl CDLMATCHINGLOW_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLMATCHINGLOW_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLMATCHINGLOW_step_impl(self.equal, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -779,7 +779,7 @@ impl CDLMATCHINGLOW_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLMATCHINGLOW_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLMATCHINGLOW_step_impl(self.equal, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -462,7 +462,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLTHRUSTING_Stream")]
 pub struct CDLTHRUSTING_Stream {
-    core: Core,
+    body_long: CandleSetting,
+    equal: CandleSetting,
     state: CDLTHRUSTING_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -473,7 +474,8 @@ impl CDLTHRUSTING_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLTHRUSTING_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.body_long = src.body_long;
+        self.equal = src.equal;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -527,19 +529,19 @@ impl CDLTHRUSTING_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLTHRUSTING_step_impl(&self, sp: &mut CDLTHRUSTING_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLTHRUSTING_step_impl(body_long: CandleSetting, equal: CandleSetting, sp: &mut CDLTHRUSTING_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = self.candle_settings.body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = self.candle_settings.body_long.factor;
+        let BodyLong_factor: f64 = body_long.factor;
         #[allow(non_snake_case)]
-        let Equal_rangeType: i32 = self.candle_settings.equal.range_type as i32;
+        let Equal_rangeType: i32 = equal.range_type as i32;
         #[allow(non_snake_case)]
-        let Equal_avgPeriod: i32 = self.candle_settings.equal.avg_period;
+        let Equal_avgPeriod: i32 = equal.avg_period;
         #[allow(non_snake_case)]
-        let Equal_factor: f64 = self.candle_settings.equal.factor;
+        let Equal_factor: f64 = equal.factor;
         let mut _candlerange_0: f64;
         match BodyLong_rangeType {
             0 => {
@@ -876,7 +878,7 @@ impl Core {
             ringLag_EqualTrailingIdx: capLag_EqualTrailingIdx as usize,
             ring_EqualTrailingIdx_derived,
         };
-        Ok(CDLTHRUSTING_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLTHRUSTING_Stream { body_long: self.candle_settings.body_long, equal: self.candle_settings.equal, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLTHRUSTING_Open`] (composition seam).
@@ -999,7 +1001,7 @@ impl CDLTHRUSTING_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLTHRUSTING_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLTHRUSTING_step_impl(self.body_long, self.equal, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1032,7 +1034,7 @@ impl CDLTHRUSTING_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLTHRUSTING_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLTHRUSTING_step_impl(self.body_long, self.equal, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

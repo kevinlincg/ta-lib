@@ -386,7 +386,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLDARKCLOUDCOVER_Stream")]
 pub struct CDLDARKCLOUDCOVER_Stream {
-    core: Core,
+    body_long: CandleSetting,
     state: CDLDARKCLOUDCOVER_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -397,7 +397,7 @@ impl CDLDARKCLOUDCOVER_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLDARKCLOUDCOVER_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.body_long = src.body_long;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -443,13 +443,13 @@ impl CDLDARKCLOUDCOVER_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLDARKCLOUDCOVER_step_impl(&self, sp: &mut CDLDARKCLOUDCOVER_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLDARKCLOUDCOVER_step_impl(body_long: CandleSetting, sp: &mut CDLDARKCLOUDCOVER_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
+        let BodyLong_rangeType: i32 = body_long.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyLong_avgPeriod: i32 = self.candle_settings.body_long.avg_period;
+        let BodyLong_avgPeriod: i32 = body_long.avg_period;
         #[allow(non_snake_case)]
-        let BodyLong_factor: f64 = self.candle_settings.body_long.factor;
+        let BodyLong_factor: f64 = body_long.factor;
         let mut _candlerange_0: f64;
         match BodyLong_rangeType {
             0 => {
@@ -675,7 +675,7 @@ impl Core {
             ringLag_BodyLongTrailingIdx: capLag_BodyLongTrailingIdx as usize,
             ring_BodyLongTrailingIdx_derived,
         };
-        Ok(CDLDARKCLOUDCOVER_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLDARKCLOUDCOVER_Stream { body_long: self.candle_settings.body_long, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLDARKCLOUDCOVER_Open`] (composition seam).
@@ -790,7 +790,7 @@ impl CDLDARKCLOUDCOVER_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLDARKCLOUDCOVER_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLDARKCLOUDCOVER_step_impl(self.body_long, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -823,7 +823,7 @@ impl CDLDARKCLOUDCOVER_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLDARKCLOUDCOVER_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLDARKCLOUDCOVER_step_impl(self.body_long, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

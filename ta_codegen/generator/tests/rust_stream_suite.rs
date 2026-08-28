@@ -71,7 +71,9 @@ fn test_rust_sma_ring_stream_section() {
     let s = rust_stream_section("sma");
     // Handle + state struct shapes.
     assert!(s.contains("pub struct SMA_Stream {"));
-    assert!(s.contains("core: Core,"));
+    // A handle whose step reads no candle setting carries no `Core` at all
+    // (#274) — the control for the CDLDOJI case below.
+    assert!(!s.contains("core: Core,"));
     assert!(s.contains("state: SMA_StreamState,"));
     assert!(s.contains("struct SMA_StreamState {"));
     assert!(s.contains("ring_trailingIdx_inReal: Vec<f64>,"));
@@ -81,7 +83,7 @@ fn test_rust_sma_ring_stream_section() {
     assert!(!s.contains("peekMode"), "no peekMode in the Rust tier");
     assert!(!s.contains("unsafe"), "stream sections are safe Rust");
     // Step: ring read-old-then-push order, `(*outReal)` write.
-    assert!(s.contains("fn SMA_step_impl(&self, sp: &mut SMA_StreamState, inReal: f64, outReal: &mut f64)"));
+    assert!(s.contains("fn SMA_step_impl(sp: &mut SMA_StreamState, inReal: f64, outReal: &mut f64)"));
     // `tempReal` is step-local scratch, not a handle field (#252).
     assert!(s.contains("(*outReal) = tempReal / (sp.optInTimePeriod as f64);"));
     assert!(!s.contains("tempReal: f64,"), "no scratch field on the state struct");
@@ -148,8 +150,10 @@ fn test_rust_macd_three_output_tuple() {
 #[test]
 fn test_rust_cdldoji_candle_settings_and_int_output() {
     let s = rust_stream_section("cdldoji");
-    // Candle settings read through the handle's immutable Core snapshot.
-    assert!(s.contains("self.candle_settings"));
+    // The handle's own snapshot of the one setting its step reads (#274): the
+    // Open tier still reads it off the `Core` it is a method on, the step reads
+    // the parameter it is handed.
+    assert!(s.contains("self.candle_settings.body_doji"));
     // Integer output end to end.
     assert!(s.contains("pub fn update(&mut self, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64) -> Result<i32, RetCode> {"));
     assert!(s.contains("outInteger: &mut i32"));
@@ -185,6 +189,54 @@ fn test_rust_cdldoji_candle_settings_and_int_output() {
     assert!(!s.contains("CDLDOJI_PEEK_SCRATCH"));
     assert!(s.contains("let mut scratch = self.clone();"));
     assert!(s.contains("scratch.update(inOpen, inHigh, inLow, inClose)"));
+}
+
+/// #274: a handle carries exactly the `CandleSetting`s its step reads — no
+/// `Core`, and no setting the step does not name.
+///
+/// Both halves are here because either alone passes for free: an emitter that
+/// carried every setting would satisfy "the one it reads is present", and one
+/// that carried none would satisfy "no Core". `test_rust_sma_ring_stream_section`
+/// is the other end of the same pin — SMA's step reads no setting, so its handle
+/// must carry no field at all.
+#[test]
+fn a_handle_carries_only_the_candle_settings_its_step_reads() {
+    let s = rust_stream_section("cdldoji");
+
+    // The field, the `restore_from` store (a `Copy`, not the `Core`'s
+    // `clone_from`), and the capture at Open.
+    assert!(s.contains("pub struct CDLDOJI_Stream {\n    body_doji: CandleSetting,\n    state:"));
+    assert!(!s.contains("core: Core,"), "the handle must not embed a Core");
+    assert!(s.contains("self.body_doji = src.body_doji;"));
+    assert!(!s.contains("self.core.clone_from"));
+    assert!(s.contains("CDLDOJI_Stream { body_doji: self.candle_settings.body_doji, state,"));
+
+    // The step is an associated function taking that setting, and unpacks it
+    // from the parameter — a `self.candle_settings` read in there would name a
+    // receiver the step no longer has.
+    let step = body_of(&s, "fn CDLDOJI_step_impl(");
+    assert!(
+        s.contains("fn CDLDOJI_step_impl(body_doji: CandleSetting, sp: &mut CDLDOJI_StreamState,"),
+        "the step takes the setting and no `&self`"
+    );
+    assert!(step.contains("let BodyDoji_factor: f64 = body_doji.factor;"));
+    assert!(!step.contains("self."), "the step body reaches nothing through a receiver:\n{step}");
+
+    // And exactly the one setting: the other ten are named nowhere in the
+    // handle, so this cannot pass by carrying all of them.
+    for other in ["body_long", "body_short", "shadow_long", "near", "far", "equal"] {
+        assert!(
+            !s.contains(&format!("{other}: CandleSetting")),
+            "CDLDOJI's step reads BodyDoji alone; the handle must not carry {other}"
+        );
+    }
+
+    // Both call sites pass it.
+    assert_eq!(
+        s.matches("Core::CDLDOJI_step_impl(self.body_doji, &mut self.state,").count(),
+        2,
+        "update and update_and_fill both reach the step through the handle's own copy"
+    );
 }
 
 #[test]
@@ -425,7 +477,7 @@ fn rust_dispatch_open_modes_differ_only_where_intended() {
     assert!(!scalar.contains("outBegIdx"), "the scalar open has no out-meta:\n{scalar}");
     assert!(!fill.contains("outBegIdx"), "the public fill carries no out-meta pair:\n{fill}");
     assert!(
-        fill.contains("Ok((MA_Stream { core: self.clone(), state, out: fillRange }, fillRange))"),
+        fill.contains("Ok((MA_Stream { state, out: fillRange }, fillRange))"),
         "the public fill returns the arm's own range beside the handle, and keeps it \
          on the handle too (#241):\n{fill}"
     );

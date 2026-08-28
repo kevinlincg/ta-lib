@@ -491,7 +491,9 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLINVERTEDHAMMER_Stream")]
 pub struct CDLINVERTEDHAMMER_Stream {
-    core: Core,
+    body_short: CandleSetting,
+    shadow_long: CandleSetting,
+    shadow_very_short: CandleSetting,
     state: CDLINVERTEDHAMMER_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -502,7 +504,9 @@ impl CDLINVERTEDHAMMER_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLINVERTEDHAMMER_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.body_short = src.body_short;
+        self.shadow_long = src.shadow_long;
+        self.shadow_very_short = src.shadow_very_short;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -556,25 +560,25 @@ impl CDLINVERTEDHAMMER_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLINVERTEDHAMMER_step_impl(&self, sp: &mut CDLINVERTEDHAMMER_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLINVERTEDHAMMER_step_impl(body_short: CandleSetting, shadow_long: CandleSetting, shadow_very_short: CandleSetting, sp: &mut CDLINVERTEDHAMMER_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
+        let BodyShort_rangeType: i32 = body_short.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyShort_avgPeriod: i32 = self.candle_settings.body_short.avg_period;
+        let BodyShort_avgPeriod: i32 = body_short.avg_period;
         #[allow(non_snake_case)]
-        let BodyShort_factor: f64 = self.candle_settings.body_short.factor;
+        let BodyShort_factor: f64 = body_short.factor;
         #[allow(non_snake_case)]
-        let ShadowLong_rangeType: i32 = self.candle_settings.shadow_long.range_type as i32;
+        let ShadowLong_rangeType: i32 = shadow_long.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowLong_avgPeriod: i32 = self.candle_settings.shadow_long.avg_period;
+        let ShadowLong_avgPeriod: i32 = shadow_long.avg_period;
         #[allow(non_snake_case)]
-        let ShadowLong_factor: f64 = self.candle_settings.shadow_long.factor;
+        let ShadowLong_factor: f64 = shadow_long.factor;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_rangeType: i32 = self.candle_settings.shadow_very_short.range_type as i32;
+        let ShadowVeryShort_rangeType: i32 = shadow_very_short.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_avgPeriod: i32 = self.candle_settings.shadow_very_short.avg_period;
+        let ShadowVeryShort_avgPeriod: i32 = shadow_very_short.avg_period;
         #[allow(non_snake_case)]
-        let ShadowVeryShort_factor: f64 = self.candle_settings.shadow_very_short.factor;
+        let ShadowVeryShort_factor: f64 = shadow_very_short.factor;
         if sp.ringCap_BodyTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyShort_rangeType {
@@ -1068,7 +1072,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLINVERTEDHAMMER_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLINVERTEDHAMMER_Stream { body_short: self.candle_settings.body_short, shadow_long: self.candle_settings.shadow_long, shadow_very_short: self.candle_settings.shadow_very_short, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLINVERTEDHAMMER_Open`] (composition seam).
@@ -1191,7 +1195,7 @@ impl CDLINVERTEDHAMMER_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLINVERTEDHAMMER_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLINVERTEDHAMMER_step_impl(self.body_short, self.shadow_long, self.shadow_very_short, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1224,7 +1228,7 @@ impl CDLINVERTEDHAMMER_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLINVERTEDHAMMER_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLINVERTEDHAMMER_step_impl(self.body_short, self.shadow_long, self.shadow_very_short, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

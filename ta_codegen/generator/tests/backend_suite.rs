@@ -9535,8 +9535,8 @@ fn the_transition_tier_is_step_impl_in_every_backend() {
         (
             "rust",
             &rust,
-            "fn SMA_step_impl(&self, sp: &mut SMA_StreamState,",
-            &["self.core.SMA_step_impl(&mut self.state,"],
+            "fn SMA_step_impl(sp: &mut SMA_StreamState,",
+            &["Core::SMA_step_impl(&mut self.state,"],
             "step_internal",
         ),
         (

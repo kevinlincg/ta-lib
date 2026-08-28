@@ -432,7 +432,8 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLGAPSIDESIDEWHITE_Stream")]
 pub struct CDLGAPSIDESIDEWHITE_Stream {
-    core: Core,
+    equal: CandleSetting,
+    near: CandleSetting,
     state: CDLGAPSIDESIDEWHITE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -443,7 +444,8 @@ impl CDLGAPSIDESIDEWHITE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLGAPSIDESIDEWHITE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.equal = src.equal;
+        self.near = src.near;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -501,19 +503,19 @@ impl CDLGAPSIDESIDEWHITE_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLGAPSIDESIDEWHITE_step_impl(&self, sp: &mut CDLGAPSIDESIDEWHITE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLGAPSIDESIDEWHITE_step_impl(equal: CandleSetting, near: CandleSetting, sp: &mut CDLGAPSIDESIDEWHITE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let Equal_rangeType: i32 = self.candle_settings.equal.range_type as i32;
+        let Equal_rangeType: i32 = equal.range_type as i32;
         #[allow(non_snake_case)]
-        let Equal_avgPeriod: i32 = self.candle_settings.equal.avg_period;
+        let Equal_avgPeriod: i32 = equal.avg_period;
         #[allow(non_snake_case)]
-        let Equal_factor: f64 = self.candle_settings.equal.factor;
+        let Equal_factor: f64 = equal.factor;
         #[allow(non_snake_case)]
-        let Near_rangeType: i32 = self.candle_settings.near.range_type as i32;
+        let Near_rangeType: i32 = near.range_type as i32;
         #[allow(non_snake_case)]
-        let Near_avgPeriod: i32 = self.candle_settings.near.avg_period;
+        let Near_avgPeriod: i32 = near.avg_period;
         #[allow(non_snake_case)]
-        let Near_factor: f64 = self.candle_settings.near.factor;
+        let Near_factor: f64 = near.factor;
         let mut _candlerange_0: f64;
         match Equal_rangeType {
             0 => {
@@ -857,7 +859,7 @@ impl Core {
             ringLag_NearTrailingIdx: capLag_NearTrailingIdx as usize,
             ring_NearTrailingIdx_derived,
         };
-        Ok(CDLGAPSIDESIDEWHITE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLGAPSIDESIDEWHITE_Stream { equal: self.candle_settings.equal, near: self.candle_settings.near, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLGAPSIDESIDEWHITE_Open`] (composition seam).
@@ -980,7 +982,7 @@ impl CDLGAPSIDESIDEWHITE_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLGAPSIDESIDEWHITE_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLGAPSIDESIDEWHITE_step_impl(self.equal, self.near, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1013,7 +1015,7 @@ impl CDLGAPSIDESIDEWHITE_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLGAPSIDESIDEWHITE_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLGAPSIDESIDEWHITE_step_impl(self.equal, self.near, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }

@@ -203,7 +203,33 @@ pub fn emit_c_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
     out
 }
 
-/// Emit Rust unpacking lines for the given candle settings.
+/// Where a Rust body finds the `CandleSetting`s it unpacks.
+///
+/// The two differ only in the receiver path, but that is the whole of #274: a
+/// tier that holds a `Core` reads through it, and the streaming step — which
+/// holds no `Core` and is handed exactly the settings its body reads — reads
+/// its own parameters.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum RustCandleSource {
+    /// `self.candle_settings.<snake>` — the batch and `Open` tiers, whose
+    /// receiver is the `Core`.
+    Core,
+    /// `<snake>` — the streaming step, whose settings arrive as parameters.
+    Bound,
+}
+
+impl RustCandleSource {
+    /// The expression naming one `CandleSetting` under this source.
+    fn path(self, setting: &str) -> String {
+        let snake = pascal_to_snake_case(setting);
+        match self {
+            Self::Core => format!("self.candle_settings.{snake}"),
+            Self::Bound => snake,
+        }
+    }
+}
+
+/// Emit Rust unpacking lines for the given candle settings, read off the `Core`.
 ///
 /// ```rust,ignore
 /// #[allow(non_snake_case)]
@@ -214,24 +240,42 @@ pub fn emit_c_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
 /// generated candle-range comparisons run on — the same shape as Java's
 /// `.ordinal()` and C#'s `(int)` cast below.
 pub fn emit_rust_unpacking(settings: &BTreeSet<String>, indent: usize) -> String {
+    emit_rust_unpacking_from(settings, indent, RustCandleSource::Core)
+}
+
+/// [`emit_rust_unpacking`] against a named source — the same three locals, read
+/// through whichever receiver the tier has.
+pub fn emit_rust_unpacking_from(
+    settings: &BTreeSet<String>,
+    indent: usize,
+    source: RustCandleSource,
+) -> String {
     let pad = " ".repeat(indent);
     let mut out = String::new();
     for setting in settings {
-        let snake = pascal_to_snake_case(setting);
+        let path = source.path(setting);
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_rangeType: i32 = self.candle_settings.{snake}.range_type as i32;\n"
+             {pad}let {setting}_rangeType: i32 = {path}.range_type as i32;\n"
         ));
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_avgPeriod: i32 = self.candle_settings.{snake}.avg_period;\n"
+             {pad}let {setting}_avgPeriod: i32 = {path}.avg_period;\n"
         ));
         out.push_str(&format!(
             "{pad}#[allow(non_snake_case)]\n\
-             {pad}let {setting}_factor: f64 = self.candle_settings.{snake}.factor;\n"
+             {pad}let {setting}_factor: f64 = {path}.factor;\n"
         ));
     }
     out
+}
+
+/// The Rust field name of a candle setting on `CandleSettings` — `"BodyLong"`
+/// becomes `"body_long"`. Shared with the stream emitter, which names the
+/// handle's fields and the step's parameters after the same slots.
+#[must_use]
+pub fn rust_field(setting: &str) -> String {
+    pascal_to_snake_case(setting)
 }
 
 /// Emit Java unpacking lines for the given candle settings.
@@ -423,6 +467,19 @@ mod tests {
         assert!(code.contains("self.candle_settings.body_long.avg_period"));
         assert!(code.contains("self.candle_settings.body_long.factor"));
         assert!(code.contains("#[allow(non_snake_case)]"));
+    }
+
+    #[test]
+    fn rust_unpacking_reads_a_bound_setting_without_a_core() {
+        let mut settings = BTreeSet::new();
+        settings.insert("BodyDoji".to_string());
+        let code = emit_rust_unpacking_from(&settings, 8, RustCandleSource::Bound);
+        assert!(code.contains("let BodyDoji_rangeType: i32 = body_doji.range_type as i32;"));
+        assert!(code.contains("let BodyDoji_avgPeriod: i32 = body_doji.avg_period;"));
+        assert!(code.contains("let BodyDoji_factor: f64 = body_doji.factor;"));
+        // The control: the step tier has no `Core` to read through, so a bound
+        // unpacking that still names one would not compile.
+        assert!(!code.contains("self.candle_settings"));
     }
 
     #[test]

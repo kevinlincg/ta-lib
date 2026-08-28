@@ -488,7 +488,9 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLRICKSHAWMAN_Stream")]
 pub struct CDLRICKSHAWMAN_Stream {
-    core: Core,
+    body_doji: CandleSetting,
+    near: CandleSetting,
+    shadow_long: CandleSetting,
     state: CDLRICKSHAWMAN_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -499,7 +501,9 @@ impl CDLRICKSHAWMAN_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLRICKSHAWMAN_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.body_doji = src.body_doji;
+        self.near = src.near;
+        self.shadow_long = src.shadow_long;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -549,25 +553,25 @@ impl CDLRICKSHAWMAN_StreamState {
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
 impl Core {
-    fn CDLRICKSHAWMAN_step_impl(&self, sp: &mut CDLRICKSHAWMAN_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
+    fn CDLRICKSHAWMAN_step_impl(body_doji: CandleSetting, near: CandleSetting, shadow_long: CandleSetting, sp: &mut CDLRICKSHAWMAN_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
-        let BodyDoji_rangeType: i32 = self.candle_settings.body_doji.range_type as i32;
+        let BodyDoji_rangeType: i32 = body_doji.range_type as i32;
         #[allow(non_snake_case)]
-        let BodyDoji_avgPeriod: i32 = self.candle_settings.body_doji.avg_period;
+        let BodyDoji_avgPeriod: i32 = body_doji.avg_period;
         #[allow(non_snake_case)]
-        let BodyDoji_factor: f64 = self.candle_settings.body_doji.factor;
+        let BodyDoji_factor: f64 = body_doji.factor;
         #[allow(non_snake_case)]
-        let Near_rangeType: i32 = self.candle_settings.near.range_type as i32;
+        let Near_rangeType: i32 = near.range_type as i32;
         #[allow(non_snake_case)]
-        let Near_avgPeriod: i32 = self.candle_settings.near.avg_period;
+        let Near_avgPeriod: i32 = near.avg_period;
         #[allow(non_snake_case)]
-        let Near_factor: f64 = self.candle_settings.near.factor;
+        let Near_factor: f64 = near.factor;
         #[allow(non_snake_case)]
-        let ShadowLong_rangeType: i32 = self.candle_settings.shadow_long.range_type as i32;
+        let ShadowLong_rangeType: i32 = shadow_long.range_type as i32;
         #[allow(non_snake_case)]
-        let ShadowLong_avgPeriod: i32 = self.candle_settings.shadow_long.avg_period;
+        let ShadowLong_avgPeriod: i32 = shadow_long.avg_period;
         #[allow(non_snake_case)]
-        let ShadowLong_factor: f64 = self.candle_settings.shadow_long.factor;
+        let ShadowLong_factor: f64 = shadow_long.factor;
         if sp.ringCap_BodyDojiTrailingIdx == 0 {
             let mut _candlerange_0: f64;
             match BodyDoji_rangeType {
@@ -1054,7 +1058,7 @@ impl Core {
             ringCap_ShadowLongTrailingIdx: cap_ShadowLongTrailingIdx as usize,
             ring_ShadowLongTrailingIdx_derived,
         };
-        Ok(CDLRICKSHAWMAN_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLRICKSHAWMAN_Stream { body_doji: self.candle_settings.body_doji, near: self.candle_settings.near, shadow_long: self.candle_settings.shadow_long, state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLRICKSHAWMAN_Open`] (composition seam).
@@ -1177,7 +1181,7 @@ impl CDLRICKSHAWMAN_Stream {
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
-        self.core.CDLRICKSHAWMAN_step_impl(&mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
+        Core::CDLRICKSHAWMAN_step_impl(self.body_doji, self.near, self.shadow_long, &mut self.state, inOpen, inHigh, inLow, inClose, &mut outInteger);
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
@@ -1210,7 +1214,7 @@ impl CDLRICKSHAWMAN_Stream {
             if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
                 return Err(RetCode::BadParam);
             }
-            self.core.CDLRICKSHAWMAN_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
+            Core::CDLRICKSHAWMAN_step_impl(self.body_doji, self.near, self.shadow_long, &mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
             if self.out.count < Core::MAX_INDEX {
                 self.out.count += 1;
             }
