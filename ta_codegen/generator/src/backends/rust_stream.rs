@@ -29,7 +29,7 @@
 //!   requires the rest to match that length (`Err(BadParam)` otherwise).
 
 use std::cell::Cell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
 
 use crate::helper_registry::HelperRegistry;
@@ -511,8 +511,18 @@ pub fn generate(
     o
 }
 
+/// Open the block the per-bar step lives in. The step reads only the slim
+/// snapshot the handle carries, so it is a method on that type rather than on
+/// `Core` — which is what lets the handle stop embedding a whole `Core` (#274).
+/// The `Open*` transcriptions that follow stay on `Core`: they run before a
+/// handle exists and do read the unstable period and the compatibility mode.
+fn emit_step_impl_block_open(o: &mut String, func: &FuncDef) {
+    let core_ty = stream_core_type_name(func);
+    let _ = writeln!(o, "{IMPL_ALLOW}impl {core_ty} {{");
+}
+
 /// The lint preamble shared by every tier's generated `impl Core` block.
-const IMPL_ALLOW: &str = "#[allow(non_snake_case)]\n#[allow(unused_variables)]\n#[allow(dead_code)]\n#[allow(unused_mut)]\n#[allow(unused_assignments)]\n#[allow(unused_parens)]\n";
+const IMPL_ALLOW: &str ="#[allow(non_snake_case)]\n#[allow(unused_variables)]\n#[allow(dead_code)]\n#[allow(unused_mut)]\n#[allow(unused_assignments)]\n#[allow(unused_parens)]\n";
 
 #[allow(clippy::too_many_arguments)]
 fn emit_loop(
@@ -527,8 +537,11 @@ fn emit_loop(
     let typing = build_typing(func, model);
     let shape = emit_handle_and_state_structs(o, func, model, &typing);
 
-    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
+    emit_step_impl_block_open(o, func);
     emit_step(o, func, model, &typing, enums, registry, helpers, counter);
+    let _ = writeln!(o, "}}\n");
+
+    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
     emit_open_internal(o, func, model, &typing, model.body, enums, registry, helpers, counter);
     emit_open_internal_wrapper(o, func, model);
     emit_open_wrapper(o, func, enums);
@@ -769,14 +782,110 @@ fn emit_handle_and_state_structs(
     model: &StreamModel,
     typing: &Typing,
 ) -> StateShape {
-    emit_handle_struct(o, func);
+    emit_handle_struct(o, func, &step_candle_settings(&[model]));
     emit_state_struct_from(o, func, &state_fields(func, model, typing))
 }
 
+/// The name of the slim `Core` snapshot a handle of this function carries.
+fn stream_core_type_name(func: &FuncDef) -> String {
+    format!("{}_StreamCore", func.name.to_uppercase())
+}
+
+/// The name of the candle-settings slice inside that snapshot.
+fn stream_settings_type_name(func: &FuncDef) -> String {
+    format!("{}_StreamSettings", func.name.to_uppercase())
+}
+
+/// The candle settings this function's per-bar step reads — the union over the
+/// tier's step models of exactly what `emit_step_body` unpacks. Nothing else in
+/// `Core` is reachable from a live handle: the unstable period and the
+/// compatibility mode are read while `Open` transcribes the batch body, on
+/// `Core` itself, and are already folded into the captured state by the time a
+/// handle exists.
+fn step_candle_settings(models: &[&StreamModel]) -> BTreeSet<String> {
+    let mut used = BTreeSet::new();
+    for m in models {
+        used.extend(crate::candle_settings::detect_candle_settings(&m.steady_stmts));
+    }
+    used
+}
+
+/// The handle's slice of `Core` (issue #274).
+///
+/// A handle used to embed a whole `Core` — 280 bytes of unstable periods,
+/// candle settings and compatibility mode — of which no step reads more than
+/// five 16-byte candle settings and 119 of the 176 read nothing at all. That
+/// cost is paid per handle and multiplies through nesting, since a composed
+/// handle holds one per sub.
+///
+/// The step body is transcribed by the same renderer as the batch, which spells
+/// a candle read `self.candle_settings.<setting>.<property>`. Naming the
+/// snapshot's field `candle_settings` and giving it a type carrying exactly the
+/// settings this step unpacks keeps that text verbatim — the bit-exactness
+/// argument in this module's header is untouched — while the handle drops
+/// everything else. If `detect_candle_settings` ever under-reports, the missing
+/// field is a compile error in the generated crate, not a wrong answer.
+fn emit_stream_core_struct(o: &mut String, func: &FuncDef, settings: &BTreeSet<String>) {
+    let core_ty = stream_core_type_name(func);
+    let n = func.name.to_uppercase();
+    if settings.is_empty() {
+        let _ = writeln!(
+            o,
+            "/// What a live {n} stream reads from [`Core`]: nothing. Its step is a pure\n\
+             /// function of the handle's own state, so the snapshot is zero-sized.\n\
+             #[allow(non_camel_case_types, dead_code)]\n\
+             #[derive(Debug, Clone, Copy)]\n\
+             struct {core_ty};\n\
+             \n\
+             impl From<&Core> for {core_ty} {{\n\
+             \x20   fn from(_core: &Core) -> Self {{\n\
+             \x20       Self\n\
+             \x20   }}\n}}\n"
+        );
+        return;
+    }
+    let settings_ty = stream_settings_type_name(func);
+    let mut fields = String::new();
+    let mut inits = String::new();
+    for s in settings {
+        let snake = crate::candle_settings::pascal_to_snake_case(s);
+        let _ = writeln!(fields, "    {snake}: CandleSetting,");
+        let _ = writeln!(inits, "                {snake}: core.candle_settings.{snake},");
+    }
+    let list = settings
+        .iter()
+        .map(|s| format!("`{s}`"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let _ = writeln!(
+        o,
+        "/// The candle settings a live {n} stream reads — {list}. Snapshotted at\n\
+         /// `Open`, exactly as the batch reads them at call time.\n\
+         #[allow(non_camel_case_types, dead_code)]\n\
+         #[derive(Debug, Clone, Copy)]\n\
+         struct {settings_ty} {{\n{fields}}}\n\
+         \n\
+         /// What a live {n} stream reads from [`Core`]: the settings above, and\n\
+         /// nothing else.\n\
+         #[allow(non_camel_case_types, dead_code)]\n\
+         #[derive(Debug, Clone, Copy)]\n\
+         struct {core_ty} {{\n    candle_settings: {settings_ty},\n}}\n\
+         \n\
+         impl From<&Core> for {core_ty} {{\n\
+         \x20   fn from(core: &Core) -> Self {{\n\
+         \x20       Self {{\n\
+         \x20           candle_settings: {settings_ty} {{\n{inits}            }},\n\
+         \x20       }}\n\
+         \x20   }}\n}}\n"
+    );
+}
+
 /// The public opaque handle struct (identical for every tier).
-fn emit_handle_struct(o: &mut String, func: &FuncDef) {
+fn emit_handle_struct(o: &mut String, func: &FuncDef, settings: &BTreeSet<String>) {
+    emit_stream_core_struct(o, func, settings);
     let handle = stream_type_name(func);
     let state = state_type_name(func);
+    let core_ty = stream_core_type_name(func);
     let sn = snake(func);
     let n = func.name.to_uppercase();
     let _ = writeln!(
@@ -789,20 +898,21 @@ fn emit_handle_struct(o: &mut String, func: &FuncDef) {
          #[must_use = \"a stream does nothing unless updated; dropping it closes the stream\"]\n\
          #[derive(Debug, Clone)]\n\
          #[doc(alias = \"TA_{n}_Stream\")]\n\
-         pub struct {handle} {{\n    core: Core,\n    state: {state},\n\
+         pub struct {handle} {{\n    core: {core_ty},\n    state: {state},\n\
          \x20   /// The bars this handle has produced a value for — see [`Self::out_range`].\n\
          \x20   out: OutRange,\n}}\n"
     );
     // The handle's half of the scratch restore: only a handle embedded in
     // another handle's state (a composed sub, a dispatch arm, a period bank
-    // slot) reaches it, so most functions never call their own.
+    // slot) reaches it, so most functions never call their own. The snapshot is
+    // `Copy` now, so its half is an assignment rather than a `clone_from`.
     let _ = writeln!(
         o,
         "#[allow(dead_code)]\nimpl {handle} {{\n\
          \x20   /// Overwrite from `src`, reusing this handle's buffers instead of\n\
          \x20   /// allocating new ones. See `{state}::restore_from`.\n\
          \x20   pub(crate) fn restore_from(&mut self, src: &Self) {{\n\
-         \x20       self.core.clone_from(&src.core);\n\
+         \x20       self.core = src.core;\n\
          \x20       self.state.restore_from(&src.state);\n\
          \x20       self.out = src.out;\n\
          \x20   }}\n}}\n"
@@ -1686,7 +1796,7 @@ fn emit_capture_and_publish(
     let _ = writeln!(o, "\n        // Capture the live batch state into the handle.");
     emit_capture(o, func, model, scalars, typing, registry, helpers, counter, extra_fields);
     // The core publishes only the handle; the scalar wrapper reads its sink.
-    let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+    let _ = writeln!(o, "        Ok({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
 }
 
 
@@ -1884,7 +1994,7 @@ fn emit_identity_fast_path(
     let _ = writeln!(o, "            }}");
     let _ = writeln!(
         o,
-        "            return Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});"
+        "            return Ok({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});"
     );
     let _ = writeln!(o, "        }}");
 }
@@ -2793,10 +2903,10 @@ fn emit_dual_mode(
     let fields_b = state_fields_from(func, mb, &typing, &union_scalars);
     let union_fields = dual_union_fields(func, &fields_a, &fields_b);
 
-    emit_handle_struct(o, func);
+    emit_handle_struct(o, func, &step_candle_settings(&[ma, mb]));
     let shape = emit_state_struct_from(o, func, &union_fields);
 
-    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
+    emit_step_impl_block_open(o, func);
 
     // --- step: one function, the mode re-derived from the stored param ------
     let opt_real_params: Vec<String> = func
@@ -2818,7 +2928,9 @@ fn emit_dual_mode(
     emit_step_body(o, func, mb, &typing, &ctx, enums, registry, helpers, counter, 12);
     let _ = writeln!(o, "        }}");
     emit_step_end(o, false);
+    let _ = writeln!(o, "}}\n");
 
+    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
     emit_dual_open(o, func, dmp, &typing, &union_scalars, enums, registry, helpers, counter);
     emit_open_internal_wrapper(o, func, ma);
     emit_open_wrapper(o, func, enums);
@@ -2995,7 +3107,9 @@ fn emit_dispatch(
     let lb_call = format!("self.{sn}_Lookback({lb_args})?");
 
     // --- structs + sub enum -------------------------------------------------
-    emit_handle_struct(o, func);
+    // The dispatch step only forwards the bar to the selected sub-handle, which
+    // carries its own snapshot, so this tier reads nothing from `Core` itself.
+    emit_handle_struct(o, func, &BTreeSet::new());
     let mut state_fields: Vec<(String, String, String)> = func
         .optional_inputs
         .iter()
@@ -3050,7 +3164,7 @@ fn emit_dispatch(
          \x20       match (self, src) {{\n{arms}            _ => {{}}\n        }}\n    }}\n}}\n"
     );
 
-    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
+    emit_step_impl_block_open(o, func);
 
     // --- step ---------------------------------------------------------------
     emit_step_sig(o, func, true);
@@ -3099,6 +3213,9 @@ fn emit_dispatch(
     }
     let _ = writeln!(o, "        }}");
     emit_step_end(o, true);
+    let _ = writeln!(o, "}}\n");
+
+    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
 
     // --- open bodies --------------------------------------------------------
     // One body emitter, three modes. The scalar open warms the handle and hands
@@ -3170,17 +3287,17 @@ fn emit_dispatch(
                     };
                     let _ = writeln!(
                         o,
-                        "            return Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, {value}));"
+                        "            return Ok(({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, {value}));"
                     );
                 }
                 OutMode::Fill => {
                     let _ = writeln!(
                         o,
-                        "            return Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }}));"
+                        "            return Ok(({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }} }}, OutRange {{ beg_idx: fillLb, count: historyLen - fillLb }}));"
                     );
                 }
                 OutMode::FillInternal => {
-                    let _ = writeln!(o, "            return Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});");
+                    let _ = writeln!(o, "            return Ok({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }});");
                 }
             }
             let _ = writeln!(o, "        }}");
@@ -3313,13 +3430,13 @@ fn emit_dispatch(
         match mode {
             OutMode::Core => unreachable!("dispatch tier is exempt from the merge"),
             OutMode::Scalar => {
-                let _ = writeln!(o, "        Ok(({handle} {{ core: self.clone(), state, out: subRange }}, value))");
+                let _ = writeln!(o, "        Ok(({handle} {{ core: self.into(), state, out: subRange }}, value))");
             }
             OutMode::Fill => {
-                let _ = writeln!(o, "        Ok(({handle} {{ core: self.clone(), state, out: fillRange }}, fillRange))");
+                let _ = writeln!(o, "        Ok(({handle} {{ core: self.into(), state, out: fillRange }}, fillRange))");
             }
             OutMode::FillInternal => {
-                let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+                let _ = writeln!(o, "        Ok({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
             }
         }
         let _ = writeln!(o, "    }}\n");
@@ -3387,7 +3504,9 @@ fn emit_period_bank(
     let open_opts = opts_of(&format!("{min} + (bankIdx as i32)"));
 
     // --- structs ------------------------------------------------------------
-    emit_handle_struct(o, func);
+    // Every slot is a sub-handle carrying its own snapshot; the bank step reads
+    // nothing from `Core`.
+    emit_handle_struct(o, func, &BTreeSet::new());
     let mut state_fields: Vec<(String, String, String)> = func
         .optional_inputs
         .iter()
@@ -3407,7 +3526,7 @@ fn emit_period_bank(
     emit_state_struct_decl(o, &state, &state_fields, &[("bank", bank_note)]);
     let shape = emit_state_restore(o, &state, &state_fields);
 
-    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
+    emit_step_impl_block_open(o, func);
 
     // --- step: advance ALL slots, output the clamped-period slot ------------
     emit_step_sig(o, func, true);
@@ -3425,6 +3544,9 @@ fn emit_period_bank(
     let _ = writeln!(o, "            }}");
     let _ = writeln!(o, "        }}");
     emit_step_end(o, true);
+    let _ = writeln!(o, "}}\n");
+
+    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
 
     // --- open_internal ------------------------------------------------------
     emit_open_sig(o, func, OutMode::Scalar);
@@ -3465,7 +3587,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
     let _ = writeln!(
         o,
-        "        Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: subStart, count: historyLen - subStart }} }}, lastValue_{out}))"
+        "        Ok(({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: subStart, count: historyLen - subStart }} }}, lastValue_{out}))"
     );
     let _ = writeln!(o, "    }}\n");
 
@@ -3515,7 +3637,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
     let _ = writeln!(
         o,
-        "        Ok(({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }} }}, OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }}))"
+        "        Ok(({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }} }}, OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }}))"
     );
     let _ = writeln!(o, "    }}\n");
     let _ = writeln!(o, "}}\n");
@@ -4203,7 +4325,7 @@ fn emit_composed_open(
                     let _ = writeln!(o, "        }}");
                 }
             }
-            let _ = writeln!(o, "        Ok({handle} {{ core: self.clone(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
+            let _ = writeln!(o, "        Ok({handle} {{ core: self.into(), state, out: OutRange {{ beg_idx: *outBegIdx, count: *outNBElement }} }})");
         }
     }
     let _ = writeln!(o, "    }}\n");
@@ -4370,7 +4492,10 @@ fn emit_composed(
     }
 
     // --- handle + state struct ---------------------------------------------
-    emit_handle_struct(o, func);
+    // Only the producer model's own steady body can read a candle setting here;
+    // each sub-call is a sub-handle carrying its own snapshot.
+    let producer_models: Vec<&StreamModel> = cp.producer.iter().collect();
+    emit_handle_struct(o, func, &step_candle_settings(&producer_models));
     let mut fields: Vec<(String, String, String)> = if let Some(model) = &cp.producer {
         state_fields(func, model, &typing)
     } else {
@@ -4407,11 +4532,14 @@ fn emit_composed(
     }
     let shape = emit_state_struct_from(o, func, &fields);
 
-    // --- impl Core ----------------------------------------------------------
-    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
+    // --- impl blocks --------------------------------------------------------
+    emit_step_impl_block_open(o, func);
     emit_composed_step(
         o, func, cp, &typing, &inputs, &outputs, enums, registry, helpers, counter,
     );
+    let _ = writeln!(o, "}}\n");
+
+    let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
     emit_composed_open(
         o, func, cp, &typing, &outputs, enums, registry, helpers, counter,
     );

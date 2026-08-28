@@ -574,6 +574,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live MINUS_DI stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct MINUS_DI_StreamCore;
+
+impl From<&Core> for MINUS_DI_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live MINUS_DI stream: one value per closed bar, bit-identical to [`Core::MINUS_DI`]
 /// over the same series. Open with [`Core::MINUS_DI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -583,7 +595,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MINUS_DI_Stream")]
 pub struct MINUS_DI_Stream {
-    core: Core,
+    core: MINUS_DI_StreamCore,
     state: MINUS_DI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -594,7 +606,7 @@ impl MINUS_DI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MINUS_DI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -631,7 +643,7 @@ impl MINUS_DI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl MINUS_DI_StreamCore {
     fn MINUS_DI_step_impl(&self, sp: &mut MINUS_DI_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         if sp.optInTimePeriod <= 1 {
             let mut tempReal: f64 = 0.0_f64;
@@ -712,6 +724,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::MINUS_DI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::MINUS_DI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn MINUS_DI_OpenImpl(
@@ -919,7 +940,7 @@ impl Core {
                 prevMinusDM,
                 prevTR,
             };
-            Ok(MINUS_DI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(MINUS_DI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         } else {
             let mut today: usize = 0_usize;
             let mut lookbackTotal: usize = 0_usize;
@@ -1185,7 +1206,7 @@ impl Core {
                 prevMinusDM,
                 prevTR,
             };
-            Ok(MINUS_DI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(MINUS_DI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         }
     }
 

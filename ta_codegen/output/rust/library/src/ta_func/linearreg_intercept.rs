@@ -398,6 +398,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live LINEARREG_INTERCEPT stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct LINEARREG_INTERCEPT_StreamCore;
+
+impl From<&Core> for LINEARREG_INTERCEPT_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live LINEARREG_INTERCEPT stream: one value per closed bar, bit-identical to [`Core::LINEARREG_INTERCEPT`]
 /// over the same series. Open with [`Core::LINEARREG_INTERCEPT_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -407,7 +419,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_LINEARREG_INTERCEPT_Stream")]
 pub struct LINEARREG_INTERCEPT_Stream {
-    core: Core,
+    core: LINEARREG_INTERCEPT_StreamCore,
     state: LINEARREG_INTERCEPT_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -418,7 +430,7 @@ impl LINEARREG_INTERCEPT_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `LINEARREG_INTERCEPT_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -471,7 +483,7 @@ impl LINEARREG_INTERCEPT_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl LINEARREG_INTERCEPT_StreamCore {
     fn LINEARREG_INTERCEPT_step_impl(&self, sp: &mut LINEARREG_INTERCEPT_StreamState, inReal: f64, outReal: &mut f64) {
         let mut m: f64 = 0.0_f64;
         let mut windowStart: usize = 0_usize;
@@ -573,6 +585,15 @@ impl Core {
         sp.today += 1;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::LINEARREG_INTERCEPT_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::LINEARREG_INTERCEPT_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn LINEARREG_INTERCEPT_OpenImpl(
@@ -802,7 +823,7 @@ impl Core {
             xMask: (physX - 1) as i32,
             x_inReal,
         };
-        Ok(LINEARREG_INTERCEPT_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(LINEARREG_INTERCEPT_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::LINEARREG_INTERCEPT_Open`] (composition seam).

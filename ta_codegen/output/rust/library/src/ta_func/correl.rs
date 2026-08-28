@@ -473,6 +473,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live CORREL stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CORREL_StreamCore;
+
+impl From<&Core> for CORREL_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live CORREL stream: one value per closed bar, bit-identical to [`Core::CORREL`]
 /// over the same series. Open with [`Core::CORREL_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -482,7 +494,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CORREL_Stream")]
 pub struct CORREL_Stream {
-    core: Core,
+    core: CORREL_StreamCore,
     state: CORREL_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -493,7 +505,7 @@ impl CORREL_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CORREL_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -556,7 +568,7 @@ impl CORREL_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CORREL_StreamCore {
     fn CORREL_step_impl(&self, sp: &mut CORREL_StreamState, inReal0: f64, inReal1: f64, outReal: &mut f64) {
         let mut x: f64 = 0.0_f64;
         let mut y: f64 = 0.0_f64;
@@ -724,6 +736,15 @@ impl Core {
         sp.today += 1;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CORREL_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CORREL_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CORREL_OpenImpl(
@@ -1020,7 +1041,7 @@ impl Core {
             x_inReal0,
             x_inReal1,
         };
-        Ok(CORREL_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CORREL_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CORREL_Open`] (composition seam).

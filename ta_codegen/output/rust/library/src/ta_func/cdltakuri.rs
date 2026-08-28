@@ -470,6 +470,36 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLTAKURI stream reads — `BodyDoji`, `ShadowVeryLong`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLTAKURI_StreamSettings {
+    body_doji: CandleSetting,
+    shadow_very_long: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDLTAKURI stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLTAKURI_StreamCore {
+    candle_settings: CDLTAKURI_StreamSettings,
+}
+
+impl From<&Core> for CDLTAKURI_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLTAKURI_StreamSettings {
+                body_doji: core.candle_settings.body_doji,
+                shadow_very_long: core.candle_settings.shadow_very_long,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDLTAKURI stream: one value per closed bar, bit-identical to [`Core::CDLTAKURI`]
 /// over the same series. Open with [`Core::CDLTAKURI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -479,7 +509,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLTAKURI_Stream")]
 pub struct CDLTAKURI_Stream {
-    core: Core,
+    core: CDLTAKURI_StreamCore,
     state: CDLTAKURI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -490,7 +520,7 @@ impl CDLTAKURI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLTAKURI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -539,7 +569,7 @@ impl CDLTAKURI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLTAKURI_StreamCore {
     fn CDLTAKURI_step_impl(&self, sp: &mut CDLTAKURI_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyDoji_rangeType: i32 = self.candle_settings.body_doji.range_type as i32;
@@ -730,6 +760,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLTAKURI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLTAKURI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLTAKURI_OpenImpl(
@@ -1038,7 +1077,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLTAKURI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLTAKURI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLTAKURI_Open`] (composition seam).

@@ -407,6 +407,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLSHORTLINE stream reads — `BodyShort`, `ShadowShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSHORTLINE_StreamSettings {
+    body_short: CandleSetting,
+    shadow_short: CandleSetting,
+}
+
+/// What a live CDLSHORTLINE stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSHORTLINE_StreamCore {
+    candle_settings: CDLSHORTLINE_StreamSettings,
+}
+
+impl From<&Core> for CDLSHORTLINE_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLSHORTLINE_StreamSettings {
+                body_short: core.candle_settings.body_short,
+                shadow_short: core.candle_settings.shadow_short,
+            },
+        }
+    }
+}
+
 /// Live CDLSHORTLINE stream: one value per closed bar, bit-identical to [`Core::CDLSHORTLINE`]
 /// over the same series. Open with [`Core::CDLSHORTLINE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -416,7 +444,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLSHORTLINE_Stream")]
 pub struct CDLSHORTLINE_Stream {
-    core: Core,
+    core: CDLSHORTLINE_StreamCore,
     state: CDLSHORTLINE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -427,7 +455,7 @@ impl CDLSHORTLINE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLSHORTLINE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -468,7 +496,7 @@ impl CDLSHORTLINE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLSHORTLINE_StreamCore {
     fn CDLSHORTLINE_step_impl(&self, sp: &mut CDLSHORTLINE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
@@ -599,6 +627,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLSHORTLINE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLSHORTLINE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLSHORTLINE_OpenImpl(
@@ -826,7 +863,7 @@ impl Core {
             ringCap_ShadowTrailingIdx: cap_ShadowTrailingIdx as usize,
             ring_ShadowTrailingIdx_derived,
         };
-        Ok(CDLSHORTLINE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLSHORTLINE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLSHORTLINE_Open`] (composition seam).

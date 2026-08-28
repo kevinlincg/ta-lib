@@ -480,6 +480,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live KAMA stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct KAMA_StreamCore;
+
+impl From<&Core> for KAMA_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live KAMA stream: one value per closed bar, bit-identical to [`Core::KAMA`]
 /// over the same series. Open with [`Core::KAMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -489,7 +501,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_KAMA_Stream")]
 pub struct KAMA_Stream {
-    core: Core,
+    core: KAMA_StreamCore,
     state: KAMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -500,7 +512,7 @@ impl KAMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `KAMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -547,7 +559,7 @@ impl KAMA_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl KAMA_StreamCore {
     fn KAMA_step_impl(&self, sp: &mut KAMA_StreamState, inReal: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         let mut tempReal2: f64 = 0.0_f64;
@@ -605,6 +617,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::KAMA_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::KAMA_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn KAMA_OpenImpl(
@@ -661,7 +682,7 @@ impl Core {
                     fillIdx += 1;
                 }
             }
-            return Ok(KAMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
+            return Ok(KAMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
         }
         let mut constMax: f64 = 0.0_f64;
         let mut constDiff: f64 = 0.0_f64;
@@ -862,7 +883,7 @@ impl Core {
             ringCap_trailingIdx: cap_trailingIdx as usize,
             ring_trailingIdx_inReal,
         };
-        Ok(KAMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(KAMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::KAMA_Open`] (composition seam).

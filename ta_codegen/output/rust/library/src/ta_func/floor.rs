@@ -204,6 +204,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live FLOOR stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct FLOOR_StreamCore;
+
+impl From<&Core> for FLOOR_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live FLOOR stream: one value per closed bar, bit-identical to [`Core::FLOOR`]
 /// over the same series. Open with [`Core::FLOOR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -213,7 +225,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_FLOOR_Stream")]
 pub struct FLOOR_Stream {
-    core: Core,
+    core: FLOOR_StreamCore,
     state: FLOOR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -224,7 +236,7 @@ impl FLOOR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `FLOOR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -249,11 +261,20 @@ impl FLOOR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl FLOOR_StreamCore {
     fn FLOOR_step_impl(&self, sp: &mut FLOOR_StreamState, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).floor();
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::FLOOR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::FLOOR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn FLOOR_OpenImpl(
@@ -291,7 +312,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = FLOOR_StreamState {
         };
-        Ok(FLOOR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(FLOOR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::FLOOR_Open`] (composition seam).

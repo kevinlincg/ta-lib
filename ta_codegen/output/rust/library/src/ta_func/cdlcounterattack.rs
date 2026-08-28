@@ -439,6 +439,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLCOUNTERATTACK stream reads — `BodyLong`, `Equal`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLCOUNTERATTACK_StreamSettings {
+    body_long: CandleSetting,
+    equal: CandleSetting,
+}
+
+/// What a live CDLCOUNTERATTACK stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLCOUNTERATTACK_StreamCore {
+    candle_settings: CDLCOUNTERATTACK_StreamSettings,
+}
+
+impl From<&Core> for CDLCOUNTERATTACK_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLCOUNTERATTACK_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                equal: core.candle_settings.equal,
+            },
+        }
+    }
+}
+
 /// Live CDLCOUNTERATTACK stream: one value per closed bar, bit-identical to [`Core::CDLCOUNTERATTACK`]
 /// over the same series. Open with [`Core::CDLCOUNTERATTACK_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -448,7 +476,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLCOUNTERATTACK_Stream")]
 pub struct CDLCOUNTERATTACK_Stream {
-    core: Core,
+    core: CDLCOUNTERATTACK_StreamCore,
     state: CDLCOUNTERATTACK_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -459,7 +487,7 @@ impl CDLCOUNTERATTACK_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLCOUNTERATTACK_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -512,7 +540,7 @@ impl CDLCOUNTERATTACK_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLCOUNTERATTACK_StreamCore {
     fn CDLCOUNTERATTACK_step_impl(&self, sp: &mut CDLCOUNTERATTACK_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
@@ -608,6 +636,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLCOUNTERATTACK_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLCOUNTERATTACK_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLCOUNTERATTACK_OpenImpl(
@@ -873,7 +910,7 @@ impl Core {
             ringLag_EqualTrailingIdx: capLag_EqualTrailingIdx as usize,
             ring_EqualTrailingIdx_derived,
         };
-        Ok(CDLCOUNTERATTACK_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLCOUNTERATTACK_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLCOUNTERATTACK_Open`] (composition seam).

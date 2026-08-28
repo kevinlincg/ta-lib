@@ -282,6 +282,7 @@ impl LanguageBackend for RustBackend {
             "scratch_election.rs",
             "stream_finite.rs",
             "stream_out_range.rs",
+            "stream_candle_snapshot.rs",
             "no_phantom_io.rs",
             "mod.rs",
         ]

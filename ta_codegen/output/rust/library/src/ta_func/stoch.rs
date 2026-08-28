@@ -538,6 +538,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live STOCH stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct STOCH_StreamCore;
+
+impl From<&Core> for STOCH_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live STOCH stream: one value per closed bar, bit-identical to [`Core::STOCH`]
 /// over the same series. Open with [`Core::STOCH_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -547,7 +559,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_STOCH_Stream")]
 pub struct STOCH_Stream {
-    core: Core,
+    core: STOCH_StreamCore,
     state: STOCH_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -558,7 +570,7 @@ impl STOCH_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `STOCH_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -621,7 +633,7 @@ impl STOCH_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl STOCH_StreamCore {
     fn STOCH_step_impl(&self, sp: &mut STOCH_StreamState, inHigh: f64, inLow: f64, inClose: f64, outSlowK: &mut f64, outSlowD: &mut f64) -> Result<(), RetCode> {
         let mut tmp: f64 = 0.0_f64;
         let mut cur_tempBuffer: f64 = 0.0_f64;
@@ -698,6 +710,15 @@ impl Core {
         Ok(())
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::STOCH_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::STOCH_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn STOCH_OpenImpl(
@@ -1000,7 +1021,7 @@ impl Core {
             let last_sc_outSlowD = sc_outSlowD[*outNBElement - 1];
             outSlowD[0] = last_sc_outSlowD;
         }
-        Ok(STOCH_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(STOCH_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::STOCH_Open`] (composition seam).

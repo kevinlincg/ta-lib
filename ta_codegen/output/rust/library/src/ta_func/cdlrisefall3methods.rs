@@ -526,6 +526,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLRISEFALL3METHODS stream reads — `BodyLong`, `BodyShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLRISEFALL3METHODS_StreamSettings {
+    body_long: CandleSetting,
+    body_short: CandleSetting,
+}
+
+/// What a live CDLRISEFALL3METHODS stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLRISEFALL3METHODS_StreamCore {
+    candle_settings: CDLRISEFALL3METHODS_StreamSettings,
+}
+
+impl From<&Core> for CDLRISEFALL3METHODS_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLRISEFALL3METHODS_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                body_short: core.candle_settings.body_short,
+            },
+        }
+    }
+}
+
 /// Live CDLRISEFALL3METHODS stream: one value per closed bar, bit-identical to [`Core::CDLRISEFALL3METHODS`]
 /// over the same series. Open with [`Core::CDLRISEFALL3METHODS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -535,7 +563,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLRISEFALL3METHODS_Stream")]
 pub struct CDLRISEFALL3METHODS_Stream {
-    core: Core,
+    core: CDLRISEFALL3METHODS_StreamCore,
     state: CDLRISEFALL3METHODS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -546,7 +574,7 @@ impl CDLRISEFALL3METHODS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLRISEFALL3METHODS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -621,7 +649,7 @@ impl CDLRISEFALL3METHODS_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLRISEFALL3METHODS_StreamCore {
     fn CDLRISEFALL3METHODS_step_impl(&self, sp: &mut CDLRISEFALL3METHODS_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
@@ -759,6 +787,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLRISEFALL3METHODS_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLRISEFALL3METHODS_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLRISEFALL3METHODS_OpenImpl(
@@ -1116,7 +1153,7 @@ impl Core {
             ringLag_BodyShortTrailingIdx: capLag_BodyShortTrailingIdx as usize,
             ring_BodyShortTrailingIdx_derived,
         };
-        Ok(CDLRISEFALL3METHODS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLRISEFALL3METHODS_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLRISEFALL3METHODS_Open`] (composition seam).

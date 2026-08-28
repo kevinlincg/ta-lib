@@ -336,6 +336,32 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLSPINNINGTOP stream reads — `BodyShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSPINNINGTOP_StreamSettings {
+    body_short: CandleSetting,
+}
+
+/// What a live CDLSPINNINGTOP stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSPINNINGTOP_StreamCore {
+    candle_settings: CDLSPINNINGTOP_StreamSettings,
+}
+
+impl From<&Core> for CDLSPINNINGTOP_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLSPINNINGTOP_StreamSettings {
+                body_short: core.candle_settings.body_short,
+            },
+        }
+    }
+}
+
 /// Live CDLSPINNINGTOP stream: one value per closed bar, bit-identical to [`Core::CDLSPINNINGTOP`]
 /// over the same series. Open with [`Core::CDLSPINNINGTOP_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -345,7 +371,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLSPINNINGTOP_Stream")]
 pub struct CDLSPINNINGTOP_Stream {
-    core: Core,
+    core: CDLSPINNINGTOP_StreamCore,
     state: CDLSPINNINGTOP_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -356,7 +382,7 @@ impl CDLSPINNINGTOP_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLSPINNINGTOP_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -389,7 +415,7 @@ impl CDLSPINNINGTOP_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLSPINNINGTOP_StreamCore {
     fn CDLSPINNINGTOP_step_impl(&self, sp: &mut CDLSPINNINGTOP_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
@@ -460,6 +486,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLSPINNINGTOP_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLSPINNINGTOP_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLSPINNINGTOP_OpenImpl(
@@ -608,7 +643,7 @@ impl Core {
             ringCap_BodyTrailingIdx: cap_BodyTrailingIdx as usize,
             ring_BodyTrailingIdx_derived,
         };
-        Ok(CDLSPINNINGTOP_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLSPINNINGTOP_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLSPINNINGTOP_Open`] (composition seam).

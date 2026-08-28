@@ -205,6 +205,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live TANH stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct TANH_StreamCore;
+
+impl From<&Core> for TANH_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live TANH stream: one value per closed bar, bit-identical to [`Core::TANH`]
 /// over the same series. Open with [`Core::TANH_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -214,7 +226,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TANH_Stream")]
 pub struct TANH_Stream {
-    core: Core,
+    core: TANH_StreamCore,
     state: TANH_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -225,7 +237,7 @@ impl TANH_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TANH_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -250,11 +262,20 @@ impl TANH_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl TANH_StreamCore {
     fn TANH_step_impl(&self, sp: &mut TANH_StreamState, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).tanh();
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::TANH_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::TANH_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn TANH_OpenImpl(
@@ -292,7 +313,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = TANH_StreamState {
         };
-        Ok(TANH_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(TANH_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::TANH_Open`] (composition seam).

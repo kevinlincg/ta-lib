@@ -224,6 +224,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live TYPPRICE stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct TYPPRICE_StreamCore;
+
+impl From<&Core> for TYPPRICE_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live TYPPRICE stream: one value per closed bar, bit-identical to [`Core::TYPPRICE`]
 /// over the same series. Open with [`Core::TYPPRICE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -233,7 +245,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TYPPRICE_Stream")]
 pub struct TYPPRICE_Stream {
-    core: Core,
+    core: TYPPRICE_StreamCore,
     state: TYPPRICE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -244,7 +256,7 @@ impl TYPPRICE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TYPPRICE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -269,11 +281,20 @@ impl TYPPRICE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl TYPPRICE_StreamCore {
     fn TYPPRICE_step_impl(&self, sp: &mut TYPPRICE_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         (*outReal) = (inHigh + inLow + inClose) / 3.0;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::TYPPRICE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::TYPPRICE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn TYPPRICE_OpenImpl(
@@ -312,7 +333,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = TYPPRICE_StreamState {
         };
-        Ok(TYPPRICE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(TYPPRICE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::TYPPRICE_Open`] (composition seam).

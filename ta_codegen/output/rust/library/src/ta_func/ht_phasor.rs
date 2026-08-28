@@ -565,6 +565,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live HT_PHASOR stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct HT_PHASOR_StreamCore;
+
+impl From<&Core> for HT_PHASOR_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live HT_PHASOR stream: one value per closed bar, bit-identical to [`Core::HT_PHASOR`]
 /// over the same series. Open with [`Core::HT_PHASOR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -574,7 +586,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_HT_PHASOR_Stream")]
 pub struct HT_PHASOR_Stream {
-    core: Core,
+    core: HT_PHASOR_StreamCore,
     state: HT_PHASOR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -585,7 +597,7 @@ impl HT_PHASOR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `HT_PHASOR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -698,7 +710,7 @@ impl HT_PHASOR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl HT_PHASOR_StreamCore {
     fn HT_PHASOR_step_impl(&self, sp: &mut HT_PHASOR_StreamState, inReal: f64, outInPhase: &mut f64, outQuadrature: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         let mut tempReal2: f64 = 0.0_f64;
@@ -857,6 +869,15 @@ impl Core {
         sp.streamParity = 1 - sp.streamParity;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::HT_PHASOR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::HT_PHASOR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn HT_PHASOR_OpenImpl(
@@ -1254,7 +1275,7 @@ impl Core {
             ringCap_trailingWMAIdx: cap_trailingWMAIdx as usize,
             ring_trailingWMAIdx_inReal,
         };
-        Ok(HT_PHASOR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(HT_PHASOR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::HT_PHASOR_Open`] (composition seam).

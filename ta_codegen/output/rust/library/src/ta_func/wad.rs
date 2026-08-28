@@ -315,6 +315,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live WAD stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct WAD_StreamCore;
+
+impl From<&Core> for WAD_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live WAD stream: one value per closed bar, bit-identical to [`Core::WAD`]
 /// over the same series. Open with [`Core::WAD_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -324,7 +336,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_WAD_Stream")]
 pub struct WAD_Stream {
-    core: Core,
+    core: WAD_StreamCore,
     state: WAD_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -335,7 +347,7 @@ impl WAD_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `WAD_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -364,7 +376,7 @@ impl WAD_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl WAD_StreamCore {
     fn WAD_step_impl(&self, sp: &mut WAD_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         let mut close: f64 = 0.0_f64;
         let mut trueExtreme: f64 = 0.0_f64;
@@ -386,6 +398,15 @@ impl Core {
         sp.prevClose = close;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::WAD_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::WAD_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn WAD_OpenImpl(
@@ -483,7 +504,7 @@ impl Core {
             sum,
             prevClose,
         };
-        Ok(WAD_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(WAD_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::WAD_Open`] (composition seam).

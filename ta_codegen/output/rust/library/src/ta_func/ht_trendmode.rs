@@ -707,6 +707,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live HT_TRENDMODE stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct HT_TRENDMODE_StreamCore;
+
+impl From<&Core> for HT_TRENDMODE_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live HT_TRENDMODE stream: one value per closed bar, bit-identical to [`Core::HT_TRENDMODE`]
 /// over the same series. Open with [`Core::HT_TRENDMODE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -716,7 +728,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_HT_TRENDMODE_Stream")]
 pub struct HT_TRENDMODE_Stream {
-    core: Core,
+    core: HT_TRENDMODE_StreamCore,
     state: HT_TRENDMODE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -727,7 +739,7 @@ impl HT_TRENDMODE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `HT_TRENDMODE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -874,7 +886,7 @@ impl HT_TRENDMODE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl HT_TRENDMODE_StreamCore {
     fn HT_TRENDMODE_step_impl(&self, sp: &mut HT_TRENDMODE_StreamState, inReal: f64, outInteger: &mut i32) {
         let mut i: usize = 0_usize;
         let mut j: usize = 0_usize;
@@ -1150,6 +1162,15 @@ impl Core {
         sp.streamParity = 1 - sp.streamParity;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::HT_TRENDMODE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::HT_TRENDMODE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn HT_TRENDMODE_OpenImpl(
@@ -1723,7 +1744,7 @@ impl Core {
             cbSize_smoothPrice: cbSize_smoothPrice,
             cb_smoothPrice: smoothPrice,
         };
-        Ok(HT_TRENDMODE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(HT_TRENDMODE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::HT_TRENDMODE_Open`] (composition seam).

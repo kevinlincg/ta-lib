@@ -285,6 +285,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live ROCR100 stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct ROCR100_StreamCore;
+
+impl From<&Core> for ROCR100_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live ROCR100 stream: one value per closed bar, bit-identical to [`Core::ROCR100`]
 /// over the same series. Open with [`Core::ROCR100_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -294,7 +306,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ROCR100_Stream")]
 pub struct ROCR100_Stream {
-    core: Core,
+    core: ROCR100_StreamCore,
     state: ROCR100_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -305,7 +317,7 @@ impl ROCR100_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ROCR100_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -338,7 +350,7 @@ impl ROCR100_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl ROCR100_StreamCore {
     fn ROCR100_step_impl(&self, sp: &mut ROCR100_StreamState, inReal: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         if sp.ringCap_trailingIdx == 0 {
@@ -357,6 +369,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::ROCR100_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::ROCR100_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn ROCR100_OpenImpl(
@@ -460,7 +481,7 @@ impl Core {
             ringCap_trailingIdx: cap_trailingIdx as usize,
             ring_trailingIdx_inReal,
         };
-        Ok(ROCR100_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(ROCR100_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ROCR100_Open`] (composition seam).

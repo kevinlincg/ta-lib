@@ -323,6 +323,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live CDLHIKKAKE stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLHIKKAKE_StreamCore;
+
+impl From<&Core> for CDLHIKKAKE_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live CDLHIKKAKE stream: one value per closed bar, bit-identical to [`Core::CDLHIKKAKE`]
 /// over the same series. Open with [`Core::CDLHIKKAKE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -332,7 +344,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLHIKKAKE_Stream")]
 pub struct CDLHIKKAKE_Stream {
-    core: Core,
+    core: CDLHIKKAKE_StreamCore,
     state: CDLHIKKAKE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -343,7 +355,7 @@ impl CDLHIKKAKE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLHIKKAKE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -384,7 +396,7 @@ impl CDLHIKKAKE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLHIKKAKE_StreamCore {
     fn CDLHIKKAKE_step_impl(&self, sp: &mut CDLHIKKAKE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         if sp.lag1_inHigh < sp.lag2_inHigh &&
            sp.lag1_inLow > sp.lag2_inLow &&   // 1st + 2nd: lower high and higher low
@@ -412,6 +424,15 @@ impl Core {
         sp.lag1_inLow = inLow;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLHIKKAKE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLHIKKAKE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLHIKKAKE_OpenImpl(
@@ -535,7 +556,7 @@ impl Core {
             lag1_inLow: inLow[historyLen - 1],
             lag2_inLow: inLow[historyLen - 2],
         };
-        Ok(CDLHIKKAKE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLHIKKAKE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLHIKKAKE_Open`] (composition seam).

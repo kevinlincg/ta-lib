@@ -433,6 +433,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live MINUS_DM stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct MINUS_DM_StreamCore;
+
+impl From<&Core> for MINUS_DM_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live MINUS_DM stream: one value per closed bar, bit-identical to [`Core::MINUS_DM`]
 /// over the same series. Open with [`Core::MINUS_DM_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -442,7 +454,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MINUS_DM_Stream")]
 pub struct MINUS_DM_Stream {
-    core: Core,
+    core: MINUS_DM_StreamCore,
     state: MINUS_DM_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -453,7 +465,7 @@ impl MINUS_DM_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MINUS_DM_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -486,7 +498,7 @@ impl MINUS_DM_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl MINUS_DM_StreamCore {
     fn MINUS_DM_step_impl(&self, sp: &mut MINUS_DM_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
         if sp.optInTimePeriod <= 1 {
             let mut tempReal: f64 = 0.0_f64;
@@ -529,6 +541,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::MINUS_DM_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::MINUS_DM_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn MINUS_DM_OpenImpl(
@@ -684,7 +705,7 @@ impl Core {
                 prevLow,
                 prevMinusDM,
             };
-            Ok(MINUS_DM_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(MINUS_DM_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         } else {
             let mut today: usize = 0_usize;
             let mut lookbackTotal: usize = 0_usize;
@@ -854,7 +875,7 @@ impl Core {
                 prevLow,
                 prevMinusDM,
             };
-            Ok(MINUS_DM_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(MINUS_DM_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         }
     }
 

@@ -349,6 +349,32 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLMATCHINGLOW stream reads — `Equal`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLMATCHINGLOW_StreamSettings {
+    equal: CandleSetting,
+}
+
+/// What a live CDLMATCHINGLOW stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLMATCHINGLOW_StreamCore {
+    candle_settings: CDLMATCHINGLOW_StreamSettings,
+}
+
+impl From<&Core> for CDLMATCHINGLOW_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLMATCHINGLOW_StreamSettings {
+                equal: core.candle_settings.equal,
+            },
+        }
+    }
+}
+
 /// Live CDLMATCHINGLOW stream: one value per closed bar, bit-identical to [`Core::CDLMATCHINGLOW`]
 /// over the same series. Open with [`Core::CDLMATCHINGLOW_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -358,7 +384,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLMATCHINGLOW_Stream")]
 pub struct CDLMATCHINGLOW_Stream {
-    core: Core,
+    core: CDLMATCHINGLOW_StreamCore,
     state: CDLMATCHINGLOW_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -369,7 +395,7 @@ impl CDLMATCHINGLOW_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLMATCHINGLOW_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -412,7 +438,7 @@ impl CDLMATCHINGLOW_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLMATCHINGLOW_StreamCore {
     fn CDLMATCHINGLOW_step_impl(&self, sp: &mut CDLMATCHINGLOW_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let Equal_rangeType: i32 = self.candle_settings.equal.range_type as i32;
@@ -473,6 +499,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLMATCHINGLOW_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLMATCHINGLOW_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLMATCHINGLOW_OpenImpl(
@@ -631,7 +666,7 @@ impl Core {
             ringLag_EqualTrailingIdx: capLag_EqualTrailingIdx as usize,
             ring_EqualTrailingIdx_derived,
         };
-        Ok(CDLMATCHINGLOW_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLMATCHINGLOW_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLMATCHINGLOW_Open`] (composition seam).

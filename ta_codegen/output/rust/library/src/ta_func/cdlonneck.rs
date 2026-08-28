@@ -417,6 +417,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLONNECK stream reads — `BodyLong`, `Equal`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLONNECK_StreamSettings {
+    body_long: CandleSetting,
+    equal: CandleSetting,
+}
+
+/// What a live CDLONNECK stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLONNECK_StreamCore {
+    candle_settings: CDLONNECK_StreamSettings,
+}
+
+impl From<&Core> for CDLONNECK_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLONNECK_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                equal: core.candle_settings.equal,
+            },
+        }
+    }
+}
+
 /// Live CDLONNECK stream: one value per closed bar, bit-identical to [`Core::CDLONNECK`]
 /// over the same series. Open with [`Core::CDLONNECK_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -426,7 +454,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLONNECK_Stream")]
 pub struct CDLONNECK_Stream {
-    core: Core,
+    core: CDLONNECK_StreamCore,
     state: CDLONNECK_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -437,7 +465,7 @@ impl CDLONNECK_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLONNECK_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -490,7 +518,7 @@ impl CDLONNECK_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLONNECK_StreamCore {
     fn CDLONNECK_step_impl(&self, sp: &mut CDLONNECK_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
@@ -595,6 +623,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLONNECK_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLONNECK_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLONNECK_OpenImpl(
@@ -838,7 +875,7 @@ impl Core {
             ringLag_EqualTrailingIdx: capLag_EqualTrailingIdx as usize,
             ring_EqualTrailingIdx_derived,
         };
-        Ok(CDLONNECK_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLONNECK_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLONNECK_Open`] (composition seam).

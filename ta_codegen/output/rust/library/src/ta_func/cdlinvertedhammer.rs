@@ -482,6 +482,36 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLINVERTEDHAMMER stream reads — `BodyShort`, `ShadowLong`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLINVERTEDHAMMER_StreamSettings {
+    body_short: CandleSetting,
+    shadow_long: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDLINVERTEDHAMMER stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLINVERTEDHAMMER_StreamCore {
+    candle_settings: CDLINVERTEDHAMMER_StreamSettings,
+}
+
+impl From<&Core> for CDLINVERTEDHAMMER_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLINVERTEDHAMMER_StreamSettings {
+                body_short: core.candle_settings.body_short,
+                shadow_long: core.candle_settings.shadow_long,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDLINVERTEDHAMMER stream: one value per closed bar, bit-identical to [`Core::CDLINVERTEDHAMMER`]
 /// over the same series. Open with [`Core::CDLINVERTEDHAMMER_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -491,7 +521,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLINVERTEDHAMMER_Stream")]
 pub struct CDLINVERTEDHAMMER_Stream {
-    core: Core,
+    core: CDLINVERTEDHAMMER_StreamCore,
     state: CDLINVERTEDHAMMER_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -502,7 +532,7 @@ impl CDLINVERTEDHAMMER_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLINVERTEDHAMMER_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -555,7 +585,7 @@ impl CDLINVERTEDHAMMER_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLINVERTEDHAMMER_StreamCore {
     fn CDLINVERTEDHAMMER_step_impl(&self, sp: &mut CDLINVERTEDHAMMER_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
@@ -753,6 +783,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLINVERTEDHAMMER_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLINVERTEDHAMMER_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLINVERTEDHAMMER_OpenImpl(
@@ -1068,7 +1107,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLINVERTEDHAMMER_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLINVERTEDHAMMER_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLINVERTEDHAMMER_Open`] (composition seam).

@@ -211,6 +211,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live LOG10 stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct LOG10_StreamCore;
+
+impl From<&Core> for LOG10_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live LOG10 stream: one value per closed bar, bit-identical to [`Core::LOG10`]
 /// over the same series. Open with [`Core::LOG10_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -220,7 +232,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_LOG10_Stream")]
 pub struct LOG10_Stream {
-    core: Core,
+    core: LOG10_StreamCore,
     state: LOG10_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -231,7 +243,7 @@ impl LOG10_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `LOG10_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -256,11 +268,20 @@ impl LOG10_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl LOG10_StreamCore {
     fn LOG10_step_impl(&self, sp: &mut LOG10_StreamState, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).log10();
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::LOG10_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::LOG10_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn LOG10_OpenImpl(
@@ -298,7 +319,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = LOG10_StreamState {
         };
-        Ok(LOG10_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(LOG10_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::LOG10_Open`] (composition seam).

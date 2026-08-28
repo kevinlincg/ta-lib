@@ -390,6 +390,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live ATR stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct ATR_StreamCore;
+
+impl From<&Core> for ATR_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live ATR stream: one value per closed bar, bit-identical to [`Core::ATR`]
 /// over the same series. Open with [`Core::ATR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -399,7 +411,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ATR_Stream")]
 pub struct ATR_Stream {
-    core: Core,
+    core: ATR_StreamCore,
     state: ATR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -410,7 +422,7 @@ impl ATR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ATR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -441,7 +453,7 @@ impl ATR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl ATR_StreamCore {
     fn ATR_step_impl(&self, sp: &mut ATR_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         let mut val2: f64 = 0.0_f64;
         let mut val3: f64 = 0.0_f64;
@@ -470,6 +482,15 @@ impl Core {
         sp.lag1_inClose = inClose;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::ATR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::ATR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn ATR_OpenImpl(
@@ -642,7 +663,7 @@ impl Core {
             prevATR,
             lag1_inClose: inClose[historyLen - 1],
         };
-        Ok(ATR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(ATR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ATR_Open`] (composition seam).

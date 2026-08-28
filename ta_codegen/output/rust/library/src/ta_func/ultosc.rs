@@ -557,6 +557,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live ULTOSC stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct ULTOSC_StreamCore;
+
+impl From<&Core> for ULTOSC_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live ULTOSC stream: one value per closed bar, bit-identical to [`Core::ULTOSC`]
 /// over the same series. Open with [`Core::ULTOSC_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -566,7 +578,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ULTOSC_Stream")]
 pub struct ULTOSC_Stream {
-    core: Core,
+    core: ULTOSC_StreamCore,
     state: ULTOSC_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -577,7 +589,7 @@ impl ULTOSC_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ULTOSC_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -638,7 +650,7 @@ impl ULTOSC_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl ULTOSC_StreamCore {
     fn ULTOSC_step_impl(&self, sp: &mut ULTOSC_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         let mut trueLow: f64 = 0.0_f64;
         let mut trueRange: f64 = 0.0_f64;
@@ -737,6 +749,15 @@ impl Core {
         sp.lag1_inClose = inClose;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::ULTOSC_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::ULTOSC_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn ULTOSC_OpenImpl(
@@ -1053,7 +1074,7 @@ impl Core {
             cb_term_closeMinusTrueLow: term_closeMinusTrueLow,
             cb_term_trueRange: term_trueRange,
         };
-        Ok(ULTOSC_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(ULTOSC_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ULTOSC_Open`] (composition seam).

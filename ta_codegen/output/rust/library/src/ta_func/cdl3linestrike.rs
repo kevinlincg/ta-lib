@@ -380,6 +380,32 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDL3LINESTRIKE stream reads — `Near`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDL3LINESTRIKE_StreamSettings {
+    near: CandleSetting,
+}
+
+/// What a live CDL3LINESTRIKE stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDL3LINESTRIKE_StreamCore {
+    candle_settings: CDL3LINESTRIKE_StreamSettings,
+}
+
+impl From<&Core> for CDL3LINESTRIKE_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDL3LINESTRIKE_StreamSettings {
+                near: core.candle_settings.near,
+            },
+        }
+    }
+}
+
 /// Live CDL3LINESTRIKE stream: one value per closed bar, bit-identical to [`Core::CDL3LINESTRIKE`]
 /// over the same series. Open with [`Core::CDL3LINESTRIKE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -389,7 +415,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL3LINESTRIKE_Stream")]
 pub struct CDL3LINESTRIKE_Stream {
-    core: Core,
+    core: CDL3LINESTRIKE_StreamCore,
     state: CDL3LINESTRIKE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -400,7 +426,7 @@ impl CDL3LINESTRIKE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL3LINESTRIKE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -459,7 +485,7 @@ impl CDL3LINESTRIKE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDL3LINESTRIKE_StreamCore {
     fn CDL3LINESTRIKE_step_impl(&self, sp: &mut CDL3LINESTRIKE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
@@ -524,6 +550,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDL3LINESTRIKE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDL3LINESTRIKE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDL3LINESTRIKE_OpenImpl(
@@ -722,7 +757,7 @@ impl Core {
             ringLag_NearTrailingIdx: capLag_NearTrailingIdx as usize,
             ring_NearTrailingIdx_derived,
         };
-        Ok(CDL3LINESTRIKE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDL3LINESTRIKE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL3LINESTRIKE_Open`] (composition seam).

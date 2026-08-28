@@ -345,6 +345,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live EMA stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct EMA_StreamCore;
+
+impl From<&Core> for EMA_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live EMA stream: one value per closed bar, bit-identical to [`Core::EMA`]
 /// over the same series. Open with [`Core::EMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -354,7 +366,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_EMA_Stream")]
 pub struct EMA_Stream {
-    core: Core,
+    core: EMA_StreamCore,
     state: EMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -365,7 +377,7 @@ impl EMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `EMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -396,7 +408,7 @@ impl EMA_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl EMA_StreamCore {
     fn EMA_step_impl(&self, sp: &mut EMA_StreamState, inReal: f64, outReal: &mut f64) {
         if sp.optInTimePeriod == 1 {
             (*outReal) = inReal;
@@ -406,6 +418,15 @@ impl Core {
         (*outReal) = sp.prevMA;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::EMA_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::EMA_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn EMA_OpenImpl(
@@ -454,7 +475,7 @@ impl Core {
                     fillIdx += 1;
                 }
             }
-            return Ok(EMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
+            return Ok(EMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
         }
         let mut optInK_1: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
@@ -528,7 +549,7 @@ impl Core {
             optInK_1,
             prevMA,
         };
-        Ok(EMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(EMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::EMA_Open`] (composition seam).

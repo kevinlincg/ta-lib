@@ -382,6 +382,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live ACCBANDS stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct ACCBANDS_StreamCore;
+
+impl From<&Core> for ACCBANDS_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live ACCBANDS stream: one value per closed bar, bit-identical to [`Core::ACCBANDS`]
 /// over the same series. Open with [`Core::ACCBANDS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -391,7 +403,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ACCBANDS_Stream")]
 pub struct ACCBANDS_Stream {
-    core: Core,
+    core: ACCBANDS_StreamCore,
     state: ACCBANDS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -402,7 +414,7 @@ impl ACCBANDS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ACCBANDS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -445,7 +457,7 @@ impl ACCBANDS_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl ACCBANDS_StreamCore {
     fn ACCBANDS_step_impl(&self, sp: &mut ACCBANDS_StreamState, inHigh: f64, inLow: f64, inClose: f64, outRealUpperBand: &mut f64, outRealMiddleBand: &mut f64, outRealLowerBand: &mut f64) {
         let mut tempUpper: f64 = 0.0_f64;
         let mut tempMiddle: f64 = 0.0_f64;
@@ -495,6 +507,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::ACCBANDS_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::ACCBANDS_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn ACCBANDS_OpenImpl(
@@ -656,7 +677,7 @@ impl Core {
             ring_trailingIdx_inLow,
             ring_trailingIdx_inClose,
         };
-        Ok(ACCBANDS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(ACCBANDS_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ACCBANDS_Open`] (composition seam).

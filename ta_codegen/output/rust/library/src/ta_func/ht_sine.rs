@@ -637,6 +637,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live HT_SINE stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct HT_SINE_StreamCore;
+
+impl From<&Core> for HT_SINE_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live HT_SINE stream: one value per closed bar, bit-identical to [`Core::HT_SINE`]
 /// over the same series. Open with [`Core::HT_SINE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -646,7 +658,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_HT_SINE_Stream")]
 pub struct HT_SINE_Stream {
-    core: Core,
+    core: HT_SINE_StreamCore,
     state: HT_SINE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -657,7 +669,7 @@ impl HT_SINE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `HT_SINE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -786,7 +798,7 @@ impl HT_SINE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl HT_SINE_StreamCore {
     fn HT_SINE_step_impl(&self, sp: &mut HT_SINE_StreamState, inReal: f64, outSine: &mut f64, outLeadSine: &mut f64) {
         let mut i: usize = 0_usize;
         let mut tempReal: f64 = 0.0_f64;
@@ -998,6 +1010,15 @@ impl Core {
         sp.streamParity = 1 - sp.streamParity;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::HT_SINE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::HT_SINE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn HT_SINE_OpenImpl(
@@ -1479,7 +1500,7 @@ impl Core {
             cbSize_smoothPrice: cbSize_smoothPrice,
             cb_smoothPrice: smoothPrice,
         };
-        Ok(HT_SINE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(HT_SINE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::HT_SINE_Open`] (composition seam).

@@ -285,6 +285,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live CDLXSIDEGAP3METHODS stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLXSIDEGAP3METHODS_StreamCore;
+
+impl From<&Core> for CDLXSIDEGAP3METHODS_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live CDLXSIDEGAP3METHODS stream: one value per closed bar, bit-identical to [`Core::CDLXSIDEGAP3METHODS`]
 /// over the same series. Open with [`Core::CDLXSIDEGAP3METHODS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -294,7 +306,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLXSIDEGAP3METHODS_Stream")]
 pub struct CDLXSIDEGAP3METHODS_Stream {
-    core: Core,
+    core: CDLXSIDEGAP3METHODS_StreamCore,
     state: CDLXSIDEGAP3METHODS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -305,7 +317,7 @@ impl CDLXSIDEGAP3METHODS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLXSIDEGAP3METHODS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -338,7 +350,7 @@ impl CDLXSIDEGAP3METHODS_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLXSIDEGAP3METHODS_StreamCore {
     fn CDLXSIDEGAP3METHODS_step_impl(&self, sp: &mut CDLXSIDEGAP3METHODS_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         if (if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) && // 1st and 2nd of same color
            (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 0 - (if inClose >= inOpen { 1 } else { 0 - 1 }) && // 3rd opposite color
@@ -360,6 +372,15 @@ impl Core {
         sp.lag1_inClose = inClose;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLXSIDEGAP3METHODS_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLXSIDEGAP3METHODS_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLXSIDEGAP3METHODS_OpenImpl(
@@ -443,7 +464,7 @@ impl Core {
             lag1_inClose: inClose[historyLen - 1],
             lag2_inClose: inClose[historyLen - 2],
         };
-        Ok(CDLXSIDEGAP3METHODS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLXSIDEGAP3METHODS_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLXSIDEGAP3METHODS_Open`] (composition seam).

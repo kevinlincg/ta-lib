@@ -423,6 +423,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLGAPSIDESIDEWHITE stream reads — `Equal`, `Near`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLGAPSIDESIDEWHITE_StreamSettings {
+    equal: CandleSetting,
+    near: CandleSetting,
+}
+
+/// What a live CDLGAPSIDESIDEWHITE stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLGAPSIDESIDEWHITE_StreamCore {
+    candle_settings: CDLGAPSIDESIDEWHITE_StreamSettings,
+}
+
+impl From<&Core> for CDLGAPSIDESIDEWHITE_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLGAPSIDESIDEWHITE_StreamSettings {
+                equal: core.candle_settings.equal,
+                near: core.candle_settings.near,
+            },
+        }
+    }
+}
+
 /// Live CDLGAPSIDESIDEWHITE stream: one value per closed bar, bit-identical to [`Core::CDLGAPSIDESIDEWHITE`]
 /// over the same series. Open with [`Core::CDLGAPSIDESIDEWHITE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -432,7 +460,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLGAPSIDESIDEWHITE_Stream")]
 pub struct CDLGAPSIDESIDEWHITE_Stream {
-    core: Core,
+    core: CDLGAPSIDESIDEWHITE_StreamCore,
     state: CDLGAPSIDESIDEWHITE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -443,7 +471,7 @@ impl CDLGAPSIDESIDEWHITE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLGAPSIDESIDEWHITE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -500,7 +528,7 @@ impl CDLGAPSIDESIDEWHITE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLGAPSIDESIDEWHITE_StreamCore {
     fn CDLGAPSIDESIDEWHITE_step_impl(&self, sp: &mut CDLGAPSIDESIDEWHITE_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let Equal_rangeType: i32 = self.candle_settings.equal.range_type as i32;
@@ -608,6 +636,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLGAPSIDESIDEWHITE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLGAPSIDESIDEWHITE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLGAPSIDESIDEWHITE_OpenImpl(
@@ -857,7 +894,7 @@ impl Core {
             ringLag_NearTrailingIdx: capLag_NearTrailingIdx as usize,
             ring_NearTrailingIdx_derived,
         };
-        Ok(CDLGAPSIDESIDEWHITE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLGAPSIDESIDEWHITE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLGAPSIDESIDEWHITE_Open`] (composition seam).

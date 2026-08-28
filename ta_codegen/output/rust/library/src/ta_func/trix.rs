@@ -384,6 +384,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live TRIX stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct TRIX_StreamCore;
+
+impl From<&Core> for TRIX_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live TRIX stream: one value per closed bar, bit-identical to [`Core::TRIX`]
 /// over the same series. Open with [`Core::TRIX_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -393,7 +405,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TRIX_Stream")]
 pub struct TRIX_Stream {
-    core: Core,
+    core: TRIX_StreamCore,
     state: TRIX_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -404,7 +416,7 @@ impl TRIX_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TRIX_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -439,7 +451,7 @@ impl TRIX_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl TRIX_StreamCore {
     fn TRIX_step_impl(&self, sp: &mut TRIX_StreamState, inReal: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         tempReal = sp.prevEMA3;
@@ -453,6 +465,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::TRIX_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::TRIX_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn TRIX_OpenImpl(
@@ -603,7 +624,7 @@ impl Core {
             prevEMA3,
             optInK_1,
         };
-        Ok(TRIX_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(TRIX_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::TRIX_Open`] (composition seam).

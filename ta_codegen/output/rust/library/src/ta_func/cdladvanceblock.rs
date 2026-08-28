@@ -734,6 +734,40 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLADVANCEBLOCK stream reads — `BodyLong`, `Far`, `Near`, `ShadowLong`, `ShadowShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLADVANCEBLOCK_StreamSettings {
+    body_long: CandleSetting,
+    far: CandleSetting,
+    near: CandleSetting,
+    shadow_long: CandleSetting,
+    shadow_short: CandleSetting,
+}
+
+/// What a live CDLADVANCEBLOCK stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLADVANCEBLOCK_StreamCore {
+    candle_settings: CDLADVANCEBLOCK_StreamSettings,
+}
+
+impl From<&Core> for CDLADVANCEBLOCK_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLADVANCEBLOCK_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                far: core.candle_settings.far,
+                near: core.candle_settings.near,
+                shadow_long: core.candle_settings.shadow_long,
+                shadow_short: core.candle_settings.shadow_short,
+            },
+        }
+    }
+}
+
 /// Live CDLADVANCEBLOCK stream: one value per closed bar, bit-identical to [`Core::CDLADVANCEBLOCK`]
 /// over the same series. Open with [`Core::CDLADVANCEBLOCK_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -743,7 +777,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLADVANCEBLOCK_Stream")]
 pub struct CDLADVANCEBLOCK_Stream {
-    core: Core,
+    core: CDLADVANCEBLOCK_StreamCore,
     state: CDLADVANCEBLOCK_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -754,7 +788,7 @@ impl CDLADVANCEBLOCK_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLADVANCEBLOCK_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -845,7 +879,7 @@ impl CDLADVANCEBLOCK_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLADVANCEBLOCK_StreamCore {
     fn CDLADVANCEBLOCK_step_impl(&self, sp: &mut CDLADVANCEBLOCK_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
@@ -1045,6 +1079,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLADVANCEBLOCK_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLADVANCEBLOCK_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLADVANCEBLOCK_OpenImpl(
@@ -1650,7 +1693,7 @@ impl Core {
             ringLag_ShadowShortTrailingIdx: capLag_ShadowShortTrailingIdx as usize,
             ring_ShadowShortTrailingIdx_derived,
         };
-        Ok(CDLADVANCEBLOCK_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLADVANCEBLOCK_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLADVANCEBLOCK_Open`] (composition seam).

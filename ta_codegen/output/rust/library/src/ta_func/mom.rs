@@ -276,6 +276,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live MOM stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct MOM_StreamCore;
+
+impl From<&Core> for MOM_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live MOM stream: one value per closed bar, bit-identical to [`Core::MOM`]
 /// over the same series. Open with [`Core::MOM_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -285,7 +297,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MOM_Stream")]
 pub struct MOM_Stream {
-    core: Core,
+    core: MOM_StreamCore,
     state: MOM_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -296,7 +308,7 @@ impl MOM_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MOM_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -329,7 +341,7 @@ impl MOM_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl MOM_StreamCore {
     fn MOM_step_impl(&self, sp: &mut MOM_StreamState, inReal: f64, outReal: &mut f64) {
         if sp.ringCap_trailingIdx == 0 {
             sp.ring_trailingIdx_inReal[0] = inReal;
@@ -342,6 +354,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::MOM_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::MOM_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn MOM_OpenImpl(
@@ -440,7 +461,7 @@ impl Core {
             ringCap_trailingIdx: cap_trailingIdx as usize,
             ring_trailingIdx_inReal,
         };
-        Ok(MOM_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(MOM_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MOM_Open`] (composition seam).

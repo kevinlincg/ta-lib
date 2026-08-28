@@ -435,6 +435,32 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLHIKKAKEMOD stream reads — `Near`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLHIKKAKEMOD_StreamSettings {
+    near: CandleSetting,
+}
+
+/// What a live CDLHIKKAKEMOD stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLHIKKAKEMOD_StreamCore {
+    candle_settings: CDLHIKKAKEMOD_StreamSettings,
+}
+
+impl From<&Core> for CDLHIKKAKEMOD_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLHIKKAKEMOD_StreamSettings {
+                near: core.candle_settings.near,
+            },
+        }
+    }
+}
+
 /// Live CDLHIKKAKEMOD stream: one value per closed bar, bit-identical to [`Core::CDLHIKKAKEMOD`]
 /// over the same series. Open with [`Core::CDLHIKKAKEMOD_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -444,7 +470,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLHIKKAKEMOD_Stream")]
 pub struct CDLHIKKAKEMOD_Stream {
-    core: Core,
+    core: CDLHIKKAKEMOD_StreamCore,
     state: CDLHIKKAKEMOD_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -455,7 +481,7 @@ impl CDLHIKKAKEMOD_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLHIKKAKEMOD_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -518,7 +544,7 @@ impl CDLHIKKAKEMOD_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLHIKKAKEMOD_StreamCore {
     fn CDLHIKKAKEMOD_step_impl(&self, sp: &mut CDLHIKKAKEMOD_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let Near_rangeType: i32 = self.candle_settings.near.range_type as i32;
@@ -596,6 +622,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLHIKKAKEMOD_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLHIKKAKEMOD_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLHIKKAKEMOD_OpenImpl(
@@ -850,7 +885,7 @@ impl Core {
             ringLag_NearTrailingIdx: capLag_NearTrailingIdx as usize,
             ring_NearTrailingIdx_derived,
         };
-        Ok(CDLHIKKAKEMOD_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLHIKKAKEMOD_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLHIKKAKEMOD_Open`] (composition seam).

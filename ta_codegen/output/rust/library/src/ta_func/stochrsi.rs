@@ -365,6 +365,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live STOCHRSI stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct STOCHRSI_StreamCore;
+
+impl From<&Core> for STOCHRSI_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live STOCHRSI stream: one value per closed bar, bit-identical to [`Core::STOCHRSI`]
 /// over the same series. Open with [`Core::STOCHRSI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -374,7 +386,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_STOCHRSI_Stream")]
 pub struct STOCHRSI_Stream {
-    core: Core,
+    core: STOCHRSI_StreamCore,
     state: STOCHRSI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -385,7 +397,7 @@ impl STOCHRSI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `STOCHRSI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -422,7 +434,7 @@ impl STOCHRSI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl STOCHRSI_StreamCore {
     fn STOCHRSI_step_impl(&self, sp: &mut STOCHRSI_StreamState, inReal: f64, outFastK: &mut f64, outFastD: &mut f64) -> Result<(), RetCode> {
         let mut cur_tempRSIBuffer: f64 = 0.0_f64;
         let mut cur_outFastK: f64 = 0.0_f64;
@@ -440,6 +452,15 @@ impl Core {
         Ok(())
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::STOCHRSI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::STOCHRSI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn STOCHRSI_OpenImpl(
@@ -574,7 +595,7 @@ impl Core {
             let last_sc_outFastD = sc_outFastD[*outNBElement - 1];
             outFastD[0] = last_sc_outFastD;
         }
-        Ok(STOCHRSI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(STOCHRSI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::STOCHRSI_Open`] (composition seam).

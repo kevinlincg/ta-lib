@@ -512,6 +512,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live SAR stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct SAR_StreamCore;
+
+impl From<&Core> for SAR_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live SAR stream: one value per closed bar, bit-identical to [`Core::SAR`]
 /// over the same series. Open with [`Core::SAR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -521,7 +533,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_SAR_Stream")]
 pub struct SAR_Stream {
-    core: Core,
+    core: SAR_StreamCore,
     state: SAR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -532,7 +544,7 @@ impl SAR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `SAR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -573,7 +585,7 @@ impl SAR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl SAR_StreamCore {
     fn SAR_step_impl(&self, sp: &mut SAR_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
         let mut prevHigh: f64 = 0.0_f64;
         let mut prevLow: f64 = 0.0_f64;
@@ -686,6 +698,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::SAR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::SAR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn SAR_OpenImpl(
@@ -946,7 +967,7 @@ impl Core {
             ep,
             sar,
         };
-        Ok(SAR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(SAR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::SAR_Open`] (composition seam).

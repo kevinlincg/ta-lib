@@ -499,6 +499,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live TRIMA stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct TRIMA_StreamCore;
+
+impl From<&Core> for TRIMA_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live TRIMA stream: one value per closed bar, bit-identical to [`Core::TRIMA`]
 /// over the same series. Open with [`Core::TRIMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -508,7 +520,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_TRIMA_Stream")]
 pub struct TRIMA_Stream {
-    core: Core,
+    core: TRIMA_StreamCore,
     state: TRIMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -519,7 +531,7 @@ impl TRIMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `TRIMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -568,7 +580,7 @@ impl TRIMA_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl TRIMA_StreamCore {
     fn TRIMA_step_impl(&self, sp: &mut TRIMA_StreamState, inReal: f64, outReal: &mut f64) {
         if sp.optInTimePeriod % 2 == 1 {
             if sp.ringCap_middleIdx == 0 {
@@ -637,6 +649,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::TRIMA_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::TRIMA_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn TRIMA_OpenImpl(
@@ -891,7 +912,7 @@ impl Core {
                 ringCap_trailingIdx: cap_trailingIdx as usize,
                 ring_trailingIdx_inReal,
             };
-            Ok(TRIMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(TRIMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         } else {
             let mut lookbackTotal: usize = 0_usize;
             let mut numerator: f64 = 0.0_f64;
@@ -1099,7 +1120,7 @@ impl Core {
                 ringCap_trailingIdx: cap_trailingIdx as usize,
                 ring_trailingIdx_inReal,
             };
-            Ok(TRIMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(TRIMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         }
     }
 

@@ -486,6 +486,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLIDENTICAL3CROWS stream reads — `Equal`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLIDENTICAL3CROWS_StreamSettings {
+    equal: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDLIDENTICAL3CROWS stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLIDENTICAL3CROWS_StreamCore {
+    candle_settings: CDLIDENTICAL3CROWS_StreamSettings,
+}
+
+impl From<&Core> for CDLIDENTICAL3CROWS_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLIDENTICAL3CROWS_StreamSettings {
+                equal: core.candle_settings.equal,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDLIDENTICAL3CROWS stream: one value per closed bar, bit-identical to [`Core::CDLIDENTICAL3CROWS`]
 /// over the same series. Open with [`Core::CDLIDENTICAL3CROWS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -495,7 +523,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLIDENTICAL3CROWS_Stream")]
 pub struct CDLIDENTICAL3CROWS_Stream {
-    core: Core,
+    core: CDLIDENTICAL3CROWS_StreamCore,
     state: CDLIDENTICAL3CROWS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -506,7 +534,7 @@ impl CDLIDENTICAL3CROWS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLIDENTICAL3CROWS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -567,7 +595,7 @@ impl CDLIDENTICAL3CROWS_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLIDENTICAL3CROWS_StreamCore {
     fn CDLIDENTICAL3CROWS_step_impl(&self, sp: &mut CDLIDENTICAL3CROWS_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
@@ -665,6 +693,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLIDENTICAL3CROWS_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLIDENTICAL3CROWS_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLIDENTICAL3CROWS_OpenImpl(
@@ -985,7 +1022,7 @@ impl Core {
             ringLag_ShadowVeryShortTrailingIdx: capLag_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLIDENTICAL3CROWS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLIDENTICAL3CROWS_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLIDENTICAL3CROWS_Open`] (composition seam).

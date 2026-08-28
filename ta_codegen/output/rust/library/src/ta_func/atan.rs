@@ -208,6 +208,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live ATAN stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct ATAN_StreamCore;
+
+impl From<&Core> for ATAN_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live ATAN stream: one value per closed bar, bit-identical to [`Core::ATAN`]
 /// over the same series. Open with [`Core::ATAN_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -217,7 +229,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ATAN_Stream")]
 pub struct ATAN_Stream {
-    core: Core,
+    core: ATAN_StreamCore,
     state: ATAN_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -228,7 +240,7 @@ impl ATAN_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ATAN_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -253,11 +265,20 @@ impl ATAN_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl ATAN_StreamCore {
     fn ATAN_step_impl(&self, sp: &mut ATAN_StreamState, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).atan();
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::ATAN_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::ATAN_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn ATAN_OpenImpl(
@@ -296,7 +317,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = ATAN_StreamState {
         };
-        Ok(ATAN_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(ATAN_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ATAN_Open`] (composition seam).

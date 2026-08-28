@@ -417,6 +417,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLGRAVESTONEDOJI stream reads — `BodyDoji`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLGRAVESTONEDOJI_StreamSettings {
+    body_doji: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDLGRAVESTONEDOJI stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLGRAVESTONEDOJI_StreamCore {
+    candle_settings: CDLGRAVESTONEDOJI_StreamSettings,
+}
+
+impl From<&Core> for CDLGRAVESTONEDOJI_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLGRAVESTONEDOJI_StreamSettings {
+                body_doji: core.candle_settings.body_doji,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDLGRAVESTONEDOJI stream: one value per closed bar, bit-identical to [`Core::CDLGRAVESTONEDOJI`]
 /// over the same series. Open with [`Core::CDLGRAVESTONEDOJI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -426,7 +454,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLGRAVESTONEDOJI_Stream")]
 pub struct CDLGRAVESTONEDOJI_Stream {
-    core: Core,
+    core: CDLGRAVESTONEDOJI_StreamCore,
     state: CDLGRAVESTONEDOJI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -437,7 +465,7 @@ impl CDLGRAVESTONEDOJI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLGRAVESTONEDOJI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -478,7 +506,7 @@ impl CDLGRAVESTONEDOJI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLGRAVESTONEDOJI_StreamCore {
     fn CDLGRAVESTONEDOJI_step_impl(&self, sp: &mut CDLGRAVESTONEDOJI_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyDoji_rangeType: i32 = self.candle_settings.body_doji.range_type as i32;
@@ -609,6 +637,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLGRAVESTONEDOJI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLGRAVESTONEDOJI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLGRAVESTONEDOJI_OpenImpl(
@@ -838,7 +875,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLGRAVESTONEDOJI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLGRAVESTONEDOJI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLGRAVESTONEDOJI_Open`] (composition seam).

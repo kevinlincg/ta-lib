@@ -2259,15 +2259,26 @@ fn csharp_test_tfms(test_dir: &Path) -> Vec<String> {
 /// `#[cfg(test)]`-only modules — DIV's zero-divisor result (issue #249), the
 /// batch bodies' scratch-buffer election (issue #146), the streaming tier's
 /// non-finite input rejection, and a handle's `OutRange` against batch (issue
-/// #241). All are listed in the Rust backend's `clean_keep`, so `generate` never
-/// deletes them.
-const RUST_TEMPLATE_MODULES: &[&str] =
-    &["types", "div_zero", "scratch_election", "stream_finite", "stream_out_range"];
+/// #241), and the candle settings a stream handle carries (issue #274). All are
+/// listed in the Rust backend's `clean_keep`, so `generate` never deletes them.
+const RUST_TEMPLATE_MODULES: &[&str] = &[
+    "types",
+    "div_zero",
+    "scratch_election",
+    "stream_finite",
+    "stream_out_range",
+    "stream_candle_snapshot",
+];
 
 /// Of [`RUST_TEMPLATE_MODULES`], the ones that exist only for `cargo test` and so
 /// are declared `#[cfg(test)]` in the generated `mod.rs`.
-const RUST_TEST_ONLY_MODULES: &[&str] =
-    &["div_zero", "scratch_election", "stream_finite", "stream_out_range"];
+const RUST_TEST_ONLY_MODULES: &[&str] = &[
+    "div_zero",
+    "scratch_election",
+    "stream_finite",
+    "stream_out_range",
+    "stream_candle_snapshot",
+];
 
 /// `#[cfg(test)]` modules that `generate` WRITES into `src/ta_func/` rather than
 /// copying from `templates/rust/` — the phantom-I/O sweep, whose two probes per

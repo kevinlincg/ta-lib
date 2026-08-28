@@ -206,6 +206,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live EXP stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct EXP_StreamCore;
+
+impl From<&Core> for EXP_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live EXP stream: one value per closed bar, bit-identical to [`Core::EXP`]
 /// over the same series. Open with [`Core::EXP_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -215,7 +227,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_EXP_Stream")]
 pub struct EXP_Stream {
-    core: Core,
+    core: EXP_StreamCore,
     state: EXP_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -226,7 +238,7 @@ impl EXP_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `EXP_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -251,11 +263,20 @@ impl EXP_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl EXP_StreamCore {
     fn EXP_step_impl(&self, sp: &mut EXP_StreamState, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).exp();
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::EXP_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::EXP_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn EXP_OpenImpl(
@@ -293,7 +314,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = EXP_StreamState {
         };
-        Ok(EXP_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(EXP_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::EXP_Open`] (composition seam).

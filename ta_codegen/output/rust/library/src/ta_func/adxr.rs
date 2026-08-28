@@ -308,6 +308,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live ADXR stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct ADXR_StreamCore;
+
+impl From<&Core> for ADXR_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live ADXR stream: one value per closed bar, bit-identical to [`Core::ADXR`]
 /// over the same series. Open with [`Core::ADXR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -317,7 +329,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ADXR_Stream")]
 pub struct ADXR_Stream {
-    core: Core,
+    core: ADXR_StreamCore,
     state: ADXR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -328,7 +340,7 @@ impl ADXR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ADXR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -363,7 +375,7 @@ impl ADXR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl ADXR_StreamCore {
     fn ADXR_step_impl(&self, sp: &mut ADXR_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) -> Result<(), RetCode> {
         let mut cur_adx: f64 = 0.0_f64;
         let mut cur_outReal: f64 = 0.0_f64;
@@ -378,6 +390,15 @@ impl Core {
         Ok(())
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::ADXR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::ADXR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn ADXR_OpenImpl(
@@ -484,7 +505,7 @@ impl Core {
             let last_sc_outReal = sc_outReal[*outNBElement - 1];
             outReal[0] = last_sc_outReal;
         }
-        Ok(ADXR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(ADXR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ADXR_Open`] (composition seam).

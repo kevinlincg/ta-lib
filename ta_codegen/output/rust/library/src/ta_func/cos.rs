@@ -206,6 +206,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live COS stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct COS_StreamCore;
+
+impl From<&Core> for COS_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live COS stream: one value per closed bar, bit-identical to [`Core::COS`]
 /// over the same series. Open with [`Core::COS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -215,7 +227,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_COS_Stream")]
 pub struct COS_Stream {
-    core: Core,
+    core: COS_StreamCore,
     state: COS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -226,7 +238,7 @@ impl COS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `COS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -251,11 +263,20 @@ impl COS_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl COS_StreamCore {
     fn COS_step_impl(&self, sp: &mut COS_StreamState, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).cos();
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::COS_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::COS_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn COS_OpenImpl(
@@ -293,7 +314,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = COS_StreamState {
         };
-        Ok(COS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(COS_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::COS_Open`] (composition seam).

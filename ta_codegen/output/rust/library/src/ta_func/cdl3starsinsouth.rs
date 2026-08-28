@@ -590,6 +590,38 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDL3STARSINSOUTH stream reads — `BodyLong`, `BodyShort`, `ShadowLong`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDL3STARSINSOUTH_StreamSettings {
+    body_long: CandleSetting,
+    body_short: CandleSetting,
+    shadow_long: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDL3STARSINSOUTH stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDL3STARSINSOUTH_StreamCore {
+    candle_settings: CDL3STARSINSOUTH_StreamSettings,
+}
+
+impl From<&Core> for CDL3STARSINSOUTH_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDL3STARSINSOUTH_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                body_short: core.candle_settings.body_short,
+                shadow_long: core.candle_settings.shadow_long,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDL3STARSINSOUTH stream: one value per closed bar, bit-identical to [`Core::CDL3STARSINSOUTH`]
 /// over the same series. Open with [`Core::CDL3STARSINSOUTH_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -599,7 +631,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL3STARSINSOUTH_Stream")]
 pub struct CDL3STARSINSOUTH_Stream {
-    core: Core,
+    core: CDL3STARSINSOUTH_StreamCore,
     state: CDL3STARSINSOUTH_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -610,7 +642,7 @@ impl CDL3STARSINSOUTH_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL3STARSINSOUTH_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -689,7 +721,7 @@ impl CDL3STARSINSOUTH_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDL3STARSINSOUTH_StreamCore {
     fn CDL3STARSINSOUTH_step_impl(&self, sp: &mut CDL3STARSINSOUTH_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
@@ -902,6 +934,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDL3STARSINSOUTH_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDL3STARSINSOUTH_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDL3STARSINSOUTH_OpenImpl(
@@ -1345,7 +1386,7 @@ impl Core {
             ringLag_ShadowVeryShortTrailingIdx: capLag_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDL3STARSINSOUTH_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDL3STARSINSOUTH_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL3STARSINSOUTH_Open`] (composition seam).

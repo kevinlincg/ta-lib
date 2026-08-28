@@ -71,7 +71,11 @@ fn test_rust_sma_ring_stream_section() {
     let s = rust_stream_section("sma");
     // Handle + state struct shapes.
     assert!(s.contains("pub struct SMA_Stream {"));
-    assert!(s.contains("core: Core,"));
+    // The handle carries the slim snapshot, not a whole `Core` (#274). SMA's
+    // step reads no candle setting, so the snapshot is the zero-sized one.
+    assert!(s.contains("core: SMA_StreamCore,"));
+    assert!(!s.contains("core: Core,"), "no handle embeds a whole Core");
+    assert!(s.contains("struct SMA_StreamCore;"));
     assert!(s.contains("state: SMA_StreamState,"));
     assert!(s.contains("struct SMA_StreamState {"));
     assert!(s.contains("ring_trailingIdx_inReal: Vec<f64>,"));
@@ -425,7 +429,7 @@ fn rust_dispatch_open_modes_differ_only_where_intended() {
     assert!(!scalar.contains("outBegIdx"), "the scalar open has no out-meta:\n{scalar}");
     assert!(!fill.contains("outBegIdx"), "the public fill carries no out-meta pair:\n{fill}");
     assert!(
-        fill.contains("Ok((MA_Stream { core: self.clone(), state, out: fillRange }, fillRange))"),
+        fill.contains("Ok((MA_Stream { core: self.into(), state, out: fillRange }, fillRange))"),
         "the public fill returns the arm's own range beside the handle, and keeps it \
          on the handle too (#241):\n{fill}"
     );

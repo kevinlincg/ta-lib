@@ -421,6 +421,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLHOMINGPIGEON stream reads — `BodyLong`, `BodyShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLHOMINGPIGEON_StreamSettings {
+    body_long: CandleSetting,
+    body_short: CandleSetting,
+}
+
+/// What a live CDLHOMINGPIGEON stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLHOMINGPIGEON_StreamCore {
+    candle_settings: CDLHOMINGPIGEON_StreamSettings,
+}
+
+impl From<&Core> for CDLHOMINGPIGEON_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLHOMINGPIGEON_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                body_short: core.candle_settings.body_short,
+            },
+        }
+    }
+}
+
 /// Live CDLHOMINGPIGEON stream: one value per closed bar, bit-identical to [`Core::CDLHOMINGPIGEON`]
 /// over the same series. Open with [`Core::CDLHOMINGPIGEON_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -430,7 +458,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLHOMINGPIGEON_Stream")]
 pub struct CDLHOMINGPIGEON_Stream {
-    core: Core,
+    core: CDLHOMINGPIGEON_StreamCore,
     state: CDLHOMINGPIGEON_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -441,7 +469,7 @@ impl CDLHOMINGPIGEON_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLHOMINGPIGEON_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -492,7 +520,7 @@ impl CDLHOMINGPIGEON_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLHOMINGPIGEON_StreamCore {
     fn CDLHOMINGPIGEON_step_impl(&self, sp: &mut CDLHOMINGPIGEON_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
@@ -615,6 +643,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLHOMINGPIGEON_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLHOMINGPIGEON_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLHOMINGPIGEON_OpenImpl(
@@ -856,7 +893,7 @@ impl Core {
             ringCap_BodyShortTrailingIdx: cap_BodyShortTrailingIdx as usize,
             ring_BodyShortTrailingIdx_derived,
         };
-        Ok(CDLHOMINGPIGEON_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLHOMINGPIGEON_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLHOMINGPIGEON_Open`] (composition seam).

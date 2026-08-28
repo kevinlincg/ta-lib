@@ -257,6 +257,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live WCLPRICE stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct WCLPRICE_StreamCore;
+
+impl From<&Core> for WCLPRICE_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live WCLPRICE stream: one value per closed bar, bit-identical to [`Core::WCLPRICE`]
 /// over the same series. Open with [`Core::WCLPRICE_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -266,7 +278,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_WCLPRICE_Stream")]
 pub struct WCLPRICE_Stream {
-    core: Core,
+    core: WCLPRICE_StreamCore,
     state: WCLPRICE_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -277,7 +289,7 @@ impl WCLPRICE_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `WCLPRICE_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -302,11 +314,20 @@ impl WCLPRICE_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl WCLPRICE_StreamCore {
     fn WCLPRICE_step_impl(&self, sp: &mut WCLPRICE_StreamState, inHigh: f64, inLow: f64, inClose: f64, outReal: &mut f64) {
         (*outReal) = ((inClose as f64).mul_add(2.0, inHigh + inLow)) / 4.0;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::WCLPRICE_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::WCLPRICE_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn WCLPRICE_OpenImpl(
@@ -345,7 +366,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = WCLPRICE_StreamState {
         };
-        Ok(WCLPRICE_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(WCLPRICE_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::WCLPRICE_Open`] (composition seam).

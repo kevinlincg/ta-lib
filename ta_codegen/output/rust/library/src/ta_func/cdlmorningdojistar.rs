@@ -555,6 +555,36 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLMORNINGDOJISTAR stream reads — `BodyDoji`, `BodyLong`, `BodyShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLMORNINGDOJISTAR_StreamSettings {
+    body_doji: CandleSetting,
+    body_long: CandleSetting,
+    body_short: CandleSetting,
+}
+
+/// What a live CDLMORNINGDOJISTAR stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLMORNINGDOJISTAR_StreamCore {
+    candle_settings: CDLMORNINGDOJISTAR_StreamSettings,
+}
+
+impl From<&Core> for CDLMORNINGDOJISTAR_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLMORNINGDOJISTAR_StreamSettings {
+                body_doji: core.candle_settings.body_doji,
+                body_long: core.candle_settings.body_long,
+                body_short: core.candle_settings.body_short,
+            },
+        }
+    }
+}
+
 /// Live CDLMORNINGDOJISTAR stream: one value per closed bar, bit-identical to [`Core::CDLMORNINGDOJISTAR`]
 /// over the same series. Open with [`Core::CDLMORNINGDOJISTAR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -564,7 +594,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLMORNINGDOJISTAR_Stream")]
 pub struct CDLMORNINGDOJISTAR_Stream {
-    core: Core,
+    core: CDLMORNINGDOJISTAR_StreamCore,
     state: CDLMORNINGDOJISTAR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -575,7 +605,7 @@ impl CDLMORNINGDOJISTAR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLMORNINGDOJISTAR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -642,7 +672,7 @@ impl CDLMORNINGDOJISTAR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLMORNINGDOJISTAR_StreamCore {
     fn CDLMORNINGDOJISTAR_step_impl(&self, sp: &mut CDLMORNINGDOJISTAR_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyDoji_rangeType: i32 = self.candle_settings.body_doji.range_type as i32;
@@ -848,6 +878,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLMORNINGDOJISTAR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLMORNINGDOJISTAR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLMORNINGDOJISTAR_OpenImpl(
@@ -1181,7 +1220,7 @@ impl Core {
             ringCap_BodyShortTrailingIdx: cap_BodyShortTrailingIdx as usize,
             ring_BodyShortTrailingIdx_derived,
         };
-        Ok(CDLMORNINGDOJISTAR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLMORNINGDOJISTAR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLMORNINGDOJISTAR_Open`] (composition seam).

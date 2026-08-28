@@ -451,6 +451,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live MFI stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct MFI_StreamCore;
+
+impl From<&Core> for MFI_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live MFI stream: one value per closed bar, bit-identical to [`Core::MFI`]
 /// over the same series. Open with [`Core::MFI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -460,7 +472,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MFI_Stream")]
 pub struct MFI_Stream {
-    core: Core,
+    core: MFI_StreamCore,
     state: MFI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -471,7 +483,7 @@ impl MFI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MFI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -516,7 +528,7 @@ impl MFI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl MFI_StreamCore {
     fn MFI_step_impl(&self, sp: &mut MFI_StreamState, inHigh: f64, inLow: f64, inClose: f64, inVolume: f64, outReal: &mut f64) {
         let mut tempValue1: f64 = 0.0_f64;
         let mut tempValue2: f64 = 0.0_f64;
@@ -560,6 +572,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::MFI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::MFI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn MFI_OpenImpl(
@@ -763,7 +784,7 @@ impl Core {
             cb_mflow_positive: mflow_positive,
             cb_mflow_negative: mflow_negative,
         };
-        Ok(MFI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(MFI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MFI_Open`] (composition seam).

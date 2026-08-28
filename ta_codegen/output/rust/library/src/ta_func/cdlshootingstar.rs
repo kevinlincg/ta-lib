@@ -482,6 +482,36 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLSHOOTINGSTAR stream reads — `BodyShort`, `ShadowLong`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSHOOTINGSTAR_StreamSettings {
+    body_short: CandleSetting,
+    shadow_long: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDLSHOOTINGSTAR stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSHOOTINGSTAR_StreamCore {
+    candle_settings: CDLSHOOTINGSTAR_StreamSettings,
+}
+
+impl From<&Core> for CDLSHOOTINGSTAR_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLSHOOTINGSTAR_StreamSettings {
+                body_short: core.candle_settings.body_short,
+                shadow_long: core.candle_settings.shadow_long,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDLSHOOTINGSTAR stream: one value per closed bar, bit-identical to [`Core::CDLSHOOTINGSTAR`]
 /// over the same series. Open with [`Core::CDLSHOOTINGSTAR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -491,7 +521,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLSHOOTINGSTAR_Stream")]
 pub struct CDLSHOOTINGSTAR_Stream {
-    core: Core,
+    core: CDLSHOOTINGSTAR_StreamCore,
     state: CDLSHOOTINGSTAR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -502,7 +532,7 @@ impl CDLSHOOTINGSTAR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLSHOOTINGSTAR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -555,7 +585,7 @@ impl CDLSHOOTINGSTAR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLSHOOTINGSTAR_StreamCore {
     fn CDLSHOOTINGSTAR_step_impl(&self, sp: &mut CDLSHOOTINGSTAR_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyShort_rangeType: i32 = self.candle_settings.body_short.range_type as i32;
@@ -753,6 +783,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLSHOOTINGSTAR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLSHOOTINGSTAR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLSHOOTINGSTAR_OpenImpl(
@@ -1068,7 +1107,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLSHOOTINGSTAR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLSHOOTINGSTAR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLSHOOTINGSTAR_Open`] (composition seam).

@@ -607,6 +607,38 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLSTALLEDPATTERN stream reads — `BodyLong`, `BodyShort`, `Near`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSTALLEDPATTERN_StreamSettings {
+    body_long: CandleSetting,
+    body_short: CandleSetting,
+    near: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDLSTALLEDPATTERN stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLSTALLEDPATTERN_StreamCore {
+    candle_settings: CDLSTALLEDPATTERN_StreamSettings,
+}
+
+impl From<&Core> for CDLSTALLEDPATTERN_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLSTALLEDPATTERN_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                body_short: core.candle_settings.body_short,
+                near: core.candle_settings.near,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDLSTALLEDPATTERN stream: one value per closed bar, bit-identical to [`Core::CDLSTALLEDPATTERN`]
 /// over the same series. Open with [`Core::CDLSTALLEDPATTERN_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -616,7 +648,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLSTALLEDPATTERN_Stream")]
 pub struct CDLSTALLEDPATTERN_Stream {
-    core: Core,
+    core: CDLSTALLEDPATTERN_StreamCore,
     state: CDLSTALLEDPATTERN_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -627,7 +659,7 @@ impl CDLSTALLEDPATTERN_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLSTALLEDPATTERN_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -706,7 +738,7 @@ impl CDLSTALLEDPATTERN_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLSTALLEDPATTERN_StreamCore {
     fn CDLSTALLEDPATTERN_step_impl(&self, sp: &mut CDLSTALLEDPATTERN_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         let mut totIdx: usize = 0_usize;
         #[allow(non_snake_case)]
@@ -900,6 +932,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLSTALLEDPATTERN_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLSTALLEDPATTERN_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLSTALLEDPATTERN_OpenImpl(
@@ -1360,7 +1401,7 @@ impl Core {
             ringLag_ShadowVeryShortTrailingIdx: capLag_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLSTALLEDPATTERN_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLSTALLEDPATTERN_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLSTALLEDPATTERN_Open`] (composition seam).

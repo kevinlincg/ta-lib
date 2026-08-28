@@ -455,6 +455,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live MACDFIX stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct MACDFIX_StreamCore;
+
+impl From<&Core> for MACDFIX_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live MACDFIX stream: one value per closed bar, bit-identical to [`Core::MACDFIX`]
 /// over the same series. Open with [`Core::MACDFIX_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -464,7 +476,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MACDFIX_Stream")]
 pub struct MACDFIX_Stream {
-    core: Core,
+    core: MACDFIX_StreamCore,
     state: MACDFIX_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -475,7 +487,7 @@ impl MACDFIX_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MACDFIX_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -514,7 +526,7 @@ impl MACDFIX_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl MACDFIX_StreamCore {
     fn MACDFIX_step_impl(&self, sp: &mut MACDFIX_StreamState, inReal: f64, outMACD: &mut f64, outMACDSignal: &mut f64, outMACDHist: &mut f64) {
         let mut macdValue: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
@@ -532,6 +544,15 @@ impl Core {
         (*outMACDHist) = macdValue - sp.prevSignal;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::MACDFIX_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::MACDFIX_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn MACDFIX_OpenImpl(
@@ -732,7 +753,7 @@ impl Core {
             fastK,
             signalK,
         };
-        Ok(MACDFIX_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(MACDFIX_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MACDFIX_Open`] (composition seam).

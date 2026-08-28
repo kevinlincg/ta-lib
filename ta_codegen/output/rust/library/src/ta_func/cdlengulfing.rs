@@ -285,6 +285,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live CDLENGULFING stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLENGULFING_StreamCore;
+
+impl From<&Core> for CDLENGULFING_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live CDLENGULFING stream: one value per closed bar, bit-identical to [`Core::CDLENGULFING`]
 /// over the same series. Open with [`Core::CDLENGULFING_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -294,7 +306,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLENGULFING_Stream")]
 pub struct CDLENGULFING_Stream {
-    core: Core,
+    core: CDLENGULFING_StreamCore,
     state: CDLENGULFING_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -305,7 +317,7 @@ impl CDLENGULFING_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLENGULFING_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -334,7 +346,7 @@ impl CDLENGULFING_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLENGULFING_StreamCore {
     fn CDLENGULFING_step_impl(&self, sp: &mut CDLENGULFING_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         if (if inClose >= inOpen { 1 } else { 0 - 1 }) == 1 && (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (inClose >= sp.lag1_inOpen && inOpen < sp.lag1_inClose || inClose > sp.lag1_inOpen && inOpen <= sp.lag1_inClose) || (((if inClose >= inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && (inOpen >= sp.lag1_inClose && inClose < sp.lag1_inOpen || inOpen > sp.lag1_inClose && inClose <= sp.lag1_inOpen) {
             // white engulfs black
@@ -351,6 +363,15 @@ impl Core {
         sp.lag1_inClose = inClose;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLENGULFING_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLENGULFING_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLENGULFING_OpenImpl(
@@ -430,7 +451,7 @@ impl Core {
             lag1_inOpen: inOpen[historyLen - 1],
             lag1_inClose: inClose[historyLen - 1],
         };
-        Ok(CDLENGULFING_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLENGULFING_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLENGULFING_Open`] (composition seam).

@@ -679,6 +679,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live SAREXT stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct SAREXT_StreamCore;
+
+impl From<&Core> for SAREXT_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live SAREXT stream: one value per closed bar, bit-identical to [`Core::SAREXT`]
 /// over the same series. Open with [`Core::SAREXT_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -688,7 +700,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_SAREXT_Stream")]
 pub struct SAREXT_Stream {
-    core: Core,
+    core: SAREXT_StreamCore,
     state: SAREXT_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -699,7 +711,7 @@ impl SAREXT_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `SAREXT_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -754,7 +766,7 @@ impl SAREXT_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl SAREXT_StreamCore {
     fn SAREXT_step_impl(&self, sp: &mut SAREXT_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
         let mut prevHigh: f64 = 0.0_f64;
         let mut prevLow: f64 = 0.0_f64;
@@ -873,6 +885,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::SAREXT_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::SAREXT_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn SAREXT_OpenImpl(
@@ -1227,7 +1248,7 @@ impl Core {
             ep,
             sar,
         };
-        Ok(SAREXT_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(SAREXT_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::SAREXT_Open`] (composition seam).

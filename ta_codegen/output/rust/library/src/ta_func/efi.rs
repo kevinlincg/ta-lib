@@ -395,6 +395,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live EFI stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct EFI_StreamCore;
+
+impl From<&Core> for EFI_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live EFI stream: one value per closed bar, bit-identical to [`Core::EFI`]
 /// over the same series. Open with [`Core::EFI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -404,7 +416,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_EFI_Stream")]
 pub struct EFI_Stream {
-    core: Core,
+    core: EFI_StreamCore,
     state: EFI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -415,7 +427,7 @@ impl EFI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `EFI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -448,7 +460,7 @@ impl EFI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl EFI_StreamCore {
     fn EFI_step_impl(&self, sp: &mut EFI_StreamState, inClose: f64, inVolume: f64, outReal: &mut f64) {
         if sp.optInTimePeriod == 1 {
             let mut force: f64 = 0.0_f64;
@@ -464,6 +476,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::EFI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::EFI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn EFI_OpenImpl(
@@ -569,7 +590,7 @@ impl Core {
                 optInK_1,
                 prevMA,
             };
-            Ok(EFI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(EFI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         } else {
             let mut optInK_1: f64 = 0.0_f64;
             let mut tempReal: f64 = 0.0_f64;
@@ -674,7 +695,7 @@ impl Core {
                 optInK_1,
                 prevMA,
             };
-            Ok(EFI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+            Ok(EFI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         }
     }
 

@@ -297,7 +297,7 @@ pub fn emit_csharp_unpacking(settings: &BTreeSet<String>, indent: usize) -> Stri
 /// Convert `PascalCase` to `snake_case`.
 ///
 /// `"BodyLong"` -> `"body_long"`, `"ShadowVeryShort"` -> `"shadow_very_short"`
-fn pascal_to_snake_case(s: &str) -> String {
+pub(crate) fn pascal_to_snake_case(s: &str) -> String {
     let mut result = String::new();
     for (i, ch) in s.chars().enumerate() {
         if ch.is_uppercase() && i > 0 {

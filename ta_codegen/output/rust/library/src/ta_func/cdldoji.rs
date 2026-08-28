@@ -332,6 +332,32 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLDOJI stream reads — `BodyDoji`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLDOJI_StreamSettings {
+    body_doji: CandleSetting,
+}
+
+/// What a live CDLDOJI stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLDOJI_StreamCore {
+    candle_settings: CDLDOJI_StreamSettings,
+}
+
+impl From<&Core> for CDLDOJI_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLDOJI_StreamSettings {
+                body_doji: core.candle_settings.body_doji,
+            },
+        }
+    }
+}
+
 /// Live CDLDOJI stream: one value per closed bar, bit-identical to [`Core::CDLDOJI`]
 /// over the same series. Open with [`Core::CDLDOJI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -341,7 +367,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLDOJI_Stream")]
 pub struct CDLDOJI_Stream {
-    core: Core,
+    core: CDLDOJI_StreamCore,
     state: CDLDOJI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -352,7 +378,7 @@ impl CDLDOJI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLDOJI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -385,7 +411,7 @@ impl CDLDOJI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLDOJI_StreamCore {
     fn CDLDOJI_step_impl(&self, sp: &mut CDLDOJI_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyDoji_rangeType: i32 = self.candle_settings.body_doji.range_type as i32;
@@ -456,6 +482,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLDOJI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLDOJI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLDOJI_OpenImpl(
@@ -604,7 +639,7 @@ impl Core {
             ringCap_BodyDojiTrailingIdx: cap_BodyDojiTrailingIdx as usize,
             ring_BodyDojiTrailingIdx_derived,
         };
-        Ok(CDLDOJI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLDOJI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLDOJI_Open`] (composition seam).

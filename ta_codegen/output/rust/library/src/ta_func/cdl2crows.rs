@@ -349,6 +349,32 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDL2CROWS stream reads — `BodyLong`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDL2CROWS_StreamSettings {
+    body_long: CandleSetting,
+}
+
+/// What a live CDL2CROWS stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDL2CROWS_StreamCore {
+    candle_settings: CDL2CROWS_StreamSettings,
+}
+
+impl From<&Core> for CDL2CROWS_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDL2CROWS_StreamSettings {
+                body_long: core.candle_settings.body_long,
+            },
+        }
+    }
+}
+
 /// Live CDL2CROWS stream: one value per closed bar, bit-identical to [`Core::CDL2CROWS`]
 /// over the same series. Open with [`Core::CDL2CROWS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -358,7 +384,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDL2CROWS_Stream")]
 pub struct CDL2CROWS_Stream {
-    core: Core,
+    core: CDL2CROWS_StreamCore,
     state: CDL2CROWS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -369,7 +395,7 @@ impl CDL2CROWS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDL2CROWS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -418,7 +444,7 @@ impl CDL2CROWS_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDL2CROWS_StreamCore {
     fn CDL2CROWS_step_impl(&self, sp: &mut CDL2CROWS_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
@@ -506,6 +532,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDL2CROWS_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDL2CROWS_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDL2CROWS_OpenImpl(
@@ -675,7 +710,7 @@ impl Core {
             ringCap_BodyLongTrailingIdx: cap_BodyLongTrailingIdx as usize,
             ring_BodyLongTrailingIdx_derived,
         };
-        Ok(CDL2CROWS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDL2CROWS_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDL2CROWS_Open`] (composition seam).

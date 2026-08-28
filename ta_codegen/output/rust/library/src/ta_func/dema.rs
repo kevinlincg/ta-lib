@@ -402,6 +402,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live DEMA stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct DEMA_StreamCore;
+
+impl From<&Core> for DEMA_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live DEMA stream: one value per closed bar, bit-identical to [`Core::DEMA`]
 /// over the same series. Open with [`Core::DEMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -411,7 +423,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_DEMA_Stream")]
 pub struct DEMA_Stream {
-    core: Core,
+    core: DEMA_StreamCore,
     state: DEMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -422,7 +434,7 @@ impl DEMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `DEMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -455,7 +467,7 @@ impl DEMA_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl DEMA_StreamCore {
     fn DEMA_step_impl(&self, sp: &mut DEMA_StreamState, inReal: f64, outReal: &mut f64) {
         if sp.optInTimePeriod == 1 {
             (*outReal) = inReal;
@@ -466,6 +478,15 @@ impl Core {
         (*outReal) = 2.0 * sp.prevEMA1 - sp.prevEMA2;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::DEMA_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::DEMA_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn DEMA_OpenImpl(
@@ -515,7 +536,7 @@ impl Core {
                     fillIdx += 1;
                 }
             }
-            return Ok(DEMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
+            return Ok(DEMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
         }
         let mut prevEMA1: f64 = 0.0_f64;
         let mut prevEMA2: f64 = 0.0_f64;
@@ -643,7 +664,7 @@ impl Core {
             prevEMA2,
             optInK_1,
         };
-        Ok(DEMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(DEMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::DEMA_Open`] (composition seam).

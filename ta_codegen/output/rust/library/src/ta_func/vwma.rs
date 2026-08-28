@@ -343,6 +343,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live VWMA stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct VWMA_StreamCore;
+
+impl From<&Core> for VWMA_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live VWMA stream: one value per closed bar, bit-identical to [`Core::VWMA`]
 /// over the same series. Open with [`Core::VWMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -352,7 +364,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_VWMA_Stream")]
 pub struct VWMA_Stream {
-    core: Core,
+    core: VWMA_StreamCore,
     state: VWMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -363,7 +375,7 @@ impl VWMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `VWMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -402,7 +414,7 @@ impl VWMA_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl VWMA_StreamCore {
     fn VWMA_step_impl(&self, sp: &mut VWMA_StreamState, inReal: f64, inVolume: f64, outReal: &mut f64) {
         let mut tempPV: f64 = 0.0_f64;
         let mut tempV: f64 = 0.0_f64;
@@ -437,6 +449,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::VWMA_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::VWMA_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn VWMA_OpenImpl(
@@ -492,7 +513,7 @@ impl Core {
                     fillIdx += 1;
                 }
             }
-            return Ok(VWMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
+            return Ok(VWMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
         }
         let mut sumPV: f64 = 0.0_f64;
         let mut sumV: f64 = 0.0_f64;
@@ -583,7 +604,7 @@ impl Core {
             ring_trailingIdx_inReal,
             ring_trailingIdx_inVolume,
         };
-        Ok(VWMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(VWMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::VWMA_Open`] (composition seam).

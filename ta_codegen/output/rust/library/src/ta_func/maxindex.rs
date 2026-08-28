@@ -281,6 +281,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live MAXINDEX stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct MAXINDEX_StreamCore;
+
+impl From<&Core> for MAXINDEX_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live MAXINDEX stream: one value per closed bar, bit-identical to [`Core::MAXINDEX`]
 /// over the same series. Open with [`Core::MAXINDEX_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -290,7 +302,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MAXINDEX_Stream")]
 pub struct MAXINDEX_Stream {
-    core: Core,
+    core: MAXINDEX_StreamCore,
     state: MAXINDEX_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -301,7 +313,7 @@ impl MAXINDEX_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MAXINDEX_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -342,7 +354,7 @@ impl MAXINDEX_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl MAXINDEX_StreamCore {
     fn MAXINDEX_step_impl(&self, sp: &mut MAXINDEX_StreamState, inReal: f64, outInteger: &mut i32) {
         let mut tmp: f64 = 0.0_f64;
         if sp.today >= 1073741824 {
@@ -374,6 +386,15 @@ impl Core {
         sp.today += 1;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::MAXINDEX_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::MAXINDEX_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn MAXINDEX_OpenImpl(
@@ -484,7 +505,7 @@ impl Core {
             xMask: (physX - 1) as i32,
             x_inReal,
         };
-        Ok(MAXINDEX_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(MAXINDEX_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MAXINDEX_Open`] (composition seam).

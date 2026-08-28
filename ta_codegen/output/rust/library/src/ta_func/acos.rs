@@ -212,6 +212,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live ACOS stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct ACOS_StreamCore;
+
+impl From<&Core> for ACOS_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live ACOS stream: one value per closed bar, bit-identical to [`Core::ACOS`]
 /// over the same series. Open with [`Core::ACOS_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -221,7 +233,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_ACOS_Stream")]
 pub struct ACOS_Stream {
-    core: Core,
+    core: ACOS_StreamCore,
     state: ACOS_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -232,7 +244,7 @@ impl ACOS_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `ACOS_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -257,11 +269,20 @@ impl ACOS_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl ACOS_StreamCore {
     fn ACOS_step_impl(&self, sp: &mut ACOS_StreamState, inReal: f64, outReal: &mut f64) {
         (*outReal) = (inReal).acos();
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::ACOS_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::ACOS_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn ACOS_OpenImpl(
@@ -299,7 +320,7 @@ impl Core {
         // Capture the live batch state into the handle.
         let state = ACOS_StreamState {
         };
-        Ok(ACOS_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(ACOS_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::ACOS_Open`] (composition seam).

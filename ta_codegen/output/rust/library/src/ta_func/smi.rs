@@ -636,6 +636,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live SMI stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct SMI_StreamCore;
+
+impl From<&Core> for SMI_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live SMI stream: one value per closed bar, bit-identical to [`Core::SMI`]
 /// over the same series. Open with [`Core::SMI_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -645,7 +657,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_SMI_Stream")]
 pub struct SMI_Stream {
-    core: Core,
+    core: SMI_StreamCore,
     state: SMI_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -656,7 +668,7 @@ impl SMI_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `SMI_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -727,7 +739,7 @@ impl SMI_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl SMI_StreamCore {
     fn SMI_step_impl(&self, sp: &mut SMI_StreamState, inHigh: f64, inLow: f64, inClose: f64, outSMI: &mut f64, outSMISignal: &mut f64) {
         let mut tmp: f64 = 0.0_f64;
         let mut num: f64 = 0.0_f64;
@@ -808,6 +820,15 @@ impl Core {
         sp.today = sp.today + 1;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::SMI_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::SMI_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn SMI_OpenImpl(
@@ -1151,7 +1172,7 @@ impl Core {
             x_inLow,
             x_inClose,
         };
-        Ok(SMI_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(SMI_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::SMI_Open`] (composition seam).

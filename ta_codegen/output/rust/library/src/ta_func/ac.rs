@@ -444,6 +444,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live AC stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct AC_StreamCore;
+
+impl From<&Core> for AC_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live AC stream: one value per closed bar, bit-identical to [`Core::AC`]
 /// over the same series. Open with [`Core::AC_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -453,7 +465,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_AC_Stream")]
 pub struct AC_Stream {
-    core: Core,
+    core: AC_StreamCore,
     state: AC_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -464,7 +476,7 @@ impl AC_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `AC_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -521,7 +533,7 @@ impl AC_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl AC_StreamCore {
     fn AC_step_impl(&self, sp: &mut AC_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
         let mut medianPrice: f64 = 0.0_f64;
         let mut osc: f64 = 0.0_f64;
@@ -572,6 +584,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::AC_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::AC_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn AC_OpenImpl(
@@ -804,7 +825,7 @@ impl Core {
             cbSize_oscBuffer: cbSize_oscBuffer,
             cb_oscBuffer: oscBuffer,
         };
-        Ok(AC_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(AC_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::AC_Open`] (composition seam).

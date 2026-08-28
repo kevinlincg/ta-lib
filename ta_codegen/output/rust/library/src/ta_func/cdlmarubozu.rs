@@ -408,6 +408,34 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// The candle settings a live CDLMARUBOZU stream reads — `BodyLong`, `ShadowVeryShort`. Snapshotted at
+/// `Open`, exactly as the batch reads them at call time.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLMARUBOZU_StreamSettings {
+    body_long: CandleSetting,
+    shadow_very_short: CandleSetting,
+}
+
+/// What a live CDLMARUBOZU stream reads from [`Core`]: the settings above, and
+/// nothing else.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct CDLMARUBOZU_StreamCore {
+    candle_settings: CDLMARUBOZU_StreamSettings,
+}
+
+impl From<&Core> for CDLMARUBOZU_StreamCore {
+    fn from(core: &Core) -> Self {
+        Self {
+            candle_settings: CDLMARUBOZU_StreamSettings {
+                body_long: core.candle_settings.body_long,
+                shadow_very_short: core.candle_settings.shadow_very_short,
+            },
+        }
+    }
+}
+
 /// Live CDLMARUBOZU stream: one value per closed bar, bit-identical to [`Core::CDLMARUBOZU`]
 /// over the same series. Open with [`Core::CDLMARUBOZU_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -417,7 +445,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLMARUBOZU_Stream")]
 pub struct CDLMARUBOZU_Stream {
-    core: Core,
+    core: CDLMARUBOZU_StreamCore,
     state: CDLMARUBOZU_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -428,7 +456,7 @@ impl CDLMARUBOZU_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `CDLMARUBOZU_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -469,7 +497,7 @@ impl CDLMARUBOZU_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl CDLMARUBOZU_StreamCore {
     fn CDLMARUBOZU_step_impl(&self, sp: &mut CDLMARUBOZU_StreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
         #[allow(non_snake_case)]
         let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
@@ -600,6 +628,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::CDLMARUBOZU_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::CDLMARUBOZU_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn CDLMARUBOZU_OpenImpl(
@@ -826,7 +863,7 @@ impl Core {
             ringCap_ShadowVeryShortTrailingIdx: cap_ShadowVeryShortTrailingIdx as usize,
             ring_ShadowVeryShortTrailingIdx_derived,
         };
-        Ok(CDLMARUBOZU_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(CDLMARUBOZU_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::CDLMARUBOZU_Open`] (composition seam).

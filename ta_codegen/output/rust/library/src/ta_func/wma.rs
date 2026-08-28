@@ -400,6 +400,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live WMA stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct WMA_StreamCore;
+
+impl From<&Core> for WMA_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live WMA stream: one value per closed bar, bit-identical to [`Core::WMA`]
 /// over the same series. Open with [`Core::WMA_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -409,7 +421,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_WMA_Stream")]
 pub struct WMA_Stream {
-    core: Core,
+    core: WMA_StreamCore,
     state: WMA_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -420,7 +432,7 @@ impl WMA_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `WMA_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -471,7 +483,7 @@ impl WMA_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl WMA_StreamCore {
     fn WMA_step_impl(&self, sp: &mut WMA_StreamState, inReal: f64, outReal: &mut f64) {
         let mut j: usize = 0_usize;
         let mut rw: usize = 0_usize;
@@ -569,6 +581,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::WMA_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::WMA_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn WMA_OpenImpl(
@@ -627,7 +648,7 @@ impl Core {
                     fillIdx += 1;
                 }
             }
-            return Ok(WMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
+            return Ok(WMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
         }
         let mut inIdx: usize = 0_usize;
         let mut outIdx: usize = 0_usize;
@@ -811,7 +832,7 @@ impl Core {
             winCap_j: cap_j as usize,
             win_j_inReal,
         };
-        Ok(WMA_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(WMA_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::WMA_Open`] (composition seam).

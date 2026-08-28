@@ -457,6 +457,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live T3 stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct T3_StreamCore;
+
+impl From<&Core> for T3_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live T3 stream: one value per closed bar, bit-identical to [`Core::T3`]
 /// over the same series. Open with [`Core::T3_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -466,7 +478,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_T3_Stream")]
 pub struct T3_Stream {
-    core: Core,
+    core: T3_StreamCore,
     state: T3_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -477,7 +489,7 @@ impl T3_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `T3_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -530,7 +542,7 @@ impl T3_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl T3_StreamCore {
     fn T3_step_impl(&self, sp: &mut T3_StreamState, inReal: f64, outReal: &mut f64) {
         if sp.optInTimePeriod == 1 {
             (*outReal) = inReal;
@@ -545,6 +557,15 @@ impl Core {
         (*outReal) = (sp.c4 as f64).mul_add(sp.e3, (sp.c3 as f64).mul_add(sp.e4, (sp.c1 as f64).mul_add(sp.e6, sp.c2 * sp.e5)));
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::T3_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::T3_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn T3_OpenImpl(
@@ -609,7 +630,7 @@ impl Core {
                     fillIdx += 1;
                 }
             }
-            return Ok(T3_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
+            return Ok(T3_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } });
         }
         let mut outIdx: usize = 0_usize;
         let mut lookbackTotal: usize = 0_usize;
@@ -776,7 +797,7 @@ impl Core {
             c3,
             c4,
         };
-        Ok(T3_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(T3_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::T3_Open`] (composition seam).

@@ -517,6 +517,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live MACD stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct MACD_StreamCore;
+
+impl From<&Core> for MACD_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live MACD stream: one value per closed bar, bit-identical to [`Core::MACD`]
 /// over the same series. Open with [`Core::MACD_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -526,7 +538,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MACD_Stream")]
 pub struct MACD_Stream {
-    core: Core,
+    core: MACD_StreamCore,
     state: MACD_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -537,7 +549,7 @@ impl MACD_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `MACD_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -580,7 +592,7 @@ impl MACD_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl MACD_StreamCore {
     fn MACD_step_impl(&self, sp: &mut MACD_StreamState, inReal: f64, outMACD: &mut f64, outMACDSignal: &mut f64, outMACDHist: &mut f64) {
         let mut macdValue: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
@@ -598,6 +610,15 @@ impl Core {
         (*outMACDHist) = macdValue - sp.prevSignal;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::MACD_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::MACD_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn MACD_OpenImpl(
@@ -822,7 +843,7 @@ impl Core {
             fastK,
             signalK,
         };
-        Ok(MACD_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(MACD_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::MACD_Open`] (composition seam).

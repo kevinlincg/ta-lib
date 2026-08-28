@@ -411,6 +411,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live VAR stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct VAR_StreamCore;
+
+impl From<&Core> for VAR_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live VAR stream: one value per closed bar, bit-identical to [`Core::VAR`]
 /// over the same series. Open with [`Core::VAR_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -420,7 +432,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_VAR_Stream")]
 pub struct VAR_Stream {
-    core: Core,
+    core: VAR_StreamCore,
     state: VAR_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -431,7 +443,7 @@ impl VAR_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `VAR_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -484,7 +496,7 @@ impl VAR_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl VAR_StreamCore {
     fn VAR_step_impl(&self, sp: &mut VAR_StreamState, inReal: f64, outReal: &mut f64) {
         let mut tempReal: f64 = 0.0_f64;
         let mut meanValue1: f64 = 0.0_f64;
@@ -609,6 +621,15 @@ impl Core {
         sp.i += 1;
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::VAR_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::VAR_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn VAR_OpenImpl(
@@ -837,7 +858,7 @@ impl Core {
             xMask: (physX - 1) as i32,
             x_inReal,
         };
-        Ok(VAR_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(VAR_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::VAR_Open`] (composition seam).

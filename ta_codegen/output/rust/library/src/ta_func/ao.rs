@@ -370,6 +370,18 @@ impl Core {
 }
 /**** Streaming API *****/
 
+/// What a live AO stream reads from [`Core`]: nothing. Its step is a pure
+/// function of the handle's own state, so the snapshot is zero-sized.
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Debug, Clone, Copy)]
+struct AO_StreamCore;
+
+impl From<&Core> for AO_StreamCore {
+    fn from(_core: &Core) -> Self {
+        Self
+    }
+}
+
 /// Live AO stream: one value per closed bar, bit-identical to [`Core::AO`]
 /// over the same series. Open with [`Core::AO_Open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
@@ -379,7 +391,7 @@ impl Core {
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_AO_Stream")]
 pub struct AO_Stream {
-    core: Core,
+    core: AO_StreamCore,
     state: AO_StreamState,
     /// The bars this handle has produced a value for — see [`Self::out_range`].
     out: OutRange,
@@ -390,7 +402,7 @@ impl AO_Stream {
     /// Overwrite from `src`, reusing this handle's buffers instead of
     /// allocating new ones. See `AO_StreamState::restore_from`.
     pub(crate) fn restore_from(&mut self, src: &Self) {
-        self.core.clone_from(&src.core);
+        self.core = src.core;
         self.state.restore_from(&src.state);
         self.out = src.out;
     }
@@ -435,7 +447,7 @@ impl AO_StreamState {
 #[allow(unused_mut)]
 #[allow(unused_assignments)]
 #[allow(unused_parens)]
-impl Core {
+impl AO_StreamCore {
     fn AO_step_impl(&self, sp: &mut AO_StreamState, inHigh: f64, inLow: f64, outReal: &mut f64) {
         let mut medianPrice: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
@@ -471,6 +483,15 @@ impl Core {
         }
     }
 
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
     /// The single whole-history transcription behind [`Core::AO_OpenInternal`]
     /// (stride 0, scalar sink) and [`Core::AO_OpenAndFill`] (stride 1, caller slices).
     pub(crate) fn AO_OpenImpl(
@@ -643,7 +664,7 @@ impl Core {
             ringCap_trailingSlowIdx: cap_trailingSlowIdx as usize,
             ring_trailingSlowIdx_derived,
         };
-        Ok(AO_Stream { core: self.clone(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+        Ok(AO_Stream { core: self.into(), state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
     }
 
     /// Internal startIdx-anchored open behind [`Core::AO_Open`] (composition seam).
