@@ -114,10 +114,25 @@ def parse_java(root):
         if not fn.endswith(".java"):
             continue
         src = open(os.path.join(d, fn)).read()
-        m = re.search(r"public (\w+)_Stream (\w+)_Open\( (.*?) \)\n", src)
+        # #278 recased the Java stream API: `SMA_Open` -> `smaOpen`,
+        # `SMA_Stream` -> `SmaStream`. The camel spelling has dropped the
+        # separators the canonical name carries (`HT_TRENDLINE` opens as
+        # `htTrendlineOpen`), so it can no longer be un-cased back into the
+        # report key. The fragment's own file name still spells that key --
+        # `Core_HT_TRENDLINE.java` -- and it is what `--funcs`, `--mark` and
+        # the Rust arm all spell, so the name comes from there and the emitted
+        # call carries the generated spellings.
+        m = re.search(r"public (\w+Stream) (\w+)Open\( (.*?) \)\n", src)
         if not m:
             continue
-        name = m.group(2)
+        stem = re.fullmatch(r"Core_(\w+)\.java", fn)
+        if not stem:
+            # A streaming fragment whose name is not the report key: skipping it
+            # silently is the failure this parser already had once.
+            declined[fn] = "fragment name is not Core_<FUNC>.java"
+            continue
+        name = stem.group(1)
+        handle, open_fn = m.group(1), m.group(2) + "Open"
         args, why = [], None
         for a in [x.strip() for x in m.group(3).split(",") if x.strip()]:
             parts = a.split()
@@ -136,13 +151,15 @@ def parse_java(root):
         if why:
             declined[name] = why
             continue
-        cls = re.search(r"public static final class %s_Stream\b(.*?)\n   \}" % name, src, re.S)
+        cls = re.search(r"public static final class %s\b(.*?)\n   \}" % re.escape(handle),
+                        src, re.S)
         m2 = re.search(r"public (\w+) update\( (.*?) \)", cls.group(1) if cls else src)
         if not m2:
             declined[name] = "no update method"
             continue
         call = [x.split()[1] for x in m2.group(2).split(",") if x.strip()]
-        funcs[name] = {"open": args, "call": call, "ret": m2.group(1)}
+        funcs[name] = {"open": args, "call": call, "ret": m2.group(1),
+                       "handle": handle, "openfn": open_fn}
     return funcs, declined
 
 
@@ -259,9 +276,9 @@ JAVA_OPEN_BLOCK = """
       try {
          java.util.ArrayList<Double> all = new java.util.ArrayList<>();
          for (int p = 0; p < passes + 2; p++) {
-            for (int i = 0; i < 200; i++) { sink += core.%(name)s_Open(%(oargs)s) != null ? 1 : 0; }
+            for (int i = 0; i < 200; i++) { sink += core.%(openfn)s(%(oargs)s) != null ? 1 : 0; }
             long t0 = System.nanoTime();
-            for (int i = 0; i < iters; i++) { sink += core.%(name)s_Open(%(oargs)s) != null ? 1 : 0; }
+            for (int i = 0; i < iters; i++) { sink += core.%(openfn)s(%(oargs)s) != null ? 1 : 0; }
             if (p >= 2) all.add((System.nanoTime() - t0) / (double) iters);
          }
          java.util.Collections.sort(all);
@@ -329,7 +346,7 @@ JAVA_BLOCK = """
       try {
          java.util.ArrayList<Double> all = new java.util.ArrayList<>();
          for (int p = 0; p < passes + 2; p++) {
-            Core.%(name)s_Stream st = core.%(name)s_Open(%(oargs)s);
+            Core.%(handle)s st = core.%(openfn)s(%(oargs)s);
             for (int i = 0; i < 20000; i++) { %(ret)s r = st.%(call)s(%(cargs)s); %(consume)s }
             long t0 = System.nanoTime();
             for (int i = 0; i < iters; i++) { %(ret)s r = st.%(call)s(%(cargs)s); %(consume)s }
@@ -383,11 +400,13 @@ def emit_java(funcs, names, call, period, marked):
         ret = f["ret"]
         if call == "open":
             s.append(JAVA_OPEN_BLOCK % {
-                "name": name, "oargs": open_args(f, "java", name, period, marked),
+                "name": name, "openfn": f["openfn"],
+                "oargs": open_args(f, "java", name, period, marked),
             })
             continue
         s.append(JAVA_BLOCK % {
             "name": name, "call": call,
+            "handle": f["handle"], "openfn": f["openfn"],
             "ret": ret if ret in ("double", "int") else "var",
             "consume": "sink += r;" if ret in ("double", "int") else "sink += (r != null ? 1.0 : 0.0);",
             "oargs": open_args(f, "java", name, period, marked),
