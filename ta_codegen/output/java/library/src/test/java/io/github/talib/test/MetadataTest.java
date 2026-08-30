@@ -201,19 +201,29 @@ public class MetadataTest {
             FunctionInfo mixed = Functions.byName(alternating(f.name()));
             check(lower == f, f.name() + ": lower-case lookup finds it");
             check(mixed == f, f.name() + ": mixed-case lookup finds it");
-            // A third line stood here asserting lower.name().equals(f.name()),
-            // "the name reported back stays canonical". It cannot fail: the
-            // line above pins lower == f, so it compares one object's name to
-            // itself. Nothing replaces it, and the reason is specific to this
-            // backend -- BY_NAME is keyed on the STORED spelling while byName
-            // folds upward, so a row stored in lower case is unreachable by
-            // its own name. Measured, by lower-casing the SMA row: four checks
-            // fail (byName(SMA), byName round-trips, and both lookups here).
-            // C matches case-insensitively on both sides and has no second
-            // reader of the stored spelling anywhere in ta_regtest, so there
-            // the canonical spelling is asserted outright, as it already is in
-            // Rust. C# folds on both sides too but is caught by the rest of
-            // its own suite; see the note at the same site there.
+            // "Canonical" has to name something for a fold to fold onto it.
+            // Both spellings probed above are derived from the stored name, so
+            // a row stored in lower case folds onto itself and both lines stay
+            // green; this is the line that fails on it.
+            //
+            // It is not the only line that fails on it, and the change that
+            // removed the vacuous third assertion said so: BY_NAME is keyed on
+            // the STORED spelling while byName() folds upward, so a lower-cased
+            // row is unreachable by its own name. Re-measured, by lower-casing
+            // the SMA row: five checks fail, the four already named there plus
+            // this one -- `byName(SMA)`, `sma: byName round-trips`, and both
+            // lookups above. So this line does NOT catch something otherwise
+            // missed, and three of those four already print the corrupt
+            // spelling in their own prefix. What it adds is the statement of
+            // the defect: the other four report lookups that missed and leave
+            // "why" to the reader, and if a later change retired them -- the
+            // stored-spelling readers are incidental to this property, not
+            // guardians of it -- the fold sweep would go quiet on a corrupt
+            // row. Same assertion and same wording in the other three
+            // backends: C (test_abstract.c, nameFoldCb), Rust (abstract_api.rs,
+            // registry_tests) and C# (MetadataTest.cs, ByNameFoldsAsciiCase).
+            check(!hasAsciiLower(f.name()),
+                  f.name() + " is not stored in its canonical upper case");
         }
 
         // Caught rather than chained: a regression here throws, and the suite
@@ -239,6 +249,24 @@ public class MetadataTest {
         check(Functions.byName("sma ") == null, "a trailing space is still part of the name");
         check(Functions.byName("ht-dcperiod") == null, "a separator is still part of the name");
         check(Functions.byName("") == null, "the empty name resolves to nothing");
+    }
+
+    /**
+     * True if {@code s} carries an ASCII lower-case letter.
+     *
+     * <p>Spelled out rather than as {@code !s.equals(s.toUpperCase(...))}: an
+     * upper fold is exactly the operation whose locale behaviour the fold sweep
+     * distrusts, and a name is not required to be ASCII-only for this question
+     * to have an answer -- only to carry no {@code a}-{@code z}.
+     */
+    private static boolean hasAsciiLower(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c >= 'a' && c <= 'z') {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** ASCII-only lower fold, so the probe cannot inherit the bug it looks for. */

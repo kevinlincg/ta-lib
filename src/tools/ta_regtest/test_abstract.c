@@ -1778,8 +1778,12 @@ static void nameFoldCb( const TA_FuncInfo *funcInfo, void *opaqueData )
    /* "Canonical" has to name something for a fold to fold onto it. Every
     * spelling probed below is derived from this entry, so a table entry stored
     * in lower case would fold onto itself just as happily and no probe here
-    * would notice; this is the only line that does. Same assertion the Rust
-    * registry sweep carries (abstract_api.rs, registry_tests).
+    * would notice; in C this is the only line that does. Same assertion, same
+    * wording, in the other three backends: Rust (abstract_api.rs,
+    * registry_tests), Java (MetadataTest.java, byNameFoldsAsciiCase) and C#
+    * (MetadataTest.cs, ByNameFoldsAsciiCase). Only in C is it the sole
+    * detector -- the other three have readers of the stored spelling that
+    * fail too, so there it states the defect rather than catching it.
     */
    ctx->nbCanonical++;
    for( i = 0; i < len; i++ )

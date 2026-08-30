@@ -228,20 +228,30 @@ public static class MetadataTest
                   $"{f.Name}: lower-case lookup finds it");
             Check(c.TryGet(Alternating(f.Name), out FunctionInfo? mixed) && ReferenceEquals(mixed, f),
                   $"{f.Name}: mixed-case lookup finds it");
-            // A third line stood here asserting lower.Name == f.Name, "the name
-            // reported back stays canonical". It cannot fail: the line above
-            // pins ReferenceEquals(lower, f), so it compares one object's name
-            // to itself. Nothing replaces it, though the reason is not the fold:
+            // "Canonical" has to name something for a fold to fold onto it.
+            // Both spellings probed above are derived from the stored name, and
             // _byName IS OrdinalIgnoreCase, so a row stored in lower case is
-            // still found by every casing and both lookups above stay green.
-            // What catches it is the rest of the suite, which is keyed on the
-            // stored spelling ordinally. Measured, by lower-casing the TRIX
-            // row: without this line four checks still fail (no typed overload
-            // matched, compared every function, XML describes trix, XML
-            // describes every function), plus NoPhantomIoTest and StreamApiTest.
-            // C has no such second reader -- its whole regtest is green with a
-            // lower-cased row -- so there the canonical spelling is asserted
-            // outright, as it already is in Rust.
+            // still found by every casing and both lines above stay green; this
+            // is the line that fails on it.
+            //
+            // It is not the only line that fails on it, and the change that
+            // removed the vacuous third assertion said so: the rest of the
+            // suite reads the stored spelling ordinally. Measured there, by
+            // lower-casing the TRIX row, four checks fail without this line (no
+            // typed overload matched, compared every function, XML describes
+            // trix, XML describes every function), plus NoPhantomIoTest and
+            // StreamApiTest. So this line does NOT catch something otherwise
+            // missed. What it adds is the statement of the defect: those four
+            // report a lookup or a comparison that missed and leave "why" to
+            // the reader, and if a later change retired them -- they read the
+            // stored spelling incidentally, they do not guard it -- the fold
+            // sweep would go quiet on a corrupt row. Same assertion and same
+            // wording in the other three backends: C (test_abstract.c,
+            // nameFoldCb), Rust (abstract_api.rs, registry_tests) and Java
+            // (MetadataTest.java, byNameFoldsAsciiCase), where the equivalent
+            // sabotage was re-run and this line fails as the fifth check.
+            Check(!HasAsciiLower(f.Name),
+                  $"{f.Name} is not stored in its canonical upper case");
         }
 
         // What actually holds the line, and the reason it is spelled as the
@@ -280,6 +290,27 @@ public static class MetadataTest
         Check(!c.TryGet("ht-dcperiod", out _), "a separator is still part of the name");
         Check(!c.TryGet("", out _), "the empty name resolves to nothing");
         Check(!c.TryGet(new string('s', 512), out _), "a name longer than any real one matches nothing");
+    }
+
+    /// <summary>
+    /// True if <paramref name="s"/> carries an ASCII lower-case letter.
+    /// </summary>
+    /// <remarks>
+    /// Spelled out rather than as <c>s != s.ToUpperInvariant()</c>: an upper
+    /// fold is exactly the operation whose culture behaviour the fold sweep
+    /// distrusts, and a name is not required to be ASCII-only for this question
+    /// to have an answer -- only to carry no <c>a</c>-<c>z</c>.
+    /// </remarks>
+    private static bool HasAsciiLower(string s)
+    {
+        foreach (char c in s)
+        {
+            if (c >= 'a' && c <= 'z')
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>ASCII-only lower fold, so the probe cannot inherit the bug it looks for.</summary>
