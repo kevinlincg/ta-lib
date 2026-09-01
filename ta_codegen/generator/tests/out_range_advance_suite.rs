@@ -159,7 +159,15 @@ fn finite_test(lang: &str, bars: &[String], indexed: bool) -> String {
     terms.join(" || ")
 }
 
-fn entry_sig(lang: &str, upper: &str, verb: &str) -> Box<dyn Fn(&str) -> bool> {
+/// `multi` selects the tier that COMMITS, which in Java is not always the
+/// public one: a multi-output `update` publishes into the caller's sink and
+/// delegates the commit — the finite test, the step and the advance — to a
+/// package-private overload of the same name. Anchoring on the public frame
+/// there would read as "the counting is gone".
+fn entry_sig(lang: &str, upper: &str, verb: &str, multi: bool) -> Box<dyn Fn(&str) -> bool> {
+    if lang == "java" && verb == "update" && multi {
+        return Box::new(|l: &str| l.starts_with("void update( ") || l == "void update() {");
+    }
     let (c, rust, java, csharp) = match verb {
         "update" => (
             format!("TA_RetCode TA_{upper}_Update( "),
@@ -247,7 +255,7 @@ fn a_rejected_bar_is_counted_by_update_and_by_the_filler_and_never_by_peek() {
             let s = section(&name, lang);
             let (guard, increment, reject) = spellings(lang);
 
-            let upd = body_of(&s, entry_sig(lang, &upper, "update"));
+            let upd = body_of(&s, entry_sig(lang, &upper, "update", func.outputs.len() > 1));
             let scalar = finite_test(lang, &bars, false);
             updates += advance_sits_on_every_reject(
                 &format!("{name}/{lang} Update"),
@@ -273,7 +281,7 @@ fn a_rejected_bar_is_counted_by_update_and_by_the_filler_and_never_by_peek() {
                  presence guard is counting a bar that was never handed over:\n{upd}"
             );
 
-            let fill = body_of(&s, entry_sig(lang, &upper, "fill"));
+            let fill = body_of(&s, entry_sig(lang, &upper, "fill", false));
             let indexed = finite_test(lang, &bars, true);
             fills += advance_sits_on_every_reject(
                 &format!("{name}/{lang} UpdateAndFill"),
@@ -293,7 +301,7 @@ fn a_rejected_bar_is_counted_by_update_and_by_the_filler_and_never_by_peek() {
             );
             guards += 2;
 
-            let peek = body_of(&s, entry_sig(lang, &upper, "peek"));
+            let peek = body_of(&s, entry_sig(lang, &upper, "peek", false));
             assert!(
                 !peek.contains(guard) && !peek.contains(increment),
                 "{name}: {lang} Peek moves the range. A peek that counts a bar is a peek \
@@ -339,7 +347,7 @@ fn the_hand_rolled_tiers_advance_at_every_bar_loop() {
             let (guard, increment, reject) = spellings(lang);
             let want = if lang == "c" { c_fill_sites } else { 1 };
 
-            let upd = body_of(&s, entry_sig(lang, upper, "update"));
+            let upd = body_of(&s, entry_sig(lang, upper, "update", func.outputs.len() > 1));
             assert_eq!(
                 advance_sits_on_every_reject(
                     &format!("{name}/{lang} Update"),
@@ -352,7 +360,7 @@ fn the_hand_rolled_tiers_advance_at_every_bar_loop() {
                 "{name}: {lang} Update has more than one finite test"
             );
 
-            let fill = body_of(&s, entry_sig(lang, upper, "fill"));
+            let fill = body_of(&s, entry_sig(lang, upper, "fill", false));
             assert_eq!(
                 advance_sits_on_every_reject(
                     &format!("{name}/{lang} UpdateAndFill"),
@@ -367,7 +375,7 @@ fn the_hand_rolled_tiers_advance_at_every_bar_loop() {
                  nothing:\n{fill}"
             );
 
-            let peek = body_of(&s, entry_sig(lang, upper, "peek"));
+            let peek = body_of(&s, entry_sig(lang, upper, "peek", false));
             assert!(
                 !peek.contains(guard) && !peek.contains(increment),
                 "{name}: {lang} Peek moves the range:\n{peek}"

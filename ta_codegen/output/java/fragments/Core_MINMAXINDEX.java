@@ -458,14 +458,20 @@
        */
       public void update( double inReal, MinmaxindexOut out ) {
          requireArgument("MINMAXINDEX update", "out", out);
+         update( inReal );
+         out.minIdx = this.cur_outMinIdx;
+         out.maxIdx = this.cur_outMaxIdx;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outMinIdx / cur_outMaxIdx instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("MINMAXINDEX update: BadParam", RetCode.BadParam);
          }
          core.minmaxindexStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.minIdx = this.cur_outMinIdx;
-         out.maxIdx = this.cur_outMaxIdx;
       }
 
       /**

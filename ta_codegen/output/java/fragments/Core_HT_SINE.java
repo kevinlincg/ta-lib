@@ -1091,14 +1091,20 @@
        */
       public void update( double inReal, HtSineOut out ) {
          requireArgument("HT_SINE update", "out", out);
+         update( inReal );
+         out.sine = this.cur_outSine;
+         out.leadSine = this.cur_outLeadSine;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outSine / cur_outLeadSine instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("HT_SINE update: BadParam", RetCode.BadParam);
          }
          core.htSineStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.sine = this.cur_outSine;
-         out.leadSine = this.cur_outLeadSine;
       }
 
       /**

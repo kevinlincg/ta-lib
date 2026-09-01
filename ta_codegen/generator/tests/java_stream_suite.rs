@@ -289,15 +289,16 @@ fn test_java_ma_dispatch() {
             "arm {label} must appear in both the copy constructor and dispatch switches"
         );
     }
-    // MAMA arm routes OutSlot Forward(0) and discards FAMA, through the same
-    // caller-owned sink the composed peek uses: Java has no out-params, so a
-    // multi-output sub-handle's N values leave the call in an object whichever
-    // verb asks for them (#310, residue tracked by #325). Reading the
-    // sub-handle's own committed `cur_*` would be free on this path, but that
-    // needs a sink-less `update` the API does not have.
-    assert!(s.contains("MamaOut subOut = new MamaOut();"));
-    assert!(s.contains("((MamaStream) sp.sub).update(inReal, subOut);"));
-    assert!(s.contains("sp.cur_outReal = subOut.mama;"));
+    // MAMA arm routes OutSlot Forward(0) and discards FAMA. `update` commits,
+    // so the arm reads the sub-handle's own `cur_*` through the sink-less
+    // overload and allocates nothing; the peek frame still carries a sink,
+    // because a peek leaves nothing committed to read back (#325).
+    assert!(s.contains("((MamaStream) sp.sub).update(inReal);"));
+    assert!(s.contains("sp.cur_outReal = ((MamaStream) sp.sub).cur_outMAMA;"));
+    assert!(
+        !s.contains("((MamaStream) sp.sub).update(inReal, "),
+        "the committing arm allocates a sink again"
+    );
     assert!(
         !s.contains("MamaStream.Value"),
         "the record is gone, not renamed"
@@ -985,18 +986,17 @@ fn no_java_peek_copies_the_handle() {
     );
 }
 
-/// The SAME residue on the committing verbs, which the peek sweep above cannot
-/// see: a composed `update` reaches its multi-output sub-handle through the same
-/// caller-owned sink, because Java has no out-params and the API has no
-/// sink-less `update`. Pinned as an exact per-function COUNT, not a set — the
-/// two functions each carry one site per verb, and losing or gaining one on
-/// either verb is the thing #325 changes.
+/// The committing verbs carry NO such residue: a composed `update` reads its
+/// multi-output sub-handle's committed `cur_*` through the sink-less overload.
+/// Pinned as an exact per-function COUNT, not a set — one site per function,
+/// the peek frame's, and a second on either would be a commit path that started
+/// allocating again.
 ///
 /// Non-vacuity: the map is asserted non-empty and every counted line is required
 /// to be a real `new <N>Out()` allocation, so an emitter that stopped writing
 /// them fails here rather than passing with an empty sweep.
 #[test]
-fn the_composed_sub_handle_sinks_are_exactly_the_costed_four() {
+fn the_composed_sub_handle_sinks_are_exactly_the_costed_two() {
     let mut sites: BTreeMap<String, usize> = BTreeMap::new();
     for name in streaming_indicators() {
         let s = java_stream_section(&name);
@@ -1012,13 +1012,13 @@ fn the_composed_sub_handle_sinks_are_exactly_the_costed_four() {
         }
     }
     let expected: BTreeMap<String, usize> =
-        [("ma".to_string(), 2usize), ("stochrsi".to_string(), 2usize)]
+        [("ma".to_string(), 1usize), ("stochrsi".to_string(), 1usize)]
             .into_iter()
             .collect();
     assert!(!sites.is_empty(), "the sweep found no sink allocation at all");
     assert_eq!(
         sites, expected,
-        "the composed sub-handle sink sites moved (one per verb on each of the two \
+        "the composed sub-handle sink sites moved (one peek frame on each of the two \
          composed multi-output callees, #325)"
     );
 }

@@ -778,14 +778,20 @@
        */
       public void update( double inHigh, double inLow, double inClose, StochOut out ) {
          requireArgument("STOCH update", "out", out);
+         update( inHigh, inLow, inClose );
+         out.slowK = this.cur_outSlowK;
+         out.slowD = this.cur_outSlowD;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outSlowK / cur_outSlowD instead. */
+      void update( double inHigh, double inLow, double inClose ) {
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("STOCH update: BadParam", RetCode.BadParam);
          }
          core.stochStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.slowK = this.cur_outSlowK;
-         out.slowD = this.cur_outSlowD;
       }
 
       /**

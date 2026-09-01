@@ -590,14 +590,20 @@
        */
       public void update( double inReal, MinmaxOut out ) {
          requireArgument("MINMAX update", "out", out);
+         update( inReal );
+         out.min = this.cur_outMin;
+         out.max = this.cur_outMax;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outMin / cur_outMax instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("MINMAX update: BadParam", RetCode.BadParam);
          }
          core.minmaxStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.min = this.cur_outMin;
-         out.max = this.cur_outMax;
       }
 
       /**

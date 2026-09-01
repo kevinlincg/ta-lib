@@ -773,9 +773,8 @@
          break;
       }
       case MAMA: {
-         MamaOut subOut = new MamaOut();
-         ((MamaStream) sp.sub).update(inReal, subOut);
-         sp.cur_outReal = subOut.mama;
+         ((MamaStream) sp.sub).update(inReal);
+         sp.cur_outReal = ((MamaStream) sp.sub).cur_outMAMA;
          break;
       }
       case T3: {

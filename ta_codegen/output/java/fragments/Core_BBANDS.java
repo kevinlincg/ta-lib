@@ -864,15 +864,21 @@
        */
       public void update( double inReal, BbandsOut out ) {
          requireArgument("BBANDS update", "out", out);
+         update( inReal );
+         out.realUpperBand = this.cur_outRealUpperBand;
+         out.realMiddleBand = this.cur_outRealMiddleBand;
+         out.realLowerBand = this.cur_outRealLowerBand;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outRealUpperBand / cur_outRealMiddleBand / cur_outRealLowerBand instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("BBANDS update: BadParam", RetCode.BadParam);
          }
          core.bbandsStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.realUpperBand = this.cur_outRealUpperBand;
-         out.realMiddleBand = this.cur_outRealMiddleBand;
-         out.realLowerBand = this.cur_outRealLowerBand;
       }
 
       /**

@@ -519,15 +519,21 @@
        */
       public void update( double inHigh, double inLow, double inClose, AccbandsOut out ) {
          requireArgument("ACCBANDS update", "out", out);
+         update( inHigh, inLow, inClose );
+         out.realUpperBand = this.cur_outRealUpperBand;
+         out.realMiddleBand = this.cur_outRealMiddleBand;
+         out.realLowerBand = this.cur_outRealLowerBand;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outRealUpperBand / cur_outRealMiddleBand / cur_outRealLowerBand instead. */
+      void update( double inHigh, double inLow, double inClose ) {
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("ACCBANDS update: BadParam", RetCode.BadParam);
          }
          core.accbandsStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.realUpperBand = this.cur_outRealUpperBand;
-         out.realMiddleBand = this.cur_outRealMiddleBand;
-         out.realLowerBand = this.cur_outRealLowerBand;
       }
 
       /**

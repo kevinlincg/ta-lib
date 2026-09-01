@@ -669,14 +669,20 @@
        */
       public void update( double inHigh, double inLow, double inClose, SupertrendOut out ) {
          requireArgument("SUPERTREND update", "out", out);
+         update( inHigh, inLow, inClose );
+         out.real = this.cur_outReal;
+         out.integer = this.cur_outInteger;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outReal / cur_outInteger instead. */
+      void update( double inHigh, double inLow, double inClose ) {
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("SUPERTREND update: BadParam", RetCode.BadParam);
          }
          core.supertrendStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.real = this.cur_outReal;
-         out.integer = this.cur_outInteger;
       }
 
       /**

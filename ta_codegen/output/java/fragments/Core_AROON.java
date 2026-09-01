@@ -476,14 +476,20 @@
        */
       public void update( double inHigh, double inLow, AroonOut out ) {
          requireArgument("AROON update", "out", out);
+         update( inHigh, inLow );
+         out.aroonDown = this.cur_outAroonDown;
+         out.aroonUp = this.cur_outAroonUp;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outAroonDown / cur_outAroonUp instead. */
+      void update( double inHigh, double inLow ) {
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("AROON update: BadParam", RetCode.BadParam);
          }
          core.aroonStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.aroonDown = this.cur_outAroonDown;
-         out.aroonUp = this.cur_outAroonUp;
       }
 
       /**

@@ -957,14 +957,20 @@
        */
       public void update( double inReal, HtPhasorOut out ) {
          requireArgument("HT_PHASOR update", "out", out);
+         update( inReal );
+         out.inPhase = this.cur_outInPhase;
+         out.quadrature = this.cur_outQuadrature;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outInPhase / cur_outQuadrature instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("HT_PHASOR update: BadParam", RetCode.BadParam);
          }
          core.htPhasorStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.inPhase = this.cur_outInPhase;
-         out.quadrature = this.cur_outQuadrature;
       }
 
       /**

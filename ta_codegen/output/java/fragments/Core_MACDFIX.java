@@ -574,15 +574,21 @@
        */
       public void update( double inReal, MacdfixOut out ) {
          requireArgument("MACDFIX update", "out", out);
+         update( inReal );
+         out.macd = this.cur_outMACD;
+         out.macdSignal = this.cur_outMACDSignal;
+         out.macdHist = this.cur_outMACDHist;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outMACD / cur_outMACDSignal / cur_outMACDHist instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("MACDFIX update: BadParam", RetCode.BadParam);
          }
          core.macdfixStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.macd = this.cur_outMACD;
-         out.macdSignal = this.cur_outMACDSignal;
-         out.macdHist = this.cur_outMACDHist;
       }
 
       /**

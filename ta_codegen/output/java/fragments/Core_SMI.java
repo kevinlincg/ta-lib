@@ -920,14 +920,20 @@
        */
       public void update( double inHigh, double inLow, double inClose, SmiOut out ) {
          requireArgument("SMI update", "out", out);
+         update( inHigh, inLow, inClose );
+         out.smi = this.cur_outSMI;
+         out.smiSignal = this.cur_outSMISignal;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outSMI / cur_outSMISignal instead. */
+      void update( double inHigh, double inLow, double inClose ) {
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("SMI update: BadParam", RetCode.BadParam);
          }
          core.smiStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.smi = this.cur_outSMI;
-         out.smiSignal = this.cur_outSMISignal;
       }
 
       /**

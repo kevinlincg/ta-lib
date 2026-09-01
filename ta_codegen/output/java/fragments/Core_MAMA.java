@@ -1105,14 +1105,20 @@
        */
       public void update( double inReal, MamaOut out ) {
          requireArgument("MAMA update", "out", out);
+         update( inReal );
+         out.mama = this.cur_outMAMA;
+         out.fama = this.cur_outFAMA;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outMAMA / cur_outFAMA instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("MAMA update: BadParam", RetCode.BadParam);
          }
          core.mamaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.mama = this.cur_outMAMA;
-         out.fama = this.cur_outFAMA;
       }
 
       /**

@@ -940,17 +940,47 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
     // Ahead of the finite-bar check, which counts the bar it rejects: an absent
     // sink is a caller fault, not a bar, and must not move `outRange`.
     o.push_str(&require_sink(func, "         ", "update"));
+    if multi {
+        // The commit is the overload below, so the two cannot drift on which
+        // bars they reject or count.
+        let _ = writeln!(o, "         update( {fwd_bars} );");
+        o.push_str(&write_out_stmts(func, "out", "this", "         "));
+        let _ = writeln!(o, "      }}");
+        emit_update_commit_only(o, func);
+        return;
+    }
     o.push_str(&finite_bar_check(func, "         ", "update", true));
     let _ = writeln!(o, "         core.{base}StepImpl(this, {fwd_bars});");
     // After the step, so a bar the step throws out of is not counted. The
     // finite-bar reject above counts its own bar and is the only rejection that
     // does; `peek` runs a frame that commits nothing and reaches neither.
     let _ = writeln!(o, "         {}", advance_out_range());
-    if multi {
-        o.push_str(&write_out_stmts(func, "out", "this", "         "));
-    } else {
-        let _ = writeln!(o, "         return {};", fresh_value_expr(func, "this"));
-    }
+    let _ = writeln!(o, "         return {};", fresh_value_expr(func, "this"));
+    let _ = writeln!(o, "      }}");
+}
+
+/// The multi-output commit with no sink to write. Package-private: a dispatch
+/// arm forwarding this callee's outputs reads them off the sub-handle's own
+/// `cur_*` fields, so a sink there is allocated only to be dropped. Not public,
+/// because "commit and discard the outputs" is not something a caller of this
+/// API should be offered.
+fn emit_update_commit_only(o: &mut String, func: &FuncDef) {
+    let base = method_base(func);
+    let (sig_bars, fwd_bars) = bar_params(func);
+    let _ = writeln!(
+        o,
+        "\n      /* Commit with no sink to write: a caller inside this package reads the\n\
+         \x20        outputs off {} instead. */",
+        func.outputs
+            .iter()
+            .map(|out| format!("cur_{}", out.name))
+            .collect::<Vec<_>>()
+            .join(" / ")
+    );
+    let _ = writeln!(o, "      void update( {sig_bars} ) {{");
+    o.push_str(&finite_bar_check(func, "         ", "update", true));
+    let _ = writeln!(o, "         core.{base}StepImpl(this, {fwd_bars});");
+    let _ = writeln!(o, "         {}", advance_out_range());
     let _ = writeln!(o, "      }}");
 }
 
@@ -3113,21 +3143,18 @@ fn emit_dispatch(
                 outputs[k]
             );
         } else {
-            // Java has no out-params, so N outputs leave a call in an object --
-            // the same per-call local the peek frame carries, and the residue
-            // #325 removes from both at once. Reading the sub-handle's own
-            // `cur_*` instead would be free here, since `update` commits, but
-            // it needs a sink-less `update` that the API does not have.
-            let ocls = callee_out_class(registry, &arm.callee);
-            let _ = writeln!(o, "         {ocls} subOut = new {ocls}();");
-            let _ = writeln!(o, "         (({cls}) sp.sub).update({bar_args}, subOut);");
+            // `update` commits, so the sub-handle's own `cur_*` fields hold the
+            // bar it just wrote and no sink is needed here at all. The peek
+            // frame two tiers up still carries one, because a peek commits
+            // nothing to read back (#325).
+            let _ = writeln!(o, "         (({cls}) sp.sub).update({bar_args});");
             for (i, slot) in arm.out_map.iter().enumerate() {
                 if let streaming::OutSlot::Forward(k) = slot {
                     let _ = writeln!(
                         o,
-                        "         sp.cur_{} = subOut.{};",
+                        "         sp.cur_{} = (({cls}) sp.sub).cur_{};",
                         outputs[*k],
-                        callee_value_field(registry, &arm.callee, i)
+                        registry.callee_outputs(&arm.callee)[i]
                     );
                 }
             }
@@ -3828,19 +3855,17 @@ fn emit_composed_step(
                 if sub.dsts.len() == 1 {
                     let d = &sub.dsts[0];
                     let _ = writeln!(o, "{pad}cur_{d} = sp.sub{sub_idx}.{verb}({arg_str});");
-                } else {
-                    // A multi-output sub-handle writes a caller-owned sink. `update`
-                    // commits, so its outputs could be read off the sub's own
-                    // `cur_*` fields -- but `peek` does not commit, and both verbs
-                    // share this emitter, so one shape serves both. The local is
-                    // the per-call allocation #310 settled on and #325 records:
-                    // this callee is far over the inline budget, so escape
+                } else if frame {
+                    // A peek commits nothing, so there is nowhere to read the
+                    // sub-handle's outputs back from: the sink is the only
+                    // carrier, and it is the per-call allocation #325 records.
+                    // This callee is far over the inline budget, so escape
                     // analysis never fired here even when the sink was the
                     // returned Value.
                     let ocls = callee_out_class(registry, &callee_key);
                     let _ = writeln!(o, "{pad}{{");
                     let _ = writeln!(o, "{pad}   {ocls} subOut{sub_idx} = new {ocls}();");
-                    let _ = writeln!(o, "{pad}   sp.sub{sub_idx}.{verb}({arg_str}, subOut{sub_idx});");
+                    let _ = writeln!(o, "{pad}   sp.sub{sub_idx}.peek({arg_str}, subOut{sub_idx});");
                     for (k, d) in sub.dsts.iter().enumerate() {
                         let _ = writeln!(
                             o,
@@ -3849,6 +3874,18 @@ fn emit_composed_step(
                         );
                     }
                     let _ = writeln!(o, "{pad}}}");
+                } else {
+                    // `update` commits, so the sub-handle's own `cur_*` fields
+                    // hold the bar it just wrote: the sink-less overload, and
+                    // no allocation on the composed commit path at all.
+                    let _ = writeln!(o, "{pad}sp.sub{sub_idx}.update({arg_str});");
+                    for (k, d) in sub.dsts.iter().enumerate() {
+                        let _ = writeln!(
+                            o,
+                            "{pad}cur_{d} = sp.sub{sub_idx}.cur_{};",
+                            registry.callee_outputs(&callee_key)[k]
+                        );
+                    }
                 }
                 for d in &sub.dsts {
                     cur.insert(d.clone(), format!("cur_{d}"));

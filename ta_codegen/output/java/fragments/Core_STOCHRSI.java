@@ -500,14 +500,20 @@
        */
       public void update( double inReal, StochrsiOut out ) {
          requireArgument("STOCHRSI update", "out", out);
+         update( inReal );
+         out.fastK = this.cur_outFastK;
+         out.fastD = this.cur_outFastD;
+      }
+
+      /* Commit with no sink to write: a caller inside this package reads the
+         outputs off cur_outFastK / cur_outFastD instead. */
+      void update( double inReal ) {
          if( !Double.isFinite(inReal) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("STOCHRSI update: BadParam", RetCode.BadParam);
          }
          core.stochrsiStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         out.fastK = this.cur_outFastK;
-         out.fastD = this.cur_outFastD;
       }
 
       /**
@@ -629,12 +635,9 @@
       double cur_outFastD = 0.0;
       /* Pipeline the new bar through the sub-streams (batch tail order). */
       cur_tempRSIBuffer = sp.sub0.update(inReal);
-      {
-         StochfOut subOut1 = new StochfOut();
-         sp.sub1.update(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer, subOut1);
-         cur_outFastK = subOut1.fastK;
-         cur_outFastD = subOut1.fastD;
-      }
+      sp.sub1.update(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer);
+      cur_outFastK = sp.sub1.cur_outFastK;
+      cur_outFastD = sp.sub1.cur_outFastD;
       sp.cur_outFastK = cur_outFastK;
       sp.cur_outFastD = cur_outFastD;
    }
