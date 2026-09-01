@@ -7399,11 +7399,64 @@ pub fn peek_transition_widest(
     transition: &[Statement],
     slot_cast: Option<VarType>,
 ) -> Result<PeekTransition, String> {
+    let trimmed = peek_tail_trimmed(model, names, transition);
+    let transition = &trimmed[..];
     let wide = transition_buffers_with_state_arrays(model, names);
     if let Ok(pt) = peek_transition(transition, &wide, slot_cast.clone()) {
         return Ok(pt);
     }
     peek_transition(transition, &transition_buffers(model, names), slot_cast)
+}
+
+/// `transition` with everything after its last store to an output sink dropped.
+///
+/// [`build_transition`] refuses a model unless [`check_no_output_read_back`]
+/// passes, so a sink is write-only and nothing below the last store to one can
+/// change what the bar answers. A peek keeps nothing else, by construction —
+/// which makes the whole suffix unobservable, arithmetic included.
+///
+/// Peek-only. `rposition` is over TOP-LEVEL statements, so the cut never lands
+/// inside a loop body or a branch arm; [`stores_a_sink`] recurses, so a sink
+/// written inside a top-level `if` anchors the cut at that `if`.
+///
+/// `model.outputs` rather than `func.outputs`: it carries the composed
+/// producer's intermediate series (STOCH's `tempBuffer`), which the pipeline
+/// below the store reads.
+pub fn peek_tail_trimmed(
+    model: &StreamModel,
+    names: &dyn NameMap,
+    transition: &[Statement],
+) -> Vec<Statement> {
+    let sinks: Vec<Expr> = model.outputs.iter().map(|o| names.output(o)).collect();
+    let Some(last) = transition.iter().rposition(|s| stores_a_sink(s, &sinks)) else {
+        return transition.to_vec();
+    };
+    // A `return` or a loop exit in the suffix decides whether statements ABOVE
+    // the cut run at all on a later iteration, so dropping it would change the
+    // frame rather than just its tail.
+    if transition[last + 1..].iter().any(diverts) {
+        return transition.to_vec();
+    }
+    transition[..=last].to_vec()
+}
+
+/// Whether `s`, or anything nested in it, stores into one of `sinks`.
+fn stores_a_sink(s: &Statement, sinks: &[Expr]) -> bool {
+    if let Statement::Assign { target, .. } = s {
+        if sinks.contains(target) {
+            return true;
+        }
+    }
+    nested_bodies(s).0.iter().any(|b| b.iter().any(|x| stores_a_sink(x, sinks)))
+}
+
+/// Whether `s`, or anything nested in it, transfers control out of its own
+/// statement list.
+fn diverts(s: &Statement) -> bool {
+    if matches!(s, Statement::Break | Statement::Continue | Statement::Return { .. }) {
+        return true;
+    }
+    nested_bodies(s).0.iter().any(|b| b.iter().any(diverts))
 }
 
 /// The statement lists nested inside `s`, and whether entering them crosses a
@@ -7681,6 +7734,18 @@ fn strip_stmts(list: &[Statement], drop: &dyn Fn(&Statement) -> bool) -> Vec<Sta
             let inner = strip_inner(s, drop);
             match &inner {
                 Statement::Block { body } if body.is_empty() => None,
+                // A guard the deletion emptied is `if( cond ) { }` — dead code
+                // the emitters would still render, and `-Wempty-body` in C. Only
+                // when BOTH arms are gone (an emptied `then` over a live `else`
+                // still decides which arm runs) and only when the condition
+                // itself computes nothing.
+                Statement::If { condition, then_body, else_body, .. }
+                    if then_body.is_empty()
+                        && else_body.is_empty()
+                        && !has_side_effect(condition) =>
+                {
+                    None
+                }
                 _ => Some(inner),
             }
         };
@@ -9635,4 +9700,96 @@ mod tests {
         let m = analyze(&f).expect("analyzes");
         assert_eq!(names(&m.state), ["buf"]);
     }
+    /// The cut is over TOP-LEVEL statements, so a sink written inside a
+    /// top-level `if` anchors it at that `if` — never inside the arm, where the
+    /// statements below the store still run on the path that took it.
+    #[test]
+    fn peek_tail_trim_anchors_at_the_if_holding_the_last_sink_store() {
+        let f = func_with_body(t1_body());
+        let m = analyze(&f).expect("analyzes");
+        let sink = Expr::PointerDeref("out_outReal".into());
+        let transition = vec![
+            Statement::If {
+                condition: le(var("k"), Expr::IntLiteral(1)),
+                then_body: vec![
+                    assign(sink.clone(), var("tempReal")),
+                    assign(var("sp->carry"), var("tempReal")),
+                ],
+                else_body: vec![],
+                cond_comments: vec![],
+            },
+            assign(var("sp->period"), var("tempReal")),
+        ];
+        let out = peek_tail_trimmed(&m, &TestNames, &transition);
+        assert_eq!(out.len(), 1, "the tail below the `if` must go: {out:?}");
+        match &out[0] {
+            Statement::If { then_body, .. } => assert_eq!(
+                then_body.len(),
+                2,
+                "the arm below the store must stay — it runs on that path: {then_body:?}"
+            ),
+            other => panic!("the `if` itself must survive: {other:?}"),
+        }
+    }
+
+    /// A `return` / `break` / `continue` below the cut decides whether the
+    /// statements ABOVE it run again, so the whole trim is refused rather than
+    /// dropping it. No shipped indicator reaches this arm; the fixture is what
+    /// keeps it honest.
+    #[test]
+    fn peek_tail_trim_refuses_a_suffix_that_diverts() {
+        let f = func_with_body(t1_body());
+        let m = analyze(&f).expect("analyzes");
+        let sink = Expr::PointerDeref("out_outReal".into());
+        let mut transition = vec![assign(sink, var("tempReal")), assign(var("sp->period"), var("tempReal"))];
+        assert_eq!(peek_tail_trimmed(&m, &TestNames, &transition).len(), 1);
+        transition.push(Statement::If {
+            condition: le(var("k"), Expr::IntLiteral(1)),
+            then_body: vec![Statement::Return { value: None }],
+            else_body: vec![],
+            cond_comments: vec![],
+        });
+        assert_eq!(
+            peek_tail_trimmed(&m, &TestNames, &transition).len(),
+            transition.len(),
+            "a nested `return` in the suffix must take the whole trim off"
+        );
+    }
+
+    /// The cut is at the LAST sink store, not the first: a state write between
+    /// two of them is live for the second and must survive.
+    #[test]
+    fn peek_tail_trim_keeps_what_sits_between_two_sink_stores() {
+        let f = func_with_body(t1_body());
+        let m = analyze(&f).expect("analyzes");
+        let sink = Expr::PointerDeref("out_outReal".into());
+        let transition = vec![
+            assign(sink.clone(), var("tempReal")),
+            assign(var("sp->period"), var("tempReal")),
+            assign(sink, var("sp->period")),
+            assign(var("sp->carry"), var("tempReal")),
+        ];
+        let out = peek_tail_trimmed(&m, &TestNames, &transition);
+        assert_eq!(out.len(), 3, "only the statement below the SECOND store goes: {out:?}");
+        assert_eq!(format!("{:?}", &out[..3]), format!("{:?}", &transition[..3]));
+    }
+
+    /// Nothing to anchor the cut to leaves the frame alone — `rposition`
+    /// answering `None` must not be read as "cut at the top".
+    #[test]
+    fn peek_tail_trim_leaves_a_frame_with_no_sink_store_alone() {
+        let f = func_with_body(t1_body());
+        let m = analyze(&f).expect("analyzes");
+        let transition = vec![
+            assign(var("sp->period"), var("tempReal")),
+            assign(var("sp->carry"), var("tempReal")),
+        ];
+        let out = peek_tail_trimmed(&m, &TestNames, &transition);
+        assert_eq!(
+            format!("{out:?}"),
+            format!("{transition:?}"),
+            "no sink store, no cut"
+        );
+    }
+
 }

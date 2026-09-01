@@ -28,6 +28,7 @@ use ta_codegen_lib::helper_registry::HelperRegistry;
 use ta_codegen_lib::ir;
 use ta_codegen_lib::parser;
 use ta_codegen_lib::registry::Registry;
+use ta_codegen_lib::streaming::NameMap;
 
 fn input_dir() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../input")
@@ -425,13 +426,20 @@ fn fma_calls(body: &str) -> Vec<String> {
     out
 }
 
-/// Peek fuses exactly where update does — the same sites with the same
+/// Peek fuses where update does, in the same order and with the same
 /// ARGUMENTS, not merely the same number of them. A count is blind to a product
 /// moving across the fusion boundary, which `canonicalize_accumulator_add` can
 /// do on its own: it matches the accumulator by raw string equality, and the
 /// peek rewrite is what first changes a store's target (`buf[k]` -> `pkValN`).
 /// The peek body is compared after undoing the rewrite — buffer subscripts
 /// masked to one token, selects collapsed to the arm update would render.
+///
+/// **A PREFIX, not equality.** `peek_tail_trimmed` drops everything after the
+/// last output-sink store, so a site update fuses in that dead tail is not in
+/// peek at all — HT_PHASOR (8 sites / 5) and MAMA (10 / 7). What the gate exists
+/// to catch survives the weakening: a site re-fused, dropped or reordered in the
+/// MIDDLE breaks the prefix. Do not restore equality by re-implementing the
+/// truncation here — a gate duplicating generator logic is worse than this.
 ///
 /// Measured today: 29 peek bodies fuse, 107 carry a select, 16 carry both, and
 /// ZERO fuse over a select operand. So the argument comparison is live against
@@ -461,7 +469,7 @@ fn a_peek_frame_fuses_the_same_multiply_adds_as_its_update_frame() {
         if !a.is_empty() {
             fusing_functions += 1;
         }
-        if a != b {
+        if b.len() > a.len() || b[..] != a[..b.len()] {
             mismatches.push(format!(
                 "{upper}: update fuses {} site(s), peek {}\n    update: {:?}\n    peek:   {:?}",
                 a.len(),
@@ -479,8 +487,8 @@ fn a_peek_frame_fuses_the_same_multiply_adds_as_its_update_frame() {
     );
     assert!(
         mismatches.is_empty(),
-        "peek and update disagree on where a multiply-add fuses, which is a silent \
-         ~1 ULP divergence in a comparison that must be bitwise:\n{}",
+        "a peek frame's multiply-adds are not a prefix of its update frame's, which is a \
+         silent ~1 ULP divergence in a comparison that must be bitwise:\n{}",
         mismatches.join("\n")
     );
 }
@@ -632,5 +640,156 @@ fn a_peek_frame_deletes_every_accumulator_store() {
          again ({} function(s)):\n{}",
         kept.len(),
         kept.join("\n")
+    );
+}
+
+/// A `NameMap` for the sweep below. Only the spellings have to be
+/// self-consistent — the same map builds the transition and locates its sinks —
+/// so this deliberately does not mirror any backend's.
+struct SweepNames;
+
+impl ta_codegen_lib::streaming::NameMap for SweepNames {
+    fn state(&self, name: &str) -> String {
+        format!("sp->{name}")
+    }
+    fn bar(&self, array: &str) -> String {
+        array.to_string()
+    }
+    fn output(&self, name: &str) -> ir::Expr {
+        ir::Expr::PointerDeref(format!("out_{name}"))
+    }
+    fn ring_buf(&self, var: &str, array: &str) -> String {
+        format!("sp->ring_{var}_{array}")
+    }
+    fn ring_pos(&self, var: &str) -> String {
+        format!("sp->ringPos_{var}")
+    }
+    fn ring_lag(&self, var: &str) -> String {
+        format!("sp->ringLag_{var}")
+    }
+    fn ring_cap(&self, var: &str) -> String {
+        format!("sp->ringCap_{var}")
+    }
+    fn win_buf(&self, var: &str, array: &str) -> String {
+        format!("sp->win_{var}_{array}")
+    }
+    fn win_pos(&self, var: &str) -> String {
+        format!("sp->winPos_{var}")
+    }
+    fn win_cap(&self, var: &str) -> String {
+        format!("sp->winCap_{var}")
+    }
+    fn circ_buf(&self, storage: &str) -> String {
+        format!("sp->circ_{storage}")
+    }
+    fn extrema_buf(&self, array: &str) -> String {
+        format!("sp->ext_{array}")
+    }
+    fn extrema_mask(&self) -> String {
+        "sp->extMask".to_string()
+    }
+}
+
+/// Whether `s`, or anything nested in it, assigns one of `sinks`.
+///
+/// Re-derived here rather than reached for in the generator: a gate calling the
+/// pass's own predicate would agree with it about a sink it fails to recognise.
+fn assigns_a_sink(s: &ir::Statement, sinks: &[ir::Expr]) -> bool {
+    let nested: Vec<&[ir::Statement]> = match s {
+        ir::Statement::While { body, .. }
+        | ir::Statement::DoWhile { body, .. }
+        | ir::Statement::For { body, .. }
+        | ir::Statement::Block { body } => vec![body.as_slice()],
+        ir::Statement::ForC { init, update, body, .. } => vec![
+            std::slice::from_ref(init.as_ref()),
+            std::slice::from_ref(update.as_ref()),
+            body.as_slice(),
+        ],
+        ir::Statement::If { then_body, else_body, .. } => {
+            vec![then_body.as_slice(), else_body.as_slice()]
+        }
+        ir::Statement::Switch { cases, default, .. } => {
+            let mut v: Vec<&[ir::Statement]> = cases.iter().map(|(_, b)| b.as_slice()).collect();
+            v.push(default.as_slice());
+            v
+        }
+        _ => Vec::new(),
+    };
+    if let ir::Statement::Assign { target, .. } = s {
+        if sinks.contains(target) {
+            return true;
+        }
+    }
+    nested.iter().any(|b| b.iter().any(|x| assigns_a_sink(x, sinks)))
+}
+
+/// No peek frame computes anything below its last output-sink store (#321).
+///
+/// `check_no_output_read_back` makes a sink write-only in a transition, so the
+/// suffix cannot change what the bar answers and `peek` keeps nothing else. The
+/// FLOOR is the load-bearing half: a pass that silently stopped trimming would
+/// satisfy the property on nothing and read green without it.
+///
+/// Swept over the neutral analysis, not over emitted text: the four emitters
+/// render this one trimmed transition, and a per-backend epilogue below it (a
+/// state write-back into the peek frame's own scratch copy) is not the tail this
+/// is about.
+#[test]
+fn no_peek_frame_computes_below_its_last_output_sink_store() {
+    let registry = Registry::from_dir(&input_dir());
+    let (mut swept, mut trimmed_frames) = (0usize, 0usize);
+    let mut offenders: Vec<String> = Vec::new();
+
+    for name in indicators() {
+        let Some((func, _)) = load(&name) else { continue };
+        let resolved = func.resolved_for(ir::Lang::C);
+        let Ok(plan) = ta_codegen_lib::streaming::validate_streamable(&resolved, &registry) else {
+            continue;
+        };
+        let models = match &plan {
+            ta_codegen_lib::streaming::StreamPlan::Loop(m) => vec![m],
+            ta_codegen_lib::streaming::StreamPlan::DualMode(dm) => vec![&dm.mode_a, &dm.mode_b],
+            ta_codegen_lib::streaming::StreamPlan::Composed(cp) => {
+                cp.producer.as_ref().map_or_else(Vec::new, |m| vec![m])
+            }
+            _ => Vec::new(),
+        };
+        for model in models {
+            let Ok(transition) = ta_codegen_lib::streaming::build_transition(model, &SweepNames)
+            else {
+                continue;
+            };
+            let sinks: Vec<ir::Expr> =
+                model.outputs.iter().map(|o| SweepNames.output(o)).collect();
+            if !transition.iter().any(|s| assigns_a_sink(s, &sinks)) {
+                continue;
+            }
+            swept += 1;
+            let trimmed = ta_codegen_lib::streaming::peek_tail_trimmed(
+                model,
+                &SweepNames,
+                &transition,
+            );
+            if trimmed.len() < transition.len() {
+                trimmed_frames += 1;
+            }
+            let dead = trimmed.len()
+                - 1
+                - trimmed.iter().rposition(|s| assigns_a_sink(s, &sinks)).unwrap_or(0);
+            if dead > 0 {
+                offenders.push(format!("{}: {dead} statement(s) below the last sink store", func.name));
+            }
+        }
+    }
+
+    assert!(
+        swept >= 150 && trimmed_frames >= 150,
+        "swept {swept} frame(s) and trimmed {trimmed_frames}, so this gate is not measuring \
+         the pass it exists for"
+    );
+    assert!(
+        offenders.is_empty(),
+        "a peek frame still computes a tail no peek can observe:\n{}",
+        offenders.join("\n")
     );
 }
