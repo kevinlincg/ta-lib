@@ -49,9 +49,11 @@ use crate::ir::{BinOp, CircBuf, Expr, Statement};
 ///   of a nested body, so nothing a re-entry can reach is ever folded;
 /// - it stops at the first control-flow statement, and folds only when that
 ///   statement is the `If` itself;
-/// - it skips an intervening statement only while that statement does not
-///   mention the variable — `macdext.c` puts two `free()` calls between the call
-///   and its guard, so strict adjacency would silently miss those sites;
+/// - it skips an intervening statement only while that statement cannot CHANGE
+///   the variable — `macdext.c` puts two `free()` calls between the call and its
+///   guard, so strict adjacency would silently miss those sites, and a statement
+///   that merely reads the code (`savedRetCode = retCode;`) leaves the guard
+///   reachable with exactly the one value the call assigned;
 /// - `admits` is the **caller's own** admission test. Rust declines shapes Java
 ///   and C# accept, and on a declined shape the call falls through to the plain
 ///   renderer, where the guard is genuinely live. A shared predicate here would
@@ -118,11 +120,62 @@ fn guard_index(body: &[Statement], from: usize, var: &str) -> Option<usize> {
         if let Statement::If { condition, .. } = st {
             return expr_mentions(condition, var).then_some(k);
         }
-        if is_control_flow(st) || stmt_mentions(st, var) {
+        if is_control_flow(st) || (stmt_mentions(st, var) && !only_reads(st, var)) {
             return None;
         }
     }
     None
+}
+
+/// Can this statement be walked past without losing the value the call assigned?
+///
+/// The scan's stopping rule is "the variable could have changed", and mentioning
+/// it is not that: `savedRetCode = retCode;` sits between a call and its guard in
+/// `input_synth/synth13`, and the guard it stopped the scan at was left with a
+/// `return retCode` reachable only with `SUCCESS` — the `Err(RetCode::Success)`
+/// that rule S7 forbids an opener (issue #327). Refusing a pure read bought
+/// nothing: a value the statement cannot write is still the call's.
+///
+/// So the test is about WRITES, and it is a whitelist rather than a search for
+/// assignment: a variant this module has not considered stops the scan, which is
+/// the same answer the old rule gave. Three ways a C statement writes a scalar,
+/// all refused:
+///
+/// - it is the name being assigned or declared (`retCode = ..`, `retCode += ..`)
+///   — a compound assignment reads it too, and is still a write;
+/// - its address is taken (`sub(.., &retCode)`), where the callee may write
+///   through it. A by-value argument cannot, which is what lets a call through;
+/// - it is incremented or decremented, in either position.
+fn only_reads(s: &Statement, var: &str) -> bool {
+    let written_through = |e: &Expr| {
+        let mut hit = false;
+        crate::streaming::walk_expr(e, &mut |x| {
+            let (Expr::AddressOf(inner)
+            | Expr::PostIncrement(inner)
+            | Expr::PostDecrement(inner)
+            | Expr::PreIncrement(inner)
+            | Expr::PreDecrement(inner)) = x
+            else {
+                return;
+            };
+            if expr_mentions(inner, var) {
+                hit = true;
+            }
+        });
+        hit
+    };
+    let mut clean = match s {
+        Statement::Assign { target, .. } => !expr_mentions(target, var),
+        Statement::VarDecl { name, .. } => name != var,
+        Statement::Expr(_) => true,
+        _ => false,
+    };
+    crate::streaming::walk_stmt_exprs(s, &mut |e| {
+        if written_through(e) {
+            clean = false;
+        }
+    });
+    clean
 }
 
 fn is_control_flow(s: &Statement) -> bool {
@@ -524,15 +577,74 @@ mod cross_call_guard_tests {
         assert!(is_gone(&out[3]));
     }
 
+    /// `input_synth/synth13`'s leg C. A read cannot make the guard reachable
+    /// with a value other than the one the call assigned, so the scan walks past
+    /// it and the read itself survives untouched (#327).
     #[test]
-    fn a_statement_that_reads_the_variable_stops_the_scan() {
+    fn a_statement_that_only_reads_the_variable_is_walked_past() {
         let read = Statement::Assign {
             target: Expr::Var("saved".into()),
             value: Expr::Var("retCode".into()),
             compound: false,
         };
         let out = run(&[call(8), read, guard(ne_success("retCode"))]);
-        assert!(!is_gone(&out[2]), "a guard reachable with another value was folded");
+        assert!(is_gone(&out[2]), "the guard is dead and was kept");
+        assert!(
+            matches!(&out[1], Statement::Assign { target: Expr::Var(t), .. } if t == "saved"),
+            "the intervening read was not preserved: {:?}",
+            out[1]
+        );
+    }
+
+    /// The three ways a statement can change the code between the call and its
+    /// guard. Each leaves the guard reachable with a value the pass has not
+    /// proved, so each stops the scan.
+    #[test]
+    fn a_statement_that_could_write_the_variable_stops_the_scan() {
+        let writes = [
+            // the plain assignment
+            Statement::Assign {
+                target: Expr::Var("retCode".into()),
+                value: Expr::Var("other".into()),
+                compound: false,
+            },
+            // compound: a read AND a write
+            Statement::Assign {
+                target: Expr::Var("retCode".into()),
+                value: Expr::IntLiteral(1),
+                compound: true,
+            },
+            // written through by a callee
+            Statement::Expr(Expr::FuncCall(
+                "sub".into(),
+                vec![Expr::AddressOf(Box::new(Expr::Var("retCode".into())))],
+            )),
+            // incremented in place
+            Statement::Expr(Expr::PostIncrement(Box::new(Expr::Var("retCode".into())))),
+        ];
+        for w in writes {
+            let out = run(&[call(8), w.clone(), guard(ne_success("retCode"))]);
+            assert!(
+                !is_gone(&out[2]),
+                "a guard reachable with another value was folded, past {w:?}"
+            );
+        }
+    }
+
+    /// A declaration seeded FROM the code is a read like any other; one that
+    /// redeclares the code itself is a write, and this is the arm that tells
+    /// them apart.
+    #[test]
+    fn a_declaration_is_read_or_write_by_its_own_name() {
+        let decl = |name: &str| Statement::VarDecl {
+            var_type: crate::ir::VarType::RetCodeType,
+            name: name.into(),
+            init: Some(Expr::Var("retCode".into())),
+        };
+        let out = run(&[call(8), decl("saved"), guard(ne_success("retCode"))]);
+        assert!(is_gone(&out[2]), "a declaration seeded from the code is a read");
+        let out = run(&[call(8), decl("retCode"), guard(ne_success("retCode"))]);
+        assert!(!is_gone(&out[2]), "a redeclaration of the code was walked past");
     }
 
     /// `MA`'s dispatch shape: the assignment ends its switch arm, so the guard

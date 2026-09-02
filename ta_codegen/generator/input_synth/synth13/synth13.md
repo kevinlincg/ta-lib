@@ -24,10 +24,16 @@ outReal[i] = 4 × SMA(real, optInTimePeriod)[i]
     copied verbatim from `bbands.c`/`stoch.c`. Shortened to the count test
     alone.
   - **Leg C** — `savedRetCode = retCode;` sits between the call and its guard.
-    The guard must survive untouched. No shipped function has this shape: the
-    two-`free()` gap in `macdext.c` that motivates the "skip a non-mentioning
-    statement" rule is a *different* case from this one, which tests the rule
-    that stops the scan.
+    The guard folds away and the assignment survives alone: a read cannot make
+    the guard reachable with a value other than the one the call assigned, so
+    the scan walks past it. No shipped function has this shape, and while the
+    scan stopped at any *mention* of the code this guard stayed standing with a
+    `return retCode` reachable only with `TA_SUCCESS` — the
+    `Err(RetCode::Success)` rule S7 forbids an opener, which is how #327 found
+    it. What stops the scan is a WRITE, in any of its three spellings, and each
+    is pinned in `backends::ir_cleanup`'s own tests — a fixture cannot carry
+    that case with the guard body it has, since a surviving guard that returns
+    the code is the very thing S7 forbids here.
   - **Leg D** — `if( retCode == TA_SUCCESS )`. Grepping every `.c` under
     `ta_codegen/input/` for `== TA_SUCCESS` returns nothing — this operator is
     refused unconditionally, and until this fixture nothing exercised that.
@@ -47,10 +53,10 @@ outReal[i] = 4 × SMA(real, optInTimePeriod)[i]
     clean baseline case, and as the one `free` the leak-check accepts as
     `scratch`'s replayable free for the streamed Open).
 - Coverage trap: legs A, B, C and D each nest a `free()` inside their own
-  `if( retCode != TA_SUCCESS ) { ... }` body. For A that whole guard folds
+  `if( retCode != TA_SUCCESS ) { ... }` body. For A and C that whole guard folds
   away as a unit, taking the nested free with it — a fold that happens
   BEFORE `drop_deallocation` ever runs, so it never independently exercises
-  that pass. For B, C and D the outer guard survives (shortened or
+  that pass. For B and D the outer guard survives (shortened or
   untouched), so the nested free is what's left for `drop_deallocation`/
   `drop_inert_guards` to clean, *after* a guard that
   `drop_answered_cross_call_guards` left standing — collapsing every leg down
@@ -65,9 +71,9 @@ outReal[i] = 4 × SMA(real, optInTimePeriod)[i]
   are already validated by synth13's own public tier before any leg runs, and
   every leg calls `sma()` with that same validated range, so `retCode` is
   `TA_SUCCESS` on every real call the gates make. That is what makes folding
-  legs A/B correct rather than merely convenient, and it is also why legs
-  C/D/E's surviving guards are safe to leave live — they never actually
-  divert control flow during `--codegen`/`--xlang-hash`.
+  legs A/B/C correct rather than merely convenient, and it is also why leg D's
+  surviving guard is safe to leave live — it never actually diverts control
+  flow during `--codegen`/`--xlang-hash`.
 
 ## Inputs
 

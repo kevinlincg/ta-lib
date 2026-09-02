@@ -92,7 +92,8 @@ TA_RetCode synth13(int startIdx, int endIdx,
    }
 
    /* Leg C: a statement between the call and its guard that READS the code
-    * variable. The scan must stop there, so the guard survives everywhere. */
+    * variable. A read cannot change what the call assigned, so the guard folds
+    * away as leg A's does while this assignment survives on its own (#327). */
    retCode = sma( startIdx, endIdx, inReal, optInTimePeriod,
                   &legBegIdx, &legNbElement, scratch );
    savedRetCode = retCode;
