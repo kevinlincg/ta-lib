@@ -55,3 +55,37 @@ Not measured: I did not benchmark this. The claim here is the allocation count
 in the generated code, 4 sites to 2, not a time. `--language=rust,csharp` was
 not run either — no .NET SDK on this machine — though no C#, Rust or C file is
 in the diff.
+
+## Rebase onto dev `cc52aea9`
+
+The branch was rebased. The only conflicts were two generated artifacts
+(`BuildStamp.java`, `TaCodegenServe.java`); they were settled by regenerating,
+not by hand.
+
+TA_SUPERTREND (`02ee797e`) arrived in the meantime and is a multi-output stream,
+so it picks up the same pair of methods: the cost line is **17** package-private
+methods, not 16. Its public sink overload keeps `requireArgument("...", "out",
+out)` ahead of the commit, so the null-sink rejection `91b76002` added is not
+reopened by the split — I read the emitted fragment to check that specifically.
+
+Re-run on the rebased tree:
+
+- `cargo test --no-fail-fast`: 885 passed, 0 failed.
+- `generate` then `git status`: clean.
+- The PR gate's three javac steps, the ones `f2e1c637` added, run by hand with
+  the same flags: the shipped library under `-Xdoclint:all,-missing`, the
+  hand-written suites against it, and the JSON-RPC server. All three exit 0.
+
+NOT re-run after the rebase, and I am not carrying the pre-rebase results
+forward as current:
+
+- `regtest.py --language=c,java` — `scripts/build.py` refuses to run as root,
+  which is what this environment is.
+- `ta_codegen build --backend=java` (the Maven path: jar, javadoc jar, doc
+  examples, the 7 suites and StreamSmokeTest's 4132 checks). The three javac
+  steps above cover compilation but execute nothing.
+- `cargo clippy --all-targets -- -D warnings`.
+- The two deliberate-break controls listed above.
+
+Still not measured: there is no benchmark here and no time claim. The claim is
+the allocation count in the generated code, 4 sites to 2.
