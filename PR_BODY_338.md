@@ -148,6 +148,29 @@ site this change introduces. Merging this before #337 would speed the batch tier
 ~3.7x and slow the peek tier down. The #337 implementation is on
 `kevinlincg:issue-337-stream-fma-multiversion`, one commit on top of this same dev.
 
+**Whichever of the two lands second needs a `generate` in the same commit, or the PR
+gate on `dev` goes red.** The two branches do not conflict textually, but they
+interact through #337's annotate pass: this PR makes ATR, NATR and SUPERTREND fuse in
+their *streaming* tiers, and #337 marks exactly the tiers that fuse. Neither branch
+can carry the result alone — #337 has no fusing ATR to mark, and this branch has no
+annotate pass to run. Measured with `regen-check` on four trees, not predicted:
+
+| tree | `scripts/build.py regen-check` |
+|---|---|
+| `dev` df0c6beb | exit 0 — "output matches the committed source. OK." |
+| this branch alone | exit 0 — same |
+| `issue-337` alone | exit 0 — same |
+| the two merged | **exit 1** — "regenerating changed the committed output" |
+
+The drift is 15 lines, all of them `TA_FMA_MULTIVERSION` and nothing else: five per TU
+on ATR, NATR and SUPERTREND, on `OpenInternal`, `OpenAndFillInternal`, `Update`,
+`Peek` and `UpdateAndFill`. C-only — the Rust, Java and C# output is unchanged by the
+merge.
+
+So the second merge is a merge plus one `generate`. Those 15 marks are also what turns
+this change's streaming half from a regression into the issue's ~1.43x peek figure, so
+they are not cosmetic.
+
 ## Verified
 
 - `cargo run -- generate` is clean and idempotent (a second run changes nothing).
