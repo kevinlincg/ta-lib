@@ -2056,6 +2056,7 @@ static TA_RetCode TA_HT_TRENDMODE_OpenImpl( struct TA_HT_TRENDMODE_Stream **stre
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_TRENDMODE_OpenInternal( struct TA_HT_TRENDMODE_Stream **stream, const double inReal[], int startIdx, int historyLen, int *outInteger )
 {
    TA_RetCode retCode;
@@ -2092,11 +2093,13 @@ TA_LIB_API TA_RetCode TA_HT_TRENDMODE_OpenAndFill( TA_HT_TRENDMODE_Stream **stre
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_TRENDMODE_OpenAndFillInternal( struct TA_HT_TRENDMODE_Stream **stream, const double inReal[], int startIdx, int historyLen, int *outBegIdx, int *outNBElement, int outInteger[] )
 {
    return TA_HT_TRENDMODE_OpenImpl( stream, inReal, startIdx, historyLen, outBegIdx, outNBElement, outInteger, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Update( TA_HT_TRENDMODE_Stream *stream, double inReal, int *outInteger )
 {
    if( !stream || !outInteger ) return TA_BAD_PARAM;
@@ -2110,6 +2113,7 @@ TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Update( TA_HT_TRENDMODE_Stream *stream, do
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Peek( const TA_HT_TRENDMODE_Stream *stream, double inReal, int *outInteger )
 {
    struct TA_HT_TRENDMODE_Stream scratch;
@@ -2404,6 +2408,7 @@ TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Peek( const TA_HT_TRENDMODE_Stream *stream
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_TRENDMODE_UpdateAndFill( TA_HT_TRENDMODE_Stream *stream, const double inReal[], int barCount, int outInteger[] )
 {
    int i;

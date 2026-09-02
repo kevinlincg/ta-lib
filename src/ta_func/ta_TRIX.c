@@ -598,6 +598,7 @@ static TA_RetCode TA_TRIX_OpenImpl( struct TA_TRIX_Stream **stream, const double
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_TRIX_OpenInternal( struct TA_TRIX_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, double *outReal )
 {
    TA_RetCode retCode;
@@ -634,11 +635,13 @@ TA_LIB_API TA_RetCode TA_TRIX_OpenAndFill( TA_TRIX_Stream **stream, const double
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_TRIX_OpenAndFillInternal( struct TA_TRIX_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
    return TA_TRIX_OpenImpl( stream, inReal, startIdx, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_TRIX_Update( TA_TRIX_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
@@ -652,6 +655,7 @@ TA_LIB_API TA_RetCode TA_TRIX_Update( TA_TRIX_Stream *stream, double inReal, dou
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_TRIX_Peek( const TA_TRIX_Stream *stream, double inReal, double *outReal )
 {
    struct TA_TRIX_Stream scratch;
@@ -675,6 +679,7 @@ TA_LIB_API TA_RetCode TA_TRIX_Peek( const TA_TRIX_Stream *stream, double inReal,
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_TRIX_UpdateAndFill( TA_TRIX_Stream *stream, const double inReal[], int barCount, double outReal[] )
 {
    int i;

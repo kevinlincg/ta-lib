@@ -707,6 +707,7 @@ static TA_RetCode TA_T3_OpenImpl( struct TA_T3_Stream **stream, const double inR
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_T3_OpenInternal( struct TA_T3_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, double optInVFactor, double *outReal )
 {
    TA_RetCode retCode;
@@ -743,11 +744,13 @@ TA_LIB_API TA_RetCode TA_T3_OpenAndFill( TA_T3_Stream **stream, const double inR
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_T3_OpenAndFillInternal( struct TA_T3_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, double optInVFactor, int *outBegIdx, int *outNBElement, double outReal[] )
 {
    return TA_T3_OpenImpl( stream, inReal, startIdx, historyLen, optInTimePeriod, optInVFactor, outBegIdx, outNBElement, outReal, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_T3_Update( TA_T3_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
@@ -761,6 +764,7 @@ TA_LIB_API TA_RetCode TA_T3_Update( TA_T3_Stream *stream, double inReal, double 
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_T3_Peek( const TA_T3_Stream *stream, double inReal, double *outReal )
 {
    struct TA_T3_Stream scratch;
@@ -785,6 +789,7 @@ TA_LIB_API TA_RetCode TA_T3_Peek( const TA_T3_Stream *stream, double inReal, dou
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_T3_UpdateAndFill( TA_T3_Stream *stream, const double inReal[], int barCount, double outReal[] )
 {
    int i;

@@ -1202,6 +1202,13 @@ pub fn generate(
     // cannot be added without one.
     emit_clone(&mut o, func, &plan, enums);
 
+    // Also tier-independent, and for the same reason: five plans reach here and
+    // they share no tier list, so a plan added later would otherwise ship an
+    // unclonable `fma()` on its hot path without being asked. See
+    // `fma::annotate_multiversion_callers` for why the attribute lands on the
+    // per-bar entry points and not on the static step they inline.
+    fma::annotate_multiversion_callers(&mut o);
+
     o
 }
 

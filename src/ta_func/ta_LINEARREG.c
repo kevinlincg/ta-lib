@@ -785,6 +785,7 @@ static TA_RetCode TA_LINEARREG_OpenImpl( struct TA_LINEARREG_Stream **stream, co
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_LINEARREG_OpenInternal( struct TA_LINEARREG_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, double *outReal )
 {
    TA_RetCode retCode;
@@ -821,11 +822,13 @@ TA_LIB_API TA_RetCode TA_LINEARREG_OpenAndFill( TA_LINEARREG_Stream **stream, co
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_LINEARREG_OpenAndFillInternal( struct TA_LINEARREG_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
    return TA_LINEARREG_OpenImpl( stream, inReal, startIdx, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_LINEARREG_Update( TA_LINEARREG_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
@@ -839,6 +842,7 @@ TA_LIB_API TA_RetCode TA_LINEARREG_Update( TA_LINEARREG_Stream *stream, double i
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_LINEARREG_Peek( const TA_LINEARREG_Stream *stream, double inReal, double *outReal )
 {
    struct TA_LINEARREG_Stream scratch;
@@ -953,6 +957,7 @@ TA_LIB_API TA_RetCode TA_LINEARREG_Peek( const TA_LINEARREG_Stream *stream, doub
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_LINEARREG_UpdateAndFill( TA_LINEARREG_Stream *stream, const double inReal[], int barCount, double outReal[] )
 {
    int i;

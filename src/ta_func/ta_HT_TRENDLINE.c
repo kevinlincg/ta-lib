@@ -1583,6 +1583,7 @@ static TA_RetCode TA_HT_TRENDLINE_OpenImpl( struct TA_HT_TRENDLINE_Stream **stre
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_TRENDLINE_OpenInternal( struct TA_HT_TRENDLINE_Stream **stream, const double inReal[], int startIdx, int historyLen, double *outReal )
 {
    TA_RetCode retCode;
@@ -1619,11 +1620,13 @@ TA_LIB_API TA_RetCode TA_HT_TRENDLINE_OpenAndFill( TA_HT_TRENDLINE_Stream **stre
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_TRENDLINE_OpenAndFillInternal( struct TA_HT_TRENDLINE_Stream **stream, const double inReal[], int startIdx, int historyLen, int *outBegIdx, int *outNBElement, double outReal[] )
 {
    return TA_HT_TRENDLINE_OpenImpl( stream, inReal, startIdx, historyLen, outBegIdx, outNBElement, outReal, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_TRENDLINE_Update( TA_HT_TRENDLINE_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
@@ -1637,6 +1640,7 @@ TA_LIB_API TA_RetCode TA_HT_TRENDLINE_Update( TA_HT_TRENDLINE_Stream *stream, do
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_TRENDLINE_Peek( const TA_HT_TRENDLINE_Stream *stream, double inReal, double *outReal )
 {
    struct TA_HT_TRENDLINE_Stream scratch;
@@ -1838,6 +1842,7 @@ TA_LIB_API TA_RetCode TA_HT_TRENDLINE_Peek( const TA_HT_TRENDLINE_Stream *stream
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_TRENDLINE_UpdateAndFill( TA_HT_TRENDLINE_Stream *stream, const double inReal[], int barCount, double outReal[] )
 {
    int i;

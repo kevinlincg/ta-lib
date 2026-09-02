@@ -550,6 +550,7 @@ static TA_RetCode TA_CDLMORNINGSTAR_OpenImpl( struct TA_CDLMORNINGSTAR_Stream **
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_CDLMORNINGSTAR_OpenInternal( struct TA_CDLMORNINGSTAR_Stream **stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int startIdx, int historyLen, double optInPenetration, int *outInteger )
 {
    TA_RetCode retCode;
@@ -586,11 +587,13 @@ TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_OpenAndFill( TA_CDLMORNINGSTAR_Stream **
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_CDLMORNINGSTAR_OpenAndFillInternal( struct TA_CDLMORNINGSTAR_Stream **stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int startIdx, int historyLen, double optInPenetration, int *outBegIdx, int *outNBElement, int outInteger[] )
 {
    return TA_CDLMORNINGSTAR_OpenImpl( stream, inOpen, inHigh, inLow, inClose, startIdx, historyLen, optInPenetration, outBegIdx, outNBElement, outInteger, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_Update( TA_CDLMORNINGSTAR_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
    if( !stream || !outInteger ) return TA_BAD_PARAM;
@@ -604,6 +607,7 @@ TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_Update( TA_CDLMORNINGSTAR_Stream *stream
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_Peek( const TA_CDLMORNINGSTAR_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
    struct TA_CDLMORNINGSTAR_Stream scratch;
@@ -628,6 +632,7 @@ TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_Peek( const TA_CDLMORNINGSTAR_Stream *st
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_UpdateAndFill( TA_CDLMORNINGSTAR_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
 {
    int i;

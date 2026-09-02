@@ -211,6 +211,7 @@ static TA_RetCode TA_WCLPRICE_OpenImpl( struct TA_WCLPRICE_Stream **stream, cons
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_WCLPRICE_OpenInternal( struct TA_WCLPRICE_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int startIdx, int historyLen, double *outReal )
 {
    TA_RetCode retCode;
@@ -247,11 +248,13 @@ TA_LIB_API TA_RetCode TA_WCLPRICE_OpenAndFill( TA_WCLPRICE_Stream **stream, cons
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_WCLPRICE_OpenAndFillInternal( struct TA_WCLPRICE_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int startIdx, int historyLen, int *outBegIdx, int *outNBElement, double outReal[] )
 {
    return TA_WCLPRICE_OpenImpl( stream, inHigh, inLow, inClose, startIdx, historyLen, outBegIdx, outNBElement, outReal, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_WCLPRICE_Update( TA_WCLPRICE_Stream *stream, double inHigh, double inLow, double inClose, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
@@ -265,6 +268,7 @@ TA_LIB_API TA_RetCode TA_WCLPRICE_Update( TA_WCLPRICE_Stream *stream, double inH
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_WCLPRICE_Peek( const TA_WCLPRICE_Stream *stream, double inHigh, double inLow, double inClose, double *outReal )
 {
    struct TA_WCLPRICE_Stream scratch;
@@ -278,6 +282,7 @@ TA_LIB_API TA_RetCode TA_WCLPRICE_Peek( const TA_WCLPRICE_Stream *stream, double
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_WCLPRICE_UpdateAndFill( TA_WCLPRICE_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outReal[] )
 {
    int i;

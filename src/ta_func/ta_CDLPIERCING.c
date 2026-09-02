@@ -452,6 +452,7 @@ static TA_RetCode TA_CDLPIERCING_OpenImpl( struct TA_CDLPIERCING_Stream **stream
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_CDLPIERCING_OpenInternal( struct TA_CDLPIERCING_Stream **stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int startIdx, int historyLen, int *outInteger )
 {
    TA_RetCode retCode;
@@ -488,11 +489,13 @@ TA_LIB_API TA_RetCode TA_CDLPIERCING_OpenAndFill( TA_CDLPIERCING_Stream **stream
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_CDLPIERCING_OpenAndFillInternal( struct TA_CDLPIERCING_Stream **stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int startIdx, int historyLen, int *outBegIdx, int *outNBElement, int outInteger[] )
 {
    return TA_CDLPIERCING_OpenImpl( stream, inOpen, inHigh, inLow, inClose, startIdx, historyLen, outBegIdx, outNBElement, outInteger, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_CDLPIERCING_Update( TA_CDLPIERCING_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
    if( !stream || !outInteger ) return TA_BAD_PARAM;
@@ -506,6 +509,7 @@ TA_LIB_API TA_RetCode TA_CDLPIERCING_Update( TA_CDLPIERCING_Stream *stream, doub
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_CDLPIERCING_Peek( const TA_CDLPIERCING_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
    struct TA_CDLPIERCING_Stream scratch;
@@ -530,6 +534,7 @@ TA_LIB_API TA_RetCode TA_CDLPIERCING_Peek( const TA_CDLPIERCING_Stream *stream, 
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_CDLPIERCING_UpdateAndFill( TA_CDLPIERCING_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
 {
    int i;

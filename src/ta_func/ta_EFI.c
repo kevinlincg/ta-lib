@@ -608,6 +608,7 @@ static TA_RetCode TA_EFI_OpenImpl( struct TA_EFI_Stream **stream, const double i
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_EFI_OpenInternal( struct TA_EFI_Stream **stream, const double inClose[], const double inVolume[], int startIdx, int historyLen, int optInTimePeriod, double *outReal )
 {
    TA_RetCode retCode;
@@ -644,11 +645,13 @@ TA_LIB_API TA_RetCode TA_EFI_OpenAndFill( TA_EFI_Stream **stream, const double i
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_EFI_OpenAndFillInternal( struct TA_EFI_Stream **stream, const double inClose[], const double inVolume[], int startIdx, int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
    return TA_EFI_OpenImpl( stream, inClose, inVolume, startIdx, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_EFI_Update( TA_EFI_Stream *stream, double inClose, double inVolume, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
@@ -662,6 +665,7 @@ TA_LIB_API TA_RetCode TA_EFI_Update( TA_EFI_Stream *stream, double inClose, doub
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_EFI_Peek( const TA_EFI_Stream *stream, double inClose, double inVolume, double *outReal )
 {
    struct TA_EFI_Stream scratch;
@@ -690,6 +694,7 @@ TA_LIB_API TA_RetCode TA_EFI_Peek( const TA_EFI_Stream *stream, double inClose, 
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_EFI_UpdateAndFill( TA_EFI_Stream *stream, const double inClose[], const double inVolume[], int barCount, double outReal[] )
 {
    int i;

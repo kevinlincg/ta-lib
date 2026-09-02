@@ -137,3 +137,89 @@ fn fma_fusion_fires_for_known_candidates() {
         assert!(n > 0, "{name}: expected >=1 fused a*b+c site, found 0");
     }
 }
+
+/// Which of a rendered C section's definitions carry `TA_FMA_MULTIVERSION`, by
+/// the name in the signature the attribute sits above.
+fn multiversioned(section: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let lines: Vec<&str> = section.lines().collect();
+    for (i, l) in lines.iter().enumerate() {
+        if l.trim_end() != "TA_FMA_MULTIVERSION" {
+            continue;
+        }
+        let sig = lines.get(i + 1).copied().unwrap_or("");
+        let open = match sig.find('(') {
+            Some(o) => o,
+            None => continue,
+        };
+        let name: String = sig[..open]
+            .chars()
+            .rev()
+            .take_while(|c| c.is_alphanumeric() || *c == '_')
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+        out.push(name);
+    }
+    out.sort();
+    out
+}
+
+/// The streaming tiers of a fusing function carry the FMA multiversion
+/// attribute, and the `static` step they inline does not.
+///
+/// Both halves are load-bearing and they pull in opposite directions.
+/// A tier that fuses only through the static step contains no `fma(` of its
+/// own, so the batch tier's text predicate cannot see it — that is the bug this
+/// pins. And `target_clones` makes a function an ifunc, which gcc cannot inline:
+/// marking the static instead would stop it folding into the per-bar entry
+/// points, leaving the very site this is meant to fix on a `call fma@PLT`.
+/// A non-fusing function must stay unmarked, which is what keeps the predicate
+/// from degenerating into "mark everything".
+#[test]
+fn fma_multiversion_marks_the_stream_tiers_that_fuse_and_not_their_static_step() {
+    let input = Path::new(env!("CARGO_MANIFEST_DIR")).join("../input");
+    let enums = parser::enums::load_enums(&input.join("enums.yaml"));
+    let registry = ta_codegen_lib::registry::Registry::from_dir(&input);
+    let helpers = ta_codegen_lib::helper_registry::HelperRegistry::from_dir(&input);
+
+    // EMA fuses (`FUSING_INVENTORY`) and streams as a plain Loop plan, so its
+    // step is small enough that gcc folds it into all three per-bar entries.
+    let ema = load_func_full("ema");
+    let section = ta_codegen_lib::backends::c_stream::generate(&ema, &enums, &registry, &helpers);
+    let marked = multiversioned(&section);
+    for tier in [
+        "TA_EMA_Update",
+        "TA_EMA_UpdateAndFill",
+        "TA_EMA_Peek",
+        "TA_EMA_OpenInternal",
+        "TA_EMA_OpenAndFillInternal",
+    ] {
+        assert!(
+            marked.iter().any(|m| m == tier),
+            "{tier} fuses through the step it inlines but carries no \
+             TA_FMA_MULTIVERSION — it will emit a bare `call fma@PLT` per bar. \
+             Marked: {marked:?}"
+        );
+    }
+    for stat in ["TA_EMA_StepImpl", "TA_EMA_OpenImpl"] {
+        assert!(
+            !marked.iter().any(|m| m == stat),
+            "{stat} is static and must NOT be multiversioned: target_clones makes \
+             it an ifunc, which gcc will not inline into the per-bar entries"
+        );
+    }
+
+    // SMA streams the same way and fuses nowhere, so nothing in its section may
+    // be marked.
+    let sma = load_func_full("sma");
+    let sma_section =
+        ta_codegen_lib::backends::c_stream::generate(&sma, &enums, &registry, &helpers);
+    assert!(
+        multiversioned(&sma_section).is_empty(),
+        "SMA fuses no site; nothing in its streaming section may be \
+         multiversioned, got {:?}",
+        multiversioned(&sma_section)
+    );
+}

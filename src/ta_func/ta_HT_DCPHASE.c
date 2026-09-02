@@ -1712,6 +1712,7 @@ static TA_RetCode TA_HT_DCPHASE_OpenImpl( struct TA_HT_DCPHASE_Stream **stream, 
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_DCPHASE_OpenInternal( struct TA_HT_DCPHASE_Stream **stream, const double inReal[], int startIdx, int historyLen, double *outReal )
 {
    TA_RetCode retCode;
@@ -1748,11 +1749,13 @@ TA_LIB_API TA_RetCode TA_HT_DCPHASE_OpenAndFill( TA_HT_DCPHASE_Stream **stream, 
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_DCPHASE_OpenAndFillInternal( struct TA_HT_DCPHASE_Stream **stream, const double inReal[], int startIdx, int historyLen, int *outBegIdx, int *outNBElement, double outReal[] )
 {
    return TA_HT_DCPHASE_OpenImpl( stream, inReal, startIdx, historyLen, outBegIdx, outNBElement, outReal, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_DCPHASE_Update( TA_HT_DCPHASE_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
@@ -1766,6 +1769,7 @@ TA_LIB_API TA_RetCode TA_HT_DCPHASE_Update( TA_HT_DCPHASE_Stream *stream, double
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_DCPHASE_Peek( const TA_HT_DCPHASE_Stream *stream, double inReal, double *outReal )
 {
    struct TA_HT_DCPHASE_Stream scratch;
@@ -1990,6 +1994,7 @@ TA_LIB_API TA_RetCode TA_HT_DCPHASE_Peek( const TA_HT_DCPHASE_Stream *stream, do
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_DCPHASE_UpdateAndFill( TA_HT_DCPHASE_Stream *stream, const double inReal[], int barCount, double outReal[] )
 {
    int i;

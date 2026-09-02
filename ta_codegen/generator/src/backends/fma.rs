@@ -428,3 +428,143 @@ pub fn fuse_operands<'e>(
     }
     None
 }
+
+/// Prepend `TA_FMA_MULTIVERSION` to every function in an emitted C section whose
+/// per-call work fuses — its own body, or a `static` helper the compiler folds
+/// into it.
+///
+/// The batch tiers can test their own text for `fma(` because the fused site is
+/// right there in the body. A streaming tier cannot: `Update`, `UpdateAndFill`
+/// and `Peek` carry no arithmetic of their own, they call `<N>_StepImpl`, and gcc
+/// inlines that static into each of them. So the fused site lands in a caller the
+/// text predicate never sees, and the caller is what needs the attribute.
+///
+/// **The attribute goes on the callers, never on the `static` helper.**
+/// `target_clones` makes a function an ifunc, and an ifunc is not inlinable — so
+/// marking `<N>_StepImpl` instead stops it folding into the three per-bar entry
+/// points and buys them nothing, while `Peek` keeps a bare `call fma@PLT`
+/// regardless (gcc 13 re-materializes its own copy of the step there). Marking
+/// the callers lets the step inline into each clone, which is the whole point.
+///
+/// Placement is the same as the batch site's: immediately above the signature,
+/// below any comment block. Non-`static` functions only — a `static` that gcc
+/// declines to inline keeps its unclonable `fma()`, which is a code-size tradeoff
+/// gcc already owns and not something an attribute here can improve.
+pub fn annotate_multiversion_callers(section: &mut String) {
+    if !EMIT_FMA {
+        return;
+    }
+    let defs = c_function_defs(section);
+    // A static helper's fusion is inherited by whoever calls it. One pass over
+    // the statics suffices: the emitters never nest a static call inside another
+    // static, so there is no chain to walk to a fixpoint.
+    let fusing_statics: Vec<&str> = defs
+        .iter()
+        .filter(|d| d.is_static && d.body.contains("fma("))
+        .map(|d| d.name.as_str())
+        .collect();
+    // Insert from the bottom up so earlier byte offsets stay valid.
+    let mut inserts: Vec<usize> = defs
+        .iter()
+        .filter(|d| !d.is_static)
+        .filter(|d| {
+            d.body.contains("fma(")
+                || fusing_statics
+                    .iter()
+                    .any(|s| d.body.contains(&format!("{s}(")))
+        })
+        .map(|d| d.sig_start)
+        .collect();
+    inserts.sort_unstable();
+    for at in inserts.into_iter().rev() {
+        section.insert_str(at, "TA_FMA_MULTIVERSION\n");
+    }
+}
+
+/// One C function definition located in an emitted section.
+struct CFuncDef {
+    name: String,
+    /// Byte offset of the first character of the signature.
+    sig_start: usize,
+    is_static: bool,
+    body: String,
+}
+
+/// Locate the function definitions in an emitted C section.
+///
+/// Relies on the one layout every C emitter here shares: a definition's
+/// signature starts in column 0 and its body opens with a `{` alone in column 0.
+/// That is what separates a definition from a prototype, a `struct` declaration
+/// and a preprocessor line, so a shape change in the emitters shows up as a
+/// definition this misses — which the fusing-tier gate then catches.
+fn c_function_defs(section: &str) -> Vec<CFuncDef> {
+    let bytes = section.as_bytes();
+    let mut defs: Vec<CFuncDef> = Vec::new();
+    // Signature start candidates: a column-0 line that is not a comment, a
+    // preprocessor directive, a brace or a label.
+    let mut sig: Option<(usize, bool)> = None;
+    let mut offset = 0usize;
+    for line in section.split_inclusive('\n') {
+        let start = offset;
+        offset += line.len();
+        let t = line.trim_end();
+        let indented = line.starts_with(' ') || line.starts_with('\t');
+        if t == "{" && !indented {
+            if let Some((sig_start, is_static)) = sig.take() {
+                // Body runs to the matching column-0 `}`.
+                let rest = &section[start..];
+                let end = rest.find("\n}").map_or(bytes.len(), |i| start + i + 2);
+                let name = c_def_name(&section[sig_start..start]);
+                if let Some(name) = name {
+                    defs.push(CFuncDef {
+                        name,
+                        sig_start,
+                        is_static,
+                        body: section[start..end].to_string(),
+                    });
+                }
+            }
+            continue;
+        }
+        if indented || t.is_empty() {
+            continue;
+        }
+        let first = t.as_bytes()[0];
+        if first == b'#' || first == b'}' || t.starts_with("/*") || t.starts_with('*')
+            || t.starts_with("//")
+        {
+            sig = None;
+            continue;
+        }
+        // A new column-0 line while a candidate is open continues that same
+        // signature (they wrap across lines); keep the earliest offset.
+        if sig.is_none() {
+            sig = Some((start, t.starts_with("static ")));
+        }
+        // A `;` at column 0 depth ends a prototype or a declaration, not a body.
+        if t.ends_with(';') {
+            sig = None;
+        }
+    }
+    defs
+}
+
+/// The declared name in a C signature: the identifier immediately before the
+/// parameter list's `(`.
+fn c_def_name(sig: &str) -> Option<String> {
+    let open = sig.find('(')?;
+    let head = &sig[..open];
+    let name: String = head
+        .chars()
+        .rev()
+        .take_while(|c| c.is_alphanumeric() || *c == '_')
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+    if name.is_empty() {
+        None
+    } else {
+        Some(name)
+    }
+}

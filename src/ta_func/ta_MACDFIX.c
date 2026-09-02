@@ -744,6 +744,7 @@ static TA_RetCode TA_MACDFIX_OpenImpl( struct TA_MACDFIX_Stream **stream, const 
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_MACDFIX_OpenInternal( struct TA_MACDFIX_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInSignalPeriod, double *outMACD, double *outMACDSignal, double *outMACDHist )
 {
    TA_RetCode retCode;
@@ -784,11 +785,13 @@ TA_LIB_API TA_RetCode TA_MACDFIX_OpenAndFill( TA_MACDFIX_Stream **stream, const 
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_MACDFIX_OpenAndFillInternal( struct TA_MACDFIX_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInSignalPeriod, int *outBegIdx, int *outNBElement, double outMACD[], double outMACDSignal[], double outMACDHist[] )
 {
    return TA_MACDFIX_OpenImpl( stream, inReal, startIdx, historyLen, optInSignalPeriod, outBegIdx, outNBElement, outMACD, outMACDSignal, outMACDHist, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_MACDFIX_Update( TA_MACDFIX_Stream *stream, double inReal, double *outMACD, double *outMACDSignal, double *outMACDHist )
 {
    if( !stream || !outMACD || !outMACDSignal || !outMACDHist ) return TA_BAD_PARAM;
@@ -802,6 +805,7 @@ TA_LIB_API TA_RetCode TA_MACDFIX_Update( TA_MACDFIX_Stream *stream, double inRea
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_MACDFIX_Peek( const TA_MACDFIX_Stream *stream, double inReal, double *outMACD, double *outMACDSignal, double *outMACDHist )
 {
    struct TA_MACDFIX_Stream scratch;
@@ -832,6 +836,7 @@ TA_LIB_API TA_RetCode TA_MACDFIX_Peek( const TA_MACDFIX_Stream *stream, double i
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_MACDFIX_UpdateAndFill( TA_MACDFIX_Stream *stream, const double inReal[], int barCount, double outMACD[], double outMACDSignal[], double outMACDHist[] )
 {
    int i;

@@ -1740,6 +1740,7 @@ static TA_RetCode TA_HT_SINE_OpenImpl( struct TA_HT_SINE_Stream **stream, const 
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_SINE_OpenInternal( struct TA_HT_SINE_Stream **stream, const double inReal[], int startIdx, int historyLen, double *outSine, double *outLeadSine )
 {
    TA_RetCode retCode;
@@ -1778,11 +1779,13 @@ TA_LIB_API TA_RetCode TA_HT_SINE_OpenAndFill( TA_HT_SINE_Stream **stream, const 
 }
 
 /* Private function, not in public API. */
+TA_FMA_MULTIVERSION
 TA_RetCode TA_HT_SINE_OpenAndFillInternal( struct TA_HT_SINE_Stream **stream, const double inReal[], int startIdx, int historyLen, int *outBegIdx, int *outNBElement, double outSine[], double outLeadSine[] )
 {
    return TA_HT_SINE_OpenImpl( stream, inReal, startIdx, historyLen, outBegIdx, outNBElement, outSine, outLeadSine, 1 );
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_SINE_Update( TA_HT_SINE_Stream *stream, double inReal, double *outSine, double *outLeadSine )
 {
    if( !stream || !outSine || !outLeadSine ) return TA_BAD_PARAM;
@@ -1796,6 +1799,7 @@ TA_LIB_API TA_RetCode TA_HT_SINE_Update( TA_HT_SINE_Stream *stream, double inRea
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_SINE_Peek( const TA_HT_SINE_Stream *stream, double inReal, double *outSine, double *outLeadSine )
 {
    struct TA_HT_SINE_Stream scratch;
@@ -2024,6 +2028,7 @@ TA_LIB_API TA_RetCode TA_HT_SINE_Peek( const TA_HT_SINE_Stream *stream, double i
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_HT_SINE_UpdateAndFill( TA_HT_SINE_Stream *stream, const double inReal[], int barCount, double outSine[], double outLeadSine[] )
 {
    int i;
