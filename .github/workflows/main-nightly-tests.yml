@@ -298,6 +298,50 @@ jobs:
         shell: bash
         run: python3 scripts/rust_package_check.py
 
+  # Java on the release branch (#172 C5), the mirror of `rust` above: main is the
+  # branch a jar publishes from, and nothing here has ever built one. The three-jar
+  # assertions (every input function on Core as two public OutRange overloads, no
+  # test class in any archive, META-INF/LICENSE, the JPMS module name) live in
+  # `ta_codegen build --backend=java`, reached only through regtest.py in
+  # dev-nightly's `cross-language` job. `xlang-hash` above looks like it covers
+  # this and does not: it builds the Java SERVER, which carries its own spliced
+  # Core, not the Maven artifact.
+  #
+  # Straight `cargo run -- build`, never `build.py servers --language=java`: that
+  # target regenerates first, so the jar would be built from freshly generated
+  # sources instead of the committed ones that a release is cut from. What ships is
+  # the tree as committed; `regen-check` below is what proves the two agree.
+  #
+  # Not gated on 'test' -- no C build is involved -- so a dist-pool failure cannot
+  # skip the release branch's only packaging coverage. No Maven install: the
+  # committed wrapper downloads and SHA-256-verifies the pinned distribution
+  # itself. `unzip` is already on ubuntu-latest, and the backend fails loudly
+  # rather than silently when it is missing.
+  java:
+    name: Java jar builds + three-jar assertions (release branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Install JDK
+        uses: ./.github/actions/apt-install
+        with:
+          packages: openjdk-21-jdk
+
+      - name: Build the publishable jars and run the suites against them
+        shell: bash
+        run: |
+          cd ta_codegen/generator
+          if ! cargo run --release -- build --backend=java; then
+            echo "::error::The release branch cannot build or verify the jars it publishes (#172 C5) — see the log above."
+            exit 1
+          fi
+
   # regen-check on the release branch (#179 E5): the same command the PR gate and
   # dev-nightly run, here for the commits only main sees (the dist bot's, which
   # rewrite a tracked header, and hotfixes). Not gated on 'test' -- it regenerates
