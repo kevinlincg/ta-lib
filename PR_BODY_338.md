@@ -157,14 +157,29 @@ site this change introduces. Merging this before #337 would speed the batch tier
 - `bin/ta_regtest`: all tests succeed, including LEGACY/064/FROZEN, SUPERTREND, KC
   (which recomposes bands over `TA_ATR`), PERIOD1/BOUNDARY and the streaming
   finite-input gate.
+- The Rust half of the PR gate: 544 doctests, the crate's 90 unit/integration tests,
+  `clippy --all-targets -D warnings` on both the generator and the generated crate,
+  and `RUSTDOCFLAGS=-D warnings cargo doc`.
+- **The bitwise parity gate**, which is the one that matters for a change whose whole
+  premise is that all backends fuse the same site:
+
+  ```
+  ta_regtest --xlang-hash --language=c,rust,java --function=ATR,NATR,SUPERTREND
+    C   : 128 cases, 0 mismatch(es)   [native in-process]
+    Rust: 9616 cases, 0 mismatch(es)
+    Java: 9616 cases, 0 mismatch(es)
+  PASS — every server matches the in-process C library: BIT-IDENTICAL (zero tolerance)
+  ```
 
 ## Not verified — stated rather than implied
 
-- **C#**: not compiled or tested. No .NET SDK in the environment this was prepared in.
-  The emitted C# was read and fuses the identical site, but nothing executed it.
-- **Cross-language value gates**: `--codegen` / `--xlang-hash` were not run, so the
-  claim that the four backends agree bitwise rests on the shared detector and on
-  reading the four emissions, not on a measured hash.
-- **`--fuzz-064`**: not run (needs the frozen-oracle worktree built).
+- **C#**: not compiled, not tested, not swept by the parity gate above. No .NET SDK in
+  the environment this was prepared in. The emitted C# was read and fuses the identical
+  site (`Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest)`), but nothing
+  executed it. Rust and Java agreeing bitwise is good evidence the shared detector did
+  its job, not proof for the fourth backend.
+- **`--codegen` against `ta_ref_serve`**: not run. It needs the frozen pre-cutover
+  oracle built from the pinned tag, which this environment did not have.
+- **`--fuzz-064`**: not run, same reason.
 - **Streaming benchmarks**: not run, and would be misleading before #337 anyway.
 - **musl / MSVC / non-glibc libm**: not measured, same open question as #337.
