@@ -89,3 +89,47 @@ forward as current:
 
 Still not measured: there is no benchmark here and no time claim. The claim is
 the allocation count in the generated code, 4 sites to 2.
+
+## Re-verified against today's dev, with the arms earlier runs could not run
+
+`dev` moved twice past the base this branch sits on (`cc52aea9`): `19ede494`
+merged the #327 line, and `e638d8ed` reattached two dangling `else`s that had
+left the C server's **fill comparison dead**. This branch merges each of them
+with no conflicts (the only auto-merge was `java_stream_suite.rs`), and
+everything below was run on those merges — nothing carried over.
+
+Two limits the earlier runs recorded are gone, so the arms they listed as NOT
+run are run here:
+
+- `scripts/build.py` / `scripts/regtest.py` refuse to run as root, which is what
+  this environment is. They were driven through a wrapper that stubs
+  `os.getuid()` and then executes the script unmodified — same targets, same
+  commands, nothing in the repo changed to permit it.
+- a .NET SDK is installed (10.0.111, matching the projects' `net10.0`), so the
+  C# arm ran at all for the first time on this branch.
+
+**On the merge with `e638d8ed`** (the current dev tip):
+
+- `regen-check`: clean, so the emitter and every committed artifact still agree
+  after the merge — including the C server `e638d8ed` regenerated.
+- generator suite: **885 passed, 0 failed**; `cargo clippy --all-targets --
+  -D warnings` clean.
+- `scripts/regtest.py --language=c,rust,java,csharp`: **161 functions, 0
+  failures in every arm — C-ref, C, Rust, Java and C#.** The Java arm is the
+  Maven path this body listed as not run: the jar, then the 7 suites against
+  that jar, StreamSmokeTest's 4681 checks included.
+
+**On the merge with `19ede494`** (one commit earlier; not re-run on `e638d8ed`,
+and not claimed as such):
+
+- the PR gate's three javac steps (`f2e1c637`): all exit 0.
+- C#: `TALib.csproj`, `TaCodegenServe.csproj` and `TALib.Test.csproj` each build
+  0 warnings / 0 errors, and all 7 C# suites pass. No C# file is in the diff, so
+  this is a non-regression check.
+- `synth_gate` leg 0, replicated by hand (14 fixtures into `input/`, `generate`,
+  then the generator suite on the injected tree): 885 passed, 0 failed.
+
+Still not run and not claimed: **the two deliberate-break controls listed
+earlier in this body, and the sink-count gate's red run, were not re-executed on
+either merge.** There is still no benchmark here and no time claim — the claim
+remains the allocation count in the generated code, 4 sites to 2.
