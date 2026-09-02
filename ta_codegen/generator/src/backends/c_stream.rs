@@ -1442,6 +1442,29 @@ fn transform_map_step(
     rewritten.iter().flat_map(drop_forc_shells).collect()
 }
 
+/// The temps `frame` declares, out of the ones the model carries.
+///
+/// A peek frame DELETES statements, so a temp the surviving frame never names
+/// would be declared and never read: `-Wunused-but-set-variable` here under
+/// `-Wall -Wextra`, and CS0219 in the C# package, which builds with
+/// `TreatWarningsAsErrors`. The committing frame keeps those statements, and
+/// filtering it too would only let the two frames' declarations drift.
+///
+/// One function because BOTH C tiers need the rule and the composed one was
+/// written without it (#334): every other backend suppresses its unfiltered
+/// block on a peek frame, so C was alone in declaring a producer temp its peek
+/// frame had dropped the last reader of.
+fn frame_temps(
+    temps: &[(String, crate::ir::VarType)],
+    frame: StepFrame,
+    transition: &[Statement],
+) -> Vec<(String, crate::ir::VarType)> {
+    match frame {
+        StepFrame::Commit => temps.to_vec(),
+        StepFrame::Peek => streaming::temps_used(temps, transition),
+    }
+}
+
 /// The composed StepImpl / PeekImpl: the producer transition (when present)
 /// writes the intermediate series' scalar, which pipelines through the sub
 /// handles; combine maps run per-bar. The peek frame calls each sub's `Peek`,
@@ -1460,8 +1483,29 @@ fn emit_composed_frame_body(
     counter: &Cell<usize>,
     frame: StepFrame,
 ) {
-    if let Some(model) = &cp.producer {
-        for (name, ty) in &model.temps {
+    // Built here rather than where it is rendered, because the peek frame's
+    // declarations are filtered BY it and they come first in C89 order. The
+    // shadow locals it also yields are pushed further down, where they belong
+    // among the declarations.
+    let producer = cp.producer.as_ref().map(|model| {
+        let names = ComposedNames {
+            series: cp.series.clone().expect("producer plan carries a series"),
+        };
+        let transition = streaming::build_transition(model, &names)
+            .unwrap_or_else(|e| panic!("streaming transition: {e}"));
+        match frame {
+            StepFrame::Commit => (model, transition, String::new()),
+            StepFrame::Peek => {
+                let pt = streaming::peek_transition_widest(model, &names, &transition, None)
+                    .unwrap_or_else(|e| panic!("{}: {e}", func.name));
+                let shadows = peek_shadow_decls(&pt.shadows, &pt.slot_temps, 3);
+                (model, answer_bare_returns(&pt.body), shadows)
+            }
+        }
+    });
+
+    if let Some((model, transition, _)) = &producer {
+        for (name, ty) in &frame_temps(&model.temps, frame, transition) {
             let _ = writeln!(decls, "   {};", c_decl(ty, name));
         }
     }
@@ -1497,28 +1541,15 @@ fn emit_composed_frame_body(
         .map(|b| (b.clone(), b.clone()))
         .collect();
 
-    if let Some(model) = &cp.producer {
-        let names = ComposedNames {
-            series: cp.series.clone().expect("producer plan carries a series"),
-        };
-        let transition = streaming::build_transition(model, &names)
-            .unwrap_or_else(|e| panic!("streaming transition: {e}"));
+    if let Some((model, transition, shadow_decls)) = &producer {
         // The shadow locals join the declarations above, ahead of the rebase:
         // the extrema rebase is a STATEMENT, and a declaration after it would
         // be C99, which this tier's producers (STOCH, STOCHF) would be the only
         // place in the emitted library to need.
-        let transition = match frame {
-            StepFrame::Commit => transition,
-            StepFrame::Peek => {
-                let pt = streaming::peek_transition_widest(model, &names, &transition, None)
-                    .unwrap_or_else(|e| panic!("{}: {e}", func.name));
-                decls.push_str(&peek_shadow_decls(&pt.shadows, &pt.slot_temps, 3));
-                answer_bare_returns(&pt.body)
-            }
-        };
+        decls.push_str(shadow_decls);
         emit_extrema_rebase(o, model);
         let mut body_c = String::new();
-        for s in &transition {
+        for s in transition {
             body_c.push_str(&render_statement_stream(s, 3, enums, registry, helpers, counter, &nullable_out_names(func)));
         }
         let step_settings = crate::candle_settings::detect_candle_settings(&model.steady_stmts);
@@ -3926,11 +3957,7 @@ fn emit_step_inner(
         }
     };
     let transition = apply_step_scalars(&transition, &elected);
-    let temps = match frame {
-        StepFrame::Commit => model.temps.clone(),
-        StepFrame::Peek => streaming::temps_used(&model.temps, &transition),
-    };
-    for (name, ty) in &temps {
+    for (name, ty) in &frame_temps(&model.temps, frame, &transition) {
         let _ = writeln!(decls, "{pad}{};", c_decl(ty, name));
     }
     for name in &elected {
@@ -5379,5 +5406,55 @@ mod tests {
         }];
         let out = apply_step_scalars(&transition, &[]);
         assert_eq!(format!("{out:?}"), format!("{transition:?}"));
+    }
+
+    /// The rule both C tiers now share: a peek frame declares only the temps
+    /// the surviving frame still names, a committing frame declares all of
+    /// them. Filtering the committing frame too would let the two frames'
+    /// declarations drift; not filtering the peek frame is #334 -- the shape
+    /// the composed tier had, and the one that reaches the consumer as
+    /// `-Wunused-but-set-variable`.
+    #[test]
+    fn a_peek_frame_declares_only_the_temps_its_surviving_body_names() {
+        let temps = vec![
+            ("kept".to_string(), crate::ir::VarType::Real),
+            ("orphaned".to_string(), crate::ir::VarType::Real),
+        ];
+        // A frame the deletion passes have already cut down: `orphaned` was
+        // named only by statements that are gone.
+        let transition = vec![Statement::Assign {
+            target: var("sp->sum"),
+            value: var("kept"),
+            compound: false,
+        }];
+
+        let peek = frame_temps(&temps, StepFrame::Peek, &transition);
+        assert_eq!(
+            peek.iter().map(|(n, _)| n.as_str()).collect::<Vec<_>>(),
+            ["kept"],
+            "a temp the frame no longer names must not be declared"
+        );
+
+        let commit = frame_temps(&temps, StepFrame::Commit, &transition);
+        assert_eq!(
+            commit.len(),
+            2,
+            "the committing frame keeps every temp, whatever this transition names"
+        );
+    }
+
+    /// A store is a mention, so a temp the frame only WRITES is still declared.
+    /// That is deliberate and not this rule's job: the pass that removes such a
+    /// store is what makes the declaration go, and stating the boundary here
+    /// keeps someone from hunting the warning in the wrong function.
+    #[test]
+    fn a_temp_the_frame_only_writes_is_still_declared() {
+        let temps = vec![("written".to_string(), crate::ir::VarType::Real)];
+        let transition = vec![Statement::Assign {
+            target: var("written"),
+            value: Expr::Literal(1.0),
+            compound: false,
+        }];
+        assert_eq!(frame_temps(&temps, StepFrame::Peek, &transition).len(), 1);
     }
 }
