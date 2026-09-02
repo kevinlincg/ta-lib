@@ -1172,8 +1172,6 @@
          double Q1 = 0.0;
          double jI = 0.0;
          double jQ = 0.0;
-         double Q2 = 0.0;
-         double I2 = 0.0;
          double todayValue = 0.0;
          double I1ForEvenPrev2 = sp.I1ForEvenPrev2;
          double I1ForEvenPrev3 = sp.I1ForEvenPrev3;
@@ -1255,8 +1253,6 @@
             if( ++hilbertIdx == 3 ) {
                hilbertIdx = 0;
             }
-            Q2 = Math.fma(0.2, Q1 + jI, 0.8 * sp.prevQ2);
-            I2 = Math.fma(0.2, I1ForEvenPrev3 - jQ, 0.8 * sp.prevI2);
             /* The variable I1 is the detrender delayed for
              * 3 price bars.
              *
@@ -1305,8 +1301,6 @@
             jQ += prev_jQ_Odd;
             prev_jQ_input_Odd = Q1;
             jQ *= adjustedPrevPeriod;
-            Q2 = Math.fma(0.2, Q1 + jI, 0.8 * sp.prevQ2);
-            I2 = Math.fma(0.2, I1ForOddPrev3 - jQ, 0.8 * sp.prevI2);
             /* The varaiable I1 is the detrender delayed for
              * 3 price bars.
              *

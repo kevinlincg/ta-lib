@@ -434,12 +434,22 @@ fn fma_calls(body: &str) -> Vec<String> {
 /// The peek body is compared after undoing the rewrite — buffer subscripts
 /// masked to one token, selects collapsed to the arm update would render.
 ///
-/// **A PREFIX, not equality.** `peek_tail_trimmed` drops everything after the
-/// last output-sink store, so a site update fuses in that dead tail is not in
-/// peek at all — HT_PHASOR (8 sites / 5) and MAMA (10 / 7). What the gate exists
-/// to catch survives the weakening: a site re-fused, dropped or reordered in the
-/// MIDDLE breaks the prefix. Do not restore equality by re-implementing the
-/// truncation here — a gate duplicating generator logic is worse than this.
+/// **A SUBSEQUENCE, not equality.** Two peek-only passes drop whole statements:
+/// `peek_tail_trimmed` cuts everything after the last output-sink store, and
+/// `drop_dead_temp_stores` then removes the stores nothing left reads. Neither
+/// cut is at the end of the fusion list — MAMA's dead `Q2`/`I2` sit between two
+/// live ones (10 sites / 3), HT_PHASOR's are its last (8 / 3) — so peek's list
+/// is a subsequence of update's, and was a prefix only while the trim was the
+/// one pass. Do not restore equality by re-implementing either cut here: a gate
+/// duplicating generator logic is worse than this.
+///
+/// The embedding must be UNIQUE, which is what keeps the weakening from
+/// admitting a site matched against the wrong twin: MAMA and HT_PHASOR each fuse
+/// the same text twice (their even and odd arms), so a peek that kept one of a
+/// pair and dropped the other would embed two ways and fail here rather than
+/// read green. What the gate no longer catches on its own is a site vanishing
+/// from peek's middle — that is a VALUE divergence, and peek is compared against
+/// the committed update bit-for-bit by `ta_regtest`'s peek non-commit leg.
 ///
 /// Measured today: 29 peek bodies fuse, 107 carry a select, 16 carry both, and
 /// ZERO fuse over a select operand. So the argument comparison is live against
@@ -469,11 +479,12 @@ fn a_peek_frame_fuses_the_same_multiply_adds_as_its_update_frame() {
         if !a.is_empty() {
             fusing_functions += 1;
         }
-        if b.len() > a.len() || b[..] != a[..b.len()] {
+        if embeddings(&b, &a) != 1 {
             mismatches.push(format!(
-                "{upper}: update fuses {} site(s), peek {}\n    update: {:?}\n    peek:   {:?}",
+                "{upper}: update fuses {} site(s), peek {} ({} embedding(s))\n    update: {:?}\n    peek:   {:?}",
                 a.len(),
                 b.len(),
+                embeddings(&b, &a),
                 a,
                 b
             ));
@@ -487,10 +498,31 @@ fn a_peek_frame_fuses_the_same_multiply_adds_as_its_update_frame() {
     );
     assert!(
         mismatches.is_empty(),
-        "a peek frame's multiply-adds are not a prefix of its update frame's, which is a \
-         silent ~1 ULP divergence in a comparison that must be bitwise:\n{}",
+        "a peek frame's multiply-adds are not a uniquely embedded subsequence of its update \
+         frame's, which is a silent ~1 ULP divergence in a comparison that must be \
+         bitwise:\n{}",
         mismatches.join("\n")
     );
+}
+
+/// How many ways `needle` embeds into `haystack` as a subsequence, saturating at
+/// 2 — the gate only distinguishes none, one, and ambiguous.
+///
+/// Counting rather than greedily matching is the whole point: a greedy walk
+/// accepts a peek site paired with the wrong one of two identical update sites
+/// and reports nothing.
+fn embeddings(needle: &[String], haystack: &[String]) -> usize {
+    // row[j] = ways to embed needle[..i] into haystack[..j].
+    let mut row: Vec<usize> = vec![1; haystack.len() + 1];
+    for n in needle {
+        let mut next = vec![0usize; haystack.len() + 1];
+        for j in 0..haystack.len() {
+            next[j + 1] = next[j] + if haystack[j] == *n { row[j] } else { 0 };
+            next[j + 1] = next[j + 1].min(2);
+        }
+        row = next;
+    }
+    row[haystack.len()]
 }
 
 /// The mirror buffers and the composed tier's `peekMode` are gone, and nothing
@@ -790,6 +822,165 @@ fn no_peek_frame_computes_below_its_last_output_sink_store() {
     assert!(
         offenders.is_empty(),
         "a peek frame still computes a tail no peek can observe:\n{}",
+        offenders.join("\n")
+    );
+}
+
+/// Every name `stmts` READS, by this gate's own reckoning: a plain `x = <expr>`
+/// writes `x` and every other mention is a read, a compound assignment's own
+/// target included.
+///
+/// The per-statement enumeration is written out here rather than reached for in
+/// the generator, and that is the whole point of the gate: `walk_stmt_exprs`
+/// hands back a nested `Assign`'s TARGET as an expression, so a scan built on it
+/// counts every store as a read of what it writes and this sweep would agree
+/// with any pass at all.
+fn names_read(stmts: &[ir::Statement], out: &mut std::collections::BTreeSet<String>) {
+    let read = |e: &ir::Expr, out: &mut std::collections::BTreeSet<String>| {
+        ta_codegen_lib::streaming::expr_var_names(e, out);
+    };
+    for s in stmts {
+        match s {
+            // The one shape whose target is a write and not a read.
+            ir::Statement::Assign { target: ir::Expr::Var(_), value, compound: false } => {
+                read(value, out);
+            }
+            ir::Statement::Assign { target, value, .. } => {
+                read(target, out);
+                read(value, out);
+            }
+            ir::Statement::VarDecl { init: Some(e), .. }
+            | ir::Statement::Return { value: Some(e) }
+            | ir::Statement::Expr(e) => read(e, out),
+            ir::Statement::While { condition, .. }
+            | ir::Statement::DoWhile { condition, .. }
+            | ir::Statement::If { condition, .. }
+            | ir::Statement::ForC { condition, .. } => read(condition, out),
+            ir::Statement::For { var, count, .. } => {
+                out.insert(var.clone());
+                read(count, out);
+            }
+            ir::Statement::Switch { expr, .. } => read(expr, out),
+            ir::Statement::CircBuf(ir::CircBuf::Init { size, .. }) => read(size, out),
+            _ => {}
+        }
+        let nested: Vec<&[ir::Statement]> = match s {
+            ir::Statement::While { body, .. }
+            | ir::Statement::DoWhile { body, .. }
+            | ir::Statement::For { body, .. }
+            | ir::Statement::Block { body } => vec![body.as_slice()],
+            ir::Statement::ForC { init, update, body, .. } => vec![
+                std::slice::from_ref(init.as_ref()),
+                std::slice::from_ref(update.as_ref()),
+                body.as_slice(),
+            ],
+            ir::Statement::If { then_body, else_body, .. } => {
+                vec![then_body.as_slice(), else_body.as_slice()]
+            }
+            ir::Statement::Switch { cases, default, .. } => {
+                let mut v: Vec<&[ir::Statement]> = cases.iter().map(|(_, b)| b.as_slice()).collect();
+                v.push(default.as_slice());
+                v
+            }
+            _ => Vec::new(),
+        };
+        for b in nested {
+            names_read(b, out);
+        }
+    }
+}
+
+/// No peek frame declares a local it only ever writes (#321 follow-up).
+///
+/// `peek_tail_trimmed` cuts the frame's tail and `drop_dead_temp_stores` then
+/// removes the stores nothing left reads; the two together are what makes this
+/// hold. Left standing, such a local is `-Wunused-but-set-variable` in the
+/// consumer's C build (`-Wall -Wextra`), CS0219 under the C# package's
+/// `TreatWarningsAsErrors`, and wasted arithmetic in all four backends.
+///
+/// Asked of the DECLARED set — what `temps_used` reports over the frame the four
+/// emitters render — because that is the set each backend turns into
+/// declarations. It also pins the pass's precondition, that no temp is also a
+/// state scalar: each backend appends a state write-back as TEXT below the body,
+/// so a name that were both would be read by an epilogue the analysis cannot
+/// see, and a peek discards the scratch copy it wrote — no value gate in the
+/// tree would report it. The FLOOR on `pruned` is the load-bearing half: a pass that
+/// stopped firing would satisfy the property on nothing and read green. Measured
+/// today: 174 frames, 349 declared locals, and the store pass fires on 3
+/// (CORREL, HT_PHASOR, MAMA).
+#[test]
+fn no_peek_frame_declares_a_local_it_only_ever_writes() {
+    let registry = Registry::from_dir(&input_dir());
+    let (mut swept, mut pruned, mut declared_total) = (0usize, 0usize, 0usize);
+    let mut offenders: Vec<String> = Vec::new();
+
+    for name in indicators() {
+        let Some((func, _)) = load(&name) else { continue };
+        let resolved = func.resolved_for(ir::Lang::C);
+        let Ok(plan) = ta_codegen_lib::streaming::validate_streamable(&resolved, &registry) else {
+            continue;
+        };
+        let models = match &plan {
+            ta_codegen_lib::streaming::StreamPlan::Loop(m) => vec![m],
+            ta_codegen_lib::streaming::StreamPlan::DualMode(dm) => vec![&dm.mode_a, &dm.mode_b],
+            ta_codegen_lib::streaming::StreamPlan::Composed(cp) => {
+                cp.producer.as_ref().map_or_else(Vec::new, |m| vec![m])
+            }
+            _ => Vec::new(),
+        };
+        for model in models {
+            let Ok(transition) = ta_codegen_lib::streaming::build_transition(model, &SweepNames)
+            else {
+                continue;
+            };
+            let trimmed =
+                ta_codegen_lib::streaming::peek_tail_trimmed(model, &SweepNames, &transition);
+            // Compared as text, not by length: the corpus's dead stores sit
+            // INSIDE the even/odd predicate in HT_PHASOR and MAMA, so the
+            // top-level count does not move and only CORREL's would be seen.
+            let kept = ta_codegen_lib::streaming::drop_dead_temp_stores(model, trimmed.clone());
+            if format!("{kept:?}") != format!("{trimmed:?}") {
+                pruned += 1;
+            }
+            let Ok(pt) =
+                ta_codegen_lib::streaming::peek_transition_widest(model, &SweepNames, &transition, None)
+            else {
+                continue;
+            };
+            swept += 1;
+            // The pass's whole soundness argument: a temp is a frame local and
+            // nothing outside the frame can read it. Each backend appends a
+            // state write-back as TEXT below the body, so a name that were both
+            // a temp and a state scalar would be read by an epilogue this
+            // analysis cannot see — and a peek discards the scratch copy it
+            // wrote, so no value gate anywhere would notice.
+            let state: std::collections::BTreeSet<&str> =
+                model.state.iter().map(|(n, _)| n.as_str()).collect();
+            for (n, _) in &model.temps {
+                if state.contains(n.as_str()) {
+                    offenders.push(format!("{}: `{n}` is both a temp and a state scalar", func.name));
+                }
+            }
+            let declared = ta_codegen_lib::streaming::temps_used(&model.temps, &pt.body);
+            declared_total += declared.len();
+            let mut read = std::collections::BTreeSet::new();
+            names_read(&pt.body, &mut read);
+            for (n, _) in declared {
+                if !read.contains(&n) {
+                    offenders.push(format!("{}: declares `{n}` and never reads it", func.name));
+                }
+            }
+        }
+    }
+
+    assert!(
+        swept >= 150 && declared_total >= 300 && pruned >= 3,
+        "swept {swept} frame(s) declaring {declared_total} local(s), with the store pass firing \
+         on {pruned} — so this gate is not measuring what it exists for"
+    );
+    assert!(
+        offenders.is_empty(),
+        "a peek frame declares a local nothing reads, or names one thing twice:\n{}",
         offenders.join("\n")
     );
 }

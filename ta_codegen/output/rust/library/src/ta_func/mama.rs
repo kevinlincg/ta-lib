@@ -1618,8 +1618,6 @@ impl MamaStream {
             let mut Q1: f64 = 0.0_f64;
             let mut jI: f64 = 0.0_f64;
             let mut jQ: f64 = 0.0_f64;
-            let mut Q2: f64 = 0.0_f64;
-            let mut I2: f64 = 0.0_f64;
             let mut todayValue: f64 = 0.0_f64;
             let mut I1ForEvenPrev2 = sp.I1ForEvenPrev2;
             let mut I1ForEvenPrev3 = sp.I1ForEvenPrev3;
@@ -1699,8 +1697,6 @@ impl MamaStream {
                 if { hilbertIdx += 1; hilbertIdx } == 3 {
                     hilbertIdx = 0;
                 }
-                Q2 = (0.2 as f64).mul_add(Q1 + jI, 0.8 * sp.prevQ2);
-                I2 = (0.2 as f64).mul_add(I1ForEvenPrev3 - jQ, 0.8 * sp.prevI2);
                 // The variable I1 is the detrender delayed for
                 // 3 price bars.
                 //
@@ -1748,8 +1744,6 @@ impl MamaStream {
                 jQ += prev_jQ_Odd;
                 prev_jQ_input_Odd = Q1;
                 jQ *= adjustedPrevPeriod;
-                Q2 = (0.2 as f64).mul_add(Q1 + jI, 0.8 * sp.prevQ2);
-                I2 = (0.2 as f64).mul_add(I1ForOddPrev3 - jQ, 0.8 * sp.prevI2);
                 // The varaiable I1 is the detrender delayed for
                 // 3 price bars.
                 //

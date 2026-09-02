@@ -73253,8 +73253,6 @@ class Core {
              CorrelStream sp = this;
              double x = 0.0;
              double y = 0.0;
-             double trailingX = 0.0;
-             double trailingY = 0.0;
              double ssX = 0.0;
              double ssY = 0.0;
              double spXY = 0.0;
@@ -73372,11 +73370,6 @@ class Core {
                    ssY = 0.0;
                 }
              }
-             /* Save the trailing values before writing the output, since the input
-              * and output might be the same array.
-              */
-             trailingX = (((trailingIdx & sp.xMask) != pkSlot0) ? sp.x_inReal0[trailingIdx & sp.xMask] : pkVal0) - shiftX;
-             trailingY = (((trailingIdx & sp.xMask) != pkSlot1) ? sp.x_inReal1[trailingIdx & sp.xMask] : pkVal1) - shiftY;
              trailingIdx += 1;
              /* Output the new coefficient.
               *
@@ -87063,8 +87056,6 @@ class Core {
              double Q1 = 0.0;
              double jI = 0.0;
              double jQ = 0.0;
-             double Q2 = 0.0;
-             double I2 = 0.0;
              double todayValue = 0.0;
              double I1ForEvenPrev2 = sp.I1ForEvenPrev2;
              double I1ForEvenPrev3 = sp.I1ForEvenPrev3;
@@ -87145,8 +87136,6 @@ class Core {
                 if( ++hilbertIdx == 3 ) {
                    hilbertIdx = 0;
                 }
-                Q2 = Math.fma(0.2, Q1 + jI, 0.8 * sp.prevQ2);
-                I2 = Math.fma(0.2, I1ForEvenPrev3 - jQ, 0.8 * sp.prevI2);
                 /* The variable I1 is the detrender delayed for
                  * 3 price bars.
                  *
@@ -87191,8 +87180,6 @@ class Core {
                 jQ += prev_jQ_Odd;
                 prev_jQ_input_Odd = Q1;
                 jQ *= adjustedPrevPeriod;
-                Q2 = Math.fma(0.2, Q1 + jI, 0.8 * sp.prevQ2);
-                I2 = Math.fma(0.2, I1ForOddPrev3 - jQ, 0.8 * sp.prevI2);
                 /* The varaiable I1 is the detrender delayed for
                  * 3 price bars.
                  *
@@ -108451,8 +108438,6 @@ class Core {
              double Q1 = 0.0;
              double jI = 0.0;
              double jQ = 0.0;
-             double Q2 = 0.0;
-             double I2 = 0.0;
              double todayValue = 0.0;
              double I1ForEvenPrev2 = sp.I1ForEvenPrev2;
              double I1ForEvenPrev3 = sp.I1ForEvenPrev3;
@@ -108534,8 +108519,6 @@ class Core {
                 if( ++hilbertIdx == 3 ) {
                    hilbertIdx = 0;
                 }
-                Q2 = Math.fma(0.2, Q1 + jI, 0.8 * sp.prevQ2);
-                I2 = Math.fma(0.2, I1ForEvenPrev3 - jQ, 0.8 * sp.prevI2);
                 /* The variable I1 is the detrender delayed for
                  * 3 price bars.
                  *
@@ -108584,8 +108567,6 @@ class Core {
                 jQ += prev_jQ_Odd;
                 prev_jQ_input_Odd = Q1;
                 jQ *= adjustedPrevPeriod;
-                Q2 = Math.fma(0.2, Q1 + jI, 0.8 * sp.prevQ2);
-                I2 = Math.fma(0.2, I1ForOddPrev3 - jQ, 0.8 * sp.prevI2);
                 /* The varaiable I1 is the detrender delayed for
                  * 3 price bars.
                  *
@@ -163275,7 +163256,7 @@ class Core {
 
 public class TaCodegenServe {
     static Core core = new Core();
-    static final String SPLICED_GENCODE_DIGEST = "920810256cf6d24f";
+    static final String SPLICED_GENCODE_DIGEST = "bfd8057d7d3c5697";
     static final int MAX_ARRAY_SIZE = 200000;
     static double[] refOpen = new double[MAX_ARRAY_SIZE];
     static double[] refHigh = new double[MAX_ARRAY_SIZE];

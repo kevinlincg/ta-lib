@@ -1487,8 +1487,6 @@ TA_LIB_API TA_RetCode TA_HT_PHASOR_Peek( const TA_HT_PHASOR_Stream *stream, doub
    double Q1;
    double jI;
    double jQ;
-   double Q2;
-   double I2;
    double todayValue;
    int pkSlot0 = -1;
    double pkVal0 = 0.0;
@@ -1550,8 +1548,6 @@ TA_LIB_API TA_RetCode TA_HT_PHASOR_Peek( const TA_HT_PHASOR_Stream *stream, doub
       {
          sp->hilbertIdx = 0;
       }
-      Q2 = fma(0.2, Q1 + jI, 0.8 * sp->prevQ2);
-      I2 = fma(0.2, sp->I1ForEvenPrev3 - jQ, 0.8 * sp->prevI2);
       /* The variable I1 is the detrender delayed for
        * 3 price bars.
        *
@@ -1597,8 +1593,6 @@ TA_LIB_API TA_RetCode TA_HT_PHASOR_Peek( const TA_HT_PHASOR_Stream *stream, doub
       jQ += sp->prev_jQ_Odd;
       sp->prev_jQ_input_Odd = Q1;
       jQ *= adjustedPrevPeriod;
-      Q2 = fma(0.2, Q1 + jI, 0.8 * sp->prevQ2);
-      I2 = fma(0.2, sp->I1ForOddPrev3 - jQ, 0.8 * sp->prevI2);
       /* The varaiable I1 is the detrender delayed for
        * 3 price bars.
        *

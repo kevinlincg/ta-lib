@@ -1724,8 +1724,6 @@ TA_LIB_API TA_RetCode TA_MAMA_Peek( const TA_MAMA_Stream *stream, double inReal,
    double Q1;
    double jI;
    double jQ;
-   double Q2;
-   double I2;
    double todayValue;
    double mama;
    double fama;
@@ -1789,8 +1787,6 @@ TA_LIB_API TA_RetCode TA_MAMA_Peek( const TA_MAMA_Stream *stream, double inReal,
       {
          sp->hilbertIdx = 0;
       }
-      Q2 = fma(0.2, Q1 + jI, 0.8 * sp->prevQ2);
-      I2 = fma(0.2, sp->I1ForEvenPrev3 - jQ, 0.8 * sp->prevI2);
       /* The variable I1 is the detrender delayed for
        * 3 price bars.
        *
@@ -1842,8 +1838,6 @@ TA_LIB_API TA_RetCode TA_MAMA_Peek( const TA_MAMA_Stream *stream, double inReal,
       jQ += sp->prev_jQ_Odd;
       sp->prev_jQ_input_Odd = Q1;
       jQ *= adjustedPrevPeriod;
-      Q2 = fma(0.2, Q1 + jI, 0.8 * sp->prevQ2);
-      I2 = fma(0.2, sp->I1ForOddPrev3 - jQ, 0.8 * sp->prevI2);
       /* The varaiable I1 is the detrender delayed for
        * 3 price bars.
        *

@@ -7399,7 +7399,7 @@ pub fn peek_transition_widest(
     transition: &[Statement],
     slot_cast: Option<VarType>,
 ) -> Result<PeekTransition, String> {
-    let trimmed = peek_tail_trimmed(model, names, transition);
+    let trimmed = drop_dead_temp_stores(model, peek_tail_trimmed(model, names, transition));
     let transition = &trimmed[..];
     let wide = transition_buffers_with_state_arrays(model, names);
     if let Ok(pt) = peek_transition(transition, &wide, slot_cast.clone()) {
@@ -7438,6 +7438,135 @@ pub fn peek_tail_trimmed(
         return transition.to_vec();
     }
     transition[..=last].to_vec()
+}
+
+/// `body` with the stores to frame locals nothing reads any more removed.
+///
+/// [`peek_tail_trimmed`] cuts everything below the last sink store, and the
+/// arithmetic that fed only that suffix is left behind writing locals no one
+/// reads: `-Wunused-but-set-variable` in the consumer's C build (which compiles
+/// with `-Wall -Wextra`), CS0219 in the C# package, and dead work in all four
+/// backends. [`temps_used`] then stops declaring them, so the declaration goes
+/// with the store in every backend at once.
+///
+/// Only [`StreamModel::temps`] are eligible. A handle field, an output sink or a
+/// buffer can be reached under a name this frame does not spell — a peek shadow
+/// select, a state write-back, the caller's array — and a temp cannot, so
+/// "never read here" is the whole liveness question for one and not for the
+/// others.
+///
+/// A temp is dropped only when all of these hold, which is what makes the
+/// rewrite behavior-preserving: the frame never READS it, every store to it is a
+/// plain `=`, and every right-hand side is call-free and increment-free, so
+/// evaluating it can be observed only through the variable being dropped. It is
+/// NOT restricted to top-level stores, because the corpus's are not: HT_PHASOR
+/// and MAMA write `Q2` in both arms of their even/odd predicate and nowhere
+/// else.
+///
+/// Iterated to a fixpoint, since a store's operands can go dead with it. The
+/// iteration terminates because a name is reported dead only where a store to
+/// it EXISTS, so every round that does not stop deletes at least one statement.
+#[must_use]
+pub fn drop_dead_temp_stores(model: &StreamModel, body: Vec<Statement>) -> Vec<Statement> {
+    let eligible: BTreeSet<String> = model.temps.iter().map(|(n, _)| n.clone()).collect();
+    if eligible.is_empty() {
+        return body;
+    }
+    let mut body = body;
+    loop {
+        let dead = dead_temps(&eligible, &body);
+        if dead.is_empty() {
+            return body;
+        }
+        let out = strip_stmts(&body, &|s| {
+            matches!(s, Statement::Assign { target: Expr::Var(v), .. } if dead.contains(v))
+        });
+        // The same refusal [`drop_stores_no_load_reaches`] makes: a loop the
+        // deletion emptied would spin where its body was what ended it. The
+        // read analysis already forecloses it — a condition mentioning a
+        // variable is a read of it, so nothing controlling a loop is
+        // droppable — which is exactly why a hit here means the analysis is
+        // wrong and the rewrite must not ship.
+        if has_empty_loop(&out) {
+            return body;
+        }
+        body = out;
+    }
+}
+
+/// The eligible temps `body` STORES INTO and never reads, with every store
+/// droppable.
+///
+/// Requiring a store is what bounds the caller's iteration: a temp the frame
+/// does not mention at all is unread, but reporting it would ask for a deletion
+/// with nothing to delete, and the fixpoint would never converge.
+fn dead_temps(eligible: &BTreeSet<String>, body: &[Statement]) -> BTreeSet<String> {
+    let mut u = TempUses::default();
+    scan_temp_uses(body, &mut u);
+    eligible
+        .iter()
+        .filter(|n| u.stored.contains(*n) && !u.read.contains(*n) && !u.pinned.contains(*n))
+        .cloned()
+        .collect()
+}
+
+/// What a frame does with each name it spells: [`scan_temp_uses`] fills it.
+#[derive(Default)]
+struct TempUses {
+    /// Read at least once — every mention that is not the target of a plain
+    /// `=`, a compound assignment's own target included.
+    read: BTreeSet<String>,
+    /// Target of at least one droppable store.
+    stored: BTreeSet<String>,
+    /// Written in a shape where dropping the store is not the whole edit.
+    pinned: BTreeSet<String>,
+}
+
+/// Split what `stmts` does with each name across [`TempUses`].
+///
+/// A plain `x = <expr>` writes `x`; every other mention is a read, compound
+/// assignment included. Pinned instead of stored are the shapes where dropping
+/// the store is not the whole edit: a declaration (the store carries the
+/// initializer), a loop variable, and a store whose right-hand side could be
+/// observed on its own.
+fn scan_temp_uses(stmts: &[Statement], u: &mut TempUses) {
+    for s in stmts {
+        match s {
+            Statement::Assign { target: Expr::Var(v), value, compound } => {
+                if *compound {
+                    u.read.insert(v.clone());
+                } else if calls_a_function(value) || has_side_effect(value) {
+                    u.pinned.insert(v.clone());
+                } else {
+                    u.stored.insert(v.clone());
+                }
+                expr_var_names(value, &mut u.read);
+            }
+            other => {
+                match other {
+                    Statement::VarDecl { name, .. } => u.pinned.insert(name.clone()),
+                    Statement::For { var, .. } => u.pinned.insert(var.clone()),
+                    _ => false,
+                };
+                walk_stmt_own_exprs(other, &mut |e| expr_var_names(e, &mut u.read));
+            }
+        }
+        for b in nested_bodies(s).0 {
+            scan_temp_uses(b, u);
+        }
+    }
+}
+
+/// Whether evaluating `e` calls anything — a call can be observed without its
+/// result (a floating-point flag, at the least), so the store holding it stays.
+fn calls_a_function(e: &Expr) -> bool {
+    let mut found = false;
+    walk_expr(e, &mut |x| {
+        if matches!(x, Expr::FuncCall(..)) {
+            found = true;
+        }
+    });
+    found
 }
 
 /// Whether `s`, or anything nested in it, stores into one of `sinks`.
@@ -9792,4 +9921,113 @@ mod tests {
         );
     }
 
+    /// `names` as a temp list to overwrite [`StreamModel::temps`] with.
+    /// `analyze` derives temps from the body it is handed, and the transitions
+    /// below are written by hand — so each case states its own eligibility set
+    /// rather than growing a fixture body a use for it.
+    fn temps_named(names: &[&str]) -> Vec<(String, VarType)> {
+        names.iter().map(|n| ((*n).to_string(), VarType::Real)).collect()
+    }
+
+    /// The store goes even when it is NESTED. HT_PHASOR and MAMA write `Q2` in
+    /// both arms of their even/odd predicate and nowhere else, so a
+    /// top-level-only rule would leave every case in today's corpus in place.
+    #[test]
+    fn a_dead_temp_store_goes_from_inside_a_branch() {
+        let f = func_with_body(t1_body());
+        let mut m = analyze(&f).expect("analyzes");
+        m.temps = temps_named(&["Q2"]);
+        let body = vec![
+            Statement::If {
+                condition: le(var("k"), Expr::IntLiteral(1)),
+                then_body: vec![assign(var("Q2"), var("sp->prevQ2"))],
+                else_body: vec![assign(var("Q2"), var("sp->prevI2"))],
+                cond_comments: vec![],
+            },
+            assign(var("sp->period"), var("tempReal")),
+        ];
+        let out = drop_dead_temp_stores(&m, body);
+        assert_eq!(
+            out.len(),
+            1,
+            "both arms emptied, so the `if` itself goes with them: {out:?}"
+        );
+        assert!(
+            matches!(&out[0], Statement::Assign { target, .. } if target == &var("sp->period")),
+            "the live statement below it stays: {out:?}"
+        );
+    }
+
+    /// One read anywhere keeps the store — including a read that is only ever
+    /// evaluated inside a branch the frame may not take.
+    #[test]
+    fn a_temp_that_is_read_anywhere_keeps_its_store() {
+        let f = func_with_body(t1_body());
+        let mut m = analyze(&f).expect("analyzes");
+        m.temps = temps_named(&["Q2"]);
+        let body = vec![
+            assign(var("Q2"), var("sp->prevQ2")),
+            Statement::If {
+                condition: le(var("k"), Expr::IntLiteral(1)),
+                then_body: vec![assign(var("sp->period"), var("Q2"))],
+                else_body: vec![],
+                cond_comments: vec![],
+            },
+        ];
+        let out = drop_dead_temp_stores(&m, body.clone());
+        assert_eq!(format!("{out:?}"), format!("{body:?}"), "a read keeps the store");
+    }
+
+    /// A compound store READS what it writes, and a right-hand side that calls
+    /// something can be observed without its result (a floating-point flag, at
+    /// the least). Neither is droppable, however dead the variable looks.
+    #[test]
+    fn a_compound_store_and_a_calling_right_hand_side_both_stay() {
+        let f = func_with_body(t1_body());
+        let mut m = analyze(&f).expect("analyzes");
+        m.temps = temps_named(&["Q2", "I2"]);
+        let body = vec![
+            Statement::Assign {
+                target: var("Q2"),
+                value: var("sp->prevQ2"),
+                compound: true,
+            },
+            assign(var("I2"), Expr::FuncCall("atan".into(), vec![var("sp->prevI2")])),
+        ];
+        let out = drop_dead_temp_stores(&m, body.clone());
+        assert_eq!(format!("{out:?}"), format!("{body:?}"));
+    }
+
+    /// Iterated: `jI` is read only by the store to `Q2`, so it is dropping
+    /// `Q2`'s store that makes `jI`'s dead. A single pass would keep it.
+    #[test]
+    fn dropping_a_dead_store_reaches_the_one_that_only_fed_it() {
+        let f = func_with_body(t1_body());
+        let mut m = analyze(&f).expect("analyzes");
+        m.temps = temps_named(&["Q2", "jI"]);
+        let body = vec![
+            assign(var("jI"), var("sp->prevI2")),
+            assign(var("Q2"), var("jI")),
+            assign(var("sp->period"), var("tempReal")),
+        ];
+        let out = drop_dead_temp_stores(&m, body);
+        assert_eq!(out.len(), 1, "both stores go, not just the leaf: {out:?}");
+    }
+
+    /// Only temps are eligible. A handle field is reachable under a name this
+    /// frame does not spell — the state write-back the emitters append, a peek
+    /// shadow select — so an unread store to one stays put.
+    #[test]
+    fn a_store_to_a_handle_field_is_never_dropped() {
+        let f = func_with_body(t1_body());
+        let mut m = analyze(&f).expect("analyzes");
+        m.temps = temps_named(&["Q2"]);
+        let body = vec![assign(var("sp->prevQ2"), var("sp->prevI2"))];
+        let out = drop_dead_temp_stores(&m, body.clone());
+        assert_eq!(
+            format!("{out:?}"),
+            format!("{body:?}"),
+            "a state field is not a frame local"
+        );
+    }
 }
