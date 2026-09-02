@@ -137,6 +137,26 @@ that the residual list comes from the shipped separate-TU build, while
 `ta_bench_stream` is a single-TU `-flto` build that re-decides inlining — which
 is why HT_PHASOR can improve in the bench and still appear here.
 
+## If #338 lands too, the second of the two needs a `generate`
+
+#338 (ATR/NATR/SUPERTREND in the fused Wilder form,
+`kevinlincg:issue-338-atr-fused-wilder`) makes those three fuse in their *streaming*
+tiers, which is exactly what the pass added here marks. The two branches do not
+conflict textually and each passes the gate on its own, but the merge of the two does
+not: neither branch can carry the result, because this one has no fusing ATR to mark
+and #338 has no annotate pass to run. Measured with `regen-check`, not predicted:
+
+| tree | `scripts/build.py regen-check` |
+|---|---|
+| `dev` df0c6beb | exit 0 — "output matches the committed source. OK." |
+| this branch alone | exit 0 — same |
+| `issue-338` alone | exit 0 — same |
+| the two merged | **exit 1** — "regenerating changed the committed output" |
+
+The drift is 15 lines, all `TA_FMA_MULTIVERSION`: five per TU on ATR, NATR and
+SUPERTREND. C-only. So whichever merges second is a merge plus one `generate` — this
+PR needs nothing if it goes first.
+
 ## Two things for you to decide
 
 1. **The residual.** Covering those 13 means marking a large static: it trades
