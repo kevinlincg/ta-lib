@@ -1,21 +1,30 @@
-test(gate): four of the six corpus-wide sweeps that fail against the fixtures (#327)
+test(gate): the corpus-wide sweeps that fail against the fixtures, and the SYNTH13 defect behind one (#327)
 
-Steps 1 and 3 of the order in #327, plus the SYNTH13 question it left open. Step
-2 is still yours, and step 4 (the `cargo test` leg in `synth_gate.py`) is
+Steps 1 and 3 of the order in #327, plus the question it left open on SYNTH13.
+Step 2 is still yours, and step 4 (the `cargo test` leg in `synth_gate.py`) is
 deliberately NOT here: two sweeps are still red, and a leg with an allowlist is
 the thing the issue rightly calls worse than the gap.
 
-Reproduced first on `dev` (`950809b4b`) by the recipe in the issue — inject all
-`input_synth/synth*`, `generate`, `cargo test --no-fail-fast`. The same six fail
-there, and the two messages that differ from the issue's differ only because
-that tree carries functions the measurement did not; one differs in substance,
-see **What is still red**.
+Rebased onto `dev` `cc52aea9`. Everything below was measured on that base in this
+run; no number is carried over from an earlier one.
 
-Note on the recipe: the `generate` step is load-bearing, not a convenience.
-Skipping it adds a seventh failure — `xml_suggested_matches_the_declaration`,
-`SYNTH6 missing from ta_func_api.xml` — because that sweep reads the COMMITTED
-`ta_func_api.xml` rather than generating one. It is an artifact of the shortcut,
-not a defect, and it is not touched here.
+## The issue says six sweeps fail. On this base it is five
+
+`02ee797e` (TA_SUPERTREND) fixed `rust_batch_impl_orders_capacity_before_aliasing`
+from the shipped side while this branch was out, and it is green on `dev` now.
+An earlier revision of this branch fixed the same defect independently; **that
+commit is dropped and dev's version taken verbatim**, because dev's is stronger.
+Both taught the expected-guard builder the emitter's cross-type skip. Where this
+branch answered `None` and then asserted nothing further about such a function,
+dev scans it anyway and asserts the guard's **absence** — so a generator that
+started comparing `*const f64` against `*const i32` would now be caught, where
+this branch's version would have skipped past it.
+
+The reason it is worth saying out loud: that is the second time a fixture-only
+finding in #327 turned out to be reachable from the shipped corpus as soon as one
+function of the right shape arrived. SUPERTREND is the first shipped mixed
+real+integer output, and it landed on exactly the sweep the fixtures had been
+failing.
 
 ## 1. SYNTH13: a real defect, and the gate's needle does not over-match
 
@@ -50,7 +59,7 @@ the refused-guard rendering. A fixture cannot carry the write case with the guar
 body these legs have: a surviving guard that returns the code is precisely what
 S7 forbids here.
 
-## 2. Three gate helpers that model the shipped corpus
+## 2. Two gate helpers that model the shipped corpus
 
 - **`no_throwing_sub_call_follows_the_cur_capture_in_a_java_step`** pinned the
   number of multi-output handles driving a sub-stream as a literal — a corpus
@@ -64,129 +73,124 @@ S7 forbids here.
   no longer skips a multi-output step that captures no `cur_*`; that shape
   satisfied the order assertion vacuously.
 
-- **`rust_batch_impl_orders_capacity_before_aliasing`** rebuilt the expected
-  guard over every output PAIR, while the emitter skips cross-typed pairs
-  (Appendix E, #262). On SYNTH12's `f64, i32, f64` it demanded a guard the
-  emitter is right not to emit. The builder now mirrors the same-type rule and
-  answers `None` when no pair survives; B5-before-B6 is asserted where a guard
-  exists, with a floor on how many carried one so that half cannot go quiet.
-
 - **`every_integer_output_carries_an_example_claim`** swept every directory under
   `input/`. Its subject is the PUBLISHED rustdoc example — the domain is
   hand-written per function in `rust_doc::integer_domain_claim`, and a fixture's
   example reaches no crates.io reader, which is the reason the doc comment there
   already gives for this being a test rather than a panic. So fixtures are
   subtracted, by reading `input_synth/` rather than by matching a name pattern,
-  and the exact count of shipped integer-output functions stays pinned (65).
+  and the exact count of shipped integer-output functions stays pinned.
+
+  This composes with, rather than replaces, the fix `02ee797e` made to the same
+  sweep: that one decides WHICH claims count (naming the integer output's own
+  variable), this one decides which functions are asked. Worth noting that the
+  two interact — on this base the offender the sweep reports is `synth6`, where
+  the issue reported `synth3`, because dev's stricter counting changed which
+  fixture trips first.
+
   This is the one place I made a judgement call you may want to reverse: the
-  alternative is a claim for SYNTH6 in `integer_domain_claim`, which would be the
-  first mention of a fixture in shipped generator source.
+  alternative is a claim for the fixture in `integer_domain_claim`, which would
+  be the first mention of a gate fixture in shipped generator source.
 
 `gate_fixtures()` lands in `tests/common/mod.rs` rather than in one suite file:
 since `backend_suite.rs` was split, the two sweeps that need it are in different
-test binaries (`indicator_variants_suite` and `rust_render_statement_suite`).
+test binaries (`update_and_fill_suite` and `rust_render_statement_suite`).
 
-## What is still red, and what I found trying to fix it
+## 3. `synth_gate.py`'s docstring
 
-`no_java_peek_copies_the_handle` / `no_csharp_peek_copies_the_handle`. The
-message is not the one in the issue:
+It said six sweeps fail on an injected tree. That was already wrong before this
+branch (SUPERTREND made it five) and is wrong after it (two). It now names what
+remains — the peek pair, on SYNTH3's integer state array — and why the leg is not
+added yet, instead of carrying a number that goes stale every time either side
+moves.
+
+## What is still red
+
+`no_java_peek_copies_the_handle` / `no_csharp_peek_copies_the_handle`, on this
+base, with fixtures injected and regenerated:
 
 ```
-synth3: clones {"ring"} but no accumulator store is refusable
+synth3: clones the handle's ring: int[] ring = sp.ring.clone();
+synth3: int[] ring = new int[sp.ring.Length];
 ```
 
-The clone is already ACCEPTED as bounded — the gate permits `.clone()` for an
-array the batch body declares with a literal size, which is option (a) of the
-issue's contract question, already in place. What fails is the second condition:
-a frame may only clone where a `validate_peekable` refusal justifies it, and
-SYNTH3 has no refusable store. It has none because `validate_peekable` was never
-asked: `transition_buffers_with_state_arrays` excludes integer arrays outright
-("none exist in the corpus, so an integer shadow would be ungated"), so SYNTH3's
-`int ring[4]` is never offered a shadow and the frame localizes it as a written
-array field — which in Java and C# means cloning the reference. The computed
-store index is not the obstacle.
+which is the message the issue quotes. These gates forbid the copy outright —
+there is no "bounded clone is acceptable" clause in either sweep on this base —
+so the contract question the issue poses, (a) permit a bounded clone for a
+literal-sized array and pin the set, versus (b) teach the emitter an N-slot
+pending-write shadow, is genuinely unanswered in the code and is yours.
 
-That makes a third option available, and it was tried: offer integer state
-arrays on the same terms, carrying the element type the `circ_storages` loop
-already passes for an integer CIRCBUF (`int_elem`). Measured then:
+**One correction to an earlier revision of this PR body, which I am flagging
+rather than quietly dropping.** It claimed the clone was already accepted as
+bounded and that what failed was a second condition — "no accumulator store is
+refusable". No such clause exists in either sweep on `cc52aea9`; I read both.
+Treat that paragraph as withdrawn.
 
-- Java: the clone is gone, replaced by the `(pkSlot0, pkVal0)` pending pair, and
-  every read of `ring[head]` becomes the ternary. The jar's own suites passed
-  (`StreamSmokeTest` 4027 checks, with the fixtures injected).
-- **Rust did not compile**: 10 errors, all of one kind —
-  `synth3.rs:868: expected i32, found usize` on
-  `(if (head as usize) != pkSlot0 { sp.ring[head] } else { pkVal0 }) + 1 <= sp.slot`.
-  The ctx-aware integer typing casts a direct `ring[head]` read into the index
-  domain and does not see through the shadow's ternary.
-
-So option (c) costs a change in `rust_lang`'s i32/usize election — the machinery
-#159/#163/#165 were each about — and it buys nothing shipped either. I stopped
-there rather than push an unverified change into that predicate: the choice
-between (a) with the gate's justification clause relaxed, (b), and (c) is yours,
-and this is the data I have for it.
-
-**That experiment was run against the previous `dev` (`69284b1d5`) and has NOT
-been repeated on this base.** Nothing in this PR depends on it — it is reported
-as the reason step 2 is left to you, not as a change.
+There is also an option (c) — offer integer state arrays a shadow on the same
+terms as real ones, via the `int_elem` the `circ_storages` loop already passes.
+It was tried against a much older base (`69284b1d5`) and the result then was:
+Java's clone disappeared in favour of the `(pkSlot0, pkVal0)` pending pair, and
+Rust did not compile — 10 errors, all `expected i32, found usize`, because the
+ctx-aware integer typing casts a direct `ring[head]` read into the index domain
+and does not see through the shadow's ternary. That would put the cost in
+`rust_lang`'s i32/usize election, the machinery #159/#163/#165 were each about,
+and it buys nothing shipped. **I did not repeat that experiment on this base**,
+and given the correction above I would not act on those numbers without
+re-running them. It is offered as a lead, not as data.
 
 ## Verification
 
-On this base, with all fourteen fixtures injected AND regenerated, nothing
-exempted:
+**Shipped corpus, no fixtures** (this is what the PR gate sees):
 
-- `cargo test --no-fail-fast`: only the two peek sweeps above fail. The control
-  is the same tree at `dev` `950809b4b` with the same fixtures injected and
-  regenerated, where six fail — the four fixed here plus those two.
-- `cargo test --no-fail-fast` with no fixtures: all suites green.
-- `generate` with no fixtures leaves the tree clean, so the shipped corpus's
-  emitted output is byte-identical: no shipped function puts a read between a
-  cross-call and its guard.
-- Change footprint, taken as a file-level diff of the two regenerated trees
-  (control vs this branch, both with fixtures): `SYNTH13` only, in Rust, Java and
-  C#, plus the two whole-corpus Java surfaces that embed its fragment. `src/`
-  — the C library — is byte-identical, as expected: a C cross-call is cross-TU,
-  so the guard is live there and nothing folds.
+- `cargo test --no-fail-fast`: green, 0 failed.
+- `cargo run -- generate` then `git status`: **clean**, 178 functions. The
+  `ir_cleanup` change is therefore byte-identical on every shipped function —
+  no shipped function puts a read between a cross-call and its guard.
 
-Stated rather than implied — things I did NOT do here:
-
-- **The `ta_regtest` cross-language legs were not re-run on this base.**
-  `--xlang-hash --function=SYNTH` and `--codegen --function=SYNTH` were run
-  against the pre-rebase base (`69284b1d5`) and passed there; `dev` has moved 59
-  commits since, so I am not carrying those numbers forward as current. This
-  environment refuses `scripts/build.py` outright when it runs as root, which is
-  what blocked re-running them.
-- **The C# server was never built or run** — no .NET SDK here — so the C# side
-  rests on the generated text and on the nightly.
-- `scripts/synth_gate.py` was not run end to end, nor `--fuzz-064`, nor any
-  benchmark. There is no performance claim in this PR.
-
-## Controls
-
-All of these were run in this environment on this base, not carried over.
-
-**The four sweeps, red before and green after.** Two trees, identical except for
-this branch's two commits, both with all fourteen fixtures injected and
-regenerated:
+**Injected corpus** — all fourteen `input_synth/synth*` copied into `input/`,
+regenerated, nothing exempted. Two trees differing only by this branch's two
+commits:
 
 | tree | passed | failed |
 |---|---|---|
-| `dev` `950809b4b` | 879 | **6** |
+| `dev` `cc52aea9` | 880 | **5** |
 | this branch | 885 | **2** |
 
-The six on `dev` are exactly the six #327 names —
-`an_opener_never_answers_the_code_its_sub_call_handed_back`,
+The five on `dev` are `an_opener_never_answers_the_code_its_sub_call_handed_back`,
 `every_integer_output_carries_an_example_claim`,
-`no_throwing_sub_call_follows_the_cur_capture_in_a_java_step`,
-`rust_batch_impl_orders_capacity_before_aliasing`, and the two peek sweeps. The
-two left are the peek sweeps.
+`no_throwing_sub_call_follows_the_cur_capture_in_a_java_step`, and the two peek
+sweeps. The two left are the peek sweeps.
 
-**The two NEW assertions, watched red under a deliberate break.** Each break was
-applied to this branch's tree and reverted afterwards:
+**The new assertion, watched red under a deliberate break.** The break was
+applied to this branch's tree and reverted afterwards. Emitted-side sub-stream
+needle mangled (`sp.sub` → `sp.subZZZ`):
 
-- emitted-side sub-stream needle mangled (`sp.sub` → `sp.subZZZ`): the derived
-  and emitted sets disagree, `left: []` against
-  `right: ["bbands", "kc", "macdext", "stoch", "stochf", "stochrsi", "synth14"]`.
-  That right-hand side is also the direct evidence for the Category-1 claim —
-  the shipped six, plus SYNTH14 and nothing else.
-- guard builder forced to answer `None`: trips the new floor,
-  `only 0 bodies carried an aliasing guard — B6 is barely covered`.
+```
+assertion `left == right` failed: the Java steps that drive a sub-stream are not
+the composed plans that have one
+  left: []
+ right: ["bbands", "kc", "macdext", "stoch", "stochf", "stochrsi"]
+```
+
+Direct evidence for the Category-1 claim, from the `dev` control run above:
+`7 multi-output handles drive a sub-stream, expected 6` — SYNTH14 is the seventh,
+and the derived set on the injected tree is the shipped six plus it.
+
+**Stated rather than implied — things I did NOT do here:**
+
+- **The `ta_regtest` cross-language legs were not run.** `scripts/build.py`
+  refuses to run as root, which is what this environment is; I confirmed that
+  this run rather than assuming it. So `--xlang-hash --function=SYNTH` and
+  `--codegen --function=SYNTH` have not been run against this base by me.
+- **The C# server was never built or run** — no .NET SDK in this environment
+  (confirmed) — so the C# side rests on the generated text and on the nightly.
+- `scripts/synth_gate.py` was not run end to end, nor `--fuzz-064`, nor any
+  benchmark. There is no performance claim in this PR.
+- I did not re-run the option (c) experiment, as stated above.
+
+One operational note, since it cost me a diff to notice: injecting the fixtures
+in-tree and regenerating advances the append-only counter in
+`ta_codegen/input/internal_error_ids.yaml` (`next: 403` → `407`), because the
+run assigns IDs to the fixtures' guards. `synth_gate.py` does this in a throwaway
+worktree so CI never sees it; a local in-tree run leaves it modified and it has
+to be reverted before committing. It is not part of this branch.
