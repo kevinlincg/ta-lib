@@ -24,7 +24,10 @@ the SYNTH family:
 
 NOT a leg: the generator's own `cargo test`. Its static sweeps read emitted
 text for structural properties and run against the shipped corpus only, so they
-have never seen a fixture — six of them fail on an injected tree today (#327).
+have never seen a fixture. What still fails on an injected tree is the pair of
+peek sweeps, on SYNTH3's integer state array — #327 carries the contract
+question they are waiting on, and adding the leg before it is answered would
+mean adding it with an allowlist.
 
 Anti-vacuity: the script asserts from the gate output that EXACTLY the
 expected number of SYNTH functions were exercised by each leg in each

@@ -60,6 +60,23 @@ pub fn load_synth(name: &str) -> (ir::FuncDef, HashMap<String, ir::EnumDef>) {
     )
 }
 
+/// The names under `input_synth/`: gate fixtures, which the synth gate copies
+/// INTO `input/` for a run and which ship nowhere. A sweep whose subject is the
+/// published API subtracts these; one whose subject is emitted structure must
+/// not, since exercising the emitter on a construct no shipped function uses is
+/// what the fixtures are for.
+pub fn gate_fixtures() -> std::collections::BTreeSet<String> {
+    let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("input_synth");
+    std::fs::read_dir(&base)
+        .expect("input_synth dir")
+        .filter_map(|e| {
+            let path = e.expect("dir entry").path();
+            let name = path.file_name()?.to_str()?.to_string();
+            (path.is_dir() && path.join(format!("{name}.yaml")).is_file()).then_some(name)
+        })
+        .collect()
+}
+
 pub fn load_from(base: &Path, name: &str) -> (ir::FuncDef, HashMap<String, ir::EnumDef>) {
     let yaml_path = base.join(format!("{}/{}.yaml", name, name));
     let c_path = base.join(format!("{}/{}.c", name, name));

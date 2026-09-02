@@ -5,7 +5,7 @@
 mod common;
 
 use common::{
-    extract_section, generate_all, load_indicator, load_synth, make_registry,
+    extract_section, gate_fixtures, generate_all, load_indicator, load_synth, make_registry,
     make_synth_registry, make_helpers,
 };
 use std::collections::HashMap;
@@ -1077,8 +1077,14 @@ fn every_integer_output_carries_an_example_claim() {
     // all 67 integer outputs declare the same `line` flag. This is the gate that a
     // function arriving with an integer output states its domain instead of
     // silently rejoining that set.
+    //
+    // The subject is the PUBLISHED example, so a gate fixture is not one: the
+    // domain is hand-written per function and a fixture's rustdoc reaches no
+    // crates.io reader (#327). Everything else here is unexempted, and the floor
+    // below is what keeps the subtraction from hollowing the sweep out.
     let registry = make_registry();
     let helpers = make_helpers();
+    let fixtures = gate_fixtures();
     let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../ta_codegen/input");
     let mut checked = 0usize;
     for entry in std::fs::read_dir(&base).expect("input dir") {
@@ -1089,6 +1095,9 @@ fn every_integer_output_carries_an_example_claim() {
         let name = entry.file_name().to_string_lossy().to_string();
         let dir = entry.path();
         if !dir.join(format!("{name}.c")).is_file() || !dir.join(format!("{name}.yaml")).is_file() {
+            continue;
+        }
+        if fixtures.contains(&name) {
             continue;
         }
         let (func, enums) = load_indicator(&name);

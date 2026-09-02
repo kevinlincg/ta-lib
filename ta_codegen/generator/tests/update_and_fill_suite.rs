@@ -371,27 +371,43 @@ fn each_backend_carries_the_guards_it_can_express() {
 /// struct built fresh from the same fields.
 #[test]
 fn no_throwing_sub_call_follows_the_cur_capture_in_a_java_step() {
-    let mut with_subs = 0usize;
+    let registry = Registry::from_dir(&input_dir());
+    let mut found: Vec<String> = Vec::new();
+    let mut expected: Vec<String> = Vec::new();
     for name in streaming_funcs() {
-        let base = backends::common::camel_words(&name.to_uppercase());
-        let s = section(&name, "java");
-        let body = body_of(&s, &format!("void {base}StepImpl("));
         // Only the multi-output handles hold a cache, and only they can publish
         // a half-written bar. A single-output `value()` is a field read, and the
         // dispatch tier's `sp.cur_outReal = sub.update(..)` puts the call
         // textually after the field it assigns while still being atomic.
-        if load(&name).0.outputs.len() < 2 {
+        let func = load(&name).0;
+        if func.outputs.len() < 2 {
             continue;
         }
-        let Some(first_cur) = body.find("sp.cur_") else {
-            continue;
-        };
+        // The IR's own answer to "does this step drive a sub-stream": a composed
+        // plan with at least one sub. Derived rather than listed, because a
+        // literal here is a corpus count — and this suite also runs against an
+        // `input/` the synth gate has injected fixtures into (#327).
+        if matches!(
+            streaming::validate_streamable(&func, &registry),
+            Ok(streaming::StreamPlan::Composed(ref cp)) if !cp.subs.is_empty()
+        ) {
+            expected.push(name.clone());
+        }
+        let base = backends::common::camel_words(&name.to_uppercase());
+        let s = section(&name, "java");
+        let body = body_of(&s, &format!("void {base}StepImpl("));
         let last_sub = ["sp.sub", "subOut"]
             .iter()
             .filter_map(|p| body.rfind(p))
             .max();
         if let Some(last_sub) = last_sub {
-            with_subs += 1;
+            found.push(name.clone());
+            // A multi-output step that drives a sub and captures nothing would
+            // satisfy the order below vacuously, so the capture is required
+            // rather than skipped.
+            let first_cur = body
+                .find("sp.cur_")
+                .unwrap_or_else(|| panic!("{name}: a multi-output step captures no cur_*:\n{body}"));
             assert!(
                 last_sub < first_cur,
                 "{name}: a sub-stream call runs after the first cur_* write, so a \
@@ -401,10 +417,17 @@ fn no_throwing_sub_call_follows_the_cur_capture_in_a_java_step() {
         }
     }
     // The property is only load-bearing where a sub exists to throw, so the
-    // sweep has to have found some.
+    // sweep has to have found some — and the emitted text has to agree with the
+    // plan about which functions those are, in both directions.
+    assert_eq!(
+        found, expected,
+        "the Java steps that drive a sub-stream are not the composed plans that have one"
+    );
     assert!(
-        with_subs == 6,
-        "{with_subs} multi-output handles drive a sub-stream, expected 6 \
-         (BBANDS, KC, MACDEXT, STOCH, STOCHF, STOCHRSI) — the pin has moved or gone vacuous"
+        expected.len() >= 6,
+        "only {} multi-output handles drive a sub-stream — the shipped six \
+         (BBANDS, KC, MACDEXT, STOCH, STOCHF, STOCHRSI) are the floor, and an \
+         injected corpus only adds to them",
+        expected.len()
     );
 }
