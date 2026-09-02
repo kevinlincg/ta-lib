@@ -86,15 +86,33 @@ in one session.** The merge is a merge commit, not a rebase.
   `StochfOut` in `STOCHRSI`'s `peek`. Both are peek frames, which is the
   #325 tail; no commit path allocates.
 
+## Carried to the post-#333 dev (`19286097`)
+
+The merge conflicted only in generated Java — `TaCodegenServe.java` and
+`BuildStamp`'s `GENCODE_DIGEST`, the staleness stamp `#324` added, which by
+construction can only be whatever the regenerated `Core` hashes to. Both were
+resolved by regenerating, not by hand.
+
+Re-measured on that merge, since `#333` rewrites peek frames and the two
+remaining sinks are in peek frames:
+
+- **Both counts are unchanged: 17 sinkless `update` overloads, 2 remaining
+  `new *Out()` sites**, still `MamaOut` in `MA.peek` and `StochfOut` in
+  `STOCHRSI.peek`.
+- `generate` then `git status`: clean.
+- Generator suite: 29 suites, 0 failed.
+- `javac` 21 compiles the generated library and the generated JSON-RPC server
+  clean.
+
 NOT run on this merge, and so not claimed for it:
 
 - `scripts/regtest.py` and every cross-language leg. `bin/ta_ref_serve` was not
   built from the pinned reference worktree in this session, and the oracle is
-  what those legs compare against. They passed on the `e638d8ed` merge one
-  advance back; that is a different tree.
+  what those legs compare against. They passed on the `e638d8ed` merge, two
+  advances back; that is a different tree.
 - `ta_codegen build --backend=java`, the Maven path (jar, javadoc jar, doc
-  examples, the 7 suites, StreamSmokeTest). The three javac steps above compile
-  everything but execute nothing.
+  examples, the 7 suites, StreamSmokeTest), and the gate's `-Xdoclint` step. The
+  javac runs above compile the library and the server and execute nothing.
 - C#. No .NET SDK in this session — an earlier run had one, this one does not.
   No C# file is in the diff.
 - **The two deliberate-break controls, and the sink-count gate's red run, were
