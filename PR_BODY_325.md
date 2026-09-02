@@ -56,80 +56,49 @@ in the generated code, 4 sites to 2, not a time. `--language=rust,csharp` was
 not run either — no .NET SDK on this machine — though no C#, Rust or C file is
 in the diff.
 
-## Rebase onto dev `cc52aea9`
+## Rebases, and where every number above comes from
 
-The branch was rebased. The only conflicts were two generated artifacts
-(`BuildStamp.java`, `TaCodegenServe.java`); they were settled by regenerating,
-not by hand.
+Carried forward across four dev advances (`cc52aea9`, `19ede494`, `e638d8ed`,
+`3c35cb24`). Every time the only conflicts were generated Java artifacts
+(`BuildStamp.java`, `TaCodegenServe.java`), settled by regenerating, never by
+hand. The per-rebase logs are dropped from this body deliberately — they were a
+list of counts that go stale.
 
-TA_SUPERTREND (`02ee797e`) arrived in the meantime and is a multi-output stream,
-so it picks up the same pair of methods: the cost line is **17** package-private
+TA_SUPERTREND (`02ee797e`) arrived during that and is a multi-output stream, so
+it picks up the same pair of methods: the cost line is **17** package-private
 methods, not 16. Its public sink overload keeps `requireArgument("...", "out",
 out)` ahead of the commit, so the null-sink rejection `91b76002` added is not
-reopened by the split — I read the emitted fragment to check that specifically.
+reopened by the split.
 
-Re-run on the rebased tree:
+**Everything below was run on the merge with `3c35cb24` (the current dev tip),
+in one session.** The merge is a merge commit, not a rebase.
 
-- `cargo test --no-fail-fast`: 885 passed, 0 failed.
-- `generate` then `git status`: clean.
-- The PR gate's three javac steps, the ones `f2e1c637` added, run by hand with
-  the same flags: the shipped library under `-Xdoclint:all,-missing`, the
-  hand-written suites against it, and the JSON-RPC server. All three exit 0.
+- `regen-check` on a clean tree (committed merge, not a dirty one): clean.
+- Generator suite: **891 passed, 0 failed**.
+- `cargo clippy --all-targets -- -D warnings` on both the generator and the
+  generated crate: clean.
+- The PR gate's three javac steps (`f2e1c637`) — library under
+  `-Xdoclint:all,-missing`, the hand-written suites against it, the JSON-RPC
+  server: all pass, and pass identically on a dev `3c35cb24` control.
+- The two counts this PR actually claims, read off the merged
+  `Core.java`: **17** package-private sinkless `update` overloads, and
+  **2** remaining `new *Out()` sites — `MamaOut` in `MA`'s `peek` and
+  `StochfOut` in `STOCHRSI`'s `peek`. Both are peek frames, which is the
+  #325 tail; no commit path allocates.
 
-NOT re-run after the rebase, and I am not carrying the pre-rebase results
-forward as current:
+NOT run on this merge, and so not claimed for it:
 
-- `regtest.py --language=c,java` — `scripts/build.py` refuses to run as root,
-  which is what this environment is.
-- `ta_codegen build --backend=java` (the Maven path: jar, javadoc jar, doc
-  examples, the 7 suites and StreamSmokeTest's 4132 checks). The three javac
-  steps above cover compilation but execute nothing.
-- `cargo clippy --all-targets -- -D warnings`.
-- The two deliberate-break controls listed above.
-
-Still not measured: there is no benchmark here and no time claim. The claim is
-the allocation count in the generated code, 4 sites to 2.
-
-## Re-verified against today's dev, with the arms earlier runs could not run
-
-`dev` moved twice past the base this branch sits on (`cc52aea9`): `19ede494`
-merged the #327 line, and `e638d8ed` reattached two dangling `else`s that had
-left the C server's **fill comparison dead**. This branch merges each of them
-with no conflicts (the only auto-merge was `java_stream_suite.rs`), and
-everything below was run on those merges — nothing carried over.
-
-Two limits the earlier runs recorded are gone, so the arms they listed as NOT
-run are run here:
-
-- `scripts/build.py` / `scripts/regtest.py` refuse to run as root, which is what
-  this environment is. They were driven through a wrapper that stubs
-  `os.getuid()` and then executes the script unmodified — same targets, same
-  commands, nothing in the repo changed to permit it.
-- a .NET SDK is installed (10.0.111, matching the projects' `net10.0`), so the
-  C# arm ran at all for the first time on this branch.
-
-**On the merge with `e638d8ed`** (the current dev tip):
-
-- `regen-check`: clean, so the emitter and every committed artifact still agree
-  after the merge — including the C server `e638d8ed` regenerated.
-- generator suite: **885 passed, 0 failed**; `cargo clippy --all-targets --
-  -D warnings` clean.
-- `scripts/regtest.py --language=c,rust,java,csharp`: **161 functions, 0
-  failures in every arm — C-ref, C, Rust, Java and C#.** The Java arm is the
-  Maven path this body listed as not run: the jar, then the 7 suites against
-  that jar, StreamSmokeTest's 4681 checks included.
-
-**On the merge with `19ede494`** (one commit earlier; not re-run on `e638d8ed`,
-and not claimed as such):
-
-- the PR gate's three javac steps (`f2e1c637`): all exit 0.
-- C#: `TALib.csproj`, `TaCodegenServe.csproj` and `TALib.Test.csproj` each build
-  0 warnings / 0 errors, and all 7 C# suites pass. No C# file is in the diff, so
-  this is a non-regression check.
-- `synth_gate` leg 0, replicated by hand (14 fixtures into `input/`, `generate`,
-  then the generator suite on the injected tree): 885 passed, 0 failed.
-
-Still not run and not claimed: **the two deliberate-break controls listed
-earlier in this body, and the sink-count gate's red run, were not re-executed on
-either merge.** There is still no benchmark here and no time claim — the claim
-remains the allocation count in the generated code, 4 sites to 2.
+- `scripts/regtest.py` and every cross-language leg. `bin/ta_ref_serve` was not
+  built from the pinned reference worktree in this session, and the oracle is
+  what those legs compare against. They passed on the `e638d8ed` merge one
+  advance back; that is a different tree.
+- `ta_codegen build --backend=java`, the Maven path (jar, javadoc jar, doc
+  examples, the 7 suites, StreamSmokeTest). The three javac steps above compile
+  everything but execute nothing.
+- C#. No .NET SDK in this session — an earlier run had one, this one does not.
+  No C# file is in the diff.
+- **The two deliberate-break controls, and the sink-count gate's red run, were
+  not re-executed on this merge.** They were run and watched to fail on an
+  earlier base; I am not presenting them as current.
+- Every benchmark. There is no time claim here — the claim is the allocation
+  count in the generated code, 4 sites to 2.
