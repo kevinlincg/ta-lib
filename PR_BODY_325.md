@@ -25,7 +25,7 @@ and only inlining the sub-frame removes it.
 Not public, deliberately: "commit and discard the outputs" is not an API a
 caller should be offered, and the alternative — a reusable `Out` field on the
 composing handle — is an object per handle that exists only to satisfy a
-signature, since these arms read `cur_*` and never the sink. The cost is 16
+signature, since these arms read `cur_*` and never the sink. The cost is 17
 package-private methods, one per multi-output stream class, and the two verbs
 now emit different shapes where the composed emitter had one for both. If you
 would rather keep one shape, this is the change to decline.
