@@ -25,42 +25,48 @@ rendered. Its shadow locals are still pushed further down, at the point they
 occupied before — and the byte-identical output below is what proves the
 reordering did not disturb the emitted text.
 
-## Unreachable on today's corpus — measured, not assumed
+## Still unreachable after #333 — measured, not assumed
 
-`generate` leaves **the whole tree byte-identical**: `git status` after a full
-regeneration shows only `c_stream.rs`, and `scripts/build.py regen-check` is
-clean. Not one emitted file moves.
+Branched before #333 landed and merged onto `dev` afterwards, so the
+interesting question got re-asked on the tree that carries the purge: **the
+whole emitted tree is still byte-identical**. `git status` after a full
+regeneration shows nothing, and `regen-check` is clean.
 
-STOCH and STOCHF are the only composed producers carrying temps, and every one
-of theirs is read, so the filter has nothing to drop today. The path goes live
-the moment a deletion pass orphans one — which is what #333 is about, so this
-wants to land alongside or after it rather than being held for a corpus
-difference it will not produce on its own.
+STOCH and STOCHF are the only composed producers carrying temps, one each, and
+the purge does not orphan either — so the filter still has nothing to drop and
+this stays a cleanup that arms a path rather than one that clears a warning.
+The six warnings #328 was about are gone with #333; this adds none and clears
+none.
 
 Because the emitted tree is identical to `dev`'s, **the C build here IS `dev`'s
-build**, and I did not re-run it to claim otherwise. `dev` currently carries the
-six `-Wunused-but-set-variable` that #321's trim left and #333 removes; this
-change neither adds to them nor clears any, and I verified those six are on
-`dev` today by compiling `ta_CORREL.c`, `ta_HT_PHASOR.c` and `ta_MAMA.c` out of
-a `dev` worktree with the CMake flags.
+build**, and I did not re-run it to claim otherwise.
 
-## Gates, and what is honestly not gated
+## Gates
 
-**No corpus gate can discriminate this fix**, and I would rather say so than
-add one that reads green either way. What the two unit tests pin is the RULE:
+No gate is added. `dev` grew the right one with #333 —
+`no_peek_frame_declares_a_local_nothing_reads`, which sweeps every peek frame in
+the corpus and reads the composed frames along with the rest. It is green
+before this change and after it, for the corpus reason above, so it does not
+discriminate the fix; what it does is make the path this change arms loud
+instead of silent the day something orphans a composed producer temp.
 
-| test | asserts |
-|---|---|
-| `a_peek_frame_declares_only_the_temps_its_surviving_body_names` | a peek frame declares only what its surviving body names; a committing frame declares all of them |
-| `a_temp_the_frame_only_writes_is_still_declared` | a store IS a mention, so retiring a write-only local is the store pass's job and not this rule's |
+I wrote a second sweep of my own before that merge — same corpus, keyed on a
+local being NAMED rather than read — and dropped it rather than push it:
+#333's is strictly stronger (never named implies never read), so it would have
+been duplication whose only distinguishing case is a declaration with an
+initializer, which #333 excludes deliberately.
 
-Each was watched red under its own sabotage, one at a time:
+Both arms of the merged gate were watched red, one sabotage at a time, on this
+branch's tree:
 
 | sabotage | reddens |
 |---|---|
-| `StepFrame::Peek` arm returns `temps.to_vec()` (the #334 shape) | the first test |
-| `StepFrame::Commit` arm filters too (the drift the rule forbids) | the first test |
-| `temps_used`'s scan stops counting a plain `x = e` as a mention | the second test |
+| `frame_temps`' `StepFrame::Peek` arm returns `temps.to_vec()` — the #334 shape, applied to both tiers | 26 locals: 14 candlesticks' `totIdx`, `CORREL`'s `trailingX`/`trailingY`, `HT_PHASOR`'s and `MAMA`'s `jI`/`jQ`, and the rest |
+| a temp the composed peek frame never names, injected into the producer model, with the composed call to `frame_temps` bypassed | 2 locals: `STOCH`, `STOCHF` — and green with the filter in place, which is the composed arm's own control |
+
+The second row is the honest form of "no shipped function exercises this": the
+corpus cannot supply an orphaned composed temp today, so the control injects
+one.
 
 **What remains ungated: a THIRD site being added that decides for itself
 again.** One decision point is the whole defence there, and no test in the tree
@@ -68,21 +74,20 @@ enforces that a future emitter routes through it.
 
 I also did **not** add a `synth<n>` fixture with a composed producer that
 orphans a temp, which is the one thing that would make this reachable end to
-end. Per `input_synth/README.md`, the synth gate's three legs are value and
-parity gates and the generator's own static sweeps never see an injected tree
-(#327 carries that classification) — so a fixture would exercise this construct
+end. Per `input_synth/README.md`, the synth gate's legs are value and parity
+gates and the generator's own static sweeps never see an injected tree (#327
+carries that classification) — so a fixture would exercise the construct
 without ever checking the property, and the C leg would emit the warning
-without failing, since the build is deliberately not `-Werror`. A fixture is
-worth having once that gap closes; as a gate for this PR it would be theatre.
+without failing, since the build is deliberately not `-Werror`.
 
 ## Verified
 
-On `dev` `3c35cb24` (current tip; branched from it, no merge needed):
+On `dev` `19286097` (current tip, merged in — the branch is mergeable as is):
 
-- `generate` then `git status`: only `c_stream.rs` — the emitted tree is byte-identical
-- `scripts/build.py regen-check`: clean
-- generator suite: **893 passed, 0 failed** (two of them new)
-- `cargo clippy --release --all-targets -- -D warnings`: clean
+- `generate` then `git status`: nothing — the emitted tree is byte-identical
+- `regen-check`: clean (source lists, S1/S7 return codes, input formatting, regeneration)
+- generator suite: 29 suites, 0 failed, including the two new `frame_temps` unit tests
+- `cargo clippy --all-targets`: clean
 
 ## NOT run
 
