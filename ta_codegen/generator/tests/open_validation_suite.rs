@@ -1372,3 +1372,87 @@ fn rust_category_index_lists_every_function_once() {
     }
     assert_eq!(heading_total, funcs.len(), "every function must land under a heading");
 }
+
+/// The C# twin of `no_java_peek_commits_a_sub_stream`: a `Peek` never drives a
+/// sub-handle's committing verb.
+///
+/// Same tiers, same reason — a composed or dispatch `Peek` writes no field of
+/// its own handle, so [`no_csharp_peek_copies_the_handle`] above has nothing to
+/// name on them, and their only commit path is one `Update` on a sub-handle
+/// `Clone` shares. Kept in the two managed suites rather than factored
+/// together: each reads its own emitter's output, and both the verb and the
+/// receiver spellings differ.
+///
+/// Justified by parity with the C gate and the Java twin, NOT by a measured
+/// runtime miss: the C# suites were not run for this (no .NET SDK to hand).
+#[test]
+fn no_csharp_peek_commits_a_sub_stream() {
+    /// A code line, with the comment shapes that name both verbs in prose
+    /// dropped.
+    fn code_line(line: &str) -> Option<&str> {
+        let l = line.trim();
+        (!(l.starts_with("//") || l.starts_with("/*") || l.starts_with('*'))).then_some(l)
+    }
+
+    /// Every sub-handle commit `s` makes, as trimmed code lines.
+    fn commits(s: &str) -> Vec<&str> {
+        s.lines()
+            .filter_map(code_line)
+            .filter(|l| l.contains(".Update(") || l.contains(".UpdateAndFill("))
+            .collect()
+    }
+
+    let registry = make_registry();
+    let helpers = HelperRegistry::empty();
+    let mut with_subs = 0usize;
+    let mut committing_sites = 0usize;
+    let mut offenders: Vec<String> = Vec::new();
+
+    for name in discover_indicators() {
+        let (func, enums) = load_indicator(&name);
+        if !func.streaming || !backends::csharp_stream::emits_stream(&func, &registry) {
+            continue;
+        }
+        let s = backends::csharp_stream::generate(&func, &enums, &registry, &helpers);
+        let mut at = 0usize;
+        while let Some(k) = s[at..].find("\n      public ") {
+            let start = at + k + 1;
+            at = start + 1;
+            let Some(nl) = s[start..].find('\n') else { break };
+            if !s[start..start + nl].contains(" Peek( ") {
+                continue;
+            }
+            let end = s[start..].find("\n      }").map_or(s.len(), |e| start + e);
+            let peek = &s[start..end];
+
+            if peek.lines().filter_map(code_line).any(|l| l.contains(".Peek(")) {
+                with_subs += 1;
+            }
+            for l in commits(peek) {
+                offenders.push(format!("{name}: Peek commits a sub-stream: {l}"));
+            }
+            // The same call in the tiers that are SUPPOSED to commit —
+            // everything outside this Peek body. Without it the check above
+            // would pass on a corpus where no tier calls a sub-handle's
+            // `Update` at all, and forbidding the call would assert nothing.
+            committing_sites += commits(&s[..start]).len() + commits(&s[end..]).len();
+        }
+    }
+
+    assert!(
+        with_subs >= 13,
+        "only {with_subs} C# Peek entry point(s) drive a sub-handle, so this gate is \
+         not looking at the tiers it exists for"
+    );
+    assert!(
+        committing_sites > 0,
+        "no tier in the corpus calls a sub-handle's Update, so forbidding that call \
+         in a Peek frame asserts nothing"
+    );
+    assert!(
+        offenders.is_empty(),
+        "a C# Peek entry point commits a sub-stream ({} site(s)):\n{}",
+        offenders.len(),
+        offenders.join("\n")
+    );
+}

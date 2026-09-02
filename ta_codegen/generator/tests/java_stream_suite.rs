@@ -1038,3 +1038,87 @@ fn java_identity_fast_path_short_circuits_at_stride_zero() {
         "fill arm indexes plainly"
     );
 }
+
+/// A code line, with the comment shapes the sweeps must not read dropped.
+/// Javadoc and block comments name both verbs in prose.
+fn code_line(line: &str) -> Option<&str> {
+    let l = line.trim();
+    (!(l.starts_with("//") || l.starts_with("/*") || l.starts_with('*'))).then_some(l)
+}
+
+/// A Java `peek` never drives a sub-handle's committing verb.
+///
+/// The composed and dispatch tiers are where
+/// [`no_java_peek_copies_the_handle`] above has nothing to look at: their peek
+/// writes no field of its own handle — every value comes back from a sub-handle
+/// — so the write sweep names none of the 13 counted here. Measured: with peek
+/// localization disabled, so every frame steps the live handle, that sweep
+/// names 167 functions and not one of these.
+///
+/// What commits here is one call — `sp.sub0.update(...)` where
+/// `sp.sub0.peek(...)` belongs — and the sub-handle is a reference `clone()`
+/// shares, so it corrupts the fork's original too. C gates it
+/// (`no_peek_entry_point_commits_a_sub_stream`, over the C source) and Rust
+/// cannot express it (`peek(&self)` borrows immutably). Java can, and nothing
+/// in this suite read for it.
+///
+/// **Not the only cover, and it does not claim to be:** the jar's
+/// `StreamSmokeTest` names the same sabotage at run time, whichever sub-handle
+/// spelling is broken. What this adds is WHEN — cargo alone, so the PR gate
+/// carries it instead of only the Maven jar build that dev-nightly's
+/// cross-language job reaches.
+///
+/// The receiver spelling is deliberately not part of the rule: the tiers reach
+/// a sub-handle three ways (`sp.sub0`, a cast `((SmaStream) sp.sub)`, an index
+/// `sp.bank[slot]`), so the rule is on the VERB.
+#[test]
+fn no_java_peek_commits_a_sub_stream() {
+    /// Every sub-handle commit `s` makes, as trimmed code lines.
+    fn commits(s: &str) -> Vec<&str> {
+        s.lines()
+            .filter_map(code_line)
+            .filter(|l| l.contains(".update(") || l.contains(".updateAndFill("))
+            .collect()
+    }
+
+    let mut with_subs = 0usize;
+    let mut committing_sites = 0usize;
+    let mut offenders: Vec<String> = Vec::new();
+
+    for name in streaming_indicators() {
+        let s = java_stream_section(&name);
+        let Some(at) = s.find(" peek( ") else { continue };
+        let start = s[..at].rfind("      public ").expect("a peek signature");
+        let end = s[start..].find("\n      }").map_or(s.len(), |k| start + k);
+        let peek = &s[start..end];
+
+        if peek.lines().filter_map(code_line).any(|l| l.contains(".peek(")) {
+            with_subs += 1;
+        }
+        for l in commits(peek) {
+            offenders.push(format!("{name}: peek commits a sub-stream: {l}"));
+        }
+        // The same call in the tiers that are SUPPOSED to commit — everything
+        // outside the peek body. Without this the check above would pass on a
+        // corpus where no tier calls a sub-handle's `update` at all, and
+        // forbidding the call in a peek frame would assert nothing.
+        committing_sites += commits(&s[..start]).len() + commits(&s[end..]).len();
+    }
+
+    assert!(
+        with_subs >= 13,
+        "only {with_subs} Java peek entry point(s) drive a sub-handle, so this gate \
+         is not looking at the tiers it exists for"
+    );
+    assert!(
+        committing_sites > 0,
+        "no tier in the corpus calls a sub-handle's update, so forbidding that call \
+         in a peek frame asserts nothing"
+    );
+    assert!(
+        offenders.is_empty(),
+        "a Java peek entry point commits a sub-stream ({} site(s)):\n{}",
+        offenders.len(),
+        offenders.join("\n")
+    );
+}
