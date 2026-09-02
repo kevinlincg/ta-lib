@@ -69,6 +69,8 @@
       double prevATR = 0;
       double periodTotal = 0;
       double tempValue = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -123,7 +125,7 @@
          return RetCode.Success ;
       }
       /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-       * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR).
+       * to the raw True Range at every bar (wAlpha 1.0, wBeta 0.0).
        * At period 1 the output is left as that raw True Range (unnormalized),
        * matching the historical TRANGE-delegation behavior; every period > 1 is
        * normalized by the close. The single general path handles all period >= 1.
@@ -138,8 +140,11 @@
        *  - Seed: the first 'period' True Range values are summed,
        *    accumulated from 0.0 in input order, then divided by
        *    the period.
-       *  - Wilder smoothing: multiply by period-1, add the True
-       *    Range, divide by period, as three separate statements.
+       *  - Wilder smoothing: the two-coefficient form, with the
+       *    reciprocal hoisted out of the loop. The generator
+       *    canonicalizes the add so the accumulator product is the
+       *    one fused, which is what keeps the four backends
+       *    bit-identical to each other here.
        *
        * Each output is normalized by the close of its own bar; a
        * close of zero yields 0.0.
@@ -153,6 +158,8 @@
        * startIdx-lookbackTotal+1 (a previous close is consumed).
        */
       today = startIdx - lookbackTotal + 1;
+      wAlpha = 1.0 / (double)optInTimePeriod;
+      wBeta = 1.0 - wAlpha;
       /* Seed the ATR with a simple average of the True Range
        * for the first 'period' bars.
        */
@@ -179,9 +186,6 @@
       prevATR = periodTotal / optInTimePeriod;
       /* Subsequent value are smoothed using the
        * previous ATR value (Wilder's approach).
-       *  1) Multiply the previous ATR by 'period-1'.
-       *  2) Add today TR value.
-       *  3) Divide by 'period'.
        */
       /* Skip the unstable period. */
       i = this.unstablePeriod[FuncUnstId.NATR.ordinal()];
@@ -200,9 +204,7 @@
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.fma(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -243,9 +245,7 @@
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.fma(wBeta, prevATR, wAlpha * greatest);
          if( optInTimePeriod <= 1 ) {
             /* No smoothing: emit the raw True Range (unnormalized). */
             outReal[outIdx] = prevATR;
@@ -282,6 +282,8 @@
       double prevATR = 0;
       double periodTotal = 0;
       double tempValue = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -309,6 +311,8 @@
          return RetCode.Success ;
       }
       today = startIdx - lookbackTotal + 1;
+      wAlpha = 1.0 / (double)optInTimePeriod;
+      wBeta = 1.0 - wAlpha;
       periodTotal = 0.0;
       i = optInTimePeriod;
       while( i-- > 0 ) {
@@ -342,9 +346,7 @@
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.fma(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -373,9 +375,7 @@
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.fma(wBeta, prevATR, wAlpha * greatest);
          if( optInTimePeriod <= 1 ) {
             outReal[outIdx] = prevATR;
          } else {
@@ -552,6 +552,8 @@
       Core core;
       int optInTimePeriod;
       double prevATR;
+      double wAlpha;
+      double wBeta;
       double lag1_inClose;
       double cur_outReal;
       int outRangeBegIdx;
@@ -576,6 +578,8 @@
          this.core = other.core;
          this.optInTimePeriod = other.optInTimePeriod;
          this.prevATR = other.prevATR;
+         this.wAlpha = other.wAlpha;
+         this.wBeta = other.wBeta;
          this.lag1_inClose = other.lag1_inClose;
          this.cur_outReal = other.cur_outReal;
          this.outRangeBegIdx = other.outRangeBegIdx;
@@ -676,9 +680,7 @@
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= sp.optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= sp.optInTimePeriod;
+         prevATR = Math.fma(sp.wBeta, prevATR, sp.wAlpha * greatest);
          if( sp.optInTimePeriod <= 1 ) {
             /* No smoothing: emit the raw True Range (unnormalized). */
             cur_outReal = prevATR;
@@ -742,9 +744,7 @@
       if( val3 > greatest ) {
          greatest = val3;
       }
-      sp.prevATR *= sp.optInTimePeriod - 1;
-      sp.prevATR += greatest;
-      sp.prevATR /= sp.optInTimePeriod;
+      sp.prevATR = Math.fma(sp.wBeta, sp.prevATR, sp.wAlpha * greatest);
       if( sp.optInTimePeriod <= 1 ) {
          /* No smoothing: emit the raw True Range (unnormalized). */
          sp.cur_outReal = sp.prevATR;
@@ -768,6 +768,8 @@
       double prevATR = 0;
       double periodTotal = 0;
       double tempValue = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -832,7 +834,7 @@
          return RetCode.InsufficientHistory ;
       }
       /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-       * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR).
+       * to the raw True Range at every bar (wAlpha 1.0, wBeta 0.0).
        * At period 1 the output is left as that raw True Range (unnormalized),
        * matching the historical TRANGE-delegation behavior; every period > 1 is
        * normalized by the close. The single general path handles all period >= 1.
@@ -847,8 +849,11 @@
        *  - Seed: the first 'period' True Range values are summed,
        *    accumulated from 0.0 in input order, then divided by
        *    the period.
-       *  - Wilder smoothing: multiply by period-1, add the True
-       *    Range, divide by period, as three separate statements.
+       *  - Wilder smoothing: the two-coefficient form, with the
+       *    reciprocal hoisted out of the loop. The generator
+       *    canonicalizes the add so the accumulator product is the
+       *    one fused, which is what keeps the four backends
+       *    bit-identical to each other here.
        *
        * Each output is normalized by the close of its own bar; a
        * close of zero yields 0.0.
@@ -862,6 +867,8 @@
        * startIdx-lookbackTotal+1 (a previous close is consumed).
        */
       today = startIdx - lookbackTotal + 1;
+      wAlpha = 1.0 / (double)optInTimePeriod;
+      wBeta = 1.0 - wAlpha;
       /* Seed the ATR with a simple average of the True Range
        * for the first 'period' bars.
        */
@@ -888,9 +895,6 @@
       prevATR = periodTotal / optInTimePeriod;
       /* Subsequent value are smoothed using the
        * previous ATR value (Wilder's approach).
-       *  1) Multiply the previous ATR by 'period-1'.
-       *  2) Add today TR value.
-       *  3) Divide by 'period'.
        */
       /* Skip the unstable period. */
       i = this.unstablePeriod[FuncUnstId.NATR.ordinal()];
@@ -909,9 +913,7 @@
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.fma(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -952,9 +954,7 @@
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.fma(wBeta, prevATR, wAlpha * greatest);
          if( optInTimePeriod <= 1 ) {
             /* No smoothing: emit the raw True Range (unnormalized). */
             outReal[outIdx * outStride] = prevATR;
@@ -974,6 +974,8 @@
       /* Capture the live batch state into the handle. */
       sp.optInTimePeriod = optInTimePeriod;
       sp.prevATR = prevATR;
+      sp.wAlpha = wAlpha;
+      sp.wBeta = wBeta;
       sp.lag1_inClose = inClose[historyLen - 1];
       sp.cur_outReal = outReal[(outNBElement.value - 1) * outStride];
       return RetCode.Success;

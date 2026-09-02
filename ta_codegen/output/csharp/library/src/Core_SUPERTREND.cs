@@ -109,6 +109,8 @@ public partial class Core
       int isUptrend = 0;
       double prevATR = 0;
       double periodTotal = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -159,10 +161,12 @@ public partial class Core
        * The arithmetic order below is the bit-exactness contract with TA_ATR (do
        * not reorder or fuse operations): True Range from high-low, then the two
        * previous-close distances in that order; the seed summed from 0.0 over the
-       * first 'period' True Ranges and divided once; Wilder smoothing as three
-       * separate statements.
+       * first 'period' True Ranges and divided once; Wilder smoothing in the same
+       * two-coefficient form TA_ATR uses, so the same accumulator product fuses.
        */
       today = startIdx - lookbackTotal + 1;
+      wAlpha = 1.0 / (double)optInTimePeriod;
+      wBeta = 1.0 - wAlpha;
       periodTotal = 0.0;
       i = optInTimePeriod;
       while( i-- > 0 ) {
@@ -201,9 +205,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -238,9 +240,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          medianPrice = (tempHT + tempLT) / 2.0;
          band = optInMultiplier * prevATR;
          basicUpper = medianPrice + band;
@@ -310,6 +310,8 @@ public partial class Core
       int isUptrend = 0;
       double prevATR = 0;
       double periodTotal = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -350,6 +352,8 @@ public partial class Core
          return RetCode.Success ;
       }
       today = startIdx - lookbackTotal + 1;
+      wAlpha = 1.0 / (double)optInTimePeriod;
+      wBeta = 1.0 - wAlpha;
       periodTotal = 0.0;
       i = optInTimePeriod;
       while( i-- > 0 ) {
@@ -383,9 +387,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -412,9 +414,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          medianPrice = (tempHT + tempLT) / 2.0;
          band = optInMultiplier * prevATR;
          basicUpper = medianPrice + band;
@@ -673,6 +673,8 @@ public partial class Core
       internal double optInMultiplier;
       internal int isUptrend;
       internal double prevATR;
+      internal double wAlpha;
+      internal double wBeta;
       internal double finalUpper;
       internal double finalLower;
       internal double prevClose;
@@ -703,6 +705,8 @@ public partial class Core
          this.optInMultiplier = other.optInMultiplier;
          this.isUptrend = other.isUptrend;
          this.prevATR = other.prevATR;
+         this.wAlpha = other.wAlpha;
+         this.wBeta = other.wBeta;
          this.finalUpper = other.finalUpper;
          this.finalLower = other.finalLower;
          this.prevClose = other.prevClose;
@@ -791,9 +795,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= sp.optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= sp.optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(sp.wBeta, prevATR, sp.wAlpha * greatest);
          medianPrice = (tempHT + tempLT) / 2.0;
          band = sp.optInMultiplier * prevATR;
          basicUpper = medianPrice + band;
@@ -916,9 +918,7 @@ public partial class Core
       if( val3 > greatest ) {
          greatest = val3;
       }
-      sp.prevATR *= sp.optInTimePeriod - 1;
-      sp.prevATR += greatest;
-      sp.prevATR /= sp.optInTimePeriod;
+      sp.prevATR = Math.FusedMultiplyAdd(sp.wBeta, sp.prevATR, sp.wAlpha * greatest);
       medianPrice = (tempHT + tempLT) / 2.0;
       band = sp.optInMultiplier * sp.prevATR;
       basicUpper = medianPrice + band;
@@ -974,6 +974,8 @@ public partial class Core
       int isUptrend = 0;
       double prevATR = 0;
       double periodTotal = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -1031,10 +1033,12 @@ public partial class Core
        * The arithmetic order below is the bit-exactness contract with TA_ATR (do
        * not reorder or fuse operations): True Range from high-low, then the two
        * previous-close distances in that order; the seed summed from 0.0 over the
-       * first 'period' True Ranges and divided once; Wilder smoothing as three
-       * separate statements.
+       * first 'period' True Ranges and divided once; Wilder smoothing in the same
+       * two-coefficient form TA_ATR uses, so the same accumulator product fuses.
        */
       today = startIdx - lookbackTotal + 1;
+      wAlpha = 1.0 / (double)optInTimePeriod;
+      wBeta = 1.0 - wAlpha;
       periodTotal = 0.0;
       i = optInTimePeriod;
       while( i-- > 0 ) {
@@ -1073,9 +1077,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -1110,9 +1112,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          medianPrice = (tempHT + tempLT) / 2.0;
          band = optInMultiplier * prevATR;
          basicUpper = medianPrice + band;
@@ -1164,6 +1164,8 @@ public partial class Core
       sp.optInMultiplier = optInMultiplier;
       sp.isUptrend = isUptrend;
       sp.prevATR = prevATR;
+      sp.wAlpha = wAlpha;
+      sp.wBeta = wBeta;
       sp.finalUpper = finalUpper;
       sp.finalLower = finalLower;
       sp.prevClose = prevClose;

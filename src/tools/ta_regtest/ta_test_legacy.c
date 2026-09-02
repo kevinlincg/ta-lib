@@ -135,8 +135,8 @@ static const TA_LegacyTol LEGACY_TOL[] =
    { "LINEARREG_SLOPE",     2e-12 },  /* #103  measured 3.49e-13             */
 
    /* --- (a) explicit fma() adoption, PR #96 ------------------------------
-    * Verified per row: ADOSC, T3, TEMA, DEMA, SAREXT, EMA, SAR, TRIX, MACDFIX
-    * and MAMA contain fma() directly. MA, MAVP and STOCH contain none and
+    * Verified per row: ADOSC, T3, TEMA, DEMA, SAREXT, EMA, SAR, TRIX, ATR, NATR,
+    * MACDFIX and MAMA contain fma() directly. MA, MAVP and STOCH contain none and
     * inherit it one dispatch hop away -- MA through its EMA/DEMA/TEMA/T3/MAMA
     * arms, MAVP through MA, STOCH through the MAType=EMA smoothing of its alt
     * case (its all-SMA default is bit-exact against v0.6.4). Worth stating
@@ -153,6 +153,8 @@ static const TA_LegacyTol LEGACY_TOL[] =
    { "SAR",                 5e-14 },  /* measured 1.42e-14                   */
    { "TRIX",                4e-14 },  /* measured 1.11e-14                   */
    { "STOCH",               3e-14 },  /* measured 7.11e-15, alt/EMA arm only */
+   { "ATR",                 2e-14 },  /* #338  measured 4.88e-15             */
+   { "NATR",                2e-14 },  /* #338  measured 4.00e-15             */
    { "MACDFIX",             4e-15 },  /* measured 1.33e-15                   */
 
    /* --- (a) plus the 8-ULP libm floor (atan-derived output) -------------- */

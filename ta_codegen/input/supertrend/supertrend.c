@@ -37,6 +37,7 @@ TA_RetCode supertrend(int startIdx, int endIdx,
    int isUptrend;
 
    double prevATR, periodTotal;
+   double wAlpha, wBeta;
    double val2, val3, greatest;
    double tempCY, tempLT, tempHT;
    double medianPrice, band, basicUpper, basicLower;
@@ -61,10 +62,13 @@ TA_RetCode supertrend(int startIdx, int endIdx,
     * The arithmetic order below is the bit-exactness contract with TA_ATR (do
     * not reorder or fuse operations): True Range from high-low, then the two
     * previous-close distances in that order; the seed summed from 0.0 over the
-    * first 'period' True Ranges and divided once; Wilder smoothing as three
-    * separate statements.
+    * first 'period' True Ranges and divided once; Wilder smoothing in the same
+    * two-coefficient form TA_ATR uses, so the same accumulator product fuses.
     */
    today = startIdx - lookbackTotal + 1;
+
+   wAlpha = 1.0 / (double)optInTimePeriod;
+   wBeta  = 1.0 - wAlpha;
 
    periodTotal = 0.0;
    i = optInTimePeriod;
@@ -107,9 +111,7 @@ TA_RetCode supertrend(int startIdx, int endIdx,
       if( val3 > greatest )
          greatest = val3;
 
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = wAlpha * greatest + wBeta * prevATR;
       today++;
       i--;
    }
@@ -149,9 +151,7 @@ TA_RetCode supertrend(int startIdx, int endIdx,
       if( val3 > greatest )
          greatest = val3;
 
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = wAlpha * greatest + wBeta * prevATR;
 
       medianPrice = (tempHT+tempLT)/2.0;
       band = optInMultiplier * prevATR;

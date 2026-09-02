@@ -43,6 +43,7 @@ TA_RetCode natr(int startIdx, int endIdx,
    int nbATR;
 
    double prevATR, periodTotal, tempValue;
+   double wAlpha, wBeta;
    double val2, val3, greatest;
    double tempCY, tempLT, tempHT;
 
@@ -86,7 +87,7 @@ TA_RetCode natr(int startIdx, int endIdx,
       return TA_SUCCESS;
 
    /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-    * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR).
+    * to the raw True Range at every bar (wAlpha 1.0, wBeta 0.0).
     * At period 1 the output is left as that raw True Range (unnormalized),
     * matching the historical TRANGE-delegation behavior; every period > 1 is
     * normalized by the close. The single general path handles all period >= 1.
@@ -102,8 +103,11 @@ TA_RetCode natr(int startIdx, int endIdx,
     *  - Seed: the first 'period' True Range values are summed,
     *    accumulated from 0.0 in input order, then divided by
     *    the period.
-    *  - Wilder smoothing: multiply by period-1, add the True
-    *    Range, divide by period, as three separate statements.
+    *  - Wilder smoothing: the two-coefficient form, with the
+    *    reciprocal hoisted out of the loop. The generator
+    *    canonicalizes the add so the accumulator product is the
+    *    one fused, which is what keeps the four backends
+    *    bit-identical to each other here.
     *
     * Each output is normalized by the close of its own bar; a
     * close of zero yields 0.0.
@@ -118,6 +122,9 @@ TA_RetCode natr(int startIdx, int endIdx,
     * startIdx-lookbackTotal+1 (a previous close is consumed).
     */
    today = startIdx - lookbackTotal + 1;
+
+   wAlpha = 1.0 / (double)optInTimePeriod;
+   wBeta  = 1.0 - wAlpha;
 
    /* Seed the ATR with a simple average of the True Range
     * for the first 'period' bars.
@@ -147,9 +154,6 @@ TA_RetCode natr(int startIdx, int endIdx,
 
    /* Subsequent value are smoothed using the
     * previous ATR value (Wilder's approach).
-    *  1) Multiply the previous ATR by 'period-1'.
-    *  2) Add today TR value.
-    *  3) Divide by 'period'.
     */
 
    /* Skip the unstable period. */
@@ -170,9 +174,7 @@ TA_RetCode natr(int startIdx, int endIdx,
       if( val3 > greatest )
          greatest = val3;
 
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = wAlpha * greatest + wBeta * prevATR;
       today++;
       i--;
    }
@@ -219,9 +221,7 @@ TA_RetCode natr(int startIdx, int endIdx,
       if( val3 > greatest )
          greatest = val3;
 
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = wAlpha * greatest + wBeta * prevATR;
       if( optInTimePeriod <= 1 )
       {
          /* No smoothing: emit the raw True Range (unnormalized). */

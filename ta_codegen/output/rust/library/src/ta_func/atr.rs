@@ -104,6 +104,40 @@ impl Core {
         inHigh: &[f64],
         inLow: &[f64],
         inClose: &[f64],
+        optInTimePeriod: i32,
+        outBegIdx: &mut usize,
+        outNBElement: &mut usize,
+        outReal: &mut [f64],
+    ) -> RetCode {
+        #[cfg(target_arch = "x86_64")]
+        return ta_lib_dispatch::dispatch_fma!(self, ATR_Impl_fma, ATR_Impl_impl, (startIdx, endIdx, inHigh, inLow, inClose, optInTimePeriod, outBegIdx, outNBElement, outReal));
+        #[cfg(not(target_arch = "x86_64"))]
+        self.ATR_Impl_impl(startIdx, endIdx, inHigh, inLow, inClose, optInTimePeriod, outBegIdx, outNBElement, outReal)
+    }
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "fma")]
+    fn ATR_Impl_fma(
+        &self,
+        startIdx: usize,
+        endIdx: usize,
+        inHigh: &[f64],
+        inLow: &[f64],
+        inClose: &[f64],
+        optInTimePeriod: i32,
+        outBegIdx: &mut usize,
+        outNBElement: &mut usize,
+        outReal: &mut [f64],
+    ) -> RetCode {
+        self.ATR_Impl_impl(startIdx, endIdx, inHigh, inLow, inClose, optInTimePeriod, outBegIdx, outNBElement, outReal)
+    }
+    #[inline(always)]
+    fn ATR_Impl_impl(
+        &self,
+        startIdx: usize,
+        endIdx: usize,
+        inHigh: &[f64],
+        inLow: &[f64],
+        inClose: &[f64],
         mut optInTimePeriod: i32,
         outBegIdx: &mut usize,
         outNBElement: &mut usize,
@@ -140,6 +174,8 @@ impl Core {
         let mut tempCY: f64 = 0.0_f64;
         let mut tempLT: f64 = 0.0_f64;
         let mut tempHT: f64 = 0.0_f64;
+        let mut wAlpha: f64 = 0.0_f64;
+        let mut wBeta: f64 = 0.0_f64;
         // Average True Range is the greatest of the following:
         //
         //  val1 = distance from today's high to today's low.
@@ -161,8 +197,8 @@ impl Core {
             return RetCode::Success;
         }
         // Period 1 needs no smoothing: the Wilder recursion below degenerates
-        // to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR),
-        // so the single general path handles every period >= 1.
+        // to the raw True Range at every bar (wAlpha 1.0, wBeta 0.0), so the
+        // single general path handles every period >= 1.
         // The True Range of each bar is computed inline in a single
         // pass. No temporary buffer is needed.
         //
@@ -173,8 +209,11 @@ impl Core {
         //  - Seed: the first 'period' True Range values are summed,
         //    accumulated from 0.0 in input order, then divided by
         //    the period.
-        //  - Wilder smoothing: multiply by period-1, add the True
-        //    Range, divide by period, as three separate statements.
+        //  - Wilder smoothing: the two-coefficient form, with the
+        //    reciprocal hoisted out of the loop. The generator
+        //    canonicalizes the add so the accumulator product is the
+        //    one fused, which is what keeps the four backends
+        //    bit-identical to each other here.
         //
         // In-place (outReal being one of the input arrays) is
         // supported: each output is written only after every input
@@ -183,6 +222,8 @@ impl Core {
         // The first True Range needs the two price bars at
         // startIdx-lookbackTotal+1 (a previous close is consumed).
         today = startIdx - lookbackTotal + 1;
+        wAlpha = 1.0 / (optInTimePeriod as f64);
+        wBeta = 1.0 - wAlpha;
         // Seed the ATR with a simple average of the True Range
         // for the first 'period' bars.
         periodTotal = 0.0;
@@ -208,9 +249,6 @@ impl Core {
         prevATR = periodTotal / ((optInTimePeriod) as f64);
         // Subsequent value are smoothed using the
         // previous ATR value (Wilder's approach).
-        //  1) Multiply the previous ATR by 'period-1'.
-        //  2) Add today TR value.
-        //  3) Divide by 'period'.
         // Skip the unstable period.
         i = (self.unstable_period[FuncUnstId::ATR as usize]) as usize;
         while i != 0 {
@@ -228,9 +266,7 @@ impl Core {
             if val3 > greatest {
                 greatest = val3;
             }
-            prevATR *= ((optInTimePeriod - 1) as f64);
-            prevATR += greatest;
-            prevATR /= ((optInTimePeriod) as f64);
+            prevATR = (wBeta as f64).mul_add(prevATR, wAlpha * greatest);
             today += 1;
             i -= 1;
         }
@@ -255,9 +291,7 @@ impl Core {
             if val3 > greatest {
                 greatest = val3;
             }
-            prevATR *= ((optInTimePeriod - 1) as f64);
-            prevATR += greatest;
-            prevATR /= ((optInTimePeriod) as f64);
+            prevATR = (wBeta as f64).mul_add(prevATR, wAlpha * greatest);
             outReal[outIdx] = prevATR;
             outIdx += 1;
             today += 1;
@@ -403,6 +437,8 @@ pub struct AtrStream {
 struct AtrStreamState {
     optInTimePeriod: i32,
     prevATR: f64,
+    wAlpha: f64,
+    wBeta: f64,
     lag1_inClose: f64,
     cur_outReal: f64,
 }
@@ -434,9 +470,7 @@ impl Core {
         if val3 > greatest {
             greatest = val3;
         }
-        sp.prevATR *= ((sp.optInTimePeriod - 1) as f64);
-        sp.prevATR += greatest;
-        sp.prevATR /= ((sp.optInTimePeriod) as f64);
+        sp.prevATR = (sp.wBeta as f64).mul_add(sp.prevATR, sp.wAlpha * greatest);
         (*outReal) = sp.prevATR;
         sp.cur_outReal = (*outReal);
         sp.lag1_inClose = inClose;
@@ -484,6 +518,8 @@ impl Core {
         let mut tempCY: f64 = 0.0_f64;
         let mut tempLT: f64 = 0.0_f64;
         let mut tempHT: f64 = 0.0_f64;
+        let mut wAlpha: f64 = 0.0_f64;
+        let mut wBeta: f64 = 0.0_f64;
         // Average True Range is the greatest of the following:
         //
         //  val1 = distance from today's high to today's low.
@@ -505,8 +541,8 @@ impl Core {
             return Err(RetCode::InsufficientHistory);
         }
         // Period 1 needs no smoothing: the Wilder recursion below degenerates
-        // to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR),
-        // so the single general path handles every period >= 1.
+        // to the raw True Range at every bar (wAlpha 1.0, wBeta 0.0), so the
+        // single general path handles every period >= 1.
         // The True Range of each bar is computed inline in a single
         // pass. No temporary buffer is needed.
         //
@@ -517,8 +553,11 @@ impl Core {
         //  - Seed: the first 'period' True Range values are summed,
         //    accumulated from 0.0 in input order, then divided by
         //    the period.
-        //  - Wilder smoothing: multiply by period-1, add the True
-        //    Range, divide by period, as three separate statements.
+        //  - Wilder smoothing: the two-coefficient form, with the
+        //    reciprocal hoisted out of the loop. The generator
+        //    canonicalizes the add so the accumulator product is the
+        //    one fused, which is what keeps the four backends
+        //    bit-identical to each other here.
         //
         // In-place (outReal being one of the input arrays) is
         // supported: each output is written only after every input
@@ -527,6 +566,8 @@ impl Core {
         // The first True Range needs the two price bars at
         // startIdx-lookbackTotal+1 (a previous close is consumed).
         today = startIdx - lookbackTotal + 1;
+        wAlpha = 1.0 / (optInTimePeriod as f64);
+        wBeta = 1.0 - wAlpha;
         // Seed the ATR with a simple average of the True Range
         // for the first 'period' bars.
         periodTotal = 0.0;
@@ -552,9 +593,6 @@ impl Core {
         prevATR = periodTotal / ((optInTimePeriod) as f64);
         // Subsequent value are smoothed using the
         // previous ATR value (Wilder's approach).
-        //  1) Multiply the previous ATR by 'period-1'.
-        //  2) Add today TR value.
-        //  3) Divide by 'period'.
         // Skip the unstable period.
         i = (self.unstable_period[FuncUnstId::ATR as usize]) as usize;
         while i != 0 {
@@ -572,9 +610,7 @@ impl Core {
             if val3 > greatest {
                 greatest = val3;
             }
-            prevATR *= ((optInTimePeriod - 1) as f64);
-            prevATR += greatest;
-            prevATR /= ((optInTimePeriod) as f64);
+            prevATR = (wBeta as f64).mul_add(prevATR, wAlpha * greatest);
             today += 1;
             i -= 1;
         }
@@ -599,9 +635,7 @@ impl Core {
             if val3 > greatest {
                 greatest = val3;
             }
-            prevATR *= ((optInTimePeriod - 1) as f64);
-            prevATR += greatest;
-            prevATR /= ((optInTimePeriod) as f64);
+            prevATR = (wBeta as f64).mul_add(prevATR, wAlpha * greatest);
             outReal[({ let _v = outIdx; outIdx += 1; _v } * outStride) as usize] = prevATR;
             today += 1;
         }
@@ -612,6 +646,8 @@ impl Core {
         let state = AtrStreamState {
             optInTimePeriod,
             prevATR,
+            wAlpha,
+            wBeta,
             cur_outReal: outReal[(*outNBElement - 1) * outStride],
             lag1_inClose: inClose[historyLen - 1],
         };
@@ -848,9 +884,7 @@ impl AtrStream {
             if val3 > greatest {
                 greatest = val3;
             }
-            prevATR *= ((sp.optInTimePeriod - 1) as f64);
-            prevATR += greatest;
-            prevATR /= ((sp.optInTimePeriod) as f64);
+            prevATR = (sp.wBeta as f64).mul_add(prevATR, sp.wAlpha * greatest);
             (*outReal) = prevATR;
         }
         Ok(outReal)

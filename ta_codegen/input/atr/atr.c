@@ -42,6 +42,7 @@ TA_RetCode atr(int startIdx, int endIdx,
    double prevATR, periodTotal;
    double val2, val3, greatest;
    double tempCY, tempLT, tempHT;
+   double wAlpha, wBeta;
 
    /* Average True Range is the greatest of the following:
     *
@@ -67,8 +68,8 @@ TA_RetCode atr(int startIdx, int endIdx,
       return TA_SUCCESS;
 
    /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-    * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR),
-    * so the single general path handles every period >= 1.
+    * to the raw True Range at every bar (wAlpha 1.0, wBeta 0.0), so the
+    * single general path handles every period >= 1.
     */
 
    /* The True Range of each bar is computed inline in a single
@@ -81,8 +82,11 @@ TA_RetCode atr(int startIdx, int endIdx,
     *  - Seed: the first 'period' True Range values are summed,
     *    accumulated from 0.0 in input order, then divided by
     *    the period.
-    *  - Wilder smoothing: multiply by period-1, add the True
-    *    Range, divide by period, as three separate statements.
+    *  - Wilder smoothing: the two-coefficient form, with the
+    *    reciprocal hoisted out of the loop. The generator
+    *    canonicalizes the add so the accumulator product is the
+    *    one fused, which is what keeps the four backends
+    *    bit-identical to each other here.
     *
     * In-place (outReal being one of the input arrays) is
     * supported: each output is written only after every input
@@ -94,6 +98,9 @@ TA_RetCode atr(int startIdx, int endIdx,
     * startIdx-lookbackTotal+1 (a previous close is consumed).
     */
    today = startIdx - lookbackTotal + 1;
+
+   wAlpha = 1.0 / (double)optInTimePeriod;
+   wBeta  = 1.0 - wAlpha;
 
    /* Seed the ATR with a simple average of the True Range
     * for the first 'period' bars.
@@ -123,9 +130,6 @@ TA_RetCode atr(int startIdx, int endIdx,
 
    /* Subsequent value are smoothed using the
     * previous ATR value (Wilder's approach).
-    *  1) Multiply the previous ATR by 'period-1'.
-    *  2) Add today TR value.
-    *  3) Divide by 'period'.
     */
 
    /* Skip the unstable period. */
@@ -146,9 +150,7 @@ TA_RetCode atr(int startIdx, int endIdx,
       if( val3 > greatest )
          greatest = val3;
 
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = wAlpha * greatest + wBeta * prevATR;
       today++;
       i--;
    }
@@ -178,9 +180,7 @@ TA_RetCode atr(int startIdx, int endIdx,
       if( val3 > greatest )
          greatest = val3;
 
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = wAlpha * greatest + wBeta * prevATR;
       outReal[outIdx++] = prevATR;
       today++;
    }
