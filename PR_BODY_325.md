@@ -104,6 +104,27 @@ remaining sinks are in peek frames:
 - `javac` 21 compiles the generated library and the generated JSON-RPC server
   clean.
 
+## Carried again, to dev `a5ca7cc6`
+
+Three further advances since: `#336` (`1c1fca43`, the composed peek frame's temp
+filter — the C emitter only), `918a7b70` (the release scripts' Cargo.lock sync)
+and `#331` (`a5ca7cc6`). None of them touches generated Java. The merge was
+clean; nothing was hand-resolved.
+
+Re-run on that merge, in one session:
+
+- `regen-check`: **`ta_codegen output matches the committed source. OK.`**
+- Generator suite: **29 suites, 899 passed, 0 failed.**
+- The two counts, re-read off the merged `Core.java`: **17** package-private
+  sinkless `update` overloads, and **2** remaining `new *Out()` sites —
+  `MamaOut` at `Core.java:103880`, inside `public double peek(...)`, and
+  `StochfOut` at `145893`, inside `public void peek(..., StochrsiOut out)`.
+  Both peek frames; no commit path allocates.
+
+NOT re-run on this last merge: `javac`, the Maven path, every cross-language
+leg, and the deliberate-break controls. They are claimed for the `19286097`
+merge above and nothing since touches Java.
+
 NOT run on this merge, and so not claimed for it:
 
 - `scripts/regtest.py` and every cross-language leg. `bin/ta_ref_serve` was not
