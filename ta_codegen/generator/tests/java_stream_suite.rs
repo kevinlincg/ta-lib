@@ -1105,6 +1105,17 @@ fn no_java_peek_commits_a_sub_stream() {
         committing_sites += commits(&s[..start]).len() + commits(&s[end..]).len();
     }
 
+    // The defect assertion goes first. Converting a peek's sub-call to the
+    // committing verb also drops that peek out of `with_subs`, and the
+    // corpus carries exactly the 13 the tripwire demands -- so with the tripwire
+    // first, a real single-site defect reports as a hollowed-out corpus instead
+    // of naming the site.
+    assert!(
+        offenders.is_empty(),
+        "a Java peek entry point commits a sub-stream ({} site(s)):\n{}",
+        offenders.len(),
+        offenders.join("\n")
+    );
     assert!(
         with_subs >= 13,
         "only {with_subs} Java peek entry point(s) drive a sub-handle, so this gate \
@@ -1114,11 +1125,5 @@ fn no_java_peek_commits_a_sub_stream() {
         committing_sites > 0,
         "no tier in the corpus calls a sub-handle's update, so forbidding that call \
          in a peek frame asserts nothing"
-    );
-    assert!(
-        offenders.is_empty(),
-        "a Java peek entry point commits a sub-stream ({} site(s)):\n{}",
-        offenders.len(),
-        offenders.join("\n")
     );
 }
