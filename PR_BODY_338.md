@@ -285,6 +285,7 @@ Nothing in `src/ta_func/` was edited by hand.
 |---|---|
 | `build.py regen-check` | exit 0 — "output matches the committed source. OK." |
 | `build.py test` (full C `ta_regtest`) | all tests succeeded, SUPERTREND differential included |
+| the generator's whole `cargo test` | 901 passed, 0 failed |
 
 **The benchmark table above was not re-measured on the new base.** Those ratios
 were taken against `dev` df0c6beb, before #316 changed how the streaming frames
