@@ -32,10 +32,10 @@ int codegen_lang_has_compatibility_api(const char *lang);
 int codegen_lang_needs_transcendental_tol(const char *lang);
 
 /* Bit-exact differential fuzz of the current in-process library against the
- * frozen released v0.6.4 exposed as bin/ta_064_serve. Opt-in (--fuzz-064),
+ * frozen released baseline exposed as bin/ta_baseline_serve. Opt-in (--fuzz-baseline),
  * never part of default/nightly runs. functionFilter: CSV substring filter
  * (NULL = all). Returns TA_TEST_PASS iff there is no unwaived divergence. */
-ErrorNumber fuzz_ref064(const char *functionFilter);
+ErrorNumber fuzz_vs_baseline(const char *functionFilter);
 
 /* Cross-language BITWISE parity gate (--xlang-hash, issue #113). Diffs each
  * generated language server against the shipped in-process C library on

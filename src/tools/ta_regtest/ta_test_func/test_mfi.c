@@ -54,7 +54,7 @@
  *   (a low price, small volumes, or a BTC-quoted pair).
  *
  *   The lineage-bound gates cannot catch that class on their own: ta_ref_serve
- *   is our own frozen pre-cutover source and --fuzz-064 is our own last
+ *   is our own frozen pre-cutover source and --fuzz-baseline is our own last
  *   release, and BOTH carry the defect. They pin what we did, not what is
  *   correct. So the value legs here are EXTERNAL.
  *

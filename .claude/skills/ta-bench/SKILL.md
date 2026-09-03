@@ -228,6 +228,6 @@ the byte-for-byte reproduction of the historical seed-42 series, which matters
 more on a timing-only corpus. Every other predicate holds for every shape.
 
 The corpus is timing-only — it is never hashed and is unrelated to
-`fuzz_data.h`, whose `FUZZ_*` shape list is iterated by `--fuzz-064` /
+`fuzz_data.h`, whose `FUZZ_*` shape list is iterated by `--fuzz-baseline` /
 `--xlang-hash`. Keep it that way: adding a shape there changes what those gates
 compare (see the note at `test_variants.c:148`).

@@ -379,7 +379,7 @@ static const TA_CDLGlobals cdlGlobalsMatrix[] =
  * fails if any of the four output classes (+/-100, +/-200) is absent (vacuous).
  * The complementary differential coverage — current batch vs frozen v0.6.4, and
  * stream vs batch — runs on the same pattern geometry via fuzz_data.h's
- * FUZZ_CANDLE shape (fuzz-064 and stream_verify).
+ * FUZZ_CANDLE shape (fuzz-baseline and stream_verify).
  * ------------------------------------------------------------------------ */
 /* PB_N sizes the scenario tape. It is deliberately far larger than any builder
  * needs: a builder is primer + pattern + flat filler per scenario, and a

@@ -221,7 +221,7 @@ a large fraction of inputs by ~1 ULP). The 3 vDSP arithmetic ops (`ADD`/`SUB`/`M
 bit-exact (IEEE-754 requires correctly-rounded `+ − ×`, with no multiply-add to fuse); `SQRT` routed
 through vForce is uncertain. This interacts with the repo's oracles:
 
-- **`fuzz-064`** (the only truly bit-exact oracle — `memcmp` of doubles vs frozen 0.6.4) runs
+- **`fuzz-baseline`** (the only truly bit-exact oracle — `memcmp` of doubles vs frozen 0.6.4) runs
   **ubuntu-only**, where the `#if` compiles out → it stays green. `--codegen` already tolerates
   `1e-6` → green. The macOS `test-macos` job uses `0.01` tolerance → green.
 - **So no existing gate turns red — which is the problem.** "Passes `ta_regtest` ⇒ 100% backward
@@ -249,13 +249,13 @@ NaN-vs-NaN as benign regardless of payload, or restrict dispatch to in-domain in
   `--accel-parity` mode, modeled on the `fuzz_ref064` server-differential). Add a
   `test-macos-accelerate` CI job (sibling of the existing scalar-only `test-macos`) running
   `macos-latest` + `TA_USE_ACCELERATE=ON` → plain `ta_regtest` (smoke) + the parity differential.
-  Keep `fuzz-064`/`--codegen` ubuntu-only; rely on the regen-clean job to prove the `#if` blocks
+  Keep `fuzz-baseline`/`--codegen` ubuntu-only; rely on the regen-clean job to prove the `#if` blocks
   come from the generator, not a hand-edit.
 
 ### 4.4 Developer workflow (write-blind for Apple, fully local for the rest)
 
 The scalar-user guarantee — that non-Apple builds are byte-identical to today — is **100%
-verifiable on Linux** (`generate` + regen-check + `fuzz-064` + `--codegen`). Only the vForce numbers
+verifiable on Linux** (`generate` + regen-check + `fuzz-baseline` + `--codegen`). Only the vForce numbers
 are unobservable off-Apple; those iterate through the dedicated macOS CI job. SLEEF (§6) collapses
 most of that blind surface by letting the *shape* of the optimization be exercised locally.
 
@@ -380,7 +380,7 @@ vForce.
 - Bit-exact oracle: `src/tools/ta_regtest/test_codegen.c` — `memcmp` at ~`:3182`; `FUZZ_064_TOL[]`
   manifest ~`:3101-3110`; `CODEGEN_EPSILON = 1e-6` ~`:92`.
 - CI: `.github/workflows/dev-nightly-tests.yml` — `test-macos` job ~`:170` (scalar-only, macos-latest);
-  `fuzz-vs-064` ~`:316` (ubuntu). `main-nightly-tests.yml` has no macOS leg.
+  `fuzz-vs-baseline` ~`:316` (ubuntu). `main-nightly-tests.yml` has no macOS leg.
 - Brew: homebrew-core autobumps the formula from the release tarball; the source
   asset it consumes comes from `scripts/package.py` (`package_src_tar_gz`).
 - Clean input examples: `ta_codegen/input/sin/sin.c`, `input/add/add.c`, `input/sub/sub.c`.

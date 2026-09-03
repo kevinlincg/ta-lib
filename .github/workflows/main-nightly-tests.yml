@@ -178,11 +178,11 @@ jobs:
         run: |
           $PYTHON $GITHUB_WORKSPACE/scripts/sync-website.py --check --warn-only
 
-  # Release gate: prove the library is still bit-identical to v0.6.4 at
-  # period>=2. C-only, gated on 'test'. fetch-depth: 0 for the v0.6.4 tag.
+  # Release gate: prove the library is still bit-identical to the baseline at
+  # period>=2. C-only, gated on 'test'. fetch-depth: 0 for the baseline tag.
   # See src/tools/ta_regtest/CLAUDE.md.
-  fuzz-vs-064:
-    name: Bit-exact fuzz vs released v0.6.4
+  fuzz-vs-baseline:
+    name: Bit-exact fuzz vs the released baseline
     needs: test
     # Run after 'test' but don't let an unrelated failure (e.g. the Windows leg)
     # silently skip this release gate — it has its own checkout+build.
@@ -195,16 +195,16 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: main
-          fetch-depth: 0 # ta_064_serve builds from the released v0.6.4 tag
+          fetch-depth: 0 # ta_baseline_serve builds from the released baseline tag
 
       - name: Install Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
-      - name: Fuzz current library vs frozen v0.6.4
+      - name: Fuzz current library vs the frozen release
         shell: bash
-        run: python3 scripts/build.py fuzz-064
+        run: python3 scripts/build.py fuzz-baseline
 
   # Cross-language BITWISE parity gate (issue #113): the generated language
   # servers must be BIT-IDENTICAL to the shipped in-process C library (no

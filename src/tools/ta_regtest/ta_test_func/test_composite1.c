@@ -72,7 +72,7 @@
  *      bit-for-bit, against a test-only reference built by calling the shipped
  *      sub-function(s) it composes. The reference contains ZERO new numerical
  *      logic - only calls to primitives already proven by the cross-language
- *      bitwise gate (--xlang-hash), the differential fuzz (--fuzz-064) and the
+ *      bitwise gate (--xlang-hash), the differential fuzz (--fuzz-baseline) and the
  *      hard-coded expected values - so it is an honest second implementation.
  *      Two independently-maintained code paths that must agree exactly; this
  *      catches any drift a future optimization of the fused path could

@@ -21,14 +21,14 @@ land in.
 | `--function=CSV` | Substring filter matched against the **group tag** in `DO_TEST`, not the function name — a function absent from its group's tag is unreachable by it, which is why the composite groups spell their members out. A tag element ending in `*` is a prefix claim (`CDL*`). Matching no group is `TA_REGTEST_FILTER_MATCHED_NOTHING`, except on the three self-contained legs below, which filter by real function name and legitimately match no group. |
 | `--codegen` | Codegen verification after the C reference tests |
 | `--language=CSV` | Narrow it (`c,rust,java,csharp`) |
-| `--fuzz-064` | Differential vs the frozen v0.6.4 oracle. **Self-contained** |
+| `--fuzz-baseline` | Differential vs the frozen released-baseline oracle. **Self-contained** |
 | `--xlang-hash` | Cross-language bitwise parity gate. **Self-contained** |
 
 The last three are **rejected in combination** (`TA_REGTEST_BAD_USER_PARAM`):
 the two self-contained gates `return` from `main()` before the normal suite, so
 a combination runs one and silently drops the rest while reading as if it had
 run both. `scripts/regtest.py` accepts neither — they are their own runs
-(`scripts/build.py xlang-hash` / `fuzz-064`).
+(`scripts/build.py xlang-hash` / `fuzz-baseline`).
 
 ## Key Files
 
@@ -373,7 +373,7 @@ define — and every gate here compares bits.
 therefore count "different bits, numerically equal" as **benign**:
 `stream_verify` returns it per request, and the driver names each function on a
 `BENIGN TA_x` line. The total is not printed, so a change that starts flipping
-zeros is visible only through those lines. `--fuzz-064` carries the same class —
+zeros is visible only through those lines. `--fuzz-baseline` carries the same class —
 `a == b` with differing bits can only be ±0.
 
 **Same-tier** comparisons stay strictly bitwise: peek vs update, `value()` vs
@@ -409,8 +409,8 @@ window while the hand-written constants carry 2–6 significant digits. That win
 is scale-blind: a third of those values sit below magnitude 10, where it admits
 >0.1% relative error, and on a bounded output (BOP, CORREL) the row is close to
 no assertion. Freezing full-precision values removes transcription as an error
-source. **Why freeze when `--fuzz-064` compares:** that gate needs the `v0.6.4`
-tag, a `../ta-lib-064` worktree and a second CMake build, cannot run from a
+source. **Why freeze when `--fuzz-baseline` compares:** that gate needs the `v0.6.4`
+tag, a frozen worktree and a second CMake build, cannot run from a
 release tarball, and dies if the tag stops being fetchable. Broad-and-transient
 against narrow-and-permanent.
 
@@ -424,7 +424,7 @@ to compare against, so the set grows with each new indicator); STOCHRSI, which
 diverges on purpose and is pinned by `test_stoch.c`; and everything whose value
 depends on **the host libm**.
 
-That last reason is *created* by freezing — `--fuzz-064` compares two binaries on
+That last reason is *created* by freezing — `--fuzz-baseline` compares two binaries on
 one host and never sees it, while a frozen table is read on every host.
 `atan`/`sin`/`cos`/`exp`/`log` are not correctly rounded, so a frozen value for
 the pure passthroughs (ACOS…TANH) asserts "your libm matches the machine that
@@ -459,7 +459,7 @@ and stay in: both are smooth in it, and MAMA carries the 8-ULP libm floor.
 **Tolerances are measured, not contractual.** Most in-scope functions reproduce
 v0.6.4 bit for bit and carry no row. Each bound that exists is that function's
 largest measured deviation on this series × ~3, absolute — there is only one
-magnitude here, unlike `--fuzz-064`'s 1e-7…1e9 shapes, which need scaled bounds
+magnitude here, unlike `--fuzz-baseline`'s 1e-7…1e9 shapes, which need scaled bounds
 and conditioning gates — so the result is orders tighter than the 1e-9 relative
 FMA contract. `LEGACY_TOL` refuses a row for a function outside the freeze and
 refuses a zero or negative bound, so it cannot accumulate dead slack. The one
@@ -511,19 +511,39 @@ putting both back.
 `LEGACY_TOL` row; both divergence causes are specific to v0.6.4. The libm floors
 are the one part that may need to survive.
 
-## `--fuzz-064` — bit-exact differential fuzz vs released v0.6.4
+## `--fuzz-baseline` — bit-exact differential fuzz vs released v0.6.4
 
 Opt-in, never part of a `--codegen` run, and proves the **current shipped library
 is bit-identical to v0.6.4** function by function. It is the regression oracle a
 class-A optimization is validated against: run it before and after — the
-divergence set must not grow. `scripts/build.py fuzz-064` builds and runs it;
+divergence set must not grow. `scripts/build.py fuzz-baseline` builds and runs it;
 both CI nightlies gate on it.
 
-- **Oracle:** `bin/ta_064_serve` — the frozen v0.6.4 `libta-lib.a` from the
-  `../ta-lib-064` worktree at tag `v0.6.4`, behind the current JSON-RPC
-  transport, **shadow-patched at build time** by `scripts/build_064_serve.py` (no
+- **Oracle:** `bin/ta_baseline_serve` — the frozen v0.6.4 `libta-lib.a` from the
+  `../ta-lib-v0.6.4` worktree at that tag, behind the current JSON-RPC
+  transport, **shadow-patched at build time** by `scripts/build_baseline_serve.py` (no
   committed file changes). The current library is called **in-process**; only
   0.6.4 crosses the pipe.
+
+**Which release is the baseline lives in two places, and that is the design**
+(#116). `serve_version.RELEASE_TAG` decides what gets built — the tag, and from
+it the worktree path, so a roll cannot land on a checkout of the previous tag.
+`FUZZ_BASELINE_TAG` (`test_codegen.c`) declares what the comparison rules below
+were measured against. The build stamps the first into the oracle's own
+`list_functions` answer and the driver refuses to run when the two disagree,
+naming what must be re-derived.
+
+Nothing else carries the version: the binary is `ta_baseline_serve`, the flag is
+`--fuzz-baseline`, the target is `build.py fuzz-baseline`, the nightly job is
+`fuzz-vs-baseline`. So **rolling to a newer release is `RELEASE_TAG`, then the
+work the refusal names, then `FUZZ_BASELINE_TAG`** — and skipping the middle
+step is not possible, which is the whole point of the second declaration.
+`FUZZ_BASELINE_TOL`, every per-case skip below, `FROZEN_ORACLE_MATYPE_MAX` and
+`FMA_TRANSITION_TOLERANCE` are statements about **one** release's behaviour;
+carried to another unexamined they would tolerate thousands of cases for reasons
+that had stopped applying. What the generalization does **not** fix is the
+metadata circularity (#161): the serve's `ta_abstract` still compiles from the
+current tree, at every release it is ever pointed at.
 - **Inputs by seed:** the request carries only `(gen_shape, gen_seed, gen_n)` and
   both ends run the identical generator in `fuzz_data.h`, so inputs are
   byte-identical by construction. `FP_CONTRACT` is forced off so the generator
@@ -539,7 +559,7 @@ Scope rules (deliberate):
   so periods are floored at 2 and period-1 is validated by the non-0.6.4
   comparisons. At period ≥ 2 there are **no waivers**.
 - **Subset tolerance is 0.6.4-only:** post-0.6.4 functions are skipped via
-  `ta_064_serve`'s `list_functions`. Any non-0.6.4 comparison must instead
+  `ta_baseline_serve`'s `list_functions`. Any non-0.6.4 comparison must instead
   require an exact function-set match.
 - **Benign class:** a diff where every differing element is numerically equal
   (±0, from cached-index rewrites) is reported, not failed.
@@ -626,7 +646,7 @@ on it. Needs cmake + gcc + cargo plus the **JDK** and the **.NET SDK**.
 Scope rules (deliberate):
 
 - **No 0.6.4, no waivers; one tolerance and two skips.** Current-vs-current, so
-  none of `--fuzz-064`'s carve-outs apply. A non-tolerated mismatch is a real
+  none of `--fuzz-baseline`'s carve-outs apply. A non-tolerated mismatch is a real
   fusion-site or codegen divergence to fix.
 - **The choice-list default sentinel, Java only.** Every optional parameter gets
   a `TA_*_DEFAULT` vector that must resolve to the declared default,

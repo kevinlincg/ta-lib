@@ -325,7 +325,7 @@ static long g_slackCalls[NUM_LANGUAGES];
  * pre-cutover library — and issue #98 fixed two functions whose OLD behaviour it
  * still has. Both changed what they compute on a PARTIAL range only, so the
  * divergence is exactly `startIdx > lookback`, which is precisely what the
- * startIdx axis sends. `--fuzz-064` makes the same carve-out against v0.6.4 (its
+ * startIdx axis sends. `--fuzz-baseline` makes the same carve-out against v0.6.4 (its
  * `skipped98` counter); this is the same two names for the same reason, and the
  * cases it withholds are covered against the in-process C library by
  * `--xlang-hash`, whose golden is not frozen. */
@@ -1216,7 +1216,7 @@ static int build_json_request(CodegenRangeTestParam *p,
  * STOCHRSI (issue #107): its internal STOCHF now guards the divide with
  * TA_IS_ZERO where the reference divided a sub-epsilon flat-RSI-window residue
  * into full-scale [0,100] noise — so ta_ref_serve is the wrong value oracle for
- * it (same reason it is excluded from --fuzz-064). STOCHRSI's structural parity
+ * it (same reason it is excluded from --fuzz-baseline). STOCHRSI's structural parity
  * (retCode/outBegIdx/outNBElement) stays strict on every backend, and its values
  * are pinned by test_stoch.c (test_stochrsi_epsilon_issue107). Standalone STOCH/
  * STOCHF keep the same guard but do NOT diverge from the reference on raw OHLC
@@ -2094,7 +2094,7 @@ static void test_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
      * (ta_ref_serve omits it from list_functions and stubs its symbol — see
      * scripts/serve_version.py). Skip it rather than hard-fail on the missing
      * baseline; it stays covered by server_verify, --xlang-hash and its
-     * hard-coded tests. Mirrors the --fuzz-064 subset gate. */
+     * hard-coded tests. Mirrors the --fuzz-baseline subset gate. */
 
     /* Skip functions with integer inputs (very rare, no test data) */
     unsigned int hasIntegerInput = 0;
@@ -2550,7 +2550,7 @@ static void test_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
 
 /* --- Post-freeze enum values (issue #139) --------------------------------
  * TA_MAType_HMA (9) exists only in the current library: the frozen oracles
- * (ta_ref_serve @ reference-pre-cutover, ta_064_serve @ v0.6.4) reject it
+ * (ta_ref_serve @ reference-pre-cutover, ta_baseline_serve @ v0.6.4) reject it
  * with TA_BAD_PARAM while the current side computes -- a guaranteed false
  * mismatch that would diff the feature itself, not a bug. Vector builders
  * that feed a FROZEN oracle therefore skip IntegerList values above this
@@ -3358,7 +3358,7 @@ static int stream_build_vectors(const TA_FuncInfo *fi,
      * the degenerate arm, which IGNORES the unstable period while the general
      * arm honors it — so the K-leg (variant 1) must run on these vectors too,
      * else period=1+K (the only place the two arms can diverge) goes untested.
-     * fuzz-064 floors periods at 2, so this is the sole gate covering it. */
+     * fuzz-baseline floors periods at 2, so this is the sole gate covering it. */
     for( v = 0; v < nvec; v++ ) vecIsEnum[v] = 0;
     for( v = 1; v < nvec; v++ ) vecIsMin[v] = 1;
 
@@ -3929,7 +3929,7 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
                     rejArms++;
                 /* Cross-tier +0.0/-0.0 pairs the server chose not to fail on
                  * (issue #147). Reported, never a failure — the same benign
-                 * class --fuzz-064 carries. `-1` is a server that predates the
+                 * class --fuzz-baseline carries. `-1` is a server that predates the
                  * field, which stream_flag reports as absent, not as a count. */
                 {
                     int z = stream_flag(ctx->responseBuf, "\"benign\":");
@@ -3989,7 +3989,7 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
         return;
     }
     ctx->streamStateLegs += stateLegs;
-    /* Named per function, like --fuzz-064's BENIGN line: a summary total that
+    /* Named per function, like --fuzz-baseline's BENIGN line: a summary total that
      * starts moving says only that something did, not what. */
     if( benign > 0 )
         printf("  BENIGN TA_%s: %lld cross-tier signed-zero case(s) "
@@ -4650,7 +4650,7 @@ static ErrorNumber test_codegen_for_language(
 
     /* Cache the frozen reference's supported-function set for the subset gate:
      * functions added after the pinned tag have no ta_ref_serve baseline and are
-     * skipped (see test_one_function / sweep_one_function). Mirrors --fuzz-064. */
+     * skipped (see test_one_function / sweep_one_function). Mirrors --fuzz-baseline. */
     char *refFuncList = NULL;
     if( refCp )
     {
@@ -5412,11 +5412,26 @@ static void write_markdown_report(const char *filepath, const char *languageFilt
     fclose(f);
 }
 
-/* Bit-exact differential fuzz of the current library vs frozen v0.6.4.
- * Seed-generated inputs (fuzz_data.h), outputs compared by hash.
- * Full spec: src/tools/ta_regtest/CLAUDE.md (--fuzz-064). */
+/* Bit-exact differential fuzz of the current library vs the frozen released
+ * baseline. Seed-generated inputs (fuzz_data.h), outputs compared by hash.
+ * Full spec: src/tools/ta_regtest/CLAUDE.md (--fuzz-baseline). */
 
-static const char *const argv_064[] = {"./ta_064_serve", NULL};
+/* The release everything below was measured against. The oracle binary carries
+ * no version in its name (scripts/serve_version.py owns which tag gets built)
+ * and instead reports its own in list_functions; fuzz_vs_baseline refuses to
+ * run when the two disagree.
+ *
+ * That refusal is the whole reason this constant is separate from the build
+ * side's RELEASE_TAG rather than derived from it. FUZZ_BASELINE_TOL, the
+ * per-case skips (#98, #107, #244, #253, #118, #242), FROZEN_ORACLE_MATYPE_MAX
+ * and FMA_TRANSITION_TOLERANCE are all statements about ONE release's
+ * behaviour. Rolling the oracle without re-deriving them would keep every
+ * waiver while diffing a different library — a gate that tolerates thousands of
+ * cases for reasons that no longer apply. Moving this line is the deliberate
+ * step that says they have been. */
+#define FUZZ_BASELINE_TAG "v0.6.4"
+
+static const char *const argv_baseline[] = {"./ta_baseline_serve", NULL};
 
 #define FUZZ_MAXN     256   /* bars per config (<= MAX_NB_TEST_ELEMENT) */
 #define FUZZ_MAX_OPT  16
@@ -5449,8 +5464,8 @@ static double fuzz_canon15(double x)
 
 /* Static scratch (one function at a time; TA_ForEachFunc is serial). */
 static double     g_fzBuf[6][FUZZ_MAXN];              /* O,H,L,C,V,OI          */
-static TA_Real    g_fz064Real[MAX_OUTPUTS][MAX_NB_TEST_ELEMENT];
-static TA_Integer g_fz064Int[MAX_OUTPUTS][MAX_NB_TEST_ELEMENT];
+static TA_Real    g_fzBaseReal[MAX_OUTPUTS][MAX_NB_TEST_ELEMENT];
+static TA_Integer g_fzBaseInt[MAX_OUTPUTS][MAX_NB_TEST_ELEMENT];
 
 typedef struct {
     const char  *functionFilter;
@@ -5483,7 +5498,7 @@ static int fuzz_call(FuzzContext *ctx)
         return 1;
     ctx->serverRestarts++;
     codegen_pipe_close(ctx->cp);
-    if( codegen_pipe_open(ctx->cp, argv_064) != TA_TEST_PASS )
+    if( codegen_pipe_open(ctx->cp, argv_baseline) != TA_TEST_PASS )
     {
         ctx->error = TA_CODEGEN_ALLOC_FAILED;
         return 0;
@@ -5639,8 +5654,8 @@ static void fuzz_add_default_sentinel(const TA_OptInputParameterInfo *oi,
 
 /* Parameter vectors: defaults + one-param-varied boundary/list sweeps, plus the
  * two contract classes (see the !frozenOracle guard below). */
-/* frozenOracle: 1 when the vectors feed a frozen oracle (--fuzz-064's
- * ta_064_serve) -- IntegerList values the freeze predates are then excluded
+/* frozenOracle: 1 when the vectors feed a frozen oracle (--fuzz-baseline's
+ * ta_baseline_serve) -- IntegerList values the freeze predates are then excluded
  * (see FROZEN_ORACLE_MATYPE_MAX). --xlang-hash is current-vs-current and
  * passes 0, so the new values stay bitwise-gated there.
  *
@@ -5795,7 +5810,7 @@ static int fuzz_build_vectors(const TA_FuncInfo *fi,
  * oracle does not. So the two differ by <=~1.7e-10 relative on the fused
  * functions — authorized, below the 1e-9 contract, but no longer hash-exact.
  *
- * While this is 1, any per-element diff NOT covered by an explicit FUZZ_064_TOL
+ * While this is 1, any per-element diff NOT covered by an explicit FUZZ_BASELINE_TOL
  * entry is tolerated when it is within the contract itself:
  *     |current - v0.6.4| <= 1e-9 * max(|current|, |v0.6.4|, inScale)
  * Output-relative (so it scales correctly for volume-magnitude outputs like
@@ -5809,8 +5824,9 @@ static int fuzz_build_vectors(const TA_FuncInfo *fi,
  * tolerance here — a candlestick/index flip must still fail.
  *
  * RE-FREEZE (once a FMA-enabled release is tagged): point
- * scripts/build_064_serve.py's REF_TAG at that release, rebuild the oracle, then
- * set FMA_TRANSITION_TOLERANCE to 0 — current == new reference bitwise, so every
+ * serve_version.RELEASE_TAG at that release, rebuild the oracle, move
+ * FUZZ_BASELINE_TAG to match (the gate refuses to run until it does), then set
+ * FMA_TRANSITION_TOLERANCE to 0 — current == new reference bitwise, so every
  * function returns to strict hash-exact comparison against the FMA baseline. */
 #define FMA_TRANSITION_TOLERANCE 1
 #define FMA_TRANSITION_REL 1e-9
@@ -5837,8 +5853,8 @@ static int fma_needs_input_scale(const char *name)
 }
 
 enum { TOL_ABS = 0, TOL_REL_IN = 1, TOL_NAN_TO = 2, TOL_REL_OUT = 3 };
-typedef struct { const char *name; int mode; double tol; double cap; } TA_Fuzz064Tol;
-static const TA_Fuzz064Tol FUZZ_064_TOL[] = {
+typedef struct { const char *name; int mode; double tol; double cap; } TA_FuzzBaselineTol;
+static const TA_FuzzBaselineTol FUZZ_BASELINE_TOL[] = {
     { "CCI",                 TOL_ABS,    1e-9, 0.0 },  /* #7   near-zero identical-price fix */
     /* #118 cancellation-free variance. Bounded relative to the OUTPUT, not the
      * input: VAR's output is a squared quantity, so an inScale-relative bound is
@@ -5876,26 +5892,29 @@ static const TA_Fuzz064Tol FUZZ_064_TOL[] = {
  * an entry can be an order of magnitude looser than the divergence it authorizes
  * and nothing says so -- and the next person to set one has no measurement to
  * size it from. The FMA bucket already reports its own ("max observed 4.13e-11");
- * this is the same for the named entries. Indexed by FUZZ_064_TOL slot. */
-static double g_fuzz064TolMax[sizeof(FUZZ_064_TOL)/sizeof(FUZZ_064_TOL[0])];
+ * this is the same for the named entries. Indexed by FUZZ_BASELINE_TOL slot. */
+#define NB_BASELINE_TOL (sizeof(FUZZ_BASELINE_TOL)/sizeof(FUZZ_BASELINE_TOL[0]))
+static double g_fuzzBaselineTolMax[NB_BASELINE_TOL];
 
 /* Record `achieved` (in bound units) against the entry `e` returned by lookup. */
-static void fuzz_064_tol_record(const void *e, double achieved)
+static void fuzz_baseline_tol_record(const void *e, double achieved)
 {
     long idx;
     if( !e ) return;
-    idx = (const TA_Fuzz064Tol *)e - FUZZ_064_TOL;
-    if( idx < 0 || (unsigned long)idx >= sizeof(FUZZ_064_TOL)/sizeof(FUZZ_064_TOL[0]) ) return;
-    if( achieved > g_fuzz064TolMax[idx] ) g_fuzz064TolMax[idx] = achieved;
+    idx = (const TA_FuzzBaselineTol *)e - FUZZ_BASELINE_TOL;
+    if( idx < 0 || (unsigned long)idx >= NB_BASELINE_TOL ) return;
+    if( achieved > g_fuzzBaselineTolMax[idx] ) g_fuzzBaselineTolMax[idx] = achieved;
 }
 
 /* Look up a function's authorized tolerance; returns NULL if it must be exact. */
-static const void *fuzz_064_tol_lookup(const char *name, int *mode, double *tol, double *cap)
+static const void *fuzz_baseline_tol_lookup(const char *name, int *mode,
+                                            double *tol, double *cap)
 {
-    for( unsigned int i = 0; i < sizeof(FUZZ_064_TOL)/sizeof(FUZZ_064_TOL[0]); i++ )
-        if( strcmp(name, FUZZ_064_TOL[i].name) == 0 )
-        { *mode = FUZZ_064_TOL[i].mode; *tol = FUZZ_064_TOL[i].tol; *cap = FUZZ_064_TOL[i].cap;
-          return &FUZZ_064_TOL[i]; }
+    for( unsigned int i = 0; i < NB_BASELINE_TOL; i++ )
+        if( strcmp(name, FUZZ_BASELINE_TOL[i].name) == 0 )
+        { *mode = FUZZ_BASELINE_TOL[i].mode; *tol = FUZZ_BASELINE_TOL[i].tol;
+          *cap = FUZZ_BASELINE_TOL[i].cap;
+          return &FUZZ_BASELINE_TOL[i]; }
     return NULL;
 }
 
@@ -6285,7 +6304,7 @@ static int fuzz_classify_and_report(FuzzContext *ctx, const TA_FuncInfo *fi,
 
     int realDiff = 0, benignDiff = 0, tolDiff = 0, fmaDiff = 0;
     int tolMode = 0; double tolVal = 0.0, tolCap = 0.0;
-    const void *tolEntry = fuzz_064_tol_lookup(fi->name, &tolMode, &tolVal, &tolCap);
+    const void *tolEntry = fuzz_baseline_tol_lookup(fi->name, &tolMode, &tolVal, &tolCap);
     /* TOL_REL_IN bound is data-scaled (optionally capped); TOL_ABS is fixed. */
     double tolBound = 0.0;
     if( tolEntry )
@@ -6304,17 +6323,17 @@ static int fuzz_classify_and_report(FuzzContext *ctx, const TA_FuncInfo *fi,
         codegen_output_field(field, sizeof(field), p->outputIsInteger, o);
         if( p->outputIsInteger[o] )
         {
-            json_get_int_array(ctx->respBuf, field, g_fz064Int[o], MAX_NB_TEST_ELEMENT);
+            json_get_int_array(ctx->respBuf, field, g_fzBaseInt[o], MAX_NB_TEST_ELEMENT);
             for( int j = 0; j < curNb; j++ )
-                if( p->outIntBufs[o][j] != g_fz064Int[o][j] )
+                if( p->outIntBufs[o][j] != g_fzBaseInt[o][j] )
                 { realDiff = 1; if( firstO < 0 ) { firstO = (int)o; firstJ = j; } }
         }
         else
         {
-            json_get_double_array(ctx->respBuf, field, g_fz064Real[o], MAX_NB_TEST_ELEMENT);
+            json_get_double_array(ctx->respBuf, field, g_fzBaseReal[o], MAX_NB_TEST_ELEMENT);
             for( int j = 0; j < curNb; j++ )
             {
-                double a = p->outRealBufs[o][j], b = g_fz064Real[o][j];
+                double a = p->outRealBufs[o][j], b = g_fzBaseReal[o][j];
                 if( memcmp(&a, &b, sizeof(double)) == 0 ) continue;
                 /* NaN-to-neutral manifest case (#112): 0.6.4's successful call
                  * emitted NaN (an unguarded x/0); the fix substitutes a defined
@@ -6343,13 +6362,13 @@ static int fuzz_classify_and_report(FuzzContext *ctx, const TA_FuncInfo *fi,
                     if( tolMode == TOL_REL_OUT )
                     {
                         double m = fabs(a) > fabs(b) ? fabs(a) : fabs(b);
-                        if( m > 0.0 ) fuzz_064_tol_record(tolEntry, d / m);
+                        if( m > 0.0 ) fuzz_baseline_tol_record(tolEntry, d / m);
                     }
                     else if( tolMode == TOL_REL_IN )
                     {
-                        if( inScale > 0.0 ) fuzz_064_tol_record(tolEntry, d / inScale);
+                        if( inScale > 0.0 ) fuzz_baseline_tol_record(tolEntry, d / inScale);
                     }
-                    else fuzz_064_tol_record(tolEntry, d);
+                    else fuzz_baseline_tol_record(tolEntry, d);
                 }
 #if FMA_TRANSITION_TOLERANCE
                 /* One-time FMA re-baseline: within the 1e-9 relative contract,
@@ -6399,11 +6418,11 @@ static int fuzz_classify_and_report(FuzzContext *ctx, const TA_FuncInfo *fi,
             printf("\n    hash differs but elements match (nbElem %d) — investigate\n", curNb);
         else if( p->outputIsInteger[firstO] )
             printf("\n    out%d[%d]: current=%d  v0.6.4=%d\n",
-                   firstO, firstJ, p->outIntBufs[firstO][firstJ], g_fz064Int[firstO][firstJ]);
+                   firstO, firstJ, p->outIntBufs[firstO][firstJ], g_fzBaseInt[firstO][firstJ]);
         else
             printf("\n    out%d[%d]: current=%.17g (%a)  v0.6.4=%.17g (%a)\n",
                    firstO, firstJ, p->outRealBufs[firstO][firstJ], p->outRealBufs[firstO][firstJ],
-                   g_fz064Real[firstO][firstJ], g_fz064Real[firstO][firstJ]);
+                   g_fzBaseReal[firstO][firstJ], g_fzBaseReal[firstO][firstJ]);
     }
     return 0;
 }
@@ -6683,7 +6702,7 @@ static void fuzz_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
     else if( ctx->cciTol > cciTolBefore )
     {
         int tm = 0; double tv = 0.0, tc = 0.0;
-        fuzz_064_tol_lookup(funcInfo->name, &tm, &tv, &tc);
+        fuzz_baseline_tol_lookup(funcInfo->name, &tm, &tv, &tc);
         if( tm == TOL_NAN_TO )
             printf("  TOLERATED TA_%s: %lld case(s) where v0.6.4 emitted NaN (x/0) and current "
                    "returns the guarded %g (authorized manifest)\n",
@@ -6691,8 +6710,10 @@ static void fuzz_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
         else
         {
             int ti = 0; double tmax = 0.0;
-            const void *te = fuzz_064_tol_lookup(funcInfo->name, &ti, &tv, &tc);
-            if( te ) tmax = g_fuzz064TolMax[(const TA_Fuzz064Tol *)te - FUZZ_064_TOL];
+            const void *te = fuzz_baseline_tol_lookup(funcInfo->name, &ti, &tv, &tc);
+            if( te )
+                tmax = g_fuzzBaselineTolMax[(const TA_FuzzBaselineTol *)te
+                                            - FUZZ_BASELINE_TOL];
             printf("  TOLERATED TA_%s: %lld case(s) within %g%s%s vs 0.6.4 (authorized manifest bound, max observed %.3g)\n",
                    funcInfo->name, ctx->cciTol - cciTolBefore, tv,
                    tm == TOL_REL_IN ? " * max|input|" : "",
@@ -6713,21 +6734,39 @@ static void fuzz_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
     TA_ParamHolderFree(paramHolder);
 }
 
-ErrorNumber fuzz_ref064(const char *functionFilter)
+/* The release the oracle reports for itself, out of its list_functions answer
+ * (stamped there by scripts/build_baseline_serve.py). 1 on success. */
+static int fuzz_baseline_tag_of(const char *funcList, char *out, size_t outSize)
+{
+    const char *p = strstr(funcList, "\"baseline_tag\":\"");
+    const char *q;
+    size_t n;
+    if( !p ) return 0;
+    p += strlen("\"baseline_tag\":\"");
+    q = strchr(p, '"');
+    if( !q ) return 0;
+    n = (size_t)(q - p);
+    if( n == 0 || n >= outSize ) return 0;
+    memcpy(out, p, n);
+    out[n] = '\0';
+    return 1;
+}
+
+ErrorNumber fuzz_vs_baseline(const char *functionFilter)
 {
     printf("\n=============================================\n");
-    printf("Bit-exact differential fuzz vs released v0.6.4\n");
+    printf("Bit-exact differential fuzz vs released %s\n", FUZZ_BASELINE_TAG);
     printf("=============================================\n");
 
     CodegenPipe cp;
-    if( codegen_pipe_open(&cp, argv_064) != TA_TEST_PASS )
+    if( codegen_pipe_open(&cp, argv_baseline) != TA_TEST_PASS )
     {
-        printf("FAILED: cannot start ta_064_serve.\n"
-               "        Build it first (scripts/build_064_serve.py): it links the\n"
-               "        frozen v0.6.4 lib from the ../ta-lib-064 worktree.\n");
+        printf("FAILED: cannot start %s.\n"
+               "        Build it first (scripts/build_baseline_serve.py): it links\n"
+               "        the frozen release from its own pinned worktree.\n",
+               argv_baseline[0]);
         return TA_CODEGEN_ALLOC_FAILED;
     }
-    printf("Oracle: ta_064_serve (pid=%d)\n\n", cp.child_pid);
 
     FuzzContext ctx;
     memset(&ctx, 0, sizeof(ctx));
@@ -6741,14 +6780,60 @@ ErrorNumber fuzz_ref064(const char *functionFilter)
     { free(ctx.reqBuf); free(ctx.respBuf); free(funcList);
         codegen_pipe_close(&cp); return TA_CODEGEN_ALLOC_FAILED; }
 
-    /* Subset gate: cache 0.6.4's supported-function set. Functions added after
-     * 0.6.4 are skipped (no baseline), never failed — see fuzz_one_function. */
+    /* Subset gate and baseline check, both off the one list_functions answer.
+     * Functions added after the baseline are skipped (nothing to compare
+     * against), never failed — see fuzz_one_function.
+     *
+     * Both are hard failures, where the subset gate used to warn and carry on.
+     * A disabled subset gate does not merely lose coverage: every
+     * post-baseline function would then be compared against a stub answering
+     * TA_BAD_PARAM. And an oracle frozen at a release these comparison rules
+     * were not measured against is the one way this gate can report a
+     * confident PASS while checking something else entirely. */
+    ErrorNumber setupErr = TA_TEST_PASS;
+    char oracleTag[64];
     if( codegen_pipe_call(&cp, "{\"method\":\"list_functions\",\"params\":{}}",
-                          funcList, JSON_BUF_SIZE) == TA_TEST_PASS
-        && strstr(funcList, "\"functions\"") )
-        ctx.funcList = funcList;
+                          funcList, JSON_BUF_SIZE) != TA_TEST_PASS
+        || !strstr(funcList, "\"functions\"") )
+    {
+        printf("FAILED: %s did not answer list_functions, so neither the subset\n"
+               "        gate nor the baseline check can be established.\n",
+               argv_baseline[0]);
+        setupErr = TA_CODEGEN_PIPE_READ_FAILED;
+    }
+    else if( !fuzz_baseline_tag_of(funcList, oracleTag, sizeof(oracleTag)) )
+    {
+        printf("FAILED: %s reports no baseline_tag, so which release it froze is\n"
+               "        unknown. Rebuild it with scripts/build_baseline_serve.py,\n"
+               "        which stamps the tag it built from into the binary.\n",
+               argv_baseline[0]);
+        setupErr = TA_CODEGEN_OUTPUT_MISMATCH;
+    }
+    else if( strcmp(oracleTag, FUZZ_BASELINE_TAG) != 0 )
+    {
+        printf("FAILED: the oracle is frozen at %s, but every comparison rule here\n"
+               "        was measured against %s.\n"
+               "        Rolling the baseline is not a rename. FUZZ_BASELINE_TOL, the\n"
+               "        per-case skips (#98, #107, #244, #253, #118, #242),\n"
+               "        FROZEN_ORACLE_MATYPE_MAX and FMA_TRANSITION_TOLERANCE each\n"
+               "        describe %s specifically — re-measure or delete every one of\n"
+               "        them, then move FUZZ_BASELINE_TAG.\n",
+               oracleTag, FUZZ_BASELINE_TAG, FUZZ_BASELINE_TAG);
+        setupErr = TA_CODEGEN_OUTPUT_MISMATCH;
+    }
     else
-        printf("  (warning: list_functions failed — subset gate disabled)\n");
+    {
+        ctx.funcList = funcList;
+        printf("Oracle: %s, frozen at %s (pid=%d)\n\n",
+               argv_baseline[0], oracleTag, cp.child_pid);
+    }
+
+    if( setupErr != TA_TEST_PASS )
+    {
+        free(ctx.reqBuf); free(ctx.respBuf); free(funcList);
+        codegen_pipe_close(&cp);
+        return setupErr;
+    }
 
     g_frozenEnumSkips = 0;
     TA_ForEachFunc(fuzz_one_function, &ctx);
@@ -6805,13 +6890,14 @@ ErrorNumber fuzz_ref064(const char *functionFilter)
         printf("oracle restarts (recovered crashes): %d\n", ctx.serverRestarts);
     if( ctx.comparisons == 0 )
     {
-        printf("FAIL — zero comparisons (broken ta_064_serve or over-narrow filter?).\n");
+        printf("FAIL — zero comparisons (broken ta_baseline_serve or over-narrow filter?).\n");
         return TA_CODEGEN_OUTPUT_MISMATCH;
     }
     if( ctx.failures == 0 && ctx.error == TA_TEST_PASS )
     {
-        printf("PASS — current library is bit-identical to v0.6.4 at period>=2"
-               " (benign signed-zero and authorized manifest tolerances aside; STOCHRSI excluded, issue #107).\n");
+        printf("PASS — current library is bit-identical to %s at period>=2"
+               " (benign signed-zero and authorized manifest tolerances aside;"
+               " STOCHRSI excluded, issue #107).\n", FUZZ_BASELINE_TAG);
         return TA_TEST_PASS;
     }
     printf("FAIL — %lld real divergence(s) across %d function(s).\n",
@@ -6836,7 +6922,7 @@ ErrorNumber fuzz_ref064(const char *functionFilter)
  *
  * The C library is linked IN-PROCESS in ta_regtest, so there is no JSON-RPC
  * boundary on the C side and no precision to reconcile — it is the GOLDEN
- * reference (exactly as --fuzz-064 uses the in-process current library). Each
+ * reference (exactly as --fuzz-baseline uses the in-process current library). Each
  * language server crosses the boundary and is diffed against it, per its
  * transport (XlangServer.usesSeed):
  *   - Rust: the seed transport (gen_present + fuzz_in_hash self-check), diffed
@@ -6857,7 +6943,7 @@ ErrorNumber fuzz_ref064(const char *functionFilter)
  *     dev box. .NET does not guarantee `Math.*` reaches the platform libm.
  *     Math.FusedMultiplyAdd IS correctly rounded, so the FMA contract is
  *     unaffected — only the transcendentals moved.
- * There is NO 0.6.4 here (current-vs-current), so — unlike --fuzz-064 — there
+ * There is NO 0.6.4 here (current-vs-current), so — unlike --fuzz-baseline — there
  * are none of the #98/#107 carve-outs; every case is bitwise except the
  * transcendental calls of Java and C#. See fuzz_data.h and
  * src/tools/ta_regtest/CLAUDE.md.
@@ -8779,7 +8865,7 @@ static void xlang_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
 
             xlang_set_opt_params(paramHolder, funcInfo, vec[k]);
 
-            /* subranges: full + two deterministic random windows (as --fuzz-064),
+            /* subranges: full + two deterministic random windows (as --fuzz-baseline),
              * plus -- once per (function, parameter vector) -- every ordered pair
              * drawn from {0,1,2,3}.
              *
@@ -9409,7 +9495,7 @@ ErrorNumber xlang_hash(const char *functionFilter, const char *languageFilter)
  *
  * A candlestick differential/stream test passes VACUOUSLY when the input data
  * never triggers the pattern: every output is 0, and all-zero == all-zero holds
- * regardless of the implementation. Both the fuzz-064 (current vs frozen v0.6.4)
+ * regardless of the implementation. Both the fuzz-baseline (current vs frozen v0.6.4)
  * and stream_verify (stream vs batch) gates draw their inputs from fuzz_gen()
  * shapes, so a pattern that fires on NO shape has its bit-exactness asserted
  * against all-zero output — its real decision logic goes unverified.
@@ -9555,7 +9641,7 @@ static ErrorNumber verify_fuzz_candle_nonvacuous(void)
         if( !(f240 && f512) )
         {
             printf("CANDLE VACUOUS: %s fires on no stream-run shape "
-                   "(N=240:%d N=512:%d) — its fuzz-064/stream coverage is "
+                   "(N=240:%d N=512:%d) — its fuzz-baseline/stream coverage is "
                    "all-zero==all-zero. Add a deterministic FUZZ_CANDLE window "
                    "(issue #109) or list it in cdl_pending[].\n",
                    L.nm[i], f240, f512);

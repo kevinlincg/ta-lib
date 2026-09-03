@@ -726,7 +726,7 @@ fn emit_sv_compare(
 
 /// The fuzz-convention input array for one expanded input name: price
 /// components map to their OHLCV series; generic reals map real0→close,
-/// real1→volume (matches abstract_call/fuzz-064 and the driver).
+/// real1→volume (matches abstract_call/fuzz-baseline and the driver).
 fn sv_input_array(name: &str, generic_idx: &mut usize) -> &'static str {
     match sv_input_suffix(name, generic_idx) {
         "o" => "sv_o",
@@ -2317,7 +2317,7 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
     // Cross-tier compare (stream vs batch, and OpenAndFill's array vs batch).
     // Differing bits that are numerically equal can only be +0.0 vs -0.0, which
     // max/min leave unspecified: counted, never a mismatch — the same benign
-    // class --fuzz-064 carries (issue #147). Same-tier compares (peek vs
+    // class --fuzz-baseline carries (issue #147). Same-tier compares (peek vs
     // update) keep sv_bitne: one code path has no licence to differ at all.
     s.push_str("static int sv_xtier_ne(double a, double b, int *zsign) {\n");
     s.push_str("    if( !sv_bitne(a, b) ) return 0;\n");

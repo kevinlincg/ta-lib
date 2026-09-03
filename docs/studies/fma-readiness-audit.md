@@ -79,7 +79,7 @@ not here — a second copy is a second thing to keep true.
 - **Streaming:** the batch and per-bar stream paths fuse the same sites (a
   state-field name-alias feeds the detector the `sp->`-qualified operands), so
   `stream_verify` stays bit-exact.
-- **Verification, as measured at the PR:** `fuzz-064` passed with 0 failures, max FMA
+- **Verification, as measured at the PR:** `fuzz-baseline` passed with 0 failures, max FMA
   divergence **2.99e-11** (33× under the 1e-9 contract), integer outputs bit-exact;
   cross-language regtest and the doctest and generator suites green. A sabotage probe (a
   1e-7 coefficient error injected into MACD) is caught by the gate — the tolerance does

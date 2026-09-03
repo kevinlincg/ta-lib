@@ -48,7 +48,7 @@
  *   (period = 360/(atan(Im/Re)*rad2Deg), then (int)DCPeriod) so one ULP of libm
  *   difference near a boundary changes the iteration count and the output moves
  *   discontinuously. sqrt/ceil/floor are correctly rounded and stay in scope.
- *   This bites here and not in --fuzz-064 because that gate compares two
+ *   This bites here and not in --fuzz-baseline because that gate compares two
  *   binaries on ONE host with ONE libm, while a frozen table is read on every
  *   host; the cross-implementation coverage is --xlang-hash's tolerance lane.
  *

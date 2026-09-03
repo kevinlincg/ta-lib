@@ -16,7 +16,7 @@ Nothing else in the tree can see that, which is why this exists:
     CDL3BLACKCROWS or CDL3WHITESOLDIERS -- three patterns with full MC/DC
     coverage, two of them from the adversarially reviewed foundation -- leaves
     the whole tier green.
-  - The differential gates are only a partial net. `--fuzz-064` catches the
+  - The differential gates are only a partial net. `--fuzz-baseline` catches the
     crossing in CDLMORNINGSTAR (10 divergences) and misses the other two.
     Firing rate is why: over 600k bars of gapped random walk, CDLPIERCING fires
     999 times and CDL3BLACKCROWS fires ONCE, so a threshold that moves by one

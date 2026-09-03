@@ -150,9 +150,10 @@ def show_help():
                         bars are identical) and the differential gates see only
                         where the data happens to straddle.
     regtest             Full pipeline: servers (cargo) + C tests + codegen verification
-    fuzz-064            Bit-exact differential fuzz of the current library vs the
-                        frozen released v0.6.4 (opt-in; builds ta_064_serve then
-                        runs ta_regtest --fuzz-064). C-only; needs the v0.6.4 tag.
+    fuzz-baseline       Bit-exact differential fuzz of the current library vs the
+                        frozen released baseline (opt-in; builds ta_baseline_serve
+                        then runs ta_regtest --fuzz-baseline). C-only; needs the
+                        tag named by serve_version.RELEASE_TAG.
     xlang-hash          Cross-language BITWISE parity gate (opt-in; issue #113):
                         builds the Rust + Java + C# servers + ta_regtest, then runs
                         ta_regtest --xlang-hash — diffs each language server vs the
@@ -223,21 +224,23 @@ def build_servers(root_dir: str, lang_filter=None):
     run_codegen(root_dir, 'run', '--release', '--', 'generate-servers', *extra)
     run_codegen(root_dir, 'run', '--release', '--', 'build', *extra)
 
-def build_fuzz064(root_dir: str, build_dir: str, jobs: int) -> int:
+def build_fuzz_baseline(root_dir: str, build_dir: str, jobs: int) -> int:
     """Opt-in bit-exact differential fuzz of the current library vs the frozen
-    released v0.6.4. Builds bin/ta_064_serve (v0.6.4 worktree + shadow-patched
-    transport) and ta_regtest, then runs `ta_regtest --fuzz-064`. C-only — no
-    cargo/JVM/.NET. Returns ta_regtest's exit code (non-zero on real divergence).
+    released baseline. Builds bin/ta_baseline_serve (the tag's worktree +
+    shadow-patched transport) and ta_regtest, then runs
+    `ta_regtest --fuzz-baseline`. C-only — no cargo/JVM/.NET. Returns
+    ta_regtest's exit code (non-zero on real divergence). Which release is
+    serve_version.RELEASE_TAG.
     """
-    # 1. Frozen v0.6.4 oracle server (creates ../ta-lib-064 worktree + its lib).
+    # 1. Frozen released oracle server (creates the tag's worktree + its lib).
     subprocess.run([sys.executable,
-                    os.path.join(root_dir, "scripts", "build_064_serve.py")],
+                    os.path.join(root_dir, "scripts", "build_baseline_serve.py")],
                    check=True)
     # 2. The C test runner (staged into bin/).
     cmake_build(build_dir, target='ensure_ta_regtest_in_bin', jobs=jobs)
-    # 3. Run the fuzz (argv is relative "./ta_064_serve", so cwd must be bin/).
-    print("=== Running ta_regtest --fuzz-064 ===")
-    return subprocess.run([os.path.join(root_dir, "bin", "ta_regtest"), "--fuzz-064"],
+    # 3. Run the fuzz (argv is relative "./ta_baseline_serve", so cwd must be bin/).
+    print("=== Running ta_regtest --fuzz-baseline ===")
+    return subprocess.run([os.path.join(root_dir, "bin", "ta_regtest"), "--fuzz-baseline"],
                           cwd=os.path.join(root_dir, "bin")).returncode
 
 def build_xlanghash(root_dir: str, build_dir: str, jobs: int, lang_filter=None) -> int:
@@ -603,7 +606,7 @@ CARGO_TARGETS = {'ta_codegen', 'generate', 'format', 'format-check', 'clippy',
 # compiles the language servers with cargo AND brings bin/ta_regtest — the only
 # thing that ever drives them — up to date, so bin/ is never left holding fresh
 # servers next to a runner built before the function list changed. `xlang-hash`
-# and `fuzz-064` already pair the two the same way. CMake decides whether there
+# and `fuzz-baseline` already pair the two the same way. CMake decides whether there
 # is anything to rebuild, so the added step is a no-op on an unchanged tree, and
 # cmake was already a prerequisite of `servers` for every --language filter.
 SIMPLE_TARGETS = {
@@ -634,7 +637,7 @@ TARGET_PREREQS = {
     'servers':      PREREQS_BUILD_SERVERS,
     'test':         PREREQS_BUILD_BASIC,
     'regtest':      PREREQS_BUILD_SERVERS,
-    'fuzz-064':     [PREREQS_CMAKE, PREREQS_GCC],
+    'fuzz-baseline': [PREREQS_CMAKE, PREREQS_GCC],
     # build_xlanghash builds --backend=rust,java,csharp, so the .NET SDK is as
     # required here as the JDK. Without it the C# server silently never builds.
     'xlang-hash':   PREREQS_BUILD_CODEGEN + [PREREQS_GCC, PREREQS_JAVAC, PREREQS_JAVA,
@@ -760,8 +763,8 @@ def main():
 
     # Bit-exact differential fuzz vs frozen v0.6.4 (opt-in; C-only composite —
     # not a single cmake/cargo target). Propagates ta_regtest's exit code.
-    if args.target == 'fuzz-064':
-        sys.exit(build_fuzz064(root_dir, build_dir, args.jobs))
+    if args.target == 'fuzz-baseline':
+        sys.exit(build_fuzz_baseline(root_dir, build_dir, args.jobs))
 
     # Cross-language BITWISE parity gate (opt-in; issue #113). Composite: build the
     # Rust server + ta_regtest, then diff each server vs the in-process C golden.

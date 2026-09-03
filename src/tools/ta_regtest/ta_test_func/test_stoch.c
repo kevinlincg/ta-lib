@@ -349,7 +349,7 @@ static ErrorNumber test_stoch_epsilon_issue107( void )
  * the FIXED output — an A/B rebuild confirmed they differ from the pre-fix output
  * (reverting the guard flips several FastK entries from 0 back to 100). This pins
  * the new behaviour directly, without comparing against the wrong 0.6.4 oracle
- * (STOCHRSI is excluded from --fuzz-064 for exactly that reason). */
+ * (STOCHRSI is excluded from --fuzz-baseline for exactly that reason). */
 static ErrorNumber test_stochrsi_epsilon_issue107( void )
 {
    static const double in[40] = {

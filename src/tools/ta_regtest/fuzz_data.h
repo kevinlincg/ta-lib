@@ -2,8 +2,8 @@
 #define FUZZ_DATA_H
 
 /* fuzz_data.h — deterministic input generator + output hasher, compiled
- * byte-identically into both ta_regtest and ta_064_serve so a (shape,seed,n)
- * tuple reproduces the same inputs on each side. See CLAUDE.md (--fuzz-064).
+ * byte-identically into both ta_regtest and ta_baseline_serve so a (shape,seed,n)
+ * tuple reproduces the same inputs on each side. See CLAUDE.md (--fuzz-baseline).
  * Both sides must be COMPILED with -ffp-contract=off so the generator can't be
  * FMA-fused on one side only; the pragma below is not enough on its own, GCC
  * ignores it (issue #150). */
@@ -42,13 +42,14 @@ enum {
     FUZZ_ZEROSUM,       /* symmetric high=-low bars: high+low == 0 EXACTLY, the */
                         /* only shape landing high+low in the 1e-14 TA_IS_ZERO  */
                         /* band -> exercises the ACCBANDS degenerate else branch */
-                        /* (no divide by high+low) in both fuzz-064 and stream   */
+                        /* (no divide by high+low) in the baseline fuzz and     */
+                        /* the stream server alike                              */
     FUZZ_NSHAPES
 };
 
 /* ---- FUZZ_CANDLE: deterministic, pattern-rich inside-bar OHLC ------------ */
 /* Pure geometry (no TA calls) so it compiles byte-identically into both sides
- * of the fuzz-064 oracle and the stream server. Lays a catalog of hand-designed
+ * of the baseline fuzz oracle and the stream server. Lays a catalog of hand-designed
  * hikkake / modified-hikkake windows (bull & bear detection, confirmation in and
  * out of the 3-bar window, and single-predicate-broken near-misses) separated by
  * FLAT filler so the confirmation countdown expires between windows. "Close near
@@ -113,7 +114,7 @@ static int fuzz_cdl_hikkakemod(double *o,double *h,double *l,double *c,double *v
 }
 /* ---- FUZZ_CANDLE deterministic pattern catalog (issue #109) --------------- */
 /* Beyond the seed-driven hikkake windows below, lay one hand-built firing
- * instance of each otherwise-vacuous multi-candle pattern so the fuzz-064 and
+ * instance of each otherwise-vacuous multi-candle pattern so the fuzz-baseline and
  * stream_verify gates exercise its real decision logic instead of comparing
  * all-zero output to all-zero. Each window self-primes with a short neutral run
  * so its candle-setting averages (BodyLong/Short/Doji, shadows, Near/Far, ...)
@@ -499,13 +500,13 @@ static void fuzz_candle_gen(int seed, int n,
 /* Drives the ACCBANDS degenerate branch, TA_IS_ZERO(high+low) -> upper=high,
  * lower=low (skipping the 4*(high-low)/(high+low) divide). No other shape lands
  * high+low inside the 1e-14 TA_IS_ZERO band (all perturb high/low with
- * independent draws), so this is the sole oracle coverage — fuzz-064 vs v0.6.4
+ * independent draws), so this is the sole oracle coverage — fuzz-baseline vs v0.6.4
  * AND stream_verify vs batch — of that else branch. A symmetric bar high=+a,
  * low=-a gives high+low == +0.0 exactly for any finite a (IEEE x + (-x) == +0);
  * all-zero bars cover a==0. Interleaved with ordinary positive bars so the
  * degenerate bars both ENTER and LEAVE the moving-average window (the add-side
  * and subtract-side of the else branch). Pure geometry, no TA calls, so it
- * compiles byte-identically into both sides of the fuzz-064 oracle. */
+ * compiles byte-identically into both sides of the fuzz-baseline oracle. */
 static void fuzz_zerosum_gen(int seed, int n,
                              double *o, double *h, double *l, double *c,
                              double *v, double *oi)

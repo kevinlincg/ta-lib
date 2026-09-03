@@ -131,12 +131,12 @@ def main():
         "--codegen=",
         "--no-guarded",
     )
-    # --fuzz-064 and --xlang-hash are deliberately NOT accepted. This pipeline
+    # --fuzz-baseline and --xlang-hash are deliberately NOT accepted. This pipeline
     # has one ta_regtest invocation and it always carries --codegen; ta_regtest
     # now rejects that combination outright, and before it did the two modes
     # returned first, so `regtest.py --xlang-hash` printed the REGTEST banner
     # and then ran none of it. They are their own runs -- scripts/build.py
-    # xlang-hash / fuzz-064 -- and the report below names them every time.
+    # xlang-hash / fuzz-baseline -- and the report below names them every time.
     # --codegen is EXACT, not a prefix: a bare `startswith("--codegen")` accepts
     # any `--codegen<anything>` and forwards the typo to ta_regtest, which is a
     # louder failure than it needs to be and a quieter one than it looks.
@@ -370,9 +370,9 @@ def main():
                 "~3 min, 176 functions",
             ),
             (
-                "--fuzz-064",
-                "differential against the frozen v0.6.4 oracle",
-                "scripts/build.py fuzz-064",
+                "--fuzz-baseline",
+                "differential against the frozen released baseline",
+                "scripts/build.py fuzz-baseline",
                 "",
             ),
         ]

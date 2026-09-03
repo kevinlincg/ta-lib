@@ -1,7 +1,7 @@
 """Shared helpers for building a "serve of another version" — a JSON-RPC server
 whose TRANSPORT is the current tree's generated `ta_codegen_serve.c` but whose
-ORACLE is a frozen older libta-lib.a (a pinned worktree: ../ta-lib-064 @ v0.6.4,
-../ta-lib-ref @ reference-pre-cutover, ...).
+ORACLE is a frozen older libta-lib.a (a pinned worktree: ../ta-lib-<RELEASE_TAG>
+for the released baseline, ../ta-lib-ref @ reference-pre-cutover, ...).
 
 The current transport enumerates every CURRENT function (list_functions) and its
 frame dispatch references every CURRENT indicator symbol (TA_<NAME>, TA_S_<NAME>,
@@ -11,7 +11,7 @@ a differential gate try (and fail) to diff a function the frozen version cannot
 compute.
 
 Both problems are handled the SAME way for every version serve (this is the
---fuzz-064 subset mechanism, generalized):
+--fuzz-baseline subset mechanism, generalized):
 
   * post_version_funcs(): functions the current tree has but the frozen version
     does not, from a plain ta_func_list.txt diff.
@@ -29,6 +29,49 @@ import re
 import shutil
 import subprocess
 import sys
+
+
+# ---- The released baseline the differential gate diffs against (#116) -------
+#
+# ONE constant decides which release `--fuzz-baseline` compares the current
+# library to: the git tag, and from it the frozen worktree. Rolling to a newer
+# release is this line.
+#
+# It is deliberately not the WHOLE roll. `test_codegen.c` declares the same tag
+# as FUZZ_BASELINE_TAG, the oracle stamps this one into its own list_functions
+# answer, and the driver refuses to run when the two disagree. The comparison
+# side carries tolerances, per-case skips and carve-outs measured against one
+# specific release; a roll that moved only this line would keep every one of
+# them while comparing against a different library. The refusal is the point.
+RELEASE_TAG = "v0.6.4"
+
+# The oracle binary carries NO version in its name -- the version travels
+# inside it, so no C source has a literal to update on a roll. The WORKTREE
+# does carry it, which is what makes a checkout left at the previous tag
+# impossible rather than merely unlikely.
+BASELINE_SERVE = "ta_baseline_serve"
+
+
+def baseline_worktree(root):
+    """Path of the frozen worktree for RELEASE_TAG, a sibling of the repo."""
+    return os.path.join(os.path.dirname(root), "ta-lib-" + RELEASE_TAG)
+
+
+def stamp_baseline_tag(src_text):
+    """Make the serve report RELEASE_TAG in its own list_functions answer.
+
+    The driver reads it back and refuses a baseline its manifest was not
+    measured against. Stamped into the payload rather than passed on the
+    command line so the tag cannot be separated from the binary that was built
+    with it -- a serve found in bin/ answers for itself."""
+    anchor = 'json_appendf(resp, resp_size, pos, "]}");'
+    if src_text.count(anchor) != 1:
+        sys.exit("serve_version: list_functions terminator not found exactly once; "
+                 "the baseline tag could not be stamped")
+    return src_text.replace(
+        anchor,
+        'json_appendf(resp, resp_size, pos, "],\\"baseline_tag\\":\\"%s\\"}");'
+        % RELEASE_TAG)
 
 
 # Floating-point contraction setting for everything a differential gate compares
