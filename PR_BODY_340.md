@@ -6,8 +6,10 @@ measurement did not justify either, and the issue asks for them only if it had.
 
 ## The answer
 
-`--xlang-hash`, C# row, upstream `dev` at `7065d886`, with the FMA3 intrinsic
-disabled for the spawned server:
+`--xlang-hash`, C# row, measured on upstream `dev` at `7065d886`, with the FMA3
+intrinsic disabled for the spawned server (the branch is rebased onto `67936169`,
+which is `7065d886` plus two dist bumps and #338 — see the note at the end of
+this section for what that does and does not change about these rows):
 
 | run | C# cases | mismatches |
 |---|---:|---:|
@@ -73,9 +75,12 @@ it did not, so adding one now is scope the issue deliberately did not authorise.
 I left it out for that reason. Say the word and it is a small follow-up.
 
 Also worth knowing: #338 fuses ATR, NATR and SUPERTREND, which moves them from 29
-`Math.FusedMultiplyAdd` files to 32. I ran the same disabled-ISA row on that
-branch as well — 284,487 cases, 0 mismatches, unchanged — so the widening does
-not move this answer either, on this platform.
+`Math.FusedMultiplyAdd` files to 32. I ran the same disabled-ISA row against that
+widening — 284,487 cases, 0 mismatches, unchanged — so it does not move this
+answer either, on this platform. One caveat on that row: I measured it on my own
+branch's spelling of the two-coefficient step, before `67936169` landed #338 on
+`dev` with a different coefficient order. The file count is the same either way,
+but **I did not re-run the row against dev's landed form.**
 
 ## Verification
 
