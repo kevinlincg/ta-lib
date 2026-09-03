@@ -663,15 +663,26 @@ Scope rules (deliberate):
   ```
 
   `DOTNET_EnableFMA=0` on its own leaves `Fma.IsSupported` true (measured, .NET
-  10.0.400), so a run with only that knob silently repeats the control and reads
-  green for the wrong reason. Confirm from `/proc/<server pid>/environ` that the
-  knobs reached the `dotnet` child, not just `ta_regtest`.
+  10.0.400) and `DOTNET_JitDisasm` still shows `vfmadd213sd` in the body, so a
+  run with only that knob silently repeats the control and reads green for the
+  wrong reason. Confirm from `/proc/<server pid>/environ` that the knobs reached
+  the `dotnet` child, not just `ta_regtest`.
 
   What that run has shown, on linux-x64 / glibc 2.39 / .NET 10.0.400: identical
   to the control, and red when four EMA fusion sites are hand-unfused. It stands
   in for the JIT's non-FMA3 code path and **not** for non-FMA3 silicon — the
   CRT's own `fma` still resolves against the host CPU — so Windows, macOS, musl
   and ARM64 remain unmeasured, and so does real hardware without FMA3.
+
+  Turning the ISA off harder does not close that gap, so do not reach for it
+  believing it does: under `DOTNET_EnableHWIntrinsic=0` the JIT emits a real
+  `call System.Math:FusedMultiplyAdd` instead of `vfmadd213sd`, and the value is
+  still correctly rounded — dotnet/runtime#98704's own operands return `1.5`,
+  4,000,000 random triples (a third of them near-cancellation) hash bit-for-bit
+  against the hardware run, and the gate stays green at 284,487 cases. The
+  practical rule: this leg goes red for an unfused site, never for the
+  misrounding it is named after. Only silicon without FMA3, or an emulator
+  masking it out of CPUID, measures that.
 
 ## `server_verify` — bitwise C⇄server on the hard-coded tests
 
