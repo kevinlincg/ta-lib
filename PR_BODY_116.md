@@ -142,4 +142,4 @@ dist path. The workflow renames are a YAML edit only — no CI run has executed
 them, and `fuzz-vs-064` is referenced by no `needs:` in either workflow, which I
 checked by grep rather than by running.
 
-_Head re-verified after merging dev `67936169` (which landed #338): `regen-check` green, exit 0; generator suite 902 passed / 0 failed. The net diff against dev is unchanged by that merge._
+_Head re-verified after merging dev `af4cdede` (which landed #338, then DONCHIAN): `regen-check` green, exit 0, 179 functions; generator suite 902 passed / 0 failed. The net diff against dev is unchanged by that merge — the same 26 files._
