@@ -141,3 +141,12 @@ NOT run on this merge, and so not claimed for it:
   earlier base; I am not presenting them as current.
 - Every benchmark. There is no time claim here — the claim is the allocation
   count in the generated code, 4 sites to 2.
+
+## Re-based onto `dev` 58a0ac54
+
+`dev` has moved again (58a0ac54, #316 — the C peek frame binds the handle
+instead of copying it). This branch carries a merge of it; the merge was clean,
+which is expected since #316 is C-side and this change is in the Java frame
+emitter. Re-run on the merged tree: `build.py regen-check` exit 0 ("output
+matches the committed source. OK.") and the generator's whole `cargo test`
+green. The Java-side numbers above were not re-measured on the new base.
