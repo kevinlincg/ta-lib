@@ -85,14 +85,27 @@ On the tree as pushed (merged with dev at `7065d886`):
 - The generator's own suite is green: 404 + 41 + 79 + 54 + ... , 0 failed across
   all 29 test binaries.
 
+- `scripts/build.py xlang-hash`, unfiltered, on the merged tree: **PASS**, 178
+  functions, every server bit-identical to the in-process C library — Rust
+  284,595 cases / Java 283,304 / C# 284,487, **0 mismatches each**. This is the
+  leg the merge with `7065d886` had not re-measured, and it is the one that would
+  see a `TA_FMA_MULTIVERSION` line changing a value.
+- A bare `bin/ta_regtest` (the whole C reference suite, LEGACY/064/FROZEN and the
+  streaming gates included): all tests succeeded.
+- The #340 question this PR widens, measured on **this** tree rather than assumed:
+  the C# parity row with the FMA3 intrinsic disabled
+  (`DOTNET_EnableAVX2=0 DOTNET_EnableFMA=0`, both knobs — the FMA one alone is a
+  no-op) is 284,487 cases, 0 mismatches, identical to the control. Going from 29
+  fused C# files to 32 does not move that answer on linux-x64 / glibc 2.39 /
+  .NET 10.0.400. It says nothing about real non-FMA3 silicon, Windows, macOS or
+  musl, which remain unmeasured.
+
 From the earlier runs on this branch, before the merge with #337:
 
 - The batch numbers above, with their controls.
-- Cross-language parity: Rust and Java bit-identical to C for the changed
-  functions.
 - `ta_regtest --codegen` and `--fuzz-064`.
 
-Not re-run after the merge with `7065d886`: `ta_regtest` and the cross-language
-parity legs. The merge adds only `TA_FMA_MULTIVERSION` lines, which #337
-establishes as numerically inert under `-ffp-contract=off`, but this branch has
-not itself re-measured that.
+Still not re-run after the merge: `--fuzz-064` and `--codegen`. `--xlang-hash` is
+the stronger of the three on the axis this merge touches (bitwise, zero
+tolerance, against the same in-process C golden), so what remains unchecked there
+is the 0.6.4 differential and the 1e-6 sweep, not fusion-site parity.
