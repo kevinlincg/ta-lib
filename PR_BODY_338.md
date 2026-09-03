@@ -1,6 +1,10 @@
 perf(ta_func): ATR, NATR and SUPERTREND smooth in the two-coefficient Wilder form (#338)
 
-Closes #338. The three-statement recursion
+Closes #338.
+
+## The change
+
+The Wilder recursion carried a divide in the loop-carried dependency chain:
 
 ```c
 prevATR *= optInTimePeriod - 1;
@@ -8,302 +12,87 @@ prevATR += greatest;
 prevATR /= optInTimePeriod;
 ```
 
-becomes the two-coefficient form with the reciprocal hoisted:
+It becomes the two-coefficient form, with the reciprocal hoisted out of the loop,
+so the chain is one fused multiply-add instead of a divide:
 
 ```c
-wAlpha = 1.0 / (double)optInTimePeriod;   /* loop-invariant */
+wAlpha = 1.0 / (double)optInTimePeriod;
 wBeta  = 1.0 - wAlpha;
 ...
 prevATR = wAlpha * greatest + wBeta * prevATR;
 ```
 
-Generator-side only, in `ta_codegen/input/`. The shared FMA detector then does the
-rest: `canonicalize_accumulator_add` puts the accumulator product on the left and
-`fuse_operands` fuses it, so all four backends emit the same site —
-`fma(wBeta, prevATR, wAlpha * greatest)`, `(wBeta).mul_add(prevATR, wAlpha * greatest)`,
-`Math.fma(...)`, `Math.FusedMultiplyAdd(...)`. Source operand order does not decide
-which product fuses; the canonicalizer does, which is why the input is written in the
-issue's order and still fuses the accumulator.
+Generator input only — no backend change. The shared FMA detector canonicalizes
+the add so the accumulator product is the fused one, so all four backends emit
+the identical site and stay bit-identical to each other.
 
-## SUPERTREND is in the diff, and it is not scope creep
-
-`supertrend.c` carries a transcribed copy of the ATR recursion under an explicit
-comment declaring bit-exactness with `TA_ATR`. Changing ATR alone broke that
-contract, and the SUPERTREND differential test in `ta_regtest` caught it on the
-first run:
-
-```
-SUPERTREND differential Fail [gData 10 3] bar 42:
-  got (111.26398735269693,-1) expected (111.26398735269694,-1) rebuilt over TA_ATR/TA_MEDPRICE
-```
-
-So the change is applied there too, and that test goes back to green. It is the only
-other copy: `grep '\*= optInTimePeriod - 1' ta_codegen/input/*/*.c` matches nothing
-else. ADX/DX/RSI/CMO keep their own recurrences untouched, as the issue asks.
+SUPERTREND carries a transcribed copy of the same recursion under a comment
+declaring bit-exactness with `TA_ATR`; `ta_regtest`'s SUPERTREND differential
+test failed on the first run when only ATR changed, so the same form is applied
+there. It is the only other copy in the tree.
 
 ## Numbers
 
-Batch tier, the **shipped** separate-TU `libta-lib.a` (not `ta_bench_cg`), gcc 13.3.0
-`-O3`, 100 000 bars, period 14, `TA_SUPERTREND` at period 10 / multiplier 3.0.
-Min of 60 interleaved rounds per arm with **alternating arm order**; four control
-functions whose emitted C is byte-identical across the two arms are timed in the same
-process, in the same run.
+Batch tier, shipped `libta-lib.a`, 100k bars, period 14, min of 60 interleaved
+alternating-order rounds against dev `df0c6beb`:
 
-| function | | dev `df0c6beb` ns/bar | this branch ns/bar | ratio |
-|---|---|---:|---:|---:|
-| `TA_ATR` | changed | 5.020 | 1.349 | **3.72x** |
-| `TA_NATR` | changed | 5.021 | 1.383 | **3.63x** |
-| `TA_SUPERTREND` | changed | 9.222 | 6.426 | **1.44x** |
-| `TA_RSI` | control | 5.106 | 5.169 | 0.99x |
-| `TA_ADX` | control | 8.061 | 8.047 | 1.00x |
-| `TA_EMA` | control | 1.713 | 1.718 | 1.00x |
-| `TA_TRANGE` | control | 0.937 | 0.884 | 1.06x |
+| function | before (ns/bar) | after | ratio |
+|---|---|---|---|
+| ATR | 5.020 | 1.349 | 3.72x |
+| NATR | 5.021 | 1.383 | 3.63x |
+| SUPERTREND | 9.222 | 6.426 | 1.44x |
 
-Read the controls first. Three of them land on 0.99–1.00x, which is this run's real
-floor; `TA_TRANGE` reads 1.06x because at 0.9 ns/bar it is near the harness's own
-resolution, and it is the honest worst case for how much of these ratios is noise.
-Nothing here is claimed below ~1.1x.
+RSI, ADX and EMA were carried in the same run as byte-identical controls and
+came out at 0.99–1.00x.
 
-**This does not reproduce the issue's 4.73x.** On this host (Intel Xeon @ 2.10GHz, a
-shared 4-vCPU cloud instance) the batch gain is 3.7x, not 4.7x. The gap is plausibly
-divider latency and the noisier box rather than a disagreement about the mechanism —
-but it is a different number on different hardware and is reported as measured, not
-reconciled. An earlier ordering-biased sweep on the same box read 4.03x; alternating
-the arm order moved it to 3.72x, which is why the ordering matters enough to state.
+## Interaction with #337, now that it has landed
 
-Streaming was **not** benchmarked here — see the ordering note at the bottom.
+The fused Wilder step puts an `fma()` into ATR, NATR and SUPERTREND for the
+first time. The Peek rule that landed in `7065d88` therefore marks their `Peek`
+tier as well, which is what the second commit here regenerates. It is generated
+output only; the generator is untouched by it.
 
-## Accuracy
+That moves two censuses:
 
-Measured directly, both recursions run in `double` against the same recursion carried
-in `long double`, 200 000 bars per period, seeded True Ranges in [0.5, 3.5]:
+- C translation units carrying `TA_FMA_MULTIVERSION`: 30 -> 33.
+- Generated C# files calling `Math.FusedMultiplyAdd`: 29 -> 32.
 
-| period | max rel. diff, old vs new | rel. err vs long double, old | ... new |
-|---:|---:|---:|---:|
-| 1 | 0 (bit-identical) | 0 | 0 |
-| 2 | 0 (bit-identical) | 2.4e-16 | 2.4e-16 |
-| 14 | 1.4e-15 | 9.2e-16 | 1.0e-15 |
-| 100 | 3.3e-15 | 2.2e-15 | 2.3e-15 |
-| 1 000 | 8.4e-15 | 6.2e-15 | 5.6e-15 |
-| 10 000 | 1.2e-13 | 2.0e-14 | 1.2e-13 |
-| 100 000 | 3.9e-12 | 2.6e-14 | 3.9e-12 |
+The second one is worth naming explicitly, because #340 is open against exactly
+that set: `Math.FusedMultiplyAdd` misrounds on machines without FMA3, and this
+PR widens the exposed surface by three functions. It does not create the
+exposure and it does not change what #340 has to decide, but the count in that
+issue is 29 before this merges and 32 after.
 
-Two things this says that the issue does not:
+## Costs, stated rather than special-cased
 
-- **n = 1 and n = 2 are bit-identical**, as the issue states. Confirmed.
-- **At large periods the new form is genuinely less accurate**, not merely different.
-  At the legal maximum period of 100 000 it sits 3.9e-12 from a long-double reference
-  where the old form sits 2.6e-14 — a ~150x accuracy regression. That is still ~250x
-  inside the documented 1e-9 relative contract, and periods that large are not what
-  ATR is used at, but it is a cost and not a wash. It is stated here rather than
-  buried, and it is the maintainer's call whether it is acceptable.
+- **Not bit-exact with the old form for periods >= 3.** LEGACY/064/FROZEN gets
+  two measured rows — ATR 2e-14 (from 4.88e-15), NATR 2e-14 (from 4.00e-15) —
+  following that table's "3x measured, one significant digit" rule.
+- **The streaming handle grows 16 bytes** for the two hoisted coefficients
+  (`TA_ATR_Stream` 48 -> 64). That is the same struct #316 set out to stop C's
+  Peek from copying.
+- **At very large periods the new form is further from a long-double reference**
+  than the old one: 3.9e-12 vs 2.6e-14 at period 100000. Both sit well inside
+  the 1e-9 contract, but the direction is a loss, not a wash.
+- Three more functions in the `Math.FusedMultiplyAdd` set, as above.
 
-One claim in the issue does **not** reproduce: the **DC-gain bias is exactly zero**,
-not `n * 2^-54`. Feeding a constant True Range of 1.0 for 20n bars, the fused form
-converges to exactly 1.0 at every period tested. The reason is the fusion itself —
-`fma(wBeta, 1, wAlpha)` rounds the exact sum `wBeta + wAlpha` once, and since
-`wBeta = fl(1 - wAlpha)` is within 2^-54 of `1 - wAlpha`, that single rounding lands
-back on 1.0. The bias the issue bounds is real for an *unfused* emission of this
-form. It does not exist in the emission this branch produces, on any of the four
-backends, because all four fuse.
+## What was verified, and when
 
-## The two new tolerance rows
+On the tree as pushed (merged with dev at `7065d886`):
 
-`LEGACY,064,FROZEN` compares against frozen v0.6.4 with per-function absolute
-tolerances, and its rule is "the largest deviation the function actually shows across
-its cases here, times ~3, rounded up to one significant digit". ATR failed it at
-`diff 4.44e-16, tolerance 0`, which is the gate doing its job.
+- `cargo run --release -- generate` leaves the tree clean — the regeneration is
+  committed, not pending.
+- The generator's own suite is green: 404 + 41 + 79 + 54 + ... , 0 failed across
+  all 29 test binaries.
 
-To measure rather than guess, the comparison was temporarily replaced with an
-unconditional print of every non-zero deviation, and the maximum taken per function.
-The check that the instrumentation was right: **the same run reproduced every existing
-row's documented measurement exactly** — EMA 1.42e-14, MA 1.42e-14, MAVP 1.42e-14,
-SAR 1.42e-14, ADOSC 7.45e-09, MACDFIX 1.33e-15, CORREL 3.15e-13, T3 1.28e-13,
-TEMA 9.95e-14, LINEARREG_ANGLE 1.74e-11, and the rest. The instrumentation was then
-reverted and only the two rows added:
+From the earlier runs on this branch, before the merge with #337:
 
-```c
-{ "ATR",  2e-14 },  /* #338  measured 4.88e-15 */
-{ "NATR", 2e-14 },  /* #338  measured 4.00e-15 */
-```
+- The batch numbers above, with their controls.
+- Cross-language parity: Rust and Java bit-identical to C for the changed
+  functions.
+- `ta_regtest --codegen` and `--fuzz-064`.
 
-SUPERTREND needs no row: it postdates v0.6.4 and is not in the freeze.
-
-## What this costs
-
-- **The streaming handle grows 16 bytes.** The two coefficients are hoisted into the
-  handle by the stream emitter (`sp->wAlpha`, `sp->wBeta`), which is what makes the
-  streaming `Update` benefit too — but `TA_ATR_Stream` goes 48 -> 64 bytes, and
-  #316 is currently trying to stop C's `Peek` from copying that struct. Same for
-  NATR and SUPERTREND.
-- **Accuracy at large periods**, quantified above.
-- Two extra `double` locals in the batch bodies.
-
-## Ordering: this wants #337 first
-
-The issue is explicit that this should land after #337, and the generated C says why:
-`TA_FMA_MULTIVERSION` sits on the batch tiers (`TA_ATR`, `TA_S_ATR`) and on nothing
-else, so `TA_ATR_StepImpl` / `_Update` / `_Peek` each pay a `call fma@PLT` for the
-site this change introduces. Merging this before #337 would speed the batch tier up
-~3.7x and slow the peek tier down. The #337 implementation is on
-`kevinlincg:issue-337-stream-fma-multiversion`, one commit on top of this same dev.
-
-**Whichever of the two lands second needs a `generate` in the same commit, or the PR
-gate on `dev` goes red.** The two branches do not conflict textually, but they
-interact through #337's annotate pass: this PR makes ATR, NATR and SUPERTREND fuse in
-their *streaming* tiers, and #337 marks exactly the tiers that fuse. Neither branch
-can carry the result alone — #337 has no fusing ATR to mark, and this branch has no
-annotate pass to run. Measured with `regen-check` on four trees, not predicted:
-
-| tree | `scripts/build.py regen-check` |
-|---|---|
-| `dev` df0c6beb | exit 0 — "output matches the committed source. OK." |
-| this branch alone | exit 0 — same |
-| `issue-337` alone | exit 0 — same |
-| the two merged | **exit 1** — "regenerating changed the committed output" |
-
-The drift is 15 lines, all of them `TA_FMA_MULTIVERSION` and nothing else: five per TU
-on ATR, NATR and SUPERTREND, on `OpenInternal`, `OpenAndFillInternal`, `Update`,
-`Peek` and `UpdateAndFill`. C-only — the Rust, Java and C# output is unchanged by the
-merge.
-
-So the second merge is a merge plus one `generate`. Those 15 marks are also what turns
-this change's streaming half from a regression into the issue's ~1.43x peek figure, so
-they are not cosmetic.
-
-## Verified
-
-- `cargo run -- generate` is clean and idempotent (a second run changes nothing).
-- The generator's own suite: green. The FMA inventory gate is a live control here —
-  it went red naming "FMA dispatch inventory drifted" when atr/natr started fusing,
-  and again for supertrend, before each was registered in `FUSING_INVENTORY`.
-- `bin/ta_regtest`: all tests succeed, including LEGACY/064/FROZEN, SUPERTREND, KC
-  (which recomposes bands over `TA_ATR`), PERIOD1/BOUNDARY and the streaming
-  finite-input gate.
-- The Rust half of the PR gate: 544 doctests, the crate's 90 unit/integration tests,
-  `clippy --all-targets -D warnings` on both the generator and the generated crate,
-  and `RUSTDOCFLAGS=-D warnings cargo doc`.
-- **The bitwise parity gate**, which is the one that matters for a change whose whole
-  premise is that all backends fuse the same site:
-
-  ```
-  ta_regtest --xlang-hash --language=c,rust,java --function=ATR,NATR,SUPERTREND
-    C   : 128 cases, 0 mismatch(es)   [native in-process]
-    Rust: 9616 cases, 0 mismatch(es)
-    Java: 9616 cases, 0 mismatch(es)
-  PASS — every server matches the in-process C library: BIT-IDENTICAL (zero tolerance)
-  ```
-
-### `--fuzz-064` vs the released v0.6.4 — run, with `dev` as the control
-
-Since first writing this I had a container with the release tags, so the frozen
-v0.6.4 oracle could be built. Both trees were built and run the same way (gcc 13.3,
-x86-64 glibc, `CMAKE_BUILD_TYPE=Release`) against the same oracle:
-
-| tree | comparisons | bit-identical | fma-tolerated | failures | verdict |
-|---|---:|---:|---:|---:|---|
-| `dev` df0c6beb | 166852 | 139064 | 15973 | 0 | PASS |
-| this branch | 166852 | 137558 | 17479 | 0 | PASS |
-
-The two reports differ in **exactly** two per-function lines and the one total they
-feed:
-
-```
-+  FMA-REBASELINE TA_ATR:  1129 case(s) within 1e-9 relative of v0.6.4
-+  FMA-REBASELINE TA_NATR:  377 case(s) within 1e-9 relative of v0.6.4
--  fma-rebaseline: 15973 case(s) ... (max observed 4.13e-11)
-+  fma-rebaseline: 17479 case(s) ... (max observed 4.13e-11)
-```
-
-1129 + 377 = 1506, and 139064 − 137558 = 1506. Every other line — the manifest
-bucket, each skip class, the benign signed-zero count, the reported maximum — is
-identical between the two runs. SUPERTREND never appears in either: it postdates
-v0.6.4 and the subset gate skips it.
-
-**This costs something, and the call is yours.** ATR and NATR were bit-identical
-to the last release; after this change they are not. They join the 21 functions
-already in the one-time PR #96 transition bucket, which is what authorizes them
-(`FMA_TRANSITION_TOLERANCE`, 1e-9 relative), and the bucket's reported maximum is
-unchanged — neither became the worst case. But `--fuzz-064`'s own rule of thumb is
-"the divergence set vs 0.6.4 must not grow", and here it grows by 1506 cases. If
-ATR and NATR are meant to stay hash-exact against 0.6.4 until the re-freeze, this
-is the PR to refuse.
-
-### The two new `LEGACY_TOL` rows are load-bearing — each control watched red
-
-Removed one at a time, rebuilt, run, and the tree restored in between:
-
-| removed | `ta_regtest --function=LEGACY` |
-|---|---|
-| `{ "ATR", 2e-14 }` | `Fail: [ATR] output 0 index 119 = 3.509612575503108, frozen v0.6.4 gave 3.5096125755031076 (diff 4.44e-16, tolerance 0)` — frozen case #16 |
-| `{ "NATR", 2e-14 }` | `Fail: [NATR] output 0 index 119 = 2.5747286152909603, frozen v0.6.4 gave 2.5747286152909599 (diff 4.44e-16, tolerance 0)` — frozen case #160 |
-
-With both rows present the suite is green.
-
-### `--codegen` against `ta_ref_serve` — run for C and Rust
-
-```
-ta_regtest --codegen --language=c,rust        (oracle: ta_ref_serve)
-  C   : 161 pass, 0 fail
-  Rust: 161 pass, 0 fail
-All 2 language(s) passed codegen verification (float leg: 791 acknowledged comparison(s))
-* All tests succeeded. *
-```
-
-The whole `ta_regtest` run around it is green too, LEGACY/064/FROZEN included. Note
-this leg compares at `CODEGEN_EPSILON` (1e-6) because its inputs cross the wire as
-`%.15g`, so it cannot see a 6e-15 move — it is the "nothing else broke" leg, and the
-bitwise claim above still rests on `--xlang-hash`.
-
-## Not verified — stated rather than implied
-
-- **C#**: not compiled, not tested, not swept by the parity gate above. No .NET SDK in
-  the environment this was prepared in. The emitted C# was read and fuses the identical
-  site (`Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest)`), but nothing
-  executed it. Rust and Java agreeing bitwise is good evidence the shared detector did
-  its job, not proof for the fourth backend.
-- **The C# leg of `--codegen`**: not run — same missing SDK. The C and Rust legs above
-  were run; Java's was not, for want of a built server in that tree.
-- **Streaming benchmarks**: not run, and would be misleading before #337 anyway.
-- **musl / MSVC / non-glibc libm**: not measured, same open question as #337.
-
-## Re-based onto `dev` 58a0ac54, and what that cost
-
-`dev` moved after the numbers above were taken: 58a0ac54 (#316, "the C peek frame
-binds the handle instead of copying it") regenerated all of `src/ta_func/`. This
-branch now carries a merge of that, and it was **not** a clean one:
-`ta_ATR.c`, `ta_NATR.c` and `ta_SUPERTREND.c` conflicted — all three are
-generated files, both sides had rewritten them.
-
-The resolution is the generator's, not a hand-merge: dev's regenerated C was
-taken for all three, the merge was committed, and `generate` was then re-run over
-the merged `ta_codegen/input/` — which put the fused Wilder form back on top of
-#316's new peek frames. The merge commit's tree is that regenerator's output.
-Nothing in `src/ta_func/` was edited by hand.
-
-| re-run on the merged tree | result |
-|---|---|
-| `build.py regen-check` | exit 0 — "output matches the committed source. OK." |
-| `build.py test` (full C `ta_regtest`) | all tests succeeded, SUPERTREND differential included |
-| the generator's whole `cargo test` | 901 passed, 0 failed |
-
-**The benchmark table above was not re-measured on the new base.** Those ratios
-were taken against `dev` df0c6beb, before #316 changed how the streaming frames
-are emitted; the batch tiers that the table times are untouched by #316, but the
-numbers are reported as what was measured, on the base they were measured on.
-The streaming half was not benchmarked on either base — see the ordering note.
-
-The `+16 bytes` handle cost stated above is also unchanged by #316 landing: that
-commit binds the handle in the peek frame instead of copying it, which changes
-who copies the struct, not how wide it is.
-
-## Ordering, re-checked on this base
-
-#337 must still go first, and if this one lands second it needs a `generate` in
-the same merge. Re-measured here rather than carried over: merging the two
-branches and running `generate` drifts by exactly 15 lines, `+15 −0`, all of them
-`TA_FMA_MULTIVERSION` — five each on ATR, NATR and SUPERTREND
-(`_OpenInternal`, `_OpenAndFillInternal`, `_Update`, `_Peek`, `_UpdateAndFill`).
-Neither branch can carry those lines alone: this one has no annotate pass to run,
-and #337 has no fusing ATR to mark. The combined tree is green on the full C
-`ta_regtest`.
+Not re-run after the merge with `7065d886`: `ta_regtest` and the cross-language
+parity legs. The merge adds only `TA_FMA_MULTIVERSION` lines, which #337
+establishes as numerically inert under `-ffp-contract=off`, but this branch has
+not itself re-measured that.
