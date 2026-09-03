@@ -859,8 +859,7 @@ TA_LIB_API TA_RetCode TA_NATR_Update( TA_NATR_Stream *stream, double inHigh, dou
 
 TA_LIB_API TA_RetCode TA_NATR_Peek( const TA_NATR_Stream *stream, double inHigh, double inLow, double inClose, double *outReal )
 {
-   struct TA_NATR_Stream scratch;
-   struct TA_NATR_Stream *sp = &scratch;
+   const struct TA_NATR_Stream *sp = stream;
    double tempValue;
    double val2;
    double val3;
@@ -868,10 +867,11 @@ TA_LIB_API TA_RetCode TA_NATR_Peek( const TA_NATR_Stream *stream, double inHigh,
    double tempCY;
    double tempLT;
    double tempHT;
+   double prevATR;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   prevATR = sp->prevATR;
    /* Find the greatest of the 3 values. */
    tempLT = inLow;
    tempHT = inHigh;
@@ -888,17 +888,17 @@ TA_LIB_API TA_RetCode TA_NATR_Peek( const TA_NATR_Stream *stream, double inHigh,
    {
       greatest = val3;
    }
-   sp->prevATR = fma(sp->wBeta, sp->prevATR, sp->wAlpha * greatest);
+   prevATR = fma(sp->wBeta, prevATR, sp->wAlpha * greatest);
    if( sp->optInTimePeriod <= 1 )
    {
       /* No smoothing: emit the raw True Range (unnormalized). */
-      *outReal= sp->prevATR;
+      *outReal= prevATR;
    } else 
    {
       tempValue = inClose;
       if( tempValue != 0.0 )
       {
-         *outReal= sp->prevATR / tempValue * 100.0;
+         *outReal= prevATR / tempValue * 100.0;
       } else 
       {
          *outReal= 0.0;

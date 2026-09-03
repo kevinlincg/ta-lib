@@ -702,18 +702,18 @@ TA_LIB_API TA_RetCode TA_ATR_Update( TA_ATR_Stream *stream, double inHigh, doubl
 
 TA_LIB_API TA_RetCode TA_ATR_Peek( const TA_ATR_Stream *stream, double inHigh, double inLow, double inClose, double *outReal )
 {
-   struct TA_ATR_Stream scratch;
-   struct TA_ATR_Stream *sp = &scratch;
+   const struct TA_ATR_Stream *sp = stream;
    double val2;
    double val3;
    double greatest;
    double tempCY;
    double tempLT;
    double tempHT;
+   double prevATR;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   prevATR = sp->prevATR;
    /* Find the greatest of the 3 values. */
    tempLT = inLow;
    tempHT = inHigh;
@@ -730,8 +730,8 @@ TA_LIB_API TA_RetCode TA_ATR_Peek( const TA_ATR_Stream *stream, double inHigh, d
    {
       greatest = val3;
    }
-   sp->prevATR = fma(sp->wBeta, sp->prevATR, sp->wAlpha * greatest);
-   *outReal= sp->prevATR;
+   prevATR = fma(sp->wBeta, prevATR, sp->wAlpha * greatest);
+   *outReal= prevATR;
    return TA_SUCCESS;
 }
 
