@@ -652,6 +652,26 @@ Scope rules (deliberate):
   shared `backends/fma.rs` detector and builds with `-ffp-contract=off`, and
   `fma`/`mul_add` are IEEE correctly-rounded, hence bit-identical for equal
   operands.
+- **The C# arm of that claim is checked only where the CPU has FMA3, which is
+  every runner we own.** `Math.FusedMultiplyAdd` is a JIT intrinsic there and a
+  runtime fallback elsewhere, and the fallback carries a standing misrounding
+  report (dotnet/runtime#98704, closed `tracking-external-issue`). Drive the
+  second path by disabling the ISA for the spawned server, **both knobs**:
+
+  ```bash
+  cd bin && DOTNET_EnableAVX2=0 DOTNET_EnableFMA=0 ./ta_regtest --xlang-hash --language=csharp
+  ```
+
+  `DOTNET_EnableFMA=0` on its own leaves `Fma.IsSupported` true (measured, .NET
+  10.0.400), so a run with only that knob silently repeats the control and reads
+  green for the wrong reason. Confirm from `/proc/<server pid>/environ` that the
+  knobs reached the `dotnet` child, not just `ta_regtest`.
+
+  What that run has shown, on linux-x64 / glibc 2.39 / .NET 10.0.400: identical
+  to the control, and red when four EMA fusion sites are hand-unfused. It stands
+  in for the JIT's non-FMA3 code path and **not** for non-FMA3 silicon — the
+  CRT's own `fma` still resolves against the host CPU — so Windows, macOS, musl
+  and ARM64 remain unmeasured, and so does real hardware without FMA3.
 
 ## `server_verify` — bitwise C⇄server on the hard-coded tests
 
