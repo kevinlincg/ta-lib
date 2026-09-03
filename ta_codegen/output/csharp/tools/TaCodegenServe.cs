@@ -212,6 +212,7 @@ public class TaCodegenServe {
             else if (method == "TA_COSH") return Handle_COSH(p, startIdx, endIdx);
             else if (method == "TA_DEMA") return Handle_DEMA(p, startIdx, endIdx);
             else if (method == "TA_DIV") return Handle_DIV(p, startIdx, endIdx);
+            else if (method == "TA_DONCHIAN") return Handle_DONCHIAN(p, startIdx, endIdx);
             else if (method == "TA_DX") return Handle_DX(p, startIdx, endIdx);
             else if (method == "TA_EFI") return Handle_EFI(p, startIdx, endIdx);
             else if (method == "TA_EMA") return Handle_EMA(p, startIdx, endIdx);
@@ -482,6 +483,8 @@ public class TaCodegenServe {
                 sb.Append("\"TA_DEMA\"");
                 sb.Append(",");
                 sb.Append("\"TA_DIV\"");
+                sb.Append(",");
+                sb.Append("\"TA_DONCHIAN\"");
                 sb.Append(",");
                 sb.Append("\"TA_DX\"");
                 sb.Append(",");
@@ -21165,6 +21168,277 @@ public class TaCodegenServe {
         return "{\"retCode\":0,\"beg\":" + beg + ",\"nb\":" + nb + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"benign\":" + zsign + extra + diag + "}";
     }
 
+    static string Sv_DONCHIAN(JsonElement req) {
+        int svShape = GetInt(req, "gen_shape", 0);
+        int svSeed = GetInt(req, "gen_seed", 0);
+        int svN = GetInt(req, "gen_n", 0);
+        if (svN < 2) svN = 2;
+        if (svN > 256) svN = 256;
+        int svK = GetInt(req, "unstablePeriod", 0);
+        int svCompat = GetInt(req, "compatibility", 0);
+        if (svCompat != 0) {
+            return "{\"error\":\"csharp has no compatibility API (pinned to Default)\"}";
+        }
+        int optInTimePeriod = GetInt(req, "optInTimePeriod", 20);
+        double[] fz_o = new double[svN];
+        double[] fz_h = new double[svN];
+        double[] fz_l = new double[svN];
+        double[] fz_c = new double[svN];
+        double[] fz_v = new double[svN];
+        double[] fz_oi = new double[svN];
+        FuzzData.FuzzGen(svShape, svSeed, svN, fz_o, fz_h, fz_l, fz_c, fz_v, fz_oi);
+        double[] b0 = new double[svN];
+        double[] b1 = new double[svN];
+        double[] b2 = new double[svN];
+        long legs = 0;
+        bool allOk = true;
+        bool peekAll = true;
+        long peekReps = 0;
+        bool peekRepAll = true;
+        int fillChecked = 0;
+        bool fillOk = true;
+        int beg = 0, nb = 0;
+        string diag = "";
+        int rangeChecked = 0;
+        bool rangeOk = true;
+        long rangeLegs = 0;
+        int rangeSites = 0;
+        int ufillChecked = 0;
+        bool ufillOk = true;
+        long zsign = 0;
+        long updAlloc = 0;
+        int rounds = 1;
+        for (int rd = 0; rd < rounds; rd++) {
+            CoreBuilder cb = Core.Builder();
+            Core c2;
+            try { c2 = cb.Build(); }
+            catch (ArgumentOutOfRangeException) {
+                return "{\"error\":\"unstablePeriod out of range\"}";
+            }
+            RetCode rc;
+            try { rc = c2.DONCHIAN_Impl(0, svN - 1, fz_h, fz_l, optInTimePeriod, out beg, out nb, b0, b1, b2); }
+            catch (Exception _sve) when (_sve is ITaLibFailure) { rc = ((ITaLibFailure)_sve).RetCode; beg = 0; nb = 0; }
+            int lb = c2.DONCHIAN_Lookback(optInTimePeriod);
+            if (rc != RetCode.Success || nb == 0) {
+                bool openRejects;
+                try { _ = c2.DonchianOpen(fz_h, fz_l, optInTimePeriod); openRejects = false; }
+                catch (ArgumentException) { openRejects = true; }
+                return "{\"retCode\":" + (int)rc + ",\"legs\":0,\"nb\":" + nb + ",\"openRejects\":" + (openRejects ? 1 : 0) + ",\"ok\":" + (openRejects ? 1 : 0) + ",\"peek_ok\":1}";
+            }
+            fillChecked = 1;
+            try {
+                double[] f0 = new double[svN];
+                Array.Fill(f0, (double)-1.2345678901234e300);
+                double[] f1 = new double[svN];
+                Array.Fill(f1, (double)-1.2345678901234e300);
+                double[] f2 = new double[svN];
+                Array.Fill(f2, (double)-1.2345678901234e300);
+                Core.DonchianStream _fh = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, f1, f2);
+                OutRange _fr = _fh.OutRange;
+                rangeChecked = 1; rangeLegs++; rangeSites |= 1;
+                if (_fr.BegIdx != beg || _fr.Count != nb) rangeOk = false;
+                if (_fr.BegIdx != beg || _fr.Count != nb) fillOk = false;
+                else {
+                    for (int bi = 0; bi < nb; bi++) if (SvXtierNe(f0[bi], b0[bi], ref zsign)) fillOk = false;
+                    for (int bi = 0; bi < nb; bi++) if (SvXtierNe(f1[bi], b1[bi], ref zsign)) fillOk = false;
+                    for (int bi = 0; bi < nb; bi++) if (SvXtierNe(f2[bi], b2[bi], ref zsign)) fillOk = false;
+                    for (int bi = nb; bi < svN; bi++) if (f0[bi] != (double)-1.2345678901234e300) fillOk = false;
+                    for (int bi = nb; bi < svN; bi++) if (f1[bi] != (double)-1.2345678901234e300) fillOk = false;
+                    for (int bi = nb; bi < svN; bi++) if (f2[bi] != (double)-1.2345678901234e300) fillOk = false;
+                }
+                /* R2: aliasing cross product -- every real output x every input,
+                   then every same-typed output pair. Each must throw. */
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, fz_h, f1, f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 aliases input inHigh */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, fz_l, f1, f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 aliases input inLow */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, fz_h, f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases input inHigh */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, fz_l, f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases input inLow */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, f1, fz_h); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases input inHigh */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, f1, fz_l); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases input inLow */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, f0, f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases output 0 */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, f1, f0); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases output 0 */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, f1, f1); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases output 1 */ }
+                double[] ovD = new double[svN + 1];
+                double[] ovIn = new double[svN + 1];
+                Array.Copy(fz_h, ovIn, svN);
+                /* R2b: PARTIAL overlap -- only spans can express it, and it is
+                   the only shape that separates Overlaps from identity. */
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, ovD.AsSpan(0, svN), ovD.AsSpan(1, svN), f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/1 partially overlap (offset) */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, ovD.AsSpan(0, svN), ovD.AsSpan(0, svN + 1), f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/1 partially overlap (same start, longer) */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, ovD.AsSpan(0, svN), f1, ovD.AsSpan(1, svN)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/2 partially overlap (offset) */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, ovD.AsSpan(0, svN), f1, ovD.AsSpan(0, svN + 1)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/2 partially overlap (same start, longer) */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, ovD.AsSpan(0, svN), ovD.AsSpan(1, svN)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 1/2 partially overlap (offset) */ }
+                try { _ = c2.DonchianOpenAndFill(fz_h, fz_l, optInTimePeriod, f0, ovD.AsSpan(0, svN), ovD.AsSpan(0, svN + 1)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 1/2 partially overlap (same start, longer) */ }
+                try { _ = c2.DonchianOpenAndFill(ovIn.AsSpan(0, svN), fz_l, optInTimePeriod, ovIn.AsSpan(1, svN), f1, f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 partially overlaps an input */ }
+                try { _ = c2.DonchianOpenAndFill(ovIn.AsSpan(0, svN), fz_l, optInTimePeriod, f0, ovIn.AsSpan(1, svN), f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 partially overlaps an input */ }
+                try { _ = c2.DonchianOpenAndFill(ovIn.AsSpan(0, svN), fz_l, optInTimePeriod, f0, f1, ovIn.AsSpan(1, svN)); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 partially overlaps an input */ }
+            } catch (ArgumentException) { fillOk = false; }
+            int seedShift = 0;
+            int[] pcs = { lb + 1 + seedShift, lb + 13, svN / 2, svN - 1 };
+            Array.Sort(pcs);
+            int prevP = -1;
+            for (int pi = 0; pi < pcs.Length; pi++) {
+                int p = pcs[pi];
+                if (p < lb + 1 + seedShift || p > svN - 1 || p == prevP) continue;
+                prevP = p;
+                Core.DonchianStream st;
+                try { st = c2.DonchianOpen(fz_h[..p], fz_l[..p], optInTimePeriod); }
+                catch (ArgumentException) { allOk = false; if (diag.Length == 0) diag = ",\"openRejectP\":" + p; continue; }
+                legs++;
+                Core.DonchianValue v0 = st.Value;
+                if (SvXtierNe(v0.RealUpperBand, b0[p - 1 - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":0,\"where\":\"open\""; }
+                if (SvXtierNe(v0.RealMiddleBand, b1[p - 1 - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":1,\"where\":\"open\""; }
+                if (SvXtierNe(v0.RealLowerBand, b2[p - 1 - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":2,\"where\":\"open\""; }
+                for (int t = p; t < svN; t++) {
+                    Core.DonchianValue pk = st.Peek(fz_h[t], fz_l[t]);
+                    if (t % 7 == 0) {
+                        _ = st.Peek(fz_h[t - 1], fz_l[t - 1]);
+                        Core.DonchianValue rp = st.Peek(fz_h[t], fz_l[t]);
+                        peekReps++;
+                        if (SvBne(rp.RealUpperBand, pk.RealUpperBand)) peekRepAll = false;
+                        if (SvBne(rp.RealMiddleBand, pk.RealMiddleBand)) peekRepAll = false;
+                        if (SvBne(rp.RealLowerBand, pk.RealLowerBand)) peekRepAll = false;
+                    }
+                    Core.DonchianValue up = st.Update(fz_h[t], fz_l[t]);
+                    if (SvBne(pk.RealUpperBand, up.RealUpperBand)) peekAll = false;
+                    if (SvBne(pk.RealMiddleBand, up.RealMiddleBand)) peekAll = false;
+                    if (SvBne(pk.RealLowerBand, up.RealLowerBand)) peekAll = false;
+                    _ = st.Peek(fz_h[t - 1], fz_l[t - 1]);
+                    Core.DonchianValue vc = st.Value;
+                    if (SvBne(vc.RealUpperBand, up.RealUpperBand)) { allOk = false; if (diag.Length == 0) diag = ",\"valueNeUpdate\":" + t; }
+                    if (SvBne(vc.RealMiddleBand, up.RealMiddleBand)) { allOk = false; if (diag.Length == 0) diag = ",\"valueNeUpdate\":" + t; }
+                    if (SvBne(vc.RealLowerBand, up.RealLowerBand)) { allOk = false; if (diag.Length == 0) diag = ",\"valueNeUpdate\":" + t; }
+                    if (SvXtierNe(up.RealUpperBand, b0[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + t + ",\"badOut\":0,\"batchv\":\"" + BitConverter.DoubleToInt64Bits(b0[t - beg]).ToString("x16") + "\",\"streamv\":\"" + BitConverter.DoubleToInt64Bits(up.RealUpperBand).ToString("x16") + "\""; }
+                    if (SvXtierNe(up.RealMiddleBand, b1[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + t + ",\"badOut\":1,\"batchv\":\"" + BitConverter.DoubleToInt64Bits(b1[t - beg]).ToString("x16") + "\",\"streamv\":\"" + BitConverter.DoubleToInt64Bits(up.RealMiddleBand).ToString("x16") + "\""; }
+                    if (SvXtierNe(up.RealLowerBand, b2[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + t + ",\"badOut\":2,\"batchv\":\"" + BitConverter.DoubleToInt64Bits(b2[t - beg]).ToString("x16") + "\",\"streamv\":\"" + BitConverter.DoubleToInt64Bits(up.RealLowerBand).ToString("x16") + "\""; }
+                }
+                if (allOk) {
+                    rangeChecked = 1; rangeLegs++; rangeSites |= 2;
+                    if (st.OutRange.BegIdx != beg || st.OutRange.Count != nb) rangeOk = false;
+                }
+            }
+            {
+                int p = lb + 1 + seedShift;
+                if (p <= svN - 1) {
+                    ufillChecked = 1;
+                    try {
+                        Core.DonchianStream stu = c2.DonchianOpen(fz_h[..p], fz_l[..p], optInTimePeriod);
+                        OutRange ur0 = stu.OutRange;
+                        double[] u0 = new double[svN];
+                        Array.Fill(u0, (double)-1.2345678901234e300);
+                        double[] u1 = new double[svN];
+                        Array.Fill(u1, (double)-1.2345678901234e300);
+                        double[] u2 = new double[svN];
+                        Array.Fill(u2, (double)-1.2345678901234e300);
+                        stu.UpdateAndFill(fz_h.AsSpan(p, 0), fz_l.AsSpan(p, 0), u0, u1, u2);
+                        try { stu.UpdateAndFill(fz_h.AsSpan(p), fz_l.AsSpan(p), new double[0], u1, u2); ufillOk = false; } catch (ArgumentException) { /* expected: output shorter than the run */ }
+                        try { stu.UpdateAndFill(fz_h.AsSpan(p), fz_l.AsSpan(p), fz_h.AsSpan(p), u1, u2); ufillOk = false; } catch (ArgumentException) { /* expected: output overlaps input */ }
+                        if (stu.OutRange.BegIdx != ur0.BegIdx || stu.OutRange.Count != ur0.Count) ufillOk = false;
+                        stu.UpdateAndFill(fz_h.AsSpan(p), fz_l.AsSpan(p), u0, u1, u2);
+                        for (int t = p; t < svN; t++) if (SvXtierNe(u0[t - p], b0[t - beg], ref zsign)) ufillOk = false;
+                        for (int t = p; t < svN; t++) if (SvXtierNe(u1[t - p], b1[t - beg], ref zsign)) ufillOk = false;
+                        for (int t = p; t < svN; t++) if (SvXtierNe(u2[t - p], b2[t - beg], ref zsign)) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u0[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u1[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u2[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        rangeChecked = 1; rangeLegs++; rangeSites |= 4;
+                        if (stu.OutRange.BegIdx != beg || stu.OutRange.Count != nb) { ufillOk = false; rangeOk = false; }
+                    } catch (ArgumentException) { ufillOk = false; }
+                }
+            }
+            {
+                int p0 = lb + 1 + seedShift;
+                if (p0 <= svN - 1) {
+                    try {
+                        Core.DonchianStream sA = c2.DonchianOpen(fz_h[..p0], fz_l[..p0], optInTimePeriod);
+                        int mid = (p0 + svN) / 2;
+                        for (int t = p0; t < mid; t++) sA.Update(fz_h[t], fz_l[t]);
+                        Core.DonchianStream sB = sA.Clone();
+                        for (int t = mid; t < svN; t++) {
+                            Core.DonchianValue uA = sA.Update(fz_h[t], fz_l[t]);
+                            Core.DonchianValue uB = sB.Update(fz_h[t], fz_l[t]);
+                            if (SvBne(uA.RealUpperBand, uB.RealUpperBand) || SvXtierNe(uA.RealUpperBand, b0[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"copyDiverged\":" + t; }
+                            if (SvBne(uA.RealMiddleBand, uB.RealMiddleBand) || SvXtierNe(uA.RealMiddleBand, b1[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"copyDiverged\":" + t; }
+                            if (SvBne(uA.RealLowerBand, uB.RealLowerBand) || SvXtierNe(uA.RealLowerBand, b2[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"copyDiverged\":" + t; }
+                        }
+                        if (allOk) {
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 16;
+                            if (sA.OutRange.BegIdx != beg || sA.OutRange.Count != nb) { rangeOk = false; if (diag.Length == 0) diag = ",\"copyRangeSrc\":1"; }
+                            if (sB.OutRange.BegIdx != beg || sB.OutRange.Count != nb) { rangeOk = false; if (diag.Length == 0) diag = ",\"copyRange\":1"; }
+                        }
+                    } catch (ArgumentException) { allOk = false; if (diag.Length == 0) diag = ",\"copyOpenReject\":1"; }
+                }
+            }
+            {
+                int pa = lb + 1 + seedShift;
+                if (pa <= svN - 1) {
+                    try {
+                        Core.DonchianStream sQ = c2.DonchianOpen(fz_h[..pa], fz_l[..pa], optInTimePeriod);
+                        double sink = 0.0;
+                        long a0 = GC.GetAllocatedBytesForCurrentThread();
+                        for (int t = pa; t < svN; t++) {
+                            Core.DonchianValue uq = sQ.Update(fz_h[t], fz_l[t]);
+                            sink += uq.RealUpperBand;
+                        }
+                        long ad = GC.GetAllocatedBytesForCurrentThread() - a0;
+                        svUpdSink += sink;
+                        if (ad > updAlloc) updAlloc = ad;
+                        if (ad != 0) { allOk = false; if (diag.Length == 0) diag = ",\"updAllocBytes\":" + ad; }
+                    } catch (ArgumentException) { /* open rejects here -- nothing to measure */ }
+                }
+            }
+            if (lb >= 1 && lb < svN) {
+                try { _ = c2.DonchianOpen(fz_h[..lb], fz_l[..lb], optInTimePeriod); allOk = false; if (diag.Length == 0) diag = ",\"shortHistoryAccepted\":1"; }
+                catch (InsufficientHistoryException) { /* expected, typed */ }
+                catch (ArgumentException) { allOk = false; if (diag.Length == 0) diag = ",\"shortHistoryWrongType\":1"; }
+            }
+            try {
+                Core.DonchianStream sD = c2.DonchianOpen(fz_h, fz_l, int.MinValue);
+                Core.DonchianStream sE = c2.DonchianOpen(fz_h, fz_l, 20);
+                Core.DonchianValue vD = sD.Value;
+                Core.DonchianValue vE = sE.Value;
+                if (SvBne(vD.RealUpperBand, vE.RealUpperBand)) { allOk = false; if (diag.Length == 0) diag = ",\"minValueDefault\":1"; }
+                if (SvBne(vD.RealMiddleBand, vE.RealMiddleBand)) { allOk = false; if (diag.Length == 0) diag = ",\"minValueDefault\":1"; }
+                if (SvBne(vD.RealLowerBand, vE.RealLowerBand)) { allOk = false; if (diag.Length == 0) diag = ",\"minValueDefault\":1"; }
+            } catch (ArgumentException) { /* defaults need more history than svN -- skip */ }
+            {
+                int Sidx = lb + (svN - lb) / 3;
+                if (Sidx > lb && Sidx < svN - 1) {
+                    int begS = 0, nbS = 0;
+                    RetCode rcS;
+                    try { rcS = c2.DONCHIAN_Impl(Sidx, svN - 1, fz_h, fz_l, optInTimePeriod, out begS, out nbS, b0, b1, b2); }
+                    catch (Exception _sve) when (_sve is ITaLibFailure) { rcS = ((ITaLibFailure)_sve).RetCode; }
+                    if (rcS == RetCode.Success && nbS > 0) {
+                        try {
+                            Core.DonchianStream stA = c2.DonchianOpenInternal(fz_h[..svN], fz_l[..svN], Sidx, optInTimePeriod);
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 8;
+                            if (stA.OutRange.BegIdx != begS || stA.OutRange.Count != nbS) rangeOk = false;
+                        } catch (ArgumentException) { rangeOk = false; if (diag.Length == 0) diag = ",\"anchoredOpenRejected\":1"; }
+                    }
+                }
+            }
+        }
+        string extra = ",\"updAlloc\":" + updAlloc;
+        return "{\"retCode\":0,\"beg\":" + beg + ",\"nb\":" + nb + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"benign\":" + zsign + extra + diag + "}";
+    }
+
     static string Sv_DX(JsonElement req) {
         int svShape = GetInt(req, "gen_shape", 0);
         int svSeed = GetInt(req, "gen_seed", 0);
@@ -39771,6 +40045,7 @@ public class TaCodegenServe {
         case "TA_COSH": return Sv_COSH(req);
         case "TA_DEMA": return Sv_DEMA(req);
         case "TA_DIV": return Sv_DIV(req);
+        case "TA_DONCHIAN": return Sv_DONCHIAN(req);
         case "TA_DX": return Sv_DX(req);
         case "TA_EFI": return Sv_EFI(req);
         case "TA_EMA": return Sv_EMA(req);
@@ -40171,6 +40446,10 @@ public class TaCodegenServe {
         }
         case "DIV": {
             return core.DIV_Lookback();
+        }
+        case "DONCHIAN": {
+            int optInTimePeriod = GetInt(p, "optInTimePeriod", 0);
+            return core.DONCHIAN_Lookback(optInTimePeriod);
         }
         case "DX": {
             int optInTimePeriod = GetInt(p, "optInTimePeriod", 0);
@@ -52984,6 +53263,141 @@ public class TaCodegenServe {
         sb.Append($",\"out_len\":{_outLen}");
         if (GetInt(p, "no_output", 0) == 0) {
             sb.Append(",\"outReal\":"); sb.Append(FormatArray(outArr0, outNBElement));
+        }
+        sb.Append($",\"used_float\":{usedFloat}");
+        sb.Append($",\"timing_ns\":{elapsedNs}");
+        sb.Append("}");
+        return sb.ToString();
+    }
+
+    static string Handle_DONCHIAN(JsonElement p, int startIdx, int endIdx) {
+        int use_preloaded = GetInt(p, "use_preloaded", 0);
+        int bench_iters = GetInt(p, "iters", 1);
+        if (bench_iters < 1) bench_iters = 1;
+        int bench_mode = GetInt(p, "bench_mode", 0);
+        double[] inHigh;
+        double[] inLow;
+        if (use_preloaded != 0 && refN > 0) {
+            inHigh = new double[refN]; Array.Copy(refHigh, inHigh, refN);
+            inLow = new double[refN]; Array.Copy(refLow, inLow, refN);
+        } else {
+            inHigh = GetDoubleArray(p, "inHigh");
+            inLow = GetDoubleArray(p, "inLow");
+        }
+        ReadOnlySpan<double> _warm_inHigh = bench_mode == 0 ? default : inHigh.AsSpan(0, endIdx + 1);
+        ReadOnlySpan<double> _warm_inLow = bench_mode == 0 ? default : inLow.AsSpan(0, endIdx + 1);
+        int optInTimePeriod = GetInt(p, "optInTimePeriod", 0);
+        // The output buffers are sized to the count the call actually PRODUCES --
+        // endIdx - max(startIdx, lookback) + 1 -- plus `out_pad` from the request, and
+        // never below one. Not to the width of the requested range: that is the bound the
+        // managed backends check and the Rust asserts state, and at the range width it was
+        // slack by exactly the lookback, so no call could ever approach it.
+        // The pad is there because a bound is a MINIMUM, never an equality. A caller
+        // re-using a pre-allocated buffer passes a larger one, and that is not an error --
+        // the reported OutRange is what says which part was written. So the harness sends
+        // both: the startIdx axis sends no pad (the bound is reachable) while the
+        // full-range value comparison sends one (slack is legal). Sizing every call one way
+        // would silently drop the other property.
+        // FLOORED AT ONE, deliberately. Zero is what the formula gives for a rejected call
+        // (the lookback is -1, or usize::MAX in Rust, for an out-of-range parameter) and
+        // for a range shorter than the lookback, where the output bound switches off and
+        // the spec says any length will do, including none. It does not: two EMPTY output
+        // buffers are rejected as aliased by C# (an explicit IsEmpty clause) and by Rust
+        // (the empty Vec the server hands each output shares one dangling as_ptr()), and
+        // accepted by C and Java -- a four-way divergence on a call the specification says
+        // all four accept. Sizing to zero here would reach it on every multi-output
+        // function, which is a semantic question, not a harness one. Recorded as
+        // error-handling-spec, open item 11.
+        // The C server keeps its MAX_ARRAY_SIZE statics: C is handed bare pointers, has no
+        // sizes and cannot make the check, so an exact buffer would test nothing there.
+        int _lb = core.DONCHIAN_Lookback(optInTimePeriod);
+        int _cs = startIdx > _lb ? startIdx : _lb;
+        int _outLen = ((_lb < 0 || _cs > endIdx) ? 1 : endIdx - _cs + 1) + GetInt(p, "out_pad", 0);
+        double[] outArr0 = new double[_outLen];
+        double[] outArr1 = new double[_outLen];
+        double[] outArr2 = new double[_outLen];
+        int outBegIdx = 0, outNBElement = 0;
+        RetCode rc = RetCode.Success;
+        long _t0 = 0;
+        for (int _bi = 0; _bi <= bench_iters; _bi++) {
+            if (_bi == 1) _t0 = GetNanoTime();
+            if (bench_mode == 0) {
+            if (GetInt(p, "timed", 0) != 0) {
+                try {
+                    rc = core.DONCHIAN_Impl(startIdx, endIdx, inHigh, inLow, optInTimePeriod, out outBegIdx, out outNBElement, outArr0, outArr1, outArr2);
+                } catch (Exception _e2) when (_e2 is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e2).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            } else {
+                try {
+                    OutRange _pr = core.DONCHIAN(startIdx, endIdx, inHigh, inLow, optInTimePeriod, outArr0, outArr1, outArr2);
+                    outBegIdx = _pr.BegIdx;
+                    outNBElement = _pr.Count;
+                    rc = RetCode.Success;
+                } catch (Exception _e) when (_e is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            }
+            } else if (bench_mode == 1) {
+                try {
+                    core.DonchianOpen(_warm_inHigh, _warm_inLow, optInTimePeriod);
+                    rc = RetCode.Success;
+                } catch (Exception _e3) when (_e3 is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e3).RetCode;
+                }
+            } else {
+                try {
+                    Core.DonchianStream _wh = core.DonchianOpenAndFill(_warm_inHigh, _warm_inLow, optInTimePeriod, outArr0, outArr1, outArr2);
+                    outBegIdx = _wh.OutRange.BegIdx;
+                    outNBElement = _wh.OutRange.Count;
+                    rc = RetCode.Success;
+                } catch (Exception _e3) when (_e3 is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e3).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            }
+        }
+        long elapsedNs = (GetNanoTime() - _t0) / bench_iters;
+        int usedFloat = 0;
+        if (GetInt(p, "use_float", 0) != 0) {
+            var f_inHigh = new float[inHigh.Length];
+            for (int _fi = 0; _fi < inHigh.Length; _fi++) f_inHigh[_fi] = (float)inHigh[_fi];
+            var f_inLow = new float[inLow.Length];
+            for (int _fi = 0; _fi < inLow.Length; _fi++) f_inLow[_fi] = (float)inLow[_fi];
+            try {
+                OutRange _fr = core.DONCHIAN(startIdx, endIdx, f_inHigh, f_inLow, optInTimePeriod, outArr0, outArr1, outArr2);
+                outBegIdx = _fr.BegIdx;
+                outNBElement = _fr.Count;
+                rc = RetCode.Success;
+            } catch (Exception _e) when (_e is ITaLibFailure) {
+                rc = ((ITaLibFailure)_e).RetCode;
+                outBegIdx = 0;
+                outNBElement = 0;
+            }
+            usedFloat = 1;
+        }
+        if (GetInt(p, "want_hash", 0) != 0 && GetInt(p, "full_output", 0) == 0) {
+            ulong _h = SvHashInit();
+            if (rc == RetCode.Success && outNBElement > 0) {
+                _h = SvHashF64(_h, outArr0, outNBElement);
+                _h = SvHashF64(_h, outArr1, outNBElement);
+                _h = SvHashF64(_h, outArr2, outNBElement);
+            }
+            _h = SvHashFin(_h);
+            return $"{{\"retCode\":{(int)rc},\"outBegIdx\":{outBegIdx},\"outNBElement\":{outNBElement},\"out_hash\":\"{_h:x16}\"}}";
+        }
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"{{\"retCode\":{(int)rc},\"outBegIdx\":{outBegIdx},\"outNBElement\":{outNBElement}");
+        sb.Append($",\"out_len\":{_outLen}");
+        if (GetInt(p, "no_output", 0) == 0) {
+            sb.Append(",\"outReal\":"); sb.Append(FormatArray(outArr0, outNBElement));
+            sb.Append(",\"outReal1\":"); sb.Append(FormatArray(outArr1, outNBElement));
+            sb.Append(",\"outReal2\":"); sb.Append(FormatArray(outArr2, outNBElement));
         }
         sb.Append($",\"used_float\":{usedFloat}");
         sb.Append($",\"timing_ns\":{elapsedNs}");
