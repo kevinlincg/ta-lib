@@ -16,6 +16,7 @@ this section for what that does and does not change about these rows):
 | control — hardware FMA3, as CI runs it | 284,487 | **0** |
 | FMA3 + AVX2 disabled in the server | 284,487 | **0** |
 | same, with four EMA fusion sites hand-unfused | 284,487 | **5,893** across 9 functions |
+| all hardware intrinsics off (`DOTNET_EnableHWIntrinsic=0`) | 284,487 | **0** |
 
 The third row is the control that goes red. It is the same command and the same
 disabled-ISA environment as the second, with
@@ -75,12 +76,38 @@ it did not, so adding one now is scope the issue deliberately did not authorise.
 I left it out for that reason. Say the word and it is a small follow-up.
 
 Also worth knowing: #338 fuses ATR, NATR and SUPERTREND, which moves them from 29
-`Math.FusedMultiplyAdd` files to 32. I ran the same disabled-ISA row against that
-widening — 284,487 cases, 0 mismatches, unchanged — so it does not move this
-answer either, on this platform. One caveat on that row: I measured it on my own
-branch's spelling of the two-coefficient step, before `67936169` landed #338 on
-`dev` with a different coefficient order. The file count is the same either way,
-but **I did not re-run the row against dev's landed form.**
+`Math.FusedMultiplyAdd` files to 32. **That row has now been re-run against dev's
+landed form**, `67936169`, which is the base this branch sits on: control 284,487
+cases / 0 mismatches, and the disabled-ISA row the same. The earlier measurement
+was taken on this branch's own spelling of the two-coefficient step, before dev
+landed #338 with a different coefficient order; the two agree, so the widening
+does not move the answer on this platform.
+
+## The stronger knob, and why it changes the conclusion's shape
+
+`DOTNET_EnableAVX2=0 DOTNET_EnableFMA=0` stops the JIT emitting `vfmadd213sd` in
+the caller, but the value can still reach a hardware FMA underneath. Setting
+`DOTNET_EnableHWIntrinsic=0` goes further — `Fma.IsSupported` is `false` and
+`DOTNET_JitDisasm` shows a real `call System.Math:FusedMultiplyAdd` in place of
+the instruction — and the result is still correctly rounded:
+
+- dotnet/runtime#98704's own operands return `1.5` / `0x3FF8000000000000`, not
+  the `1.5000000000000002` the report describes;
+- 4,000,000 random triples, 1,333,334 of them constructed as near-cancellations
+  of the same shape as the reporter's, hash bit-for-bit identically to the
+  hardware-FMA run (FNV-1a `0xFE4D36BA5DAB5B74` both ways);
+- the full C# `--xlang-hash` row under that knob is green at 284,487 cases.
+
+So the honest statement is stronger than "no divergence measured": on linux-x64
+**no process-level knob reaches a misrounding fallback at all**. A nightly leg
+built on any of these knobs would go red for an unfused site — the sabotage row
+above proves that much — but it could never go red for the defect #340 names.
+That is an argument against step 2 as the issue frames it, and it is the reason
+the note now says so in the file rather than leaving the next person to find it.
+
+Worth flagging for the same reason: `DOTNET_EnableFMA=0` alone leaving
+`vfmadd213sd` in the emitted code is now checked at the instruction level, not
+just inferred from `Fma.IsSupported`.
 
 ## Verification
 
@@ -90,3 +117,10 @@ but **I did not re-run the row against dev's landed form.**
 - The changed file is `src/tools/ta_regtest/CLAUDE.md` and nothing else; no
   generated artifact and no generator input is touched.
 - `scripts/build.py regen-check` clean.
+- Re-run on the current head (dev `67936169` + this doc commit), .NET 10.0.400
+  installed fresh on the box: `xlang-hash --language=csharp` control 284,487 / 0,
+  and the same under `DOTNET_EnableHWIntrinsic=0`, 284,487 / 0.
+- Not checked this round: I did not re-read `/proc/<server pid>/environ` for the
+  `DOTNET_EnableHWIntrinsic=0` row — that leg rests on `execvp` environment
+  inheritance, which the earlier row did confirm directly. The primitive-level
+  numbers above were taken in a standalone probe, not through the server.
