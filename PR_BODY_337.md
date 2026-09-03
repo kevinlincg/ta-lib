@@ -203,3 +203,33 @@ PR needs nothing if it goes first.
   servers built in this tree and no .NET SDK. Cross-language parity rests here on
   the generated Rust/Java/C# being byte-identical, not on a run of those gates.
   (`--fuzz-064` has since been run — see the differential below.)
+
+## Re-based onto `dev` 58a0ac54, and re-measured there
+
+`dev` moved after the body above was written: 58a0ac54 (#316, "the C peek frame
+binds the handle instead of copying it") rewrote 439 lines of
+`backends/c_stream.rs` and regenerated all of `src/ta_func/`. The branch now
+carries a merge of that.
+
+It merged with **no textual conflict**, which on its own proves nothing about a
+7-line hook into an emitter that was just rewritten around it — so the pass was
+re-verified on the new base rather than assumed:
+
+| re-run on the merged tree | result |
+|---|---|
+| `build.py regen-check` | exit 0 — "output matches the committed source. OK." |
+| `cargo test --test fma_suite` | 3 passed, 0 failed |
+| `build.py test` (full C `ta_regtest`) | all tests succeeded |
+| `.fma` clones in the archive | 203, unchanged |
+
+The "#338 needs a `generate`" finding was **re-measured on this base**, not
+carried over: merging `issue-338-atr-fused-wilder` into this branch and running
+`generate` still drifts by exactly 15 lines, `+15 −0`, all of them
+`TA_FMA_MULTIVERSION`, five each on ATR, NATR and SUPERTREND
+(`_OpenInternal`, `_OpenAndFillInternal`, `_Update`, `_Peek`, `_UpdateAndFill`).
+That combined tree is green on the full C `ta_regtest`. So the guidance is
+unchanged: whichever of the two merges second is a merge plus one `generate`.
+
+Not re-run on the new base: `--fuzz-064`, the objdump `.text`/PLT census, and the
+`ta_bench_stream` A/Bs. Those numbers are from the df0c6beb base and are left as
+they were measured.
