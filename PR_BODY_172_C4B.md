@@ -25,7 +25,7 @@ C has gated this since the peek tier landed
 (`no_peek_entry_point_commits_a_sub_stream`, reading the C source). Rust cannot
 express it: `peek(&self)` borrows immutably. Java and C# can, and nothing read
 for it — with both managed emitters made to call the committing verb from a peek
-frame, **all 887 generator tests stay green**.
+frame, **the other 901 generator tests stay green** and only these two go red.
 
 ## What the sweeps do
 
@@ -39,6 +39,14 @@ Each one counts what it protects, in both directions:
   quiet by ceasing to find the tiers it exists for);
 * the committing verb occurs outside the peek body (`> 0`, so a corpus that
   never calls `update` on a sub-handle cannot satisfy the rule vacuously).
+
+**The defect assertion runs before both tripwires, and the order is
+load-bearing.** Turning one peek's sub-call into a commit also drops that peek
+out of the `>= 13` count, and the corpus carries exactly 13 — so with the
+tripwire first, every single-site defect reported `only 12 Java peek entry
+point(s) drive a sub-handle` instead of naming the offending line. Both twins
+asserted in that order until this branch; the fix is the assertion order
+only.
 
 ## The cost, and the honest limit on what this buys
 
@@ -58,7 +66,7 @@ made for `java-compiles`: caught after merge is caught one branch too late. It
 is also the parity argument — C gates this, Rust cannot fail it, the two managed
 backends were the ones with nothing.
 
-Against that: **168 lines of test code, in two suites, for a defect the nightly
+Against that: **178 lines of test code, in two suites, for a defect the nightly
 already catches.** Not factored into one helper on purpose — each reads its own
 emitter's output, and both the verb and the receiver spellings differ — but that
 is a judgement call, and if the answer is "the nightly is soon enough", this
@@ -66,15 +74,25 @@ should be dropped rather than trimmed.
 
 ## Verification
 
+Re-run on this branch after merging dev `7065d886`:
+
 * `regen-check` clean — test-only, no generated file moves.
-* generator suite **887 / 887** (885 before, +2 here); clippy `-D warnings`
-  clean.
+* generator suite **903 / 903** (901 before, +2 here).
 * Controls, each broken and watched to fail, then reverted:
-  * composed pipeline verb forced to `update` / `Update` -> both new sweeps red,
-    the other 885 green.
-  * dispatch cast and MAVP bank spelling forced to `update` -> the Java sweep
-    red. These are the two tiers the first control does not reach, which is why
-    there are two.
+  * composed pipeline verb forced to `update` / `Update`, both emitters -> both
+    new sweeps red, the other **901 green**; the Java sweep names 21 sites.
+  * **one** sub-call of BBANDS' peek forced to `update` -> the Java sweep red
+    naming `bbands: peek commits a sub-stream: cur_tempBuffer1 =
+    sp.sub0.update(inReal);`. This is the control the assertion order above
+    exists for: before the reorder the same sabotage reported a hollowed-out
+    corpus and never named the site.
+
+Carried over from the pre-merge base, **not** re-measured here:
+
+* `clippy -D warnings` clean.
+* dispatch cast and MAVP bank spelling forced to `update` -> the Java sweep
+  red. These are the two tiers the first control does not reach, which is why
+  there are two.
 * Java runtime arm, on the jar, for the same two sabotages: baseline 7 suites
   green (StreamSmokeTest 4681 checks), sabotaged 22 and 19 failures — that is
   the table above.
