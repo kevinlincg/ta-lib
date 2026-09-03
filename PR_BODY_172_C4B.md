@@ -130,3 +130,5 @@ Which leaves C4b's residue as a *belt* on 14 handles that already have braces â€
 worth far less than the 13 tiers this PR covers. Recommend rewriting C4b to say
 so, or closing it; either way it should not be closed by building a candlestick
 corpus for that sweep.
+
+_Head re-verified after merging dev `67936169` (which landed #338): `regen-check` green, exit 0; generator suite 904 passed / 0 failed. The net diff against dev is unchanged by that merge._
