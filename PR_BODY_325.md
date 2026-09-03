@@ -66,11 +66,10 @@ On the original tree, Linux x86-64, JDK 21 through the committed Maven wrapper:
 - `regtest.py --language=c,java` against the pinned-tag oracle: C 161 passed /
   0 failed, Java 161 / 0, 967 acknowledged float comparisons.
 
-On the tree as pushed, merged with dev `7065d886`:
+On the tree as pushed, merged with dev `67936169`:
 
-- `generate` then `git status`: clean — dev's #337 and #316 change no file this
-  PR touches.
-- The generator suite: 29 test binaries, 0 failed.
+- `generate` then `git status`: clean.
+- The generator suite: 902 passed / 0 failed.
 
 Not measured: this was not benchmarked. The claim is the allocation count in
 the generated code, 4 sites to 2, not a time. `--language=rust,csharp` was not
@@ -82,21 +81,22 @@ where the 17th method comes from; the public sink overload keeps
 `requireArgument` ahead of the commit, so the null-sink rejection added in
 `91b76002` is not reopened by the split.
 
-## Merge-order note: this PR and #338 collide on one generated value
+## The #338 digest collision is already resolved in this branch
 
-Both change generated Java, so both recompute the Java gencode digest, and
-whichever merges second collides on exactly the two lines carrying it:
-`BuildStamp.GENCODE_DIGEST` and its spliced copy
-`TaCodegenServe.SPLICED_GENCODE_DIGEST`. Neither side's value is correct for the
-combined tree, so the resolution is one `generate` run, not a pick from either
-side.
+Both this PR and #338 change generated Java, so both recompute the Java gencode
+digest, and whichever landed second was going to collide on exactly the two
+lines carrying it: `BuildStamp.GENCODE_DIGEST` and its spliced copy
+`TaCodegenServe.SPLICED_GENCODE_DIGEST`. #338 landed first, as dev `67936169`,
+so the collision is this branch's to resolve, and the head merge commit does it.
 
-Measured on `dev` `2d8a2381` with both branches merged into one tree: taking
-either digest by hand leaves `scripts/build.py regen-check` **red** on those two
-lines (exit 1); re-running `generate` writes the combined digest and the gate is
-**green** (exit 0), with the generator suite at 903 passed / 0 failed. Every
-other file in the two diffs auto-merges and regenerates identically, so the
-digest is the whole interaction.
+Neither side's value is correct for the combined tree, so the resolution is one
+`generate` run, not a pick from either side. Measured on the merged head:
 
-Each branch merges onto `dev` `2d8a2381` cleanly on its own; the collision
-exists only once both are in.
+- taking dev's digest by hand and committing it leaves `regen-check` **red**,
+  exit 1, and the diff it prints is exactly those two lines — this is a
+  deliberate control, run and watched;
+- re-running `generate` writes the combined value `ad1343133314e1b2` and the
+  gate is **green**, exit 0, generator suite 902 passed / 0 failed.
+
+Every other file in the two diffs auto-merged and regenerated identically, so
+the digest is the whole interaction between them.
