@@ -657,12 +657,10 @@ TA_LIB_API TA_RetCode TA_CDLRISEFALL3METHODS_Update( TA_CDLRISEFALL3METHODS_Stre
 
 TA_LIB_API TA_RetCode TA_CDLRISEFALL3METHODS_Peek( const TA_CDLRISEFALL3METHODS_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
-   struct TA_CDLRISEFALL3METHODS_Stream scratch;
-   struct TA_CDLRISEFALL3METHODS_Stream *sp = &scratch;
+   const struct TA_CDLRISEFALL3METHODS_Stream *sp = stream;
 
    if( !stream || !outInteger ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
    if( ((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 0 - ((sp->lag3_inClose >= sp->lag3_inOpen) ? 1 : 0 - 1) && /* white, 3 black, white  ||  black, 3 white, black */
        ((sp->lag3_inClose >= sp->lag3_inOpen) ? 1 : 0 - 1) == ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) &&
        ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) &&
@@ -687,33 +685,6 @@ TA_LIB_API TA_RetCode TA_CDLRISEFALL3METHODS_Peek( const TA_CDLRISEFALL3METHODS_
    } else 
    {
       *outInteger= 0;
-   }
-   sp->cur_outInteger = *outInteger;
-   sp->lag4_inOpen = sp->lag3_inOpen;
-   sp->lag3_inOpen = sp->lag2_inOpen;
-   sp->lag2_inOpen = sp->lag1_inOpen;
-   sp->lag1_inOpen = inOpen;
-   sp->lag4_inHigh = sp->lag3_inHigh;
-   sp->lag3_inHigh = sp->lag2_inHigh;
-   sp->lag2_inHigh = sp->lag1_inHigh;
-   sp->lag1_inHigh = inHigh;
-   sp->lag4_inLow = sp->lag3_inLow;
-   sp->lag3_inLow = sp->lag2_inLow;
-   sp->lag2_inLow = sp->lag1_inLow;
-   sp->lag1_inLow = inLow;
-   sp->lag4_inClose = sp->lag3_inClose;
-   sp->lag3_inClose = sp->lag2_inClose;
-   sp->lag2_inClose = sp->lag1_inClose;
-   sp->lag1_inClose = inClose;
-   sp->ringPos_BodyLongTrailingIdx = sp->ringPos_BodyLongTrailingIdx + 1;
-   if( sp->ringPos_BodyLongTrailingIdx >= sp->ringCap_BodyLongTrailingIdx )
-   {
-      sp->ringPos_BodyLongTrailingIdx = 0;
-   }
-   sp->ringPos_BodyShortTrailingIdx = sp->ringPos_BodyShortTrailingIdx + 1;
-   if( sp->ringPos_BodyShortTrailingIdx >= sp->ringCap_BodyShortTrailingIdx )
-   {
-      sp->ringPos_BodyShortTrailingIdx = 0;
    }
    return TA_SUCCESS;
 }

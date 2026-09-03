@@ -1220,28 +1220,19 @@ public partial class Core
          double hilbertTempReal = 0.0;
          double detrender = 0.0;
          double Q1 = 0.0;
-         double jI = 0.0;
-         double jQ = 0.0;
-         double Q2 = 0.0;
-         double I2 = 0.0;
          double todayValue = 0.0;
          double I1ForEvenPrev2 = sp.I1ForEvenPrev2;
          double I1ForEvenPrev3 = sp.I1ForEvenPrev3;
          double I1ForOddPrev2 = sp.I1ForOddPrev2;
          double I1ForOddPrev3 = sp.I1ForOddPrev3;
-         double Im = sp.Im;
-         double Re = sp.Re;
          double cur_outFAMA = sp.cur_outFAMA;
          double cur_outMAMA = sp.cur_outMAMA;
          double fama = sp.fama;
          int hilbertIdx = sp.hilbertIdx;
          double mama = sp.mama;
-         double period = sp.period;
          double periodWMASub = sp.periodWMASub;
          double periodWMASum = sp.periodWMASum;
-         double prevI2 = sp.prevI2;
          double prevPhase = sp.prevPhase;
-         double prevQ2 = sp.prevQ2;
          double prev_Q1_Even = sp.prev_Q1_Even;
          double prev_Q1_Odd = sp.prev_Q1_Odd;
          double prev_Q1_input_Even = sp.prev_Q1_input_Even;
@@ -1258,8 +1249,6 @@ public partial class Core
          double prev_jQ_Odd = sp.prev_jQ_Odd;
          double prev_jQ_input_Even = sp.prev_jQ_input_Even;
          double prev_jQ_input_Odd = sp.prev_jQ_input_Odd;
-         int ringPos_trailingWMAIdx = sp.ringPos_trailingWMAIdx;
-         int streamParity = sp.streamParity;
          double trailingWMAValue = sp.trailingWMAValue;
          int pkSlot0 = -1;
          double pkVal0 = 0.0;
@@ -1267,15 +1256,15 @@ public partial class Core
             pkSlot0 = 0;
             pkVal0 = inReal;
          }
-         adjustedPrevPeriod = Math.FusedMultiplyAdd(0.075, period, 0.54);
+         adjustedPrevPeriod = Math.FusedMultiplyAdd(0.075, sp.period, 0.54);
          todayValue = inReal;
          periodWMASub += todayValue;
          periodWMASub -= trailingWMAValue;
          periodWMASum += todayValue * 4.0;
-         trailingWMAValue = (ringPos_trailingWMAIdx != pkSlot0) ? sp.ring_trailingWMAIdx_inReal[ringPos_trailingWMAIdx] : pkVal0;
+         trailingWMAValue = (sp.ringPos_trailingWMAIdx != pkSlot0) ? sp.ring_trailingWMAIdx_inReal[sp.ringPos_trailingWMAIdx] : pkVal0;
          smoothedValue = periodWMASum * 0.1;
          periodWMASum -= periodWMASub;
-         if( streamParity == 0 ) {
+         if( sp.streamParity == 0 ) {
             /* Do the Hilbert Transforms for even price bar */
             hilbertTempReal = sp.a * smoothedValue;
             detrender = 0 - sp.detrender_Even[hilbertIdx];
@@ -1294,26 +1283,14 @@ public partial class Core
             prev_Q1_input_Even = detrender;
             Q1 *= adjustedPrevPeriod;
             hilbertTempReal = sp.a * I1ForEvenPrev3;
-            jI = 0 - sp.jI_Even[hilbertIdx];
-            jI += hilbertTempReal;
-            jI -= prev_jI_Even;
             prev_jI_Even = sp.b * prev_jI_input_Even;
-            jI += prev_jI_Even;
             prev_jI_input_Even = I1ForEvenPrev3;
-            jI *= adjustedPrevPeriod;
             hilbertTempReal = sp.a * Q1;
-            jQ = 0 - sp.jQ_Even[hilbertIdx];
-            jQ += hilbertTempReal;
-            jQ -= prev_jQ_Even;
             prev_jQ_Even = sp.b * prev_jQ_input_Even;
-            jQ += prev_jQ_Even;
             prev_jQ_input_Even = Q1;
-            jQ *= adjustedPrevPeriod;
             if( ++hilbertIdx == 3 ) {
                hilbertIdx = 0;
             }
-            Q2 = Math.FusedMultiplyAdd(0.2, Q1 + jI, 0.8 * prevQ2);
-            I2 = Math.FusedMultiplyAdd(0.2, I1ForEvenPrev3 - jQ, 0.8 * prevI2);
             /* The variable I1 is the detrender delayed for
              * 3 price bars.
              *
@@ -1347,23 +1324,11 @@ public partial class Core
             prev_Q1_input_Odd = detrender;
             Q1 *= adjustedPrevPeriod;
             hilbertTempReal = sp.a * I1ForOddPrev3;
-            jI = 0 - sp.jI_Odd[hilbertIdx];
-            jI += hilbertTempReal;
-            jI -= prev_jI_Odd;
             prev_jI_Odd = sp.b * prev_jI_input_Odd;
-            jI += prev_jI_Odd;
             prev_jI_input_Odd = I1ForOddPrev3;
-            jI *= adjustedPrevPeriod;
             hilbertTempReal = sp.a * Q1;
-            jQ = 0 - sp.jQ_Odd[hilbertIdx];
-            jQ += hilbertTempReal;
-            jQ -= prev_jQ_Odd;
             prev_jQ_Odd = sp.b * prev_jQ_input_Odd;
-            jQ += prev_jQ_Odd;
             prev_jQ_input_Odd = Q1;
-            jQ *= adjustedPrevPeriod;
-            Q2 = Math.FusedMultiplyAdd(0.2, Q1 + jI, 0.8 * prevQ2);
-            I2 = Math.FusedMultiplyAdd(0.2, I1ForOddPrev3 - jQ, 0.8 * prevI2);
             /* The varaiable I1 is the detrender delayed for
              * 3 price bars.
              *
@@ -1403,35 +1368,6 @@ public partial class Core
           */
          cur_outFAMA = fama;
          cur_outMAMA = mama;
-         /* Adjust the period for next price bar */
-         Re = Math.FusedMultiplyAdd(0.8, Re, 0.2 * (Math.FusedMultiplyAdd(I2, prevI2, Q2 * prevQ2)));
-         Im = Math.FusedMultiplyAdd(0.8, Im, 0.2 * (I2 * prevQ2 - Q2 * prevI2));
-         prevQ2 = Q2;
-         prevI2 = I2;
-         tempReal = period;
-         if( Im != 0.0 && Re != 0.0 ) {
-            period = 360.0 / (Math.Atan(Im / Re) * sp.rad2Deg);
-         }
-         tempReal2 = 1.5 * tempReal;
-         if( period > tempReal2 ) {
-            period = tempReal2;
-         }
-         tempReal2 = 0.67 * tempReal;
-         if( period < tempReal2 ) {
-            period = tempReal2;
-         }
-         if( period < 6 ) {
-            period = 6;
-         } else if( period > 50 ) {
-            period = 50;
-         }
-         period = Math.FusedMultiplyAdd(0.2, period, 0.8 * tempReal);
-         /* Ooof... let's do the next price bar now! */
-         ringPos_trailingWMAIdx = ringPos_trailingWMAIdx + 1;
-         if( ringPos_trailingWMAIdx >= sp.ringCap_trailingWMAIdx ) {
-            ringPos_trailingWMAIdx = 0;
-         }
-         streamParity = 1 - streamParity;
          return new MamaValue(cur_outMAMA, cur_outFAMA);
       }
 

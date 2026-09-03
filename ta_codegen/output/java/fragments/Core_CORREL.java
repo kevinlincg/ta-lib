@@ -731,8 +731,6 @@
          CorrelStream sp = this;
          double x = 0.0;
          double y = 0.0;
-         double trailingX = 0.0;
-         double trailingY = 0.0;
          double ssX = 0.0;
          double ssY = 0.0;
          double spXY = 0.0;
@@ -741,8 +739,6 @@
          int barsSinceReseed = sp.barsSinceReseed;
          double cur_outReal = sp.cur_outReal;
          int j = sp.j;
-         double leavingX = sp.leavingX;
-         double leavingY = sp.leavingY;
          double shiftX = sp.shiftX;
          double shiftY = sp.shiftY;
          double sumX = sp.sumX;
@@ -804,7 +800,7 @@
           * startIdx-lookbackTotal+outIdx, which is >= outIdx.
           */
          barsSinceReseed -= 1;
-         if( ssX < 0.000001 * sumX2 || ssY < 0.000001 * sumY2 || leavingX > 1000000.0 * sumX2 || leavingY > 1000000.0 * sumY2 || barsSinceReseed <= 0 ) {
+         if( ssX < 0.000001 * sumX2 || ssY < 0.000001 * sumY2 || sp.leavingX > 1000000.0 * sumX2 || sp.leavingY > 1000000.0 * sumY2 || barsSinceReseed <= 0 ) {
             barsSinceReseed = 32 * sp.optInTimePeriod;
             windowStart = today - sp.lookbackTotal;
             /* Both means in one pass over the window: the rebuild below is the
@@ -852,11 +848,6 @@
                ssY = 0.0;
             }
          }
-         /* Save the trailing values before writing the output, since the input
-          * and output might be the same array.
-          */
-         trailingX = (((trailingIdx & sp.xMask) != pkSlot0) ? sp.x_inReal0[trailingIdx & sp.xMask] : pkVal0) - shiftX;
-         trailingY = (((trailingIdx & sp.xMask) != pkSlot1) ? sp.x_inReal1[trailingIdx & sp.xMask] : pkVal1) - shiftY;
          trailingIdx += 1;
          /* Output the new coefficient.
           *
@@ -904,15 +895,6 @@
          } else {
             cur_outReal = 0.0;
          }
-         /* Remove the trailing values (prepares the next window). */
-         leavingX = trailingX * trailingX;
-         leavingY = trailingY * trailingY;
-         sumX -= trailingX;
-         sumX2 -= leavingX;
-         sumXY -= trailingX * trailingY;
-         sumY -= trailingY;
-         sumY2 -= leavingY;
-         today += 1;
          return cur_outReal;
       }
 

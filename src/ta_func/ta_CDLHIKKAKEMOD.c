@@ -670,56 +670,37 @@ TA_LIB_API TA_RetCode TA_CDLHIKKAKEMOD_Update( TA_CDLHIKKAKEMOD_Stream *stream, 
 
 TA_LIB_API TA_RetCode TA_CDLHIKKAKEMOD_Peek( const TA_CDLHIKKAKEMOD_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
-   struct TA_CDLHIKKAKEMOD_Stream scratch;
-   struct TA_CDLHIKKAKEMOD_Stream *sp = &scratch;
-   int pkSlot0 = -1;
-   double pkVal0 = 0.0;
+   const struct TA_CDLHIKKAKEMOD_Stream *sp = stream;
+   int patternCount;
+   double patternHigh;
+   double patternLow;
+   int patternResult;
 
    if( !stream || !outInteger ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
-   pkSlot0 = sp->ringPos_NearTrailingIdx;
-   pkVal0 = TA_STREAM_CANDLERANGE(Near,inOpen,inHigh,inLow,inClose);
+   patternCount = sp->patternCount;
+   patternHigh = sp->patternHigh;
+   patternLow = sp->patternLow;
+   patternResult = sp->patternResult;
    if( sp->lag2_inHigh < sp->lag3_inHigh &&
        sp->lag2_inLow > sp->lag3_inLow &&   /* 2nd: lower high and higher low than 1st */
        sp->lag1_inHigh < sp->lag2_inHigh &&
        sp->lag1_inLow > sp->lag2_inLow &&   /* 3rd: lower high and higher low than 2nd */
        ((inHigh < sp->lag1_inHigh && inLow < sp->lag1_inLow && sp->lag2_inClose <= sp->lag2_inLow + TA_STREAM_CANDLEAVERAGE(Near,sp->NearPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose)) || (inHigh > sp->lag1_inHigh && inLow > sp->lag1_inLow && sp->lag2_inClose >= sp->lag2_inHigh - TA_STREAM_CANDLEAVERAGE(Near,sp->NearPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose))) ) /* (bull) 4th: lower high and lower low (bull) 2nd: close near the low (bear) 4th: higher high and higher low (bull) 2nd: close near the top */
    {
-      sp->patternResult = 100 * ((inHigh < sp->lag1_inHigh) ? 1 : 0 - 1);
-      sp->patternHigh = sp->lag1_inHigh;
-      sp->patternLow = sp->lag1_inLow;
-      sp->patternCount = 4;
-      *outInteger= sp->patternResult;
-   } else if( sp->patternCount > 0 &&
-       ((sp->patternResult > 0 && inClose > sp->patternHigh) || (sp->patternResult < 0 && inClose < sp->patternLow)) ) /* search for confirmation if modified hikkake was no more than 3 bars ago close higher than the high of 3rd close lower than the low of 3rd */
+      patternResult = 100 * ((inHigh < sp->lag1_inHigh) ? 1 : 0 - 1);
+      patternHigh = sp->lag1_inHigh;
+      patternLow = sp->lag1_inLow;
+      patternCount = 4;
+      *outInteger= patternResult;
+   } else if( patternCount > 0 &&
+       ((patternResult > 0 && inClose > patternHigh) || (patternResult < 0 && inClose < patternLow)) ) /* search for confirmation if modified hikkake was no more than 3 bars ago close higher than the high of 3rd close lower than the low of 3rd */
    {
-      *outInteger= sp->patternResult + 100 * ((sp->patternResult > 0) ? 1 : 0 - 1);
-      sp->patternCount = 0;
+      *outInteger= patternResult + 100 * ((patternResult > 0) ? 1 : 0 - 1);
+      patternCount = 0;
    } else 
    {
       *outInteger= 0;
-   }
-   sp->NearPeriodTotal += TA_STREAM_CANDLERANGE(Near,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) - (((sp->ringPos_NearTrailingIdx + sp->ringCap_NearTrailingIdx - sp->ringLag_NearTrailingIdx - 2) % sp->ringCap_NearTrailingIdx != pkSlot0) ? sp->ring_NearTrailingIdx_derived[(sp->ringPos_NearTrailingIdx + sp->ringCap_NearTrailingIdx - sp->ringLag_NearTrailingIdx - 2) % sp->ringCap_NearTrailingIdx] : pkVal0);
-   if( sp->patternCount > 0 )
-   {
-      sp->patternCount -= 1;
-   }
-   sp->cur_outInteger = *outInteger;
-   sp->lag2_inOpen = sp->lag1_inOpen;
-   sp->lag1_inOpen = inOpen;
-   sp->lag3_inHigh = sp->lag2_inHigh;
-   sp->lag2_inHigh = sp->lag1_inHigh;
-   sp->lag1_inHigh = inHigh;
-   sp->lag3_inLow = sp->lag2_inLow;
-   sp->lag2_inLow = sp->lag1_inLow;
-   sp->lag1_inLow = inLow;
-   sp->lag2_inClose = sp->lag1_inClose;
-   sp->lag1_inClose = inClose;
-   sp->ringPos_NearTrailingIdx = sp->ringPos_NearTrailingIdx + 1;
-   if( sp->ringPos_NearTrailingIdx >= sp->ringCap_NearTrailingIdx )
-   {
-      sp->ringPos_NearTrailingIdx = 0;
    }
    return TA_SUCCESS;
 }
