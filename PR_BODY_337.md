@@ -87,6 +87,24 @@ fail:
 | also mark the static step | `TA_EMA_StepImpl is static and must NOT be multiversioned` |
 | mark unconditionally | `SMA fuses no site; nothing in its streaming section may be multiversioned` |
 
+### `--fuzz-064`: the whole report is byte-identical to `dev`'s
+
+Since first writing this I had a container with the release tags, so the frozen
+v0.6.4 oracle could be built. This branch and `dev` df0c6beb were built and run
+the same way (gcc 13.3, x86-64 glibc, `CMAKE_BUILD_TYPE=Release`) against the same
+oracle. Diffing the two reports line by line leaves **nothing** but the pid and the
+build stamp: 166852 comparisons, 139064 bit-identical, 15973 in the PR #96 FMA
+bucket at an unchanged max of 4.13e-11, 0 failures, and every skip class equal.
+A full `ta_regtest` on this branch is green as well, streaming finite-input gate
+included.
+
+Two limits on what that buys, stated rather than implied. `--fuzz-064` drives the
+**batch** tiers, which this PR does not annotate — so it is a regression guard,
+not evidence for the streaming half; the streaming half rests on `ta_regtest`'s
+own stream gate. And because this box has hardware FMA, what the resolver ran was
+the `.fma` clone, so the identity above is about the clone that is actually
+selected, not about the `.default` fallback (still unexercised — see below).
+
 ### Performance: what the numbers do and do not support
 
 `ta_bench_stream`, two independent interleaved A/Bs (arms alternate order each
@@ -181,7 +199,7 @@ PR needs nothing if it goes first.
   what stands behind it is that no arithmetic changed (the diff above) plus
   PR #96's existing contract.
 - The `musl-build` nightly. Not run.
-- `--xlang-hash`, `--fuzz-064`, `--codegen` and `server_verify` as separate
-  runs: this environment has no `ta_ref_serve`, no `ta_064_serve`, no language
-  servers built and no .NET SDK. Cross-language parity rests here on the
-  generated Rust/Java/C# being byte-identical, not on a run of those gates.
+- `--xlang-hash`, `--codegen` and `server_verify` as separate runs: no language
+  servers built in this tree and no .NET SDK. Cross-language parity rests here on
+  the generated Rust/Java/C# being byte-identical, not on a run of those gates.
+  (`--fuzz-064` has since been run — see the differential below.)
