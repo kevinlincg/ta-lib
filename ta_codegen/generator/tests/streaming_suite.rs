@@ -227,13 +227,20 @@ fn bbands_composed_rejected() {
     assert!(streaming::analyze(&load("bbands")).is_err());
 }
 
-/// Whole-corpus gate: every `streaming: true` function must analyze clean.
-/// (The same check `generate` enforces; here it runs in `cargo test`.)
+/// Whole-corpus gate: every function must DECLARE `stream`, and every
+/// declaration must analyze clean. (The same pair `generate` enforces; here it
+/// runs in `cargo test`.)
+///
+/// The declaration half is a total, not a floor: the four servers are emitted
+/// on the assumption that every function streams, so one flagless definition
+/// is four broken server builds, and the flag is the only place that shows.
 #[test]
 fn all_declared_functions_are_streamable() {
     let base = input_dir();
     let lk = lookup();
     let mut checked = 0;
+    let mut seen = 0;
+    let mut undeclared: Vec<String> = Vec::new();
     for entry in std::fs::read_dir(&base).expect("input dir") {
         let dir = entry.expect("entry").path();
         if !dir.is_dir() {
@@ -246,6 +253,10 @@ fn all_declared_functions_are_streamable() {
             continue;
         }
         let func = load(&name);
+        seen += 1;
+        if !func.streaming {
+            undeclared.push(name.clone());
+        }
         if func.streaming {
             // Per language: a `PRAGMA TA_ALT={STREAM,<lang>}` claim can hand one
             // backend a different body, so streamability is a per-language
@@ -257,6 +268,16 @@ fn all_declared_functions_are_streamable() {
             checked += 1;
         }
     }
+    assert!(
+        undeclared.is_empty(),
+        "{} function(s) carry no `stream` flag: {}. The JSON-RPC servers \
+         reference <N>_Open / _OpenAndFill / <N>Stream for every function they \
+         dispatch, so each of these is four broken server builds. Declare the \
+         flag, or restore the servers' batch-only emitter path (#342).",
+        undeclared.len(),
+        undeclared.join(", ")
+    );
+    assert_eq!(checked, seen, "declared count must be the whole corpus");
     assert!(checked >= 136, "expected 136+ declared functions, saw {checked}");
 }
 

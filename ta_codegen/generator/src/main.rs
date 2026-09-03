@@ -547,6 +547,30 @@ fn generate(func_filter: Option<&str>, backend_filter: Option<&str>) {
                     std::process::exit(1);
                 }
             }
+        } else {
+            // The other direction, and the one the flag fails OPEN on: the four
+            // JSON-RPC servers reference `<N>_Open` / `_OpenAndFill` /
+            // `<N>Stream` for every function they dispatch, so a definition
+            // without the flag generates fine and then takes down all four
+            // server builds -- each naming a symbol, none naming the flag.
+            // Answering here costs nothing a batch-only function could want:
+            // `stream-census` still classifies an undeclared candidate, which
+            // is how the flag gets authored in the first place, and shipping
+            // one for real means restoring the emitters' batch-only guard
+            // (retired with the last batch-only function, #342) rather than
+            // discovering its absence from a C# compiler error.
+            eprintln!(
+                "error: {}: no `stream` flag, and the JSON-RPC servers assume every \
+                 function streams",
+                func_def.name
+            );
+            eprintln!(
+                "       Declare `flags: [stream]` (run `ta_codegen stream-census` for the"
+            );
+            eprintln!(
+                "       derived tier), or restore the servers' batch-only emitter path (#342)."
+            );
+            std::process::exit(1);
         }
 
         // Canonical documentation (third sibling input file) — feeds the rustdoc

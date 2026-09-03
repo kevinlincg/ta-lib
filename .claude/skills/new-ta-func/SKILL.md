@@ -101,19 +101,17 @@ period 1 returns the input unchanged; copy neither it nor any other flag without
 checking it holds.
 
 **Decide `stream` deliberately.** It generates the streaming API (Open/Update/Peek/…)
-in all four languages, **every shipped function declares it**, and it fails open in
-both directions:
+in all four languages, **every shipped function declares it**, and it is a hard gate
+in both directions:
 
-- **Omit it** and you silently ship the corpus's only batch-only function. Nothing
-  catches that: the generator's corpus check
-  (`ta_codegen/generator/tests/streaming_suite.rs`) only validates functions that
-  already declare the flag, and asserts a floor rather than a total; ta_regtest's
-  flag-vs-server check sees both sides agree that there is no stream. In Java it is
-  worse than silent — `StreamSmokeTest` sweeps the metadata registry for a
-  `<NAME>_Open` on every registered function, so a batch-only function reddens the
-  Java build with a message that names nothing to do with your change.
-- **Declare it** and you arm a hard gate: `generate` runs `validate_streamable` once
-  per language and **`exit(1)`s** if the body's IR shape is not analyzable.
+- **Omit it** and `generate` **`exit(1)`s** naming the function: the four JSON-RPC
+  servers reference `<N>_Open` / `_OpenAndFill` / `<N>Stream` for every function they
+  dispatch, so a batch-only definition is four broken server builds. Shipping one for
+  real means restoring the emitters' batch-only path first (it was retired with the
+  last batch-only function, #342) — not dropping the flag and reading the C# compiler
+  error. `streaming_suite.rs` asserts the same total in `cargo test`.
+- **Declare it** and you arm the other half: `generate` runs `validate_streamable`
+  once per language and **`exit(1)`s** if the body's IR shape is not analyzable.
 
 So ask the generator before authoring the flag:
 
