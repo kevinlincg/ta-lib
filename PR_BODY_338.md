@@ -194,6 +194,67 @@ they are not cosmetic.
   PASS — every server matches the in-process C library: BIT-IDENTICAL (zero tolerance)
   ```
 
+### `--fuzz-064` vs the released v0.6.4 — run, with `dev` as the control
+
+Since first writing this I had a container with the release tags, so the frozen
+v0.6.4 oracle could be built. Both trees were built and run the same way (gcc 13.3,
+x86-64 glibc, `CMAKE_BUILD_TYPE=Release`) against the same oracle:
+
+| tree | comparisons | bit-identical | fma-tolerated | failures | verdict |
+|---|---:|---:|---:|---:|---|
+| `dev` df0c6beb | 166852 | 139064 | 15973 | 0 | PASS |
+| this branch | 166852 | 137558 | 17479 | 0 | PASS |
+
+The two reports differ in **exactly** two per-function lines and the one total they
+feed:
+
+```
++  FMA-REBASELINE TA_ATR:  1129 case(s) within 1e-9 relative of v0.6.4
++  FMA-REBASELINE TA_NATR:  377 case(s) within 1e-9 relative of v0.6.4
+-  fma-rebaseline: 15973 case(s) ... (max observed 4.13e-11)
++  fma-rebaseline: 17479 case(s) ... (max observed 4.13e-11)
+```
+
+1129 + 377 = 1506, and 139064 − 137558 = 1506. Every other line — the manifest
+bucket, each skip class, the benign signed-zero count, the reported maximum — is
+identical between the two runs. SUPERTREND never appears in either: it postdates
+v0.6.4 and the subset gate skips it.
+
+**This costs something, and the call is yours.** ATR and NATR were bit-identical
+to the last release; after this change they are not. They join the 21 functions
+already in the one-time PR #96 transition bucket, which is what authorizes them
+(`FMA_TRANSITION_TOLERANCE`, 1e-9 relative), and the bucket's reported maximum is
+unchanged — neither became the worst case. But `--fuzz-064`'s own rule of thumb is
+"the divergence set vs 0.6.4 must not grow", and here it grows by 1506 cases. If
+ATR and NATR are meant to stay hash-exact against 0.6.4 until the re-freeze, this
+is the PR to refuse.
+
+### The two new `LEGACY_TOL` rows are load-bearing — each control watched red
+
+Removed one at a time, rebuilt, run, and the tree restored in between:
+
+| removed | `ta_regtest --function=LEGACY` |
+|---|---|
+| `{ "ATR", 2e-14 }` | `Fail: [ATR] output 0 index 119 = 3.509612575503108, frozen v0.6.4 gave 3.5096125755031076 (diff 4.44e-16, tolerance 0)` — frozen case #16 |
+| `{ "NATR", 2e-14 }` | `Fail: [NATR] output 0 index 119 = 2.5747286152909603, frozen v0.6.4 gave 2.5747286152909599 (diff 4.44e-16, tolerance 0)` — frozen case #160 |
+
+With both rows present the suite is green.
+
+### `--codegen` against `ta_ref_serve` — run for C and Rust
+
+```
+ta_regtest --codegen --language=c,rust        (oracle: ta_ref_serve)
+  C   : 161 pass, 0 fail
+  Rust: 161 pass, 0 fail
+All 2 language(s) passed codegen verification (float leg: 791 acknowledged comparison(s))
+* All tests succeeded. *
+```
+
+The whole `ta_regtest` run around it is green too, LEGACY/064/FROZEN included. Note
+this leg compares at `CODEGEN_EPSILON` (1e-6) because its inputs cross the wire as
+`%.15g`, so it cannot see a 6e-15 move — it is the "nothing else broke" leg, and the
+bitwise claim above still rests on `--xlang-hash`.
+
 ## Not verified — stated rather than implied
 
 - **C#**: not compiled, not tested, not swept by the parity gate above. No .NET SDK in
@@ -201,8 +262,7 @@ they are not cosmetic.
   site (`Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest)`), but nothing
   executed it. Rust and Java agreeing bitwise is good evidence the shared detector did
   its job, not proof for the fourth backend.
-- **`--codegen` against `ta_ref_serve`**: not run. It needs the frozen pre-cutover
-  oracle built from the pinned tag, which this environment did not have.
-- **`--fuzz-064`**: not run, same reason.
+- **The C# leg of `--codegen`**: not run — same missing SDK. The C and Rust legs above
+  were run; Java's was not, for want of a built server in that tree.
 - **Streaming benchmarks**: not run, and would be misleading before #337 anyway.
 - **musl / MSVC / non-glibc libm**: not measured, same open question as #337.
