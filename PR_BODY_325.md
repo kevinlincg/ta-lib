@@ -60,9 +60,12 @@ because it "widens the public surface, and that is your call". The call taken he
 is to add it **package-private**, which is the same primitive without the public
 surface — so the stated objection does not apply, and no caller is offered
 "commit and discard the outputs". One number to reconcile rather than smooth over:
-the thread costs the public variant at 15 methods and this is 17 (verified by
-counting the diff, all package-private); the 17th is `SUPERTREND`, per the note
-below, and I have not accounted for the remaining one.
+the thread costs the public variant at 15 methods and this is 18 (counted on the
+merged head as the number of generated Java fragments carrying the sink-less
+overload, all package-private). Two of the three above the thread's count are
+accounted for: `SUPERTREND`, per the note below, and `DONCHIAN`, which landed on
+dev after that comment was written and picks up the pair like any other
+multi-output stream. **I have not accounted for the remaining one.**
 
 ## The cost, stated rather than special-cased
 
@@ -71,7 +74,7 @@ caller should be offered, and the alternative — a reusable `Out` field on the
 composing handle — is an object per handle that exists only to satisfy a
 signature, since these arms read `cur_*` and never the sink.
 
-The cost is **17 package-private methods**, one per multi-output stream class,
+The cost is **18 package-private methods**, one per multi-output stream class,
 and the two verbs now emit different shapes where the composed emitter had one
 for both. If you would rather keep one shape, this is the change to decline.
 
@@ -102,37 +105,48 @@ On the original tree, Linux x86-64, JDK 21 through the committed Maven wrapper:
 - `regtest.py --language=c,java` against the pinned-tag oracle: C 161 passed /
   0 failed, Java 161 / 0, 967 acknowledged float comparisons.
 
-On the tree as pushed, merged with dev `67936169`:
+On the tree as pushed, merged with dev `af4cdede`:
 
-- `generate` then `git status`: clean.
+- `generate` then `git status`: clean (`regen-check` exit 0, 179 functions).
 - The generator suite: 902 passed / 0 failed.
+  `cargo clippy --release --all-targets -- -D warnings`: clean.
+
+Re-verified against dev `af4cdede` only at the two tiers above. The Java jar,
+javadoc and `regtest.py` legs in the previous block were **not** re-run on this
+merge — no JDK leg was executed this round, so those three lines describe the
+earlier tree, not the pushed head.
 
 Not measured: this was not benchmarked. The claim is the allocation count in
 the generated code, 4 sites to 2, not a time. `--language=rust,csharp` was not
 run either — no .NET SDK on the machine — though no C#, Rust or C file is in
 the diff.
 
-`TA_SUPERTREND` is a multi-output stream and picks up the same pair, which is
-where the 17th method comes from; the public sink overload keeps
+`TA_SUPERTREND` is a multi-output stream and picks up the same pair, and so does
+`TA_DONCHIAN` now that it is on dev; the public sink overload keeps
 `requireArgument` ahead of the commit, so the null-sink rejection added in
 `91b76002` is not reopened by the split.
 
-## The #338 digest collision is already resolved in this branch
+## The generated-Java digest collision is already resolved in this branch
 
-Both this PR and #338 change generated Java, so both recompute the Java gencode
-digest, and whichever landed second was going to collide on exactly the two
-lines carrying it: `BuildStamp.GENCODE_DIGEST` and its spliced copy
-`TaCodegenServe.SPLICED_GENCODE_DIGEST`. #338 landed first, as dev `67936169`,
-so the collision is this branch's to resolve, and the head merge commit does it.
+Anything that changes generated Java recomputes the Java gencode digest, so this
+branch collides with dev on exactly the two lines carrying it:
+`BuildStamp.GENCODE_DIGEST` and its spliced copy
+`TaCodegenServe.SPLICED_GENCODE_DIGEST`. Dev landed first — #338 as `67936169`,
+then DONCHIAN through `af4cdede` — so the collision is this branch's to resolve,
+and the head merge commit does it.
 
 Neither side's value is correct for the combined tree, so the resolution is one
-`generate` run, not a pick from either side. Measured on the merged head:
+`generate` run, not a pick from either side. Measured on the merged head against
+dev `af4cdede`:
 
-- taking dev's digest by hand and committing it leaves `regen-check` **red**,
-  exit 1, and the diff it prints is exactly those two lines — this is a
-  deliberate control, run and watched;
-- re-running `generate` writes the combined value `ad1343133314e1b2` and the
+- taking dev's digest (`c6beffa2c163b194`) by hand and committing it leaves
+  `regen-check` **red**, exit 1, and the diff it prints is exactly those two
+  files — this is a deliberate control, re-run against `af4cdede` and watched
+  to fail;
+- re-running `generate` writes the combined value `fe336d7433975c86` and the
   gate is **green**, exit 0, generator suite 902 passed / 0 failed.
 
-Every other file in the two diffs auto-merged and regenerated identically, so
-the digest is the whole interaction between them.
+DONCHIAN also makes the merge more than a digest pick: it is a multi-output
+stream, so the regeneration gives it the sink-less overload as well — that is
+the 18th method, and the only non-digest content the merge commit adds. Every
+other file in the two diffs auto-merged and regenerated identically.
