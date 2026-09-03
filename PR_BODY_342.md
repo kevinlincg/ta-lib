@@ -1,4 +1,4 @@
-fix(codegen): a function without the `stream` flag is refused, not emitted (#342)
+fix(codegen): a function without the `stream` flag is refused, not emitted (#342 follow-up)
 
 Dropping `stream` from a function's YAML is the one authoring mistake nothing
 answered. `generate` accepted the definition and emitted every backend; the
@@ -76,12 +76,15 @@ simplified, and it reverses `221fcd63`, so it is not what this PR does.
 - `scripts/build.py regen-check` reports the output byte-identical: no emitted
   file changes, since every shipped function declares the flag. The new error
   path is unreachable for the current corpus, which is the point.
+- `scripts/synth_gate.py` on this branch: **PASS** — 14 synthetic functions,
+  4 languages, stream and batch bitwise legs, 1520 elements compared across
+  14 fixtures x 4 servers, and the generator suite green (902 tests) on the
+  injected tree. The refusal is what a flagless `input_synth` fixture would now
+  hit, so this is the gate that had to stay green, and it did.
 
-**Not checked:** I did not re-run `scripts/synth_gate.py` after the final edit.
-It ran on this dev base during the investigation (that is where the four
-compile errors above came from), all 14 fixtures declare `stream`, and
-regen-check reports no output change, so nothing in its path moves — but I did
-not confirm that by running it. I also did not run the nightly legs.
+**Not checked:** the nightly legs (`--xlang-hash`, `--fuzz-064`, the arm64 and
+Windows/macOS jobs). Nothing in this change reaches an emitted file — regen-check
+reports the output byte-identical — but I did not run them.
 
 ## Also
 
