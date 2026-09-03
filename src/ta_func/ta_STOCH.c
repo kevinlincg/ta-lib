@@ -736,7 +736,6 @@ static TA_RetCode TA_STOCH_OpenImpl( struct TA_STOCH_Stream **stream, const doub
    int dummyBegIdx;
    int dummyNBElement;
    TA_RetCode subRc;
-   double subOpenDummy;
    double *sc_outSlowK;
    double *sc_outSlowD;
    TA_MA_Stream *sub0;
@@ -778,7 +777,6 @@ static TA_RetCode TA_STOCH_OpenImpl( struct TA_STOCH_Stream **stream, const doub
    dummyBegIdx = 0;
    dummyNBElement = 0;
    subRc = TA_SUCCESS;
-   subOpenDummy = 0.0;
    sub0 = NULL;
    sub1 = NULL;
    if( outStride ) sc_outSlowK = outSlowK;
@@ -986,6 +984,7 @@ static TA_RetCode TA_STOCH_OpenImpl( struct TA_STOCH_Stream **stream, const doub
       /* Sub-stream 0: ma over `tempBuffer`, warmed from bar 0 up to the
        * sub-call's own startIdx (the seeding point). */
       {
+         double subOpenDummy = 0.0;
          subRc = TA_MA_OpenInternal( &sub0, tempBuffer, (0), (outIdx - 1) + 1, optInSlowK_Period, optInSlowK_MAType, &subOpenDummy );
          if( subRc != TA_SUCCESS )
          {

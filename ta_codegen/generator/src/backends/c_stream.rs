@@ -1844,7 +1844,6 @@ fn emit_composed_sub_open(
         sub.srcs.join(", ")
     );
     let _ = writeln!(o, "       * sub-call's own startIdx (the seeding point). */");
-    let _ = writeln!(o, "      {{");
     // Fused form (issue #192): one pass that BOTH warms the handle and fills
     // this sub-call's destination, so the batch sub-call the caller transcribed
     // next has nothing left to compute. The out-meta and destination arguments
@@ -1853,6 +1852,14 @@ fn emit_composed_sub_open(
     // `fastNb`, STOCHRSI mixes `outBegIdx2` with `dummyNBElement`), and getting
     // them from anywhere else would silently feed the wrong lengths downstream.
     let fused = sub.is_fusable() && streaming::batch_call_out_args(batch_stmt, sub).is_some();
+    let _ = writeln!(o, "      {{");
+    // The throwaway the non-fused form hands the callee for each of its outputs
+    // lives in THIS block, not at function scope: a plan whose every sub-call
+    // fuses would otherwise declare it and never mention it, and a declaration
+    // is the one thing `c_hygiene` cannot take back (#344).
+    if !fused && !sub.dsts.is_empty() {
+        let _ = writeln!(o, "         double subOpenDummy = 0.0;");
+    }
     if fused {
         let (out_meta, dsts) = streaming::batch_call_out_args(batch_stmt, sub).unwrap();
         let rend = |e: &Expr| render_expression(e, registry, helpers, counter);
@@ -1924,7 +1931,6 @@ fn emit_composed_open(
     let _ = writeln!(o, "   int dummyBegIdx;");
     let _ = writeln!(o, "   int dummyNBElement;");
     let _ = writeln!(o, "   TA_RetCode subRc;");
-    let _ = writeln!(o, "   double subOpenDummy;");
     for out in outputs {
         let _ = writeln!(o, "   {} *sc_{out};", out_c_type(func, out));
     }
@@ -1940,13 +1946,12 @@ fn emit_composed_open(
     let _ = writeln!(o, "   dummyBegIdx = 0;");
     let _ = writeln!(o, "   dummyNBElement = 0;");
     let _ = writeln!(o, "   subRc = TA_SUCCESS;");
-    let _ = writeln!(o, "   subOpenDummy = 0.0;");
     for (i, _) in cp.subs.iter().enumerate() {
         let _ = writeln!(o, "   sub{i} = NULL;");
     }
     let _ = writeln!(
         o,
-        "   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement; (void)subRc; (void)subOpenDummy;"
+        "   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement; (void)subRc;"
     );
     // Scratch output arrays: the batch tail writes REAL arrays (sub-call
     // out args, memmoves) — a last-value scalar cannot stand in here. When
@@ -3221,7 +3226,7 @@ fn emit_dual_mode(
     // union memset, including the buffers only the general arm dereferences;
     // what keeps that arm from running is the step's guard, hoisted above the
     // mode predicate.
-    emit_open_head(o, func, ma, &union_circs, registry, helpers, counter, enums);
+    let pre = open_head_prerender(func, ma, registry, helpers, counter);
 
     // Each mode transcribes the SHARED PROLOGUE, then its own arm body, then the
     // SHARED EPILOGUE (empty for the early-return form; the out-meta + return tail
@@ -3239,17 +3244,20 @@ fn emit_dual_mode(
     let pred_bare = render_dual_pred(&dmp.predicate, false, func, registry, helpers, counter);
     let body_a = compose(ma.body);
     let body_b = compose(mb.body);
-    let _ = writeln!(o, "\n   if( {pred_bare} )\n   {{");
-    emit_open_arm(o, func, ma, &body_a, enums, registry, helpers, counter);
-    let _ = writeln!(o, "   }}\n   else\n   {{");
-    emit_open_arm(o, func, mb, &body_b, enums, registry, helpers, counter);
-    let _ = writeln!(o, "   }}");
+    let mut arms = String::new();
+    let _ = writeln!(arms, "\n   if( {pred_bare} )\n   {{");
+    emit_open_arm(&mut arms, func, ma, &body_a, enums, registry, helpers, counter);
+    let _ = writeln!(arms, "   }}\n   else\n   {{");
+    emit_open_arm(&mut arms, func, mb, &body_b, enums, registry, helpers, counter);
+    let _ = writeln!(arms, "   }}");
     // Both arms return; keep the compiler happy about the fall-through.
     let _ = writeln!(
-        o,
+        arms,
         "\n   return TA_INTERNAL_ERROR({});\n}}\n",
         crate::internal_error_ids::site("dualmode")
     );
+    emit_open_head(o, func, &union_circs, &pre, &arms, enums);
+    o.push_str(&arms);
     emit_open_internal_wrapper(o, func);
     emit_open_wrapper(o, func);
     emit_open_and_fill_wrapper(o, func);
@@ -4374,28 +4382,47 @@ fn emit_used_candle_unpacking(
 /// signature, declarations, param validation, initialization, and the identity
 /// fast path. The caller then emits the transcribed body arm(s) and closes the
 /// function.
+///
+/// `arms` is the rest of the function, ALREADY RENDERED. A head cannot guess
+/// which of the out-meta locals the body below it will touch, and a name it
+/// declares for a body that never mentions it is a dead local a text phase
+/// cannot remove: `c_hygiene` can prove a `(void)x;` unnecessary, but deleting
+/// the declaration behind it turns a warning into a compile error (#344). So
+/// the caller renders first and the declaration follows the text.
+///
+/// Rendering out of emission order would renumber the hoisted inline helpers,
+/// which is why the head's own two counter-consuming parts come in through
+/// `pre` from [`open_head_prerender`] rather than being rendered here.
 fn emit_open_head(
     o: &mut String,
     func: &FuncDef,
-    model: &StreamModel,
     hoist_circs: &[CircState],
-    registry: &Registry,
-    helpers: &HelperRegistry,
-    counter: &Cell<usize>,
+    pre: &OpenHeadPre,
+    arms: &str,
     enums: &HashMap<String, EnumDef>,
 ) {
     let n = uname(func);
+    let OpenHeadPre { inits, ident } = pre;
+    // The out-meta locals stand in for the caller's pointers on the paths the
+    // fill contract does not publish, and the composed tier reads them back as
+    // plain ints — but a body that never mentions one needs neither the local
+    // nor the store into it. `mentions`, not `reads`: a body that only WRITES
+    // one still needs it declared, and keeps the suppression it is owed.
+    let mentions = |name: &str| ident.contains(name) || arms.contains(name);
+    let (uses_beg, uses_nb) = (mentions("dummyBegIdx"), mentions("dummyNBElement"));
+
     let _ = writeln!(o, "{}\n{{", open_core_signature(func));
 
     // --- declarations -------------------------------------------------------
     let _ = writeln!(o, "   struct TA_{n}_Stream *sp;");
     emit_circ_hoist(o, func, hoist_circs);
     let _ = writeln!(o, "   int endIdx;");
-    // Kept as locals even though the core always has real out-meta pointers:
-    // the transcribed body writes them on paths the fill contract does not
-    // publish, and the composed tier reads them back as plain ints.
-    let _ = writeln!(o, "   int dummyBegIdx;");
-    let _ = writeln!(o, "   int dummyNBElement;");
+    if uses_beg {
+        let _ = writeln!(o, "   int dummyBegIdx;");
+    }
+    if uses_nb {
+        let _ = writeln!(o, "   int dummyNBElement;");
+    }
     for (name, c_type) in &func.private_extra_params {
         let _ = writeln!(o, "   {c_type} {name};");
     }
@@ -4407,8 +4434,42 @@ fn emit_open_head(
     // points, the sub-call's own startIdx when a composed function opens this
     // as a sub-stream.
     let _ = writeln!(o, "\n   endIdx = historyLen - 1;");
-    let _ = writeln!(o, "   dummyBegIdx = 0;");
-    let _ = writeln!(o, "   dummyNBElement = 0;");
+    if uses_beg {
+        let _ = writeln!(o, "   dummyBegIdx = 0;");
+    }
+    if uses_nb {
+        let _ = writeln!(o, "   dummyNBElement = 0;");
+    }
+    o.push_str(inits);
+    let mut suppress = String::from("   (void)startIdx;");
+    if uses_beg {
+        suppress.push_str(" (void)dummyBegIdx;");
+    }
+    if uses_nb {
+        suppress.push_str(" (void)dummyNBElement;");
+    }
+    let _ = writeln!(o, "{suppress}");
+
+    o.push_str(ident);
+}
+
+/// The two parts of the Open head that consume the shared inline-helper
+/// counter: the private-parameter initializers and the identity fast path.
+/// Rendered BEFORE the caller renders its arms, which is where they sit in the
+/// emitted text, so the temporaries keep the numbers they had.
+struct OpenHeadPre {
+    inits: String,
+    ident: String,
+}
+
+fn open_head_prerender(
+    func: &FuncDef,
+    model: &StreamModel,
+    registry: &Registry,
+    helpers: &HelperRegistry,
+    counter: &Cell<usize>,
+) -> OpenHeadPre {
+    let mut inits = String::new();
     for (name, _) in &func.private_extra_params {
         let init = func
             .private_param_init
@@ -4418,14 +4479,11 @@ fn emit_open_head(
                 || panic!("{}: no init for private param {name}", func.name),
                 |(_, e)| render_expression(e, registry, helpers, counter),
             );
-        let _ = writeln!(o, "   {name} = {init};");
+        let _ = writeln!(inits, "   {name} = {init};");
     }
-    let _ = writeln!(
-        o,
-        "   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;"
-    );
-
-    emit_identity_fast_path(o, func, model, registry, helpers, counter);
+    let mut ident = String::new();
+    emit_identity_fast_path(&mut ident, func, model, registry, helpers, counter);
+    OpenHeadPre { inits, ident }
 }
 
 /// The whole Open family for any tier whose core is `emit_open_head` + a single
@@ -4444,8 +4502,11 @@ fn emit_open_core_body(
     helpers: &HelperRegistry,
     counter: &Cell<usize>,
 ) {
-    emit_open_head(o, func, model, model.circs(), registry, helpers, counter, enums);
-    emit_open_arm(o, func, model, body, enums, registry, helpers, counter);
+    let pre = open_head_prerender(func, model, registry, helpers, counter);
+    let mut arm = String::new();
+    emit_open_arm(&mut arm, func, model, body, enums, registry, helpers, counter);
+    emit_open_head(o, func, model.circs(), &pre, &arm, enums);
+    o.push_str(&arm);
     let _ = writeln!(o, "}}\n");
     emit_open_internal_wrapper(o, func);
     emit_open_wrapper(o, func);
