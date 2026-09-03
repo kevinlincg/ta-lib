@@ -266,3 +266,43 @@ bitwise claim above still rests on `--xlang-hash`.
   were run; Java's was not, for want of a built server in that tree.
 - **Streaming benchmarks**: not run, and would be misleading before #337 anyway.
 - **musl / MSVC / non-glibc libm**: not measured, same open question as #337.
+
+## Re-based onto `dev` 58a0ac54, and what that cost
+
+`dev` moved after the numbers above were taken: 58a0ac54 (#316, "the C peek frame
+binds the handle instead of copying it") regenerated all of `src/ta_func/`. This
+branch now carries a merge of that, and it was **not** a clean one:
+`ta_ATR.c`, `ta_NATR.c` and `ta_SUPERTREND.c` conflicted — all three are
+generated files, both sides had rewritten them.
+
+The resolution is the generator's, not a hand-merge: dev's regenerated C was
+taken for all three, the merge was committed, and `generate` was then re-run over
+the merged `ta_codegen/input/` — which put the fused Wilder form back on top of
+#316's new peek frames. The merge commit's tree is that regenerator's output.
+Nothing in `src/ta_func/` was edited by hand.
+
+| re-run on the merged tree | result |
+|---|---|
+| `build.py regen-check` | exit 0 — "output matches the committed source. OK." |
+| `build.py test` (full C `ta_regtest`) | all tests succeeded, SUPERTREND differential included |
+
+**The benchmark table above was not re-measured on the new base.** Those ratios
+were taken against `dev` df0c6beb, before #316 changed how the streaming frames
+are emitted; the batch tiers that the table times are untouched by #316, but the
+numbers are reported as what was measured, on the base they were measured on.
+The streaming half was not benchmarked on either base — see the ordering note.
+
+The `+16 bytes` handle cost stated above is also unchanged by #316 landing: that
+commit binds the handle in the peek frame instead of copying it, which changes
+who copies the struct, not how wide it is.
+
+## Ordering, re-checked on this base
+
+#337 must still go first, and if this one lands second it needs a `generate` in
+the same merge. Re-measured here rather than carried over: merging the two
+branches and running `generate` drifts by exactly 15 lines, `+15 −0`, all of them
+`TA_FMA_MULTIVERSION` — five each on ATR, NATR and SUPERTREND
+(`_OpenInternal`, `_OpenAndFillInternal`, `_Update`, `_Peek`, `_UpdateAndFill`).
+Neither branch can carry those lines alone: this one has no annotate pass to run,
+and #337 has no fusing ATR to mark. The combined tree is green on the full C
+`ta_regtest`.
