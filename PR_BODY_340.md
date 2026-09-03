@@ -7,9 +7,10 @@ measurement did not justify either, and the issue asks for them only if it had.
 ## The answer
 
 `--xlang-hash`, C# row, measured on upstream `dev` at `7065d886`, with the FMA3
-intrinsic disabled for the spawned server (the branch is rebased onto `67936169`,
-which is `7065d886` plus two dist bumps and #338 — see the note at the end of
-this section for what that does and does not change about these rows):
+intrinsic disabled for the spawned server (the branch's head now merges dev
+`af4cdede`, which is `7065d886` plus two dist bumps, #338 and DONCHIAN — see the
+note at the end of this section, and the last bullet under Verified, for what
+that does and does not change about these rows):
 
 | run | C# cases | mismatches |
 |---|---:|---:|
@@ -124,3 +125,12 @@ just inferred from `Fma.IsSupported`.
   `DOTNET_EnableHWIntrinsic=0` row — that leg rests on `execvp` environment
   inheritance, which the earlier row did confirm directly. The primitive-level
   numbers above were taken in a standalone probe, not through the server.
+- Head re-verified after merging dev `af4cdede` (which landed DONCHIAN):
+  `regen-check` green, exit 0, 179 functions. The net diff against dev is
+  unchanged by that merge — still the one file. **The `--xlang-hash` rows above
+  were not re-run on this merge: there is no .NET SDK on the machine this round,
+  so every C# number in this body is the one measured on `67936169`.** What did
+  get checked instead is the only way DONCHIAN could have moved them: the count
+  of generated C# files calling `Math.FusedMultiplyAdd` is still 32 on the merged
+  head, and `Core_DONCHIAN.cs` contains no call — DONCHIAN is max/min/midpoint,
+  so it adds no FMA site and cannot widen the exposure this body measures.
