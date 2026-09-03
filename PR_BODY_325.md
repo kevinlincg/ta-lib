@@ -81,3 +81,22 @@ the diff.
 where the 17th method comes from; the public sink overload keeps
 `requireArgument` ahead of the commit, so the null-sink rejection added in
 `91b76002` is not reopened by the split.
+
+## Merge-order note: this PR and #338 collide on one generated value
+
+Both change generated Java, so both recompute the Java gencode digest, and
+whichever merges second collides on exactly the two lines carrying it:
+`BuildStamp.GENCODE_DIGEST` and its spliced copy
+`TaCodegenServe.SPLICED_GENCODE_DIGEST`. Neither side's value is correct for the
+combined tree, so the resolution is one `generate` run, not a pick from either
+side.
+
+Measured on `dev` `2d8a2381` with both branches merged into one tree: taking
+either digest by hand leaves `scripts/build.py regen-check` **red** on those two
+lines (exit 1); re-running `generate` writes the combined digest and the gate is
+**green** (exit 0), with the generator suite at 903 passed / 0 failed. Every
+other file in the two diffs auto-merges and regenerates identically, so the
+digest is the whole interaction.
+
+Each branch merges onto `dev` `2d8a2381` cleanly on its own; the collision
+exists only once both are in.
