@@ -219,6 +219,7 @@ re-verified on the new base rather than assumed:
 |---|---|
 | `build.py regen-check` | exit 0 — "output matches the committed source. OK." |
 | `cargo test --test fma_suite` | 3 passed, 0 failed |
+| the generator's whole `cargo test` | 902 passed, 0 failed |
 | `build.py test` (full C `ta_regtest`) | all tests succeeded |
 | `.fma` clones in the archive | 203, unchanged |
 
