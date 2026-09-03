@@ -2,66 +2,49 @@
  *
  *  Initial  Name/description
  *  -------------------------------------------------------------------
+ *  KL       Kevin Lin
  *  MF       Mario Fortier
- *  CC       Claude Code (AI assistant)
  *
  * Change history:
  *
  *  MMDDYY BY     Description
  *  -------------------------------------------------------------------
- *  010802 MF     Template creation.
- *  052603 MF     Adapt code to compile with .NET Managed C++
- *  070226 MF,CC  Speed optimization: for periods above 20, cache the
- *                highest/lowest index instead of rescanning the window
- *                on every bar (same approach as MIN/MAX/WILLR). Smaller
- *                periods keep the simple scan, which auto-vectorizes
- *                and is faster there. Both paths produce identical
- *                output.
+ *  090526 KL     First version (issue #342).
+ *  090326 MF     Drop optInLag; the window ends at the current bar.
  */
 
    /**
-    * Number of leading input bars {@link Core#MIDPRICE} consumes before it can
+    * Number of leading input bars {@link Core#DONCHIAN} consumes before it can
     * produce its first value.
     * <p>Equivalently, the index of the first bar with a value when the whole
     * series is requested. Feed at least {@code lookback + 1} bars to get any
     * output.
     *
-    * @param optInTimePeriod Window length over which the high/low extremes are
-    *        taken (default 14; range 2..100000; {@code Integer.MIN_VALUE} selects the
-    *        default).
+    * @param optInTimePeriod Number of bars in the extrema window (default 20;
+    *        range 2..100000; {@code Integer.MIN_VALUE} selects the default).
     * @return The lookback, or {@code -1} if a parameter is out of range.
     */
-   public int MIDPRICE_Lookback( int optInTimePeriod )
+   public int DONCHIAN_Lookback( int optInTimePeriod )
    {
       if( optInTimePeriod == Integer.MIN_VALUE ) {
-         optInTimePeriod = 14;
+         optInTimePeriod = 20;
       } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
          return -1;
       }
       return optInTimePeriod - 1 ;
 
    }
-   RetCode MIDPRICE_Impl( int startIdx,
+   RetCode DONCHIAN_Impl( int startIdx,
                           int endIdx,
                           double inHigh[],
                           double inLow[],
                           int optInTimePeriod,
                           MInteger outBegIdx,
                           MInteger outNBElement,
-                          double outReal[] )
+                          double outRealUpperBand[],
+                          double outRealMiddleBand[],
+                          double outRealLowerBand[] )
    {
-      double[] sufHighest;
-      int sufHighest_Idx = 0;
-      int maxIdx_sufHighest = (30)-1;
-      double[] preHighest;
-      int preHighest_Idx = 0;
-      int maxIdx_preHighest = (30)-1;
-      double[] sufLowest;
-      int sufLowest_Idx = 0;
-      int maxIdx_sufLowest = (30)-1;
-      double[] preLowest;
-      int preLowest_Idx = 0;
-      int maxIdx_preLowest = (30)-1;
       double lowest = 0;
       double highest = 0;
       double tmpLow = 0;
@@ -69,12 +52,10 @@
       int outIdx = 0;
       int nbInitialElementNeeded = 0;
       int trailingIdx = 0;
+      int lowestIdx = 0;
+      int highestIdx = 0;
       int today = 0;
       int i = 0;
-      int blockStart = 0;
-      int nAvail = 0;
-      int m = 0;
-      int blockNext = 0;
       if( (startIdx < 0) || (startIdx > MAX_INDEX) ) {
          return RetCode.OutOfRangeStartIndex ;
       }
@@ -82,14 +63,25 @@
          return RetCode.OutOfRangeEndIndex ;
       }
       if( optInTimePeriod == Integer.MIN_VALUE ) {
-         optInTimePeriod = 14;
+         optInTimePeriod = 20;
       } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
          return RetCode.BadParam;
       }
-      /* MIDPRICE = (Highest High + Lowest Low)/2
+      if( outRealUpperBand == outRealMiddleBand || outRealUpperBand == outRealLowerBand || outRealMiddleBand == outRealLowerBand ) {
+         return RetCode.BadParam ;
+      }
+      /* Donchian Channels over the optInTimePeriod bars ending at the current
+       * bar:
        *
-       * This function is equivalent to MEDPRICE when the
-       * period is 1.
+       *    Upper  = Highest High of the window
+       *    Lower  = Lowest  Low  of the window
+       *    Middle = (Upper + Lower) / 2
+       *
+       * The window includes the current bar, matching every other library and
+       * charting platform. A breakout rule compares the current bar against the
+       * PREVIOUS bar's band, which is where the one-bar offset belongs.
+       *
+       * Upper/Middle/Lower are bit-identical to MAX(high,N)/MIDPRICE(N)/MIN(low,N).
        */
       /* Identify the minimum number of price bar needed
        * to identify at least one output over the specified
@@ -110,119 +102,59 @@
       }
       /* Proceed with the calculation for the requested range.
        * Note that this algorithm allows the input and
-       * output to be the same buffer.
+       * output to be the same buffer: every position written (outIdx) sits
+       * at or below trailingIdx, the oldest position any later bar reads.
        *
-       * Van Herk / Gil-Werman block scan, block-batched form. The p outputs
-       * belonging to one block boundary are produced together: one backward
-       * pass builds the older block's suffix extrema, one forward pass builds
-       * the newer block's prefix extrema, and a third pass combines them.
-       * Both extrema travel in the same passes.
-       * All the loops are straight-line with no data-dependent branching,
-       * which is what lets a compiler vectorize them, and the work per bar is
-       * a fixed number of comparisons regardless of period. Every scratch
-       * array holds COPIES, so input and output may alias.
-       *
-       * Producing a whole block at a time is also why this cannot be turned
-       * into a per-bar automaton, so the streaming tier runs midprice_ALT1
-       * below. See issue #147.
+       * The highest high and lowest low of the window are cached with their
+       * indices; the window is rescanned only when a cached extremum drops
+       * out of it (same approach as MIN/MAX/WILLR and MIDPRICE).
        */
       outIdx = 0;
       today = startIdx;
       trailingIdx = startIdx - nbInitialElementNeeded;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      sufHighest = new double[optInTimePeriod];
-      maxIdx_sufHighest = (optInTimePeriod)-1;
-      sufHighest_Idx = 0;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      preHighest = new double[optInTimePeriod];
-      maxIdx_preHighest = (optInTimePeriod)-1;
-      preHighest_Idx = 0;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      sufLowest = new double[optInTimePeriod];
-      maxIdx_sufLowest = (optInTimePeriod)-1;
-      sufLowest_Idx = 0;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      preLowest = new double[optInTimePeriod];
-      maxIdx_preLowest = (optInTimePeriod)-1;
-      preLowest_Idx = 0;
-      blockStart = trailingIdx;
+      highestIdx = 0 - 1;
+      highest = 0.0;
+      lowestIdx = 0 - 1;
+      lowest = 0.0;
       while( today <= endIdx ) {
-         /* Suffix extrema of the block [blockStart, blockStart+p-1], which
-          * is fully available here: today == blockStart+p-1 <= endIdx.
-          * Scanning backward while keeping the incumbent on a tie
-          * leaves the later element holding a tie, which is what lets this
-          * compile to a single min/max instruction.
-          */
-         i = blockStart + optInTimePeriod - 1;
-         highest = inHigh[i];
-         lowest = inLow[i];
-         sufHighest[optInTimePeriod - 1] = highest;
-         sufLowest[optInTimePeriod - 1] = lowest;
-         while( i > blockStart ) {
-            i -= 1;
-            tmpHigh = inHigh[i];
-            if( tmpHigh > highest ) {
-               highest = tmpHigh;
-            }
-            tmpLow = inLow[i];
-            if( tmpLow < lowest ) {
-               lowest = tmpLow;
-            }
-            sufHighest[i - blockStart] = highest;
-            sufLowest[i - blockStart] = lowest;
-         }
-         outReal[outIdx++] = (sufHighest[0] + sufLowest[0]) / 2.0;
-         trailingIdx += 1;
-         today += 1;
-         if( today > endIdx ) {
-            blockStart = blockStart + optInTimePeriod;
-         } else {
-            /* Prefix extrema of the next block, clamped to what remains.
-             * Forward, keeping the incumbent on a tie: earliest wins again.
-             */
-            blockNext = blockStart + optInTimePeriod;
-            nAvail = endIdx - blockNext + 1;
-            if( nAvail > optInTimePeriod - 1 ) {
-               nAvail = optInTimePeriod - 1;
-            }
-            highest = inHigh[blockNext];
-            lowest = inLow[blockNext];
-            preHighest[0] = highest;
-            preLowest[0] = lowest;
-            i = 1;
-            while( i < nAvail ) {
-               tmpHigh = inHigh[blockNext + i];
+         tmpHigh = inHigh[today];
+         tmpLow = inLow[today];
+         if( highestIdx < trailingIdx ) {
+            highestIdx = trailingIdx;
+            highest = inHigh[highestIdx];
+            i = highestIdx;
+            while( ++i <= today ) {
+               tmpHigh = inHigh[i];
                if( tmpHigh > highest ) {
+                  highestIdx = i;
                   highest = tmpHigh;
                }
-               tmpLow = inLow[blockNext + i];
+            }
+         } else if( tmpHigh >= highest ) {
+            highestIdx = today;
+            highest = tmpHigh;
+         }
+         if( lowestIdx < trailingIdx ) {
+            lowestIdx = trailingIdx;
+            lowest = inLow[lowestIdx];
+            i = lowestIdx;
+            while( ++i <= today ) {
+               tmpLow = inLow[i];
                if( tmpLow < lowest ) {
+                  lowestIdx = i;
                   lowest = tmpLow;
                }
-               preHighest[i] = highest;
-               preLowest[i] = lowest;
-               i += 1;
             }
-            /* Combine. The suffix half is the older one, so preferring it
-             * on a tie keeps the earliest-wins rule.
-             */
-            m = 1;
-            while( m <= nAvail ) {
-               highest = sufHighest[m];
-               if( preHighest[m - 1] > highest ) {
-                  highest = preHighest[m - 1];
-               }
-               lowest = sufLowest[m];
-               if( preLowest[m - 1] < lowest ) {
-                  lowest = preLowest[m - 1];
-               }
-               outReal[outIdx++] = (highest + lowest) / 2.0;
-               m += 1;
-            }
-            trailingIdx = trailingIdx + nAvail;
-            today = today + nAvail;
-            blockStart = blockStart + optInTimePeriod;
+         } else if( tmpLow <= lowest ) {
+            lowestIdx = today;
+            lowest = tmpLow;
          }
+         outRealUpperBand[outIdx] = highest;
+         outRealLowerBand[outIdx] = lowest;
+         outRealMiddleBand[outIdx] = (highest + lowest) / 2.0;
+         outIdx += 1;
+         trailingIdx += 1;
+         today += 1;
       }
       /* Keep the outBegIdx relative to the
        * caller input before returning.
@@ -231,27 +163,17 @@
       outNBElement.value = outIdx;
       return RetCode.Success ;
    }
-   RetCode MIDPRICE_Impl( int startIdx,
+   RetCode DONCHIAN_Impl( int startIdx,
                           int endIdx,
                           float inHigh[],
                           float inLow[],
                           int optInTimePeriod,
                           MInteger outBegIdx,
                           MInteger outNBElement,
-                          double outReal[] )
+                          double outRealUpperBand[],
+                          double outRealMiddleBand[],
+                          double outRealLowerBand[] )
    {
-      double[] sufHighest;
-      int sufHighest_Idx = 0;
-      int maxIdx_sufHighest = (30)-1;
-      double[] preHighest;
-      int preHighest_Idx = 0;
-      int maxIdx_preHighest = (30)-1;
-      double[] sufLowest;
-      int sufLowest_Idx = 0;
-      int maxIdx_sufLowest = (30)-1;
-      double[] preLowest;
-      int preLowest_Idx = 0;
-      int maxIdx_preLowest = (30)-1;
       double lowest = 0;
       double highest = 0;
       double tmpLow = 0;
@@ -259,12 +181,10 @@
       int outIdx = 0;
       int nbInitialElementNeeded = 0;
       int trailingIdx = 0;
+      int lowestIdx = 0;
+      int highestIdx = 0;
       int today = 0;
       int i = 0;
-      int blockStart = 0;
-      int nAvail = 0;
-      int m = 0;
-      int blockNext = 0;
       if( (startIdx < 0) || (startIdx > MAX_INDEX) ) {
          return RetCode.OutOfRangeStartIndex ;
       }
@@ -272,9 +192,12 @@
          return RetCode.OutOfRangeEndIndex ;
       }
       if( optInTimePeriod == Integer.MIN_VALUE ) {
-         optInTimePeriod = 14;
+         optInTimePeriod = 20;
       } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
          return RetCode.BadParam;
+      }
+      if( outRealUpperBand == outRealMiddleBand || outRealUpperBand == outRealLowerBand || outRealMiddleBand == outRealLowerBand ) {
+         return RetCode.BadParam ;
       }
       nbInitialElementNeeded = optInTimePeriod - 1;
       if( startIdx < nbInitialElementNeeded ) {
@@ -288,117 +211,94 @@
       outIdx = 0;
       today = startIdx;
       trailingIdx = startIdx - nbInitialElementNeeded;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      sufHighest = new double[optInTimePeriod];
-      maxIdx_sufHighest = (optInTimePeriod)-1;
-      sufHighest_Idx = 0;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      preHighest = new double[optInTimePeriod];
-      maxIdx_preHighest = (optInTimePeriod)-1;
-      preHighest_Idx = 0;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      sufLowest = new double[optInTimePeriod];
-      maxIdx_sufLowest = (optInTimePeriod)-1;
-      sufLowest_Idx = 0;
-      if( optInTimePeriod < 1 ) return RetCode.InternalError;
-      preLowest = new double[optInTimePeriod];
-      maxIdx_preLowest = (optInTimePeriod)-1;
-      preLowest_Idx = 0;
-      blockStart = trailingIdx;
+      highestIdx = 0 - 1;
+      highest = 0.0;
+      lowestIdx = 0 - 1;
+      lowest = 0.0;
       while( today <= endIdx ) {
-         i = blockStart + optInTimePeriod - 1;
-         highest = (double)inHigh[i];
-         lowest = (double)inLow[i];
-         sufHighest[optInTimePeriod - 1] = highest;
-         sufLowest[optInTimePeriod - 1] = lowest;
-         while( i > blockStart ) {
-            i -= 1;
-            tmpHigh = (double)inHigh[i];
-            if( tmpHigh > highest ) {
-               highest = tmpHigh;
-            }
-            tmpLow = (double)inLow[i];
-            if( tmpLow < lowest ) {
-               lowest = tmpLow;
-            }
-            sufHighest[i - blockStart] = highest;
-            sufLowest[i - blockStart] = lowest;
-         }
-         outReal[outIdx++] = (sufHighest[0] + sufLowest[0]) / 2.0;
-         trailingIdx += 1;
-         today += 1;
-         if( today > endIdx ) {
-            blockStart = blockStart + optInTimePeriod;
-         } else {
-            blockNext = blockStart + optInTimePeriod;
-            nAvail = endIdx - blockNext + 1;
-            if( nAvail > optInTimePeriod - 1 ) {
-               nAvail = optInTimePeriod - 1;
-            }
-            highest = (double)inHigh[blockNext];
-            lowest = (double)inLow[blockNext];
-            preHighest[0] = highest;
-            preLowest[0] = lowest;
-            i = 1;
-            while( i < nAvail ) {
-               tmpHigh = (double)inHigh[blockNext + i];
+         tmpHigh = (double)inHigh[today];
+         tmpLow = (double)inLow[today];
+         if( highestIdx < trailingIdx ) {
+            highestIdx = trailingIdx;
+            highest = (double)inHigh[highestIdx];
+            i = highestIdx;
+            while( ++i <= today ) {
+               tmpHigh = (double)inHigh[i];
                if( tmpHigh > highest ) {
+                  highestIdx = i;
                   highest = tmpHigh;
                }
-               tmpLow = (double)inLow[blockNext + i];
+            }
+         } else if( tmpHigh >= highest ) {
+            highestIdx = today;
+            highest = tmpHigh;
+         }
+         if( lowestIdx < trailingIdx ) {
+            lowestIdx = trailingIdx;
+            lowest = (double)inLow[lowestIdx];
+            i = lowestIdx;
+            while( ++i <= today ) {
+               tmpLow = (double)inLow[i];
                if( tmpLow < lowest ) {
+                  lowestIdx = i;
                   lowest = tmpLow;
                }
-               preHighest[i] = highest;
-               preLowest[i] = lowest;
-               i += 1;
             }
-            m = 1;
-            while( m <= nAvail ) {
-               highest = sufHighest[m];
-               if( preHighest[m - 1] > highest ) {
-                  highest = preHighest[m - 1];
-               }
-               lowest = sufLowest[m];
-               if( preLowest[m - 1] < lowest ) {
-                  lowest = preLowest[m - 1];
-               }
-               outReal[outIdx++] = (highest + lowest) / 2.0;
-               m += 1;
-            }
-            trailingIdx = trailingIdx + nAvail;
-            today = today + nAvail;
-            blockStart = blockStart + optInTimePeriod;
+         } else if( tmpLow <= lowest ) {
+            lowestIdx = today;
+            lowest = tmpLow;
          }
+         outRealUpperBand[outIdx] = highest;
+         outRealLowerBand[outIdx] = lowest;
+         outRealMiddleBand[outIdx] = (highest + lowest) / 2.0;
+         outIdx += 1;
+         trailingIdx += 1;
+         today += 1;
       }
       outBegIdx.value = startIdx;
       outNBElement.value = outIdx;
       return RetCode.Success ;
    }
    /**
-    * Midpoint of the price range over a rolling window: the average of the
-    * highest high and lowest low across the last optInTimePeriod bars. An
-    * overlap-study line plotted on price.
+    * Donchian Channels: three overlap lines built from rolling price extrema.
+    * The upper band is the highest high and the lower band the lowest low over
+    * the period; the middle line is their midpoint. Richard Donchian's original
+    * four-week rule — generally credited as the first published systematic
+    * trend-following system — buys a break above the high of the preceding
+    * weeks and sells a break below their low.
     * <p><b>Formula</b>
     * <pre>{@code
-    * MIDPRICE = (Highest(High, N) + Lowest(Low, N)) / 2, over the N=optInTimePeriod bars ending at each index
-    * This is the Donchian Channel centerline: `DONCHIAN` emits this line as its middle output, alongside the two extrema.
+    * Window = the optInTimePeriod bars ending at the current bar
+    * Upper  = Highest High of Window
+    * Lower  = Lowest  Low  of Window
+    * Middle = (Upper + Lower) / 2
     * }</pre>
+    * <p><b>Notes</b>
+    * <ul>
+    * <li>The window includes the current bar, matching TradingView ({@code ta.highest}/{@code ta.lowest}), NinjaTrader, ta4j, pandas-ta and every other library that ships Donchian Channels.</li>
+    * <li>A breakout rule compares the current bar against the **previous** bar's band — {@code High[t] &gt; Upper[t-1]} — which is where the one-bar offset belongs. Reading {@code Upper[t]} against {@code High[t]} can never signal, because {@code High[t]} is inside the window that produced it.</li>
+    * <li>Upper, Middle and Lower are bit-identical to {@code MAX(high, N)}, {@code MIDPRICE(N)} and {@code MIN(low, N)}. DONCHIAN computes all three in one pass under the name users look for.</li>
+    * <li>The middle line is the channel midpoint, not a moving average of price.</li>
+    * <li>No smoothing or recursion is involved, so there is no unstable period: outputs are exact from the first bar.</li>
+    * </ul>
     * <p>Values are written only where the indicator is defined. The returned
     * {@link OutRange} says where they start and how many there are; nothing
     * outside that range is touched, and the library never pads with NaN. A
-    * valid range shorter than {@link Core#MIDPRICE_Lookback} is a <b>success
+    * valid range shorter than {@link Core#DONCHIAN_Lookback} is a <b>success
     * with no values</b> ({@code count() == 0}), not an error.
     *
     * @param startIdx First bar of the requested range (inclusive).
     * @param endIdx Last bar of the requested range (inclusive).
     * @param inHigh High price of each bar.
     * @param inLow Low price of each bar.
-    * @param optInTimePeriod Window length over which the high/low extremes are
-    *        taken (default 14; range 2..100000; {@code Integer.MIN_VALUE} selects the
-    *        default).
-    * @param outReal Midpoint of the period's high/low extremes. Must hold at
-    *        least {@code endIdx - startIdx + 1} values.
+    * @param optInTimePeriod Number of bars in the extrema window (default 20;
+    *        range 2..100000; {@code Integer.MIN_VALUE} selects the default).
+    * @param outRealUpperBand Highest high of the window. Must hold at least
+    *        {@code endIdx - startIdx + 1} values.
+    * @param outRealMiddleBand Midpoint of the upper and lower bands. Must hold
+    *        at least {@code endIdx - startIdx + 1} values.
+    * @param outRealLowerBand Lowest low of the window. Must hold at least
+    *        {@code endIdx - startIdx + 1} values.
     * @return The range written: {@code begIdx} is the first bar with a value,
     *        {@code count} how many were written.
     * @throws IndexOutOfBoundsException if {@code startIdx} or {@code endIdx} is
@@ -412,59 +312,76 @@
     *        same. An output this function documents as declinable is the one
     *        exception: {@code null} is how you decline it. Checked before anything is
     *        written, so a rejected call leaves every buffer untouched.
-    *
-    * @see Core#MIDPOINT
-    * @see Core#MEDPRICE
     */
-   public OutRange MIDPRICE( int startIdx,
+   public OutRange DONCHIAN( int startIdx,
                              int endIdx,
                              double inHigh[],
                              double inLow[],
                              int optInTimePeriod,
-                             double outReal[] )
+                             double outRealUpperBand[],
+                             double outRealMiddleBand[],
+                             double outRealLowerBand[] )
    {
-      requireIndexRange("MIDPRICE", startIdx, endIdx);
-      int guardStart = clampedStart("MIDPRICE", startIdx, MIDPRICE_Lookback(optInTimePeriod));
+      requireIndexRange("DONCHIAN", startIdx, endIdx);
+      int guardStart = clampedStart("DONCHIAN", startIdx, DONCHIAN_Lookback(optInTimePeriod));
       int guardInLen = endIdx + 1;
       int guardOutLen = guardStart > endIdx ? 0 : endIdx - guardStart + 1;
-      requireLength("MIDPRICE", "inHigh", inHigh, guardInLen);
-      requireLength("MIDPRICE", "inLow", inLow, guardInLen);
-      requireLength("MIDPRICE", "outReal", outReal, guardOutLen);
+      requireLength("DONCHIAN", "inHigh", inHigh, guardInLen);
+      requireLength("DONCHIAN", "inLow", inLow, guardInLen);
+      requireLength("DONCHIAN", "outRealUpperBand", outRealUpperBand, guardOutLen);
+      requireLength("DONCHIAN", "outRealMiddleBand", outRealMiddleBand, guardOutLen);
+      requireLength("DONCHIAN", "outRealLowerBand", outRealLowerBand, guardOutLen);
       MInteger outBegIdx = new MInteger();
       MInteger outNBElement = new MInteger();
-      RetCode retCode = MIDPRICE_Impl(startIdx, endIdx, inHigh, inLow, optInTimePeriod, outBegIdx, outNBElement, outReal);
+      RetCode retCode = DONCHIAN_Impl(startIdx, endIdx, inHigh, inLow, optInTimePeriod, outBegIdx, outNBElement, outRealUpperBand, outRealMiddleBand, outRealLowerBand);
       if( retCode != RetCode.Success ) {
-         throw failure("MIDPRICE", retCode);
+         throw failure("DONCHIAN", retCode);
       }
       return new OutRange(outBegIdx.value, outNBElement.value);
    }
    /**
-    * Midpoint of the price range over a rolling window: the average of the
-    * highest high and lowest low across the last optInTimePeriod bars. An
-    * overlap-study line plotted on price.
+    * Donchian Channels: three overlap lines built from rolling price extrema.
+    * The upper band is the highest high and the lower band the lowest low over
+    * the period; the middle line is their midpoint. Richard Donchian's original
+    * four-week rule — generally credited as the first published systematic
+    * trend-following system — buys a break above the high of the preceding
+    * weeks and sells a break below their low.
     * <p><b>Formula</b>
     * <pre>{@code
-    * MIDPRICE = (Highest(High, N) + Lowest(Low, N)) / 2, over the N=optInTimePeriod bars ending at each index
-    * This is the Donchian Channel centerline: `DONCHIAN` emits this line as its middle output, alongside the two extrema.
+    * Window = the optInTimePeriod bars ending at the current bar
+    * Upper  = Highest High of Window
+    * Lower  = Lowest  Low  of Window
+    * Middle = (Upper + Lower) / 2
     * }</pre>
+    * <p><b>Notes</b>
+    * <ul>
+    * <li>The window includes the current bar, matching TradingView ({@code ta.highest}/{@code ta.lowest}), NinjaTrader, ta4j, pandas-ta and every other library that ships Donchian Channels.</li>
+    * <li>A breakout rule compares the current bar against the **previous** bar's band — {@code High[t] &gt; Upper[t-1]} — which is where the one-bar offset belongs. Reading {@code Upper[t]} against {@code High[t]} can never signal, because {@code High[t]} is inside the window that produced it.</li>
+    * <li>Upper, Middle and Lower are bit-identical to {@code MAX(high, N)}, {@code MIDPRICE(N)} and {@code MIN(low, N)}. DONCHIAN computes all three in one pass under the name users look for.</li>
+    * <li>The middle line is the channel midpoint, not a moving average of price.</li>
+    * <li>No smoothing or recursion is involved, so there is no unstable period: outputs are exact from the first bar.</li>
+    * </ul>
     * <p>This is the {@code float[]} overload. The arithmetic is performed in
     * {@code double} before being written to the {@code double[]} output, so a
     * result beyond {@code float} range is still representable.
     * <p>Values are written only where the indicator is defined. The returned
     * {@link OutRange} says where they start and how many there are; nothing
     * outside that range is touched, and the library never pads with NaN. A
-    * valid range shorter than {@link Core#MIDPRICE_Lookback} is a <b>success
+    * valid range shorter than {@link Core#DONCHIAN_Lookback} is a <b>success
     * with no values</b> ({@code count() == 0}), not an error.
     *
     * @param startIdx First bar of the requested range (inclusive).
     * @param endIdx Last bar of the requested range (inclusive).
     * @param inHigh High price of each bar.
     * @param inLow Low price of each bar.
-    * @param optInTimePeriod Window length over which the high/low extremes are
-    *        taken (default 14; range 2..100000; {@code Integer.MIN_VALUE} selects the
-    *        default).
-    * @param outReal Midpoint of the period's high/low extremes. Must hold at
-    *        least {@code endIdx - startIdx + 1} values.
+    * @param optInTimePeriod Number of bars in the extrema window (default 20;
+    *        range 2..100000; {@code Integer.MIN_VALUE} selects the default).
+    * @param outRealUpperBand Highest high of the window. Must hold at least
+    *        {@code endIdx - startIdx + 1} values.
+    * @param outRealMiddleBand Midpoint of the upper and lower bands. Must hold
+    *        at least {@code endIdx - startIdx + 1} values.
+    * @param outRealLowerBand Lowest low of the window. Must hold at least
+    *        {@code endIdx - startIdx + 1} values.
     * @return The range written: {@code begIdx} is the first bar with a value,
     *        {@code count} how many were written.
     * @throws IndexOutOfBoundsException if {@code startIdx} or {@code endIdx} is
@@ -478,40 +395,39 @@
     *        same. An output this function documents as declinable is the one
     *        exception: {@code null} is how you decline it. Checked before anything is
     *        written, so a rejected call leaves every buffer untouched.
-    *
-    * @see Core#MIDPOINT
-    * @see Core#MEDPRICE
     */
-   public OutRange MIDPRICE( int startIdx,
+   public OutRange DONCHIAN( int startIdx,
                              int endIdx,
                              float inHigh[],
                              float inLow[],
                              int optInTimePeriod,
-                             double outReal[] )
+                             double outRealUpperBand[],
+                             double outRealMiddleBand[],
+                             double outRealLowerBand[] )
    {
-      requireIndexRange("MIDPRICE", startIdx, endIdx);
-      int guardStart = clampedStart("MIDPRICE", startIdx, MIDPRICE_Lookback(optInTimePeriod));
+      requireIndexRange("DONCHIAN", startIdx, endIdx);
+      int guardStart = clampedStart("DONCHIAN", startIdx, DONCHIAN_Lookback(optInTimePeriod));
       int guardInLen = endIdx + 1;
       int guardOutLen = guardStart > endIdx ? 0 : endIdx - guardStart + 1;
-      requireLength("MIDPRICE", "inHigh", inHigh, guardInLen);
-      requireLength("MIDPRICE", "inLow", inLow, guardInLen);
-      requireLength("MIDPRICE", "outReal", outReal, guardOutLen);
+      requireLength("DONCHIAN", "inHigh", inHigh, guardInLen);
+      requireLength("DONCHIAN", "inLow", inLow, guardInLen);
+      requireLength("DONCHIAN", "outRealUpperBand", outRealUpperBand, guardOutLen);
+      requireLength("DONCHIAN", "outRealMiddleBand", outRealMiddleBand, guardOutLen);
+      requireLength("DONCHIAN", "outRealLowerBand", outRealLowerBand, guardOutLen);
       MInteger outBegIdx = new MInteger();
       MInteger outNBElement = new MInteger();
-      RetCode retCode = MIDPRICE_Impl(startIdx, endIdx, inHigh, inLow, optInTimePeriod, outBegIdx, outNBElement, outReal);
+      RetCode retCode = DONCHIAN_Impl(startIdx, endIdx, inHigh, inLow, optInTimePeriod, outBegIdx, outNBElement, outRealUpperBand, outRealMiddleBand, outRealLowerBand);
       if( retCode != RetCode.Success ) {
-         throw failure("MIDPRICE", retCode);
+         throw failure("DONCHIAN", retCode);
       }
       return new OutRange(outBegIdx.value, outNBElement.value);
    }
 /**** Streaming API *****/
 
-/* Using midprice_ALT1 for TA_ALT={STREAM,ALL_LANGUAGES} */
-
    /**
-    * A live MIDPRICE stream (unrelated to {@code java.util.stream}): one value per
-    * closed bar, bit-identical to {@link Core#MIDPRICE} over the same series.
-    * Open with {@link Core#midpriceOpen}; there is no close — the handle is
+    * A live DONCHIAN stream (unrelated to {@code java.util.stream}): one value per
+    * closed bar, bit-identical to {@link Core#DONCHIAN} over the same series.
+    * Open with {@link Core#donchianOpen}; there is no close — the handle is
     * ordinary heap state, unreferenced handles are simply garbage-collected.
     * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
     * {@code value} and {@code clone} must not race with an {@code update} on
@@ -522,7 +438,7 @@
     * <p>Not serializable by design: to checkpoint, retain the history and
     * re-open — the result is bit-identical by contract.
     */
-   public static final class MidpriceStream {
+   public static final class DonchianStream {
       Core core;
       int optInTimePeriod;
       double lowest;
@@ -535,16 +451,18 @@
       int xMask;
       double[] x_inHigh;
       double[] x_inLow;
-      double cur_outReal;
+      double cur_outRealUpperBand;
+      double cur_outRealMiddleBand;
+      double cur_outRealLowerBand;
       int outRangeBegIdx;
       int outRangeCount;
 
-      MidpriceStream( Core core ) { this.core = core; }
+      DonchianStream( Core core ) { this.core = core; }
 
       /**
        * The bars this stream has an output for, in the input series'
        * coordinates: {@code [begIdx, begIdx + count)}.
-       * <p>It is what {@link Core#MIDPRICE} reports over the same bars: the
+       * <p>It is what {@link Core#DONCHIAN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
        * {@code update} adds one to the count — a bar rejected for being
        * non-finite included, because it still happened — {@code peek} leaves
@@ -554,7 +472,7 @@
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
 
-      MidpriceStream( MidpriceStream other ) {
+      DonchianStream( DonchianStream other ) {
          this.core = other.core;
          this.optInTimePeriod = other.optInTimePeriod;
          this.lowest = other.lowest;
@@ -567,18 +485,20 @@
          this.xMask = other.xMask;
          this.x_inHigh = other.x_inHigh.clone();
          this.x_inLow = other.x_inLow.clone();
-         this.cur_outReal = other.cur_outReal;
+         this.cur_outRealUpperBand = other.cur_outRealUpperBand;
+         this.cur_outRealMiddleBand = other.cur_outRealMiddleBand;
+         this.cur_outRealLowerBand = other.cur_outRealLowerBand;
          this.outRangeBegIdx = other.outRangeBegIdx;
          this.outRangeCount = other.outRangeCount;
       }
 
       /**
-       * Commit one closed bar, returning the new current value.
+       * Commit one closed bar, writing the new current values into the {@code out} the CALLER owns.
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
        * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
+       * output is the previous value, held, and {@link #value(DonchianOut)} answers it.
        * The stream stays usable, so skip the bar or re-open on a clean
        * history. {@link #outRange()} does advance: the bar happened and
        * occupies a position in the series, so the handle counts it, which is
@@ -588,14 +508,17 @@
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
-      public double update( double inHigh, double inLow ) {
+      public void update( double inHigh, double inLow, DonchianOut out ) {
+         requireArgument("DONCHIAN update", "out", out);
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-            throw new TaLibArgumentException("MIDPRICE update: BadParam", RetCode.BadParam);
+            throw new TaLibArgumentException("DONCHIAN update: BadParam", RetCode.BadParam);
          }
-         core.midpriceStepImpl(this, inHigh, inLow);
+         core.donchianStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         return this.cur_outReal;
+         out.realUpperBand = this.cur_outRealUpperBand;
+         out.realMiddleBand = this.cur_outRealMiddleBand;
+         out.realLowerBand = this.cur_outRealLowerBand;
       }
 
       /**
@@ -611,40 +534,47 @@
        * everything after it not, and the count advanced by {@code k + 1} —
        * the committed bars plus the rejected one.
        */
-      public void updateAndFill( double inHigh[], double inLow[], double outReal[] ) {
-         requireArgument("MIDPRICE updateAndFill", "inHigh", inHigh);
-         requireArgument("MIDPRICE updateAndFill", "inLow", inLow);
-         requireArgument("MIDPRICE updateAndFill", "outReal", outReal);
+      public void updateAndFill( double inHigh[], double inLow[], double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] ) {
+         requireArgument("DONCHIAN updateAndFill", "inHigh", inHigh);
+         requireArgument("DONCHIAN updateAndFill", "inLow", inLow);
+         requireArgument("DONCHIAN updateAndFill", "outRealUpperBand", outRealUpperBand);
+         requireArgument("DONCHIAN updateAndFill", "outRealMiddleBand", outRealMiddleBand);
+         requireArgument("DONCHIAN updateAndFill", "outRealLowerBand", outRealLowerBand);
          final int barCount = inHigh.length;
-         if( inLow.length != barCount || outReal.length < barCount || (Object)outReal == (Object)inHigh || (Object)outReal == (Object)inLow )
-            throw new TaLibArgumentException("MIDPRICE updateAndFill: BadParam", RetCode.BadParam);
+         if( inLow.length != barCount || outRealUpperBand.length < barCount || outRealMiddleBand.length < barCount || outRealLowerBand.length < barCount || (Object)outRealUpperBand == (Object)inHigh || (Object)outRealUpperBand == (Object)inLow || (Object)outRealMiddleBand == (Object)inHigh || (Object)outRealMiddleBand == (Object)inLow || (Object)outRealLowerBand == (Object)inHigh || (Object)outRealLowerBand == (Object)inLow || (Object)outRealUpperBand == (Object)outRealMiddleBand || (Object)outRealUpperBand == (Object)outRealLowerBand || (Object)outRealMiddleBand == (Object)outRealLowerBand )
+            throw new TaLibArgumentException("DONCHIAN updateAndFill: BadParam", RetCode.BadParam);
          for( int i = 0; i < barCount; i++ ) {
             if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) ) {
                if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("MIDPRICE updateAndFill: BadParam", RetCode.BadParam);
+               throw new TaLibArgumentException("DONCHIAN updateAndFill: BadParam", RetCode.BadParam);
             }
-            core.midpriceStepImpl(this, inHigh[i], inLow[i]);
-            outReal[i] = this.cur_outReal;
+            core.donchianStepImpl(this, inHigh[i], inLow[i]);
+            outRealUpperBand[i] = this.cur_outRealUpperBand;
+            outRealMiddleBand[i] = this.cur_outRealMiddleBand;
+            outRealLowerBand[i] = this.cur_outRealLowerBand;
             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          }
       }
 
       /**
        * Evaluate a forming bar without committing — bit-identical to what the
-       * next {@code update} with the same bar would return — the same
+       * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.
        * Never writes this handle, so peeks may
        * run concurrently with each other. It copies nothing: the frame runs against this handle, reading its
        * buffers and storing what the step would commit into locals, so the cost
        * does not grow with the period and {@code peek} never allocates.
        */
-      public double peek( double inHigh, double inLow ) {
+      public void peek( double inHigh, double inLow, DonchianOut out ) {
+         requireArgument("DONCHIAN peek", "out", out);
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
-            throw new TaLibArgumentException("MIDPRICE peek: BadParam", RetCode.BadParam);
-         MidpriceStream sp = this;
+            throw new TaLibArgumentException("DONCHIAN peek: BadParam", RetCode.BadParam);
+         DonchianStream sp = this;
          double tmpLow = 0.0;
          double tmpHigh = 0.0;
-         double cur_outReal = sp.cur_outReal;
+         double cur_outRealLowerBand = sp.cur_outRealLowerBand;
+         double cur_outRealMiddleBand = sp.cur_outRealMiddleBand;
+         double cur_outRealUpperBand = sp.cur_outRealUpperBand;
          double highest = sp.highest;
          int highestIdx = sp.highestIdx;
          int i = sp.i;
@@ -700,18 +630,25 @@
             lowestIdx = today;
             lowest = tmpLow;
          }
-         cur_outReal = (highest + lowest) / 2.0;
-         return cur_outReal;
+         cur_outRealUpperBand = highest;
+         cur_outRealLowerBand = lowest;
+         cur_outRealMiddleBand = (highest + lowest) / 2.0;
+         out.realUpperBand = cur_outRealUpperBand;
+         out.realMiddleBand = cur_outRealMiddleBand;
+         out.realLowerBand = cur_outRealLowerBand;
       }
 
       /**
        * The value at the last bar this stream counted — the bar
        * {@link #outRange()} ends on. The last history bar right after open,
-       * then whatever the latest accepted {@code update} returned.
-       * A pure field read; {@code peek} does not change it.
+       * then whatever the latest accepted {@code update} wrote.
+       * A pure field read; {@code peek} does not change it. Overwrites {@code out}, allocating nothing.
        */
-      public double value() {
-         return this.cur_outReal;
+      public void value( DonchianOut out ) {
+         requireArgument("DONCHIAN value", "out", out);
+         out.realUpperBand = this.cur_outRealUpperBand;
+         out.realMiddleBand = this.cur_outRealMiddleBand;
+         out.realLowerBand = this.cur_outRealLowerBand;
       }
 
       /**
@@ -726,11 +663,35 @@
        * @return an independent stream at the same bar
        */
       @Override
-      public MidpriceStream clone() {
-         return new MidpriceStream(this);
+      public DonchianStream clone() {
+         return new DonchianStream(this);
       }
    }
-   void midpriceStepImpl( MidpriceStream sp, double inHigh, double inLow )
+
+   /**
+    * The outputs of one DONCHIAN bar, written by the stream into an object the
+    * CALLER owns. Allocate one and reuse it: {@code update}, {@code peek}
+    * and {@code value} overwrite its fields, so the sink itself costs
+    * nothing per bar.
+    *
+    * <p><b>Its contents are only valid until the next call that writes it.</b>
+    * It is a mutable buffer, not a reading: a reference kept past that call,
+    * or one put in a collection, sees the value change underneath it. Copy the
+    * fields out if the reading has to outlive the call.
+    *
+    * <p>Deliberately no {@code equals} or {@code hashCode}: a mutable type
+    * with value equality breaks the {@code HashMap}/{@code HashSet}
+    * invariant the moment a reused instance becomes a key. Compare the fields.
+    */
+   public static final class DonchianOut {
+      /** Highest high of the window. */
+      public double realUpperBand;
+      /** Midpoint of the upper and lower bands. */
+      public double realMiddleBand;
+      /** Lowest low of the window. */
+      public double realLowerBand;
+   }
+   void donchianStepImpl( DonchianStream sp, double inHigh, double inLow )
    {
       double tmpLow = 0.0;
       double tmpHigh = 0.0;
@@ -776,11 +737,13 @@
          sp.lowestIdx = sp.today;
          sp.lowest = tmpLow;
       }
-      sp.cur_outReal = (sp.highest + sp.lowest) / 2.0;
+      sp.cur_outRealUpperBand = sp.highest;
+      sp.cur_outRealLowerBand = sp.lowest;
+      sp.cur_outRealMiddleBand = (sp.highest + sp.lowest) / 2.0;
       sp.trailingIdx += 1;
       sp.today += 1;
    }
-   private RetCode midpriceOpenImpl( MidpriceStream sp, double inHigh[], double inLow[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outReal[], int outStride )
+   private RetCode donchianOpenImpl( DonchianStream sp, double inHigh[], double inLow[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[], int outStride )
    {
       double lowest = 0;
       double highest = 0;
@@ -805,7 +768,7 @@
          return RetCode.BadParam;
       }
       if( optInTimePeriod == Integer.MIN_VALUE ) {
-         optInTimePeriod = 14;
+         optInTimePeriod = 20;
       } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
          return RetCode.BadParam;
       }
@@ -814,10 +777,18 @@
          outNBElement.value = 0;
          return RetCode.InsufficientHistory;
       }
-      /* MIDPRICE = (Highest High + Lowest Low)/2
+      /* Donchian Channels over the optInTimePeriod bars ending at the current
+       * bar:
        *
-       * This function is equivalent to MEDPRICE when the
-       * period is 1.
+       *    Upper  = Highest High of the window
+       *    Lower  = Lowest  Low  of the window
+       *    Middle = (Upper + Lower) / 2
+       *
+       * The window includes the current bar, matching every other library and
+       * charting platform. A breakout rule compares the current bar against the
+       * PREVIOUS bar's band, which is where the one-bar offset belongs.
+       *
+       * Upper/Middle/Lower are bit-identical to MAX(high,N)/MIDPRICE(N)/MIN(low,N).
        */
       /* Identify the minimum number of price bar needed
        * to identify at least one output over the specified
@@ -838,24 +809,12 @@
       }
       /* Proceed with the calculation for the requested range.
        * Note that this algorithm allows the input and
-       * output to be the same buffer.
+       * output to be the same buffer: every position written (outIdx) sits
+       * at or below trailingIdx, the oldest position any later bar reads.
        *
        * The highest high and lowest low of the window are cached with their
-       * indices; the window is rescanned only when a cached extremum drops out
-       * of it. That is O(1)
-       * per bar while the extremum sits away from the trailing edge, but it is
-       * not amortized O(1): an extremum on the oldest in-window bar drops out
-       * on the very next bar, so the rescan repeats and the cost stays
-       * O(period) per bar for as long as that persists.
-       *
-       * Tracking both extrema keeps that state going through a trend: while
-       * the high is refreshed by each new bar, the low stays pinned at the
-       * oldest bar for the whole leg (and the reverse on the way down). A flat
-       * stretch pins both. Random-walk input is the favourable case, where
-       * rescans are rare.
-       *
-       * Slower than the block scan the batch tier runs; it is here because one
-       * bar at a time is exactly what the streaming tier needs. See issue #147.
+       * indices; the window is rescanned only when a cached extremum drops
+       * out of it (same approach as MIN/MAX/WILLR and MIDPRICE).
        */
       outIdx = 0;
       today = startIdx;
@@ -897,7 +856,10 @@
             lowestIdx = today;
             lowest = tmpLow;
          }
-         outReal[outIdx++ * outStride] = (highest + lowest) / 2.0;
+         outRealUpperBand[outIdx * outStride] = highest;
+         outRealLowerBand[outIdx * outStride] = lowest;
+         outRealMiddleBand[outIdx * outStride] = (highest + lowest) / 2.0;
+         outIdx += 1;
          trailingIdx += 1;
          today += 1;
       }
@@ -932,53 +894,57 @@
       sp.xMask = physX - 1;
       sp.x_inHigh = capX_inHigh;
       sp.x_inLow = capX_inLow;
-      sp.cur_outReal = outReal[(outNBElement.value - 1) * outStride];
+      sp.cur_outRealUpperBand = outRealUpperBand[(outNBElement.value - 1) * outStride];
+      sp.cur_outRealMiddleBand = outRealMiddleBand[(outNBElement.value - 1) * outStride];
+      sp.cur_outRealLowerBand = outRealLowerBand[(outNBElement.value - 1) * outStride];
       return RetCode.Success;
    }
-   /* midpriceOpenAndFill anchored at startIdx — the composed-open fusion seam. */
-   MidpriceStream midpriceOpenAndFillInternal( double inHigh[], double inLow[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outReal[] )
+   /* donchianOpenAndFill anchored at startIdx — the composed-open fusion seam. */
+   DonchianStream donchianOpenAndFillInternal( double inHigh[], double inLow[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
    {
-      MidpriceStream sp = new MidpriceStream(this);
-      RetCode retCode = midpriceOpenImpl(sp, inHigh, inLow, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal, 1);
+      DonchianStream sp = new DonchianStream(this);
+      RetCode retCode = donchianOpenImpl(sp, inHigh, inLow, startIdx, optInTimePeriod, outBegIdx, outNBElement, outRealUpperBand, outRealMiddleBand, outRealLowerBand, 1);
       sp.outRangeBegIdx = outBegIdx.value;
       sp.outRangeCount = outNBElement.value;
       if( retCode == RetCode.Success ) {
          return sp;
       }
       if( retCode == RetCode.InsufficientHistory ) {
-         throw new InsufficientHistoryException("MIDPRICE openAndFill: history shorter than lookback + 1");
+         throw new InsufficientHistoryException("DONCHIAN openAndFill: history shorter than lookback + 1");
       }
       if( retCode == RetCode.InternalError ) {
-         throw new TaLibStateException("MIDPRICE openAndFill: internal error", retCode);
+         throw new TaLibStateException("DONCHIAN openAndFill: internal error", retCode);
       }
-      throw new TaLibArgumentException("MIDPRICE openAndFill: " + retCode, retCode);
+      throw new TaLibArgumentException("DONCHIAN openAndFill: " + retCode, retCode);
    }
-   /* Internal startIdx-anchored open behind midpriceOpen (composition seam). */
-   MidpriceStream midpriceOpenInternal( double inHigh[], double inLow[], int startIdx, int optInTimePeriod )
+   /* Internal startIdx-anchored open behind donchianOpen (composition seam). */
+   DonchianStream donchianOpenInternal( double inHigh[], double inLow[], int startIdx, int optInTimePeriod )
    {
-      MidpriceStream sp = new MidpriceStream(this);
+      DonchianStream sp = new DonchianStream(this);
       MInteger outBegIdx = new MInteger();
       MInteger outNBElement = new MInteger();
-      double[] sink_outReal = new double[1];
-      RetCode retCode = midpriceOpenImpl(sp, inHigh, inLow, startIdx, optInTimePeriod, outBegIdx, outNBElement, sink_outReal, 0);
+      double[] sink_outRealUpperBand = new double[1];
+      double[] sink_outRealMiddleBand = new double[1];
+      double[] sink_outRealLowerBand = new double[1];
+      RetCode retCode = donchianOpenImpl(sp, inHigh, inLow, startIdx, optInTimePeriod, outBegIdx, outNBElement, sink_outRealUpperBand, sink_outRealMiddleBand, sink_outRealLowerBand, 0);
       sp.outRangeBegIdx = outBegIdx.value;
       sp.outRangeCount = outNBElement.value;
       if( retCode == RetCode.Success ) {
          return sp;
       }
       if( retCode == RetCode.InsufficientHistory ) {
-         throw new InsufficientHistoryException("MIDPRICE open: history shorter than lookback + 1");
+         throw new InsufficientHistoryException("DONCHIAN open: history shorter than lookback + 1");
       }
       if( retCode == RetCode.InternalError ) {
-         throw new TaLibStateException("MIDPRICE open: internal error", retCode);
+         throw new TaLibStateException("DONCHIAN open: internal error", retCode);
       }
-      throw new TaLibArgumentException("MIDPRICE open: " + retCode, retCode);
+      throw new TaLibArgumentException("DONCHIAN open: " + retCode, retCode);
    }
    /**
-    * Open a live MIDPRICE stream over the warm-up history; the handle's
+    * Open a live DONCHIAN stream over the warm-up history; the handle's
     * {@code value()} starts at the last history bar's value — bit-identical
-    * to {@link Core#MIDPRICE} at that bar.
-    * <p>The history must hold at least {@code MIDPRICE_Lookback(...) + 1} bars
+    * to {@link Core#DONCHIAN} at that bar.
+    * <p>The history must hold at least {@code DONCHIAN_Lookback(...) + 1} bars
     * (unstable-period aware), or {@link InsufficientHistoryException} is
     * thrown. Out-of-range parameters throw {@link IllegalArgumentException}
     * ({@code Integer.MIN_VALUE} selects an integer parameter's documented
@@ -987,37 +953,39 @@
     * names no bar — and a null argument {@link IllegalArgumentException},
     * both ahead of everything above.
     */
-   public MidpriceStream midpriceOpen( double inHigh[], double inLow[], int optInTimePeriod )
+   public DonchianStream donchianOpen( double inHigh[], double inLow[], int optInTimePeriod )
    {
-      requireArgument("MIDPRICE open", "inHigh", inHigh);
-      requireHistory("MIDPRICE open", inHigh.length);
-      requireArgument("MIDPRICE open", "inLow", inLow);
-      requireHistoryLength("MIDPRICE open", "inLow", inLow.length, inHigh.length);
-      return midpriceOpenInternal(inHigh, inLow, 0, optInTimePeriod);
+      requireArgument("DONCHIAN open", "inHigh", inHigh);
+      requireHistory("DONCHIAN open", inHigh.length);
+      requireArgument("DONCHIAN open", "inLow", inLow);
+      requireHistoryLength("DONCHIAN open", "inLow", inLow.length, inHigh.length);
+      return donchianOpenInternal(inHigh, inLow, 0, optInTimePeriod);
    }
    /**
-    * {@link Core#midpriceOpen} that also fills the output array(s) bit-identically
-    * to {@link Core#MIDPRICE} over the whole history in the same single pass
+    * {@link Core#donchianOpen} that also fills the output array(s) bit-identically
+    * to {@link Core#DONCHIAN} over the whole history in the same single pass
     * (no separate batch call needed for the warm-up plot). Output arrays must
     * not alias the inputs or each other, and must hold
     * {@code historyLen - lookback} values — both checked before anything is
     * written, so an undersized array is an {@link IllegalArgumentException}
     * naming it rather than a fault from inside the fill.
     * <p>The range written is on the returned handle:
-    * {@link MidpriceStream#outRange()}.
+    * {@link DonchianStream#outRange()}.
     */
-   public MidpriceStream midpriceOpenAndFill( double inHigh[], double inLow[], int optInTimePeriod, double outReal[] )
+   public DonchianStream donchianOpenAndFill( double inHigh[], double inLow[], int optInTimePeriod, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
    {
-      requireArgument("MIDPRICE openAndFill", "inHigh", inHigh);
-      requireHistory("MIDPRICE openAndFill", inHigh.length);
-      requireArgument("MIDPRICE openAndFill", "inLow", inLow);
-      int guardOutLen = openFillCount("MIDPRICE openAndFill", inHigh.length, MIDPRICE_Lookback(optInTimePeriod));
-      requireHistoryLength("MIDPRICE openAndFill", "inLow", inLow.length, inHigh.length);
-      requireLength("MIDPRICE openAndFill", "outReal", outReal, guardOutLen);
-      if( (Object)outReal == (Object)inHigh || (Object)outReal == (Object)inLow ) {
-         throw new TaLibArgumentException("MIDPRICE openAndFill: " + RetCode.BadParam, RetCode.BadParam);
+      requireArgument("DONCHIAN openAndFill", "inHigh", inHigh);
+      requireHistory("DONCHIAN openAndFill", inHigh.length);
+      requireArgument("DONCHIAN openAndFill", "inLow", inLow);
+      int guardOutLen = openFillCount("DONCHIAN openAndFill", inHigh.length, DONCHIAN_Lookback(optInTimePeriod));
+      requireHistoryLength("DONCHIAN openAndFill", "inLow", inLow.length, inHigh.length);
+      requireLength("DONCHIAN openAndFill", "outRealUpperBand", outRealUpperBand, guardOutLen);
+      requireLength("DONCHIAN openAndFill", "outRealMiddleBand", outRealMiddleBand, guardOutLen);
+      requireLength("DONCHIAN openAndFill", "outRealLowerBand", outRealLowerBand, guardOutLen);
+      if( (Object)outRealUpperBand == (Object)inHigh || (Object)outRealUpperBand == (Object)inLow || (Object)outRealMiddleBand == (Object)inHigh || (Object)outRealMiddleBand == (Object)inLow || (Object)outRealLowerBand == (Object)inHigh || (Object)outRealLowerBand == (Object)inLow || (Object)outRealUpperBand == (Object)outRealMiddleBand || (Object)outRealUpperBand == (Object)outRealLowerBand || (Object)outRealMiddleBand == (Object)outRealLowerBand ) {
+         throw new TaLibArgumentException("DONCHIAN openAndFill: " + RetCode.BadParam, RetCode.BadParam);
       }
       MInteger outBegIdx = new MInteger();
       MInteger outNBElement = new MInteger();
-      return midpriceOpenAndFillInternal(inHigh, inLow, 0, optInTimePeriod, outBegIdx, outNBElement, outReal);
+      return donchianOpenAndFillInternal(inHigh, inLow, 0, optInTimePeriod, outBegIdx, outNBElement, outRealUpperBand, outRealMiddleBand, outRealLowerBand);
    }
