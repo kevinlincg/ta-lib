@@ -71,4 +71,4 @@ through it. The value is only in the commits that never went through `dev`.
   dispatch upstream workflows.
 - I did not touch `dev-nightly-tests.yml`; the Java coverage there is unchanged.
 
-_Head re-verified after merging dev `67936169` (which landed #338): `regen-check` green, exit 0; generator suite not re-run (this branch changes one workflow file only). The net diff against dev is unchanged by that merge._
+_Head re-verified after merging dev `af4cdede` (which landed #338, then DONCHIAN): `regen-check` green, exit 0, 179 functions; generator suite not re-run (this branch changes one workflow file only). The net diff against dev is unchanged by that merge — the same 1 file._
