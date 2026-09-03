@@ -28,6 +28,42 @@ nothing, so its sink is the only carrier, and only inlining the sub-frame
 removes it. This PR takes the allocation sites from 4 to 2 and does not touch
 that half, so #325 stays open.
 
+## What the numbers on the issue say this buys — and what they say it does not
+
+The issue thread carries the measurement this branch does not, and it is the one
+a reviewer will reach for first: against `389515aa1` with
+`ThreadMXBean.getThreadAllocatedBytes`, min of 7 passes of 2M calls, JDK 21,
+`-XX:+UseSerialGC`, **both composed `update` sites already read 0 B/bar.**
+`StochfStream.update` and `MamaStream.update` are ~94 B of bytecode, under
+`FreqInlineSize`, so C2 opens the call and escape analysis scalar-replaces the
+`<N>Out`. It is only `peek`'s callees that are over the inlining budget.
+
+Stated plainly, and not special-cased away: **on a warmed C2 this PR removes two
+allocations the JIT was already removing, and buys 0 B/bar.** What it buys instead
+is narrower than "4 sites to 2" sounds:
+
+- the generated source stops constructing a carrier for values the handle already
+  holds, so the two sites are free by construction rather than free because escape
+  analysis happens to fire;
+- anything not a warmed C2 — the interpreter, C1, tiered warm-up, or a future
+  callee that grows past `FreqInlineSize` — pays the allocation that is written
+  down, and stops paying it here.
+
+If a source-level-only improvement is not worth 17 package-private methods, this
+is the change to decline, and the issue's own conclusion — that closing #325 reads
+better with the numbers than doing the frame-emitter work — is not contradicted by
+anything in this PR. This PR is deliberately **not** that frame-emitter work.
+
+It is instead the other option the thread names: a sink-less `update` that "removes
+the two `update` sites on its own, with no emitter surgery", declined there only
+because it "widens the public surface, and that is your call". The call taken here
+is to add it **package-private**, which is the same primitive without the public
+surface — so the stated objection does not apply, and no caller is offered
+"commit and discard the outputs". One number to reconcile rather than smooth over:
+the thread costs the public variant at 15 methods and this is 17 (verified by
+counting the diff, all package-private); the 17th is `SUPERTREND`, per the note
+below, and I have not accounted for the remaining one.
+
 ## The cost, stated rather than special-cased
 
 Not public, deliberately: "commit and discard the outputs" is not an API a
