@@ -73,8 +73,9 @@ it did not, so adding one now is scope the issue deliberately did not authorise.
 I left it out for that reason. Say the word and it is a small follow-up.
 
 Also worth knowing: #338 fuses ATR, NATR and SUPERTREND, which moves them from 29
-`Math.FusedMultiplyAdd` files to 32. That widens the surface described here; it
-does not change the answer above, which was measured on `dev` without #338.
+`Math.FusedMultiplyAdd` files to 32. I ran the same disabled-ISA row on that
+branch as well — 284,487 cases, 0 mismatches, unchanged — so the widening does
+not move this answer either, on this platform.
 
 ## Verification
 
