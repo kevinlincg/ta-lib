@@ -131,4 +131,4 @@ worth far less than the 13 tiers this PR covers. Recommend rewriting C4b to say
 so, or closing it; either way it should not be closed by building a candlestick
 corpus for that sweep.
 
-_Head re-verified after merging dev `67936169` (which landed #338): `regen-check` green, exit 0; generator suite 904 passed / 0 failed. The net diff against dev is unchanged by that merge._
+_Head re-verified after merging dev `af4cdede` (which landed #338, then DONCHIAN): `regen-check` green, exit 0, 179 functions; generator suite 904 passed / 0 failed. The net diff against dev is unchanged by that merge — the same 2 files._
