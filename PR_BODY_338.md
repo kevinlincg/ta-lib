@@ -22,9 +22,11 @@ wBeta  = 1.0 - wAlpha;
 prevATR = wAlpha * greatest + wBeta * prevATR;
 ```
 
-Generator input only — no backend change. The shared FMA detector canonicalizes
-the add so the accumulator product is the fused one, so all four backends emit
-the identical site and stay bit-identical to each other.
+No emitter change: the only generator-side edit is three names appended to
+`fma::FUSING_INVENTORY`, the pinned membership list two suites check the
+detector against from opposite ends. The shared FMA detector canonicalizes the
+add so the accumulator product is the fused one, so all four backends emit the
+identical site and stay bit-identical to each other.
 
 SUPERTREND carries a transcribed copy of the same recursion under a comment
 declaring bit-exactness with `TA_ATR`; `ta_regtest`'s SUPERTREND differential
@@ -67,7 +69,15 @@ issue is 29 before this merges and 32 after.
 
 - **Not bit-exact with the old form for periods >= 3.** LEGACY/064/FROZEN gets
   two measured rows — ATR 2e-14 (from 4.88e-15), NATR 2e-14 (from 4.00e-15) —
-  following that table's "3x measured, one significant digit" rule.
+  following that table's "3x measured, one significant digit" rule. Against the
+  frozen v0.6.4 the size of that move is now counted rather than described:
+  **1,506** of the 166,852 `--fuzz-064` comparisons leave the bit-exact column
+  for the 1e-9 FMA band (139,064 -> 137,558 exact, 15,973 -> 17,479
+  fma-tolerated), with dev `7065d886` measured as the control in the same run on
+  the same machine. Every other column is identical, failures 0 on both, and the
+  worst observed FMA deviation does not move: 4.13e-11 before and after, so the
+  three new sites land inside the band the contract already spans rather than
+  widening it.
 - **The streaming handle grows 16 bytes** for the two hoisted coefficients
   (`TA_ATR_Stream` 48 -> 64). That is the same struct #316 set out to stop C's
   Peek from copying.
@@ -100,12 +110,22 @@ On the tree as pushed (merged with dev at `7065d886`):
   .NET 10.0.400. It says nothing about real non-FMA3 silicon, Windows, macOS or
   musl, which remain unmeasured.
 
-From the earlier runs on this branch, before the merge with #337:
+- `scripts/build.py fuzz-064` — the leg that had been outstanding since the merge
+  — **PASS**: 166,852 comparisons, **0 failures**, bit-identical to the frozen
+  v0.6.4 at period >= 2 aside from the authorized tolerances. Run twice on the
+  same machine, this branch and dev `7065d886` as the control, to get the 1,506
+  moved cases quoted under Costs; the two runs differ in exactly the exact vs
+  fma-tolerated split and in nothing else.
+- `bin/ta_regtest --codegen --language=c,rust,java` — the other outstanding leg —
+  **PASS**: 161 functions, 0 failures per language, all three passing against the
+  frozen pre-cutover oracle. Its **C# arm was not re-run here**, because this
+  machine has no .NET SDK. What that leaves unmeasured for C# is only this gate's
+  own 1e-6 sweep: `--xlang-hash` above drives the same C# server over the same
+  178 functions at *zero* tolerance and is green, so fusion-site parity — the
+  axis this PR moves — is covered for C# by the stronger gate, not by assumption.
+- `scripts/build.py servers` regenerated all three server sources on this tree and
+  left `git status` clean, so the committed generated output matches what the
+  generator produces from these inputs.
 
-- The batch numbers above, with their controls.
-- `ta_regtest --codegen` and `--fuzz-064`.
-
-Still not re-run after the merge: `--fuzz-064` and `--codegen`. `--xlang-hash` is
-the stronger of the three on the axis this merge touches (bitwise, zero
-tolerance, against the same in-process C golden), so what remains unchecked there
-is the 0.6.4 differential and the 1e-6 sweep, not fusion-site parity.
+From the earlier runs on this branch, before the merge with #337: the batch
+numbers above, with their controls.
