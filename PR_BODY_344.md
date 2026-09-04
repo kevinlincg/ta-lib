@@ -1,3 +1,38 @@
+SUPERSEDED — do not open this PR (#344 landed on dev as ce5f5748)
+
+> **STOP.** Do not open a pull request from `issue-344-dead-open-locals`.
+>
+> The maintainer landed his own fix for #344 directly on `dev` as `ce5f5748`
+> ("refactor(codegen): a head declares what its body uses, not what every shape
+> might", authored 2026-09-04 05:10 UTC), while this branch was sitting here
+> waiting to be opened. A PR from this branch would be a duplicate.
+>
+> Verified against `dev` at `ce5f5748`:
+>
+> - `src/ta_func` carries **0** `(void)` suppressions, and `dummyBegIdx` /
+>   `dummyNBElement` survive only where a body reads them — the same residue this
+>   branch removed.
+> - `ce5f5748`'s own message reports the same 342 locals and the same three
+>   sites (`dummyBegIdx` and `dummyNBElement` in 166 Open heads, `subOpenDummy`
+>   in 10 of the 11 composed ones), reached the same way: emit the head after the
+>   body and declare against the finished text.
+>
+> **The one difference, and it is not worth a PR.** `ce5f5748` leaves `STOCH`'s
+> `subOpenDummy` declared at function scope (`src/ta_func/ta_STOCH.c:739`), where
+> this branch moved it into the sub-open's own block. `STOCH` is the one composed
+> function with a non-fused sub-call, so the local is *live* either way — it is
+> block scope versus function scope and nothing else. No warning, no instruction
+> difference, no gate sees it.
+>
+> The branch tip is `15db3bf5` (kept as a ref, in case you want the block-scope
+> spelling as a follow-up). Nothing here needs to reach upstream.
+
+---
+
+The body written before `ce5f5748` landed follows, unchanged, for reference only.
+
+---
+
 refactor(codegen): the Open head declares an out-meta local only where the body mentions it (#344)
 
 `c_hygiene` (dev `46577145f`) deletes a `(void)x;` whose block reads `x`, and
