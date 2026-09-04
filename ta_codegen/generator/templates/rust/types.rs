@@ -162,6 +162,8 @@ pub enum FuncUnstId {
     UNUSED_22,
     /// Unstable period of [`Core::T3`].
     T3,
+    /// Unstable period of [`Core::RMA`].
+    RMA,
     /// Wildcard: set the unstable period for all functions at once.
     ///
     /// Pinned rather than sitting one past the last function id, so that adding
@@ -173,7 +175,7 @@ impl FuncUnstId {
     /// Number of [`FuncUnstId`] function ids — the size of the unstable-period
     /// table. Not an id, and not [`FuncUnstId::ALL`]. Mirrors C's
     /// `TA_FUNC_UNST_COUNT` and Java's `FuncUnstId.COUNT`.
-    pub const COUNT: usize = 24;
+    pub const COUNT: usize = 25;
 }
 
 /// What a candlestick setting measures a candle against. Mirrors the C
@@ -770,12 +772,13 @@ mod tests {
 
     #[test]
     fn get_unstable_period_accepts_the_last_real_function() {
-        // The other side of the guard's boundary: T3 is the last real variant,
+        // The other side of the guard's boundary: the highest real variant sits
         // one below the wildcard, so a guard tightened by one rejects it here.
+        // Keep the last id in this list the last variant declared above.
         // Reads go through the getter on purpose -- indexing the array directly
         // would exercise the field, not the check.
         let core = Core::builder().unstable_period(FuncUnstId::ALL, 4).build().unwrap();
-        for id in [FuncUnstId::ADX, FuncUnstId::EMA, FuncUnstId::RSI, FuncUnstId::T3] {
+        for id in [FuncUnstId::ADX, FuncUnstId::EMA, FuncUnstId::RSI, FuncUnstId::RMA] {
             assert_eq!(core.get_unstable_period(id), Ok(4));
         }
     }

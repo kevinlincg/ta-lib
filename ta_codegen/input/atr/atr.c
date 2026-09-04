@@ -71,7 +71,10 @@ TA_RetCode atr(int startIdx, int endIdx,
    /* wAlpha is derived FROM wBeta, never the reverse: only that order makes
     * wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
     * measures closer to the exact recursion than the 1/period-first spelling
-    * at nearly every period. Swapping them reddens nothing.
+    * at nearly every period. Since RMA shipped (#348) this is a GATED
+    * contract, not just a preference: test_rma.c compares TA_RMA over
+    * TA_TRANGE against this function with memcmp, so swapping these two
+    * lines -- here or in rma.c -- turns that leg red.
     * The pair is exactly (1, 0) at period 1 -- hence no period-1 arm.
     */
    wBeta  = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;

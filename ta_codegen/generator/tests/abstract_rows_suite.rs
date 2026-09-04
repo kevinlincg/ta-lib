@@ -18,12 +18,14 @@ use common::{all_abstract_rows, check_rust_cast_parens, generate_all, load_indic
 // appears, the sweep names the renderers that need a look.
 
 
-/// The unstable-period set used to live as a 20-arm hardcoded name -> variant
-/// `match` inside `rust_abstract`, duplicating `enums.yaml`. It is now resolved
-/// by name (`TA_FUNC_UNST_<NAME>`), the same derivation the servers use. This
-/// pins the resulting set both ways: a lost mapping and a spurious one both fail.
+/// The unstable-period set used to live as a hardcoded name -> variant `match`
+/// inside `rust_abstract`, duplicating `enums.yaml`. It is now resolved by name
+/// (`TA_FUNC_UNST_<NAME>`), the same derivation the servers use. This pins the
+/// resulting set both ways: a lost mapping and a spurious one both fail. The
+/// test name carries no count -- the list grows with each indicator that owns
+/// an unstable period, and a number in the name would go stale on the next one.
 #[test]
-fn abstract_rows_unstable_period_set_is_exactly_the_twenty() {
+fn abstract_rows_unstable_period_set_is_pinned_by_name_and_ordinal() {
     // (function name, its FuncUnstId ordinal). The NAME half would be a
     // tautology on its own — `unst_row` resolves `TA_FUNC_UNST_<name>` and hands
     // the variant's name back, so it can only ever equal the function's. The
@@ -51,6 +53,7 @@ fn abstract_rows_unstable_period_set_is_exactly_the_twenty() {
         ("PLUS_DM", 20),
         ("RSI", 21),
         ("T3", 23),
+        ("RMA", 24),
     ];
 
     let rows = all_abstract_rows();

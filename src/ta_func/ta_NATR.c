@@ -170,7 +170,9 @@ TA_LIB_API TA_RetCode TA_NATR( int    startIdx,
    /* wAlpha is derived FROM wBeta, never the reverse: only that order makes
     * wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
     * measures closer to the exact recursion than the 1/period-first spelling
-    * at nearly every period. Swapping them reddens nothing.
+    * at nearly every period. It has to agree with atr.c and rma.c: the
+    * memcmp leg in test_rma.c pins that spelling for the whole Wilder
+    * family, and NATR's own goldens are ATR's divided by the close.
     */
    wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
    wAlpha = 1.0 - wBeta;
@@ -623,7 +625,9 @@ static TA_RetCode TA_NATR_OpenImpl( struct TA_NATR_Stream **stream, const double
       /* wAlpha is derived FROM wBeta, never the reverse: only that order makes
        * wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
        * measures closer to the exact recursion than the 1/period-first spelling
-       * at nearly every period. Swapping them reddens nothing.
+       * at nearly every period. It has to agree with atr.c and rma.c: the
+       * memcmp leg in test_rma.c pins that spelling for the whole Wilder
+       * family, and NATR's own goldens are ATR's divided by the close.
        */
       wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
       wAlpha = 1.0 - wBeta;

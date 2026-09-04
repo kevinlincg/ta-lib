@@ -6,6 +6,7 @@ ErrorNumber test_func_adx     ( TA_History *history );
 ErrorNumber test_func_ma      ( TA_History *history );
 ErrorNumber test_func_trange  ( TA_History *history );
 ErrorNumber test_func_rsi     ( TA_History *history );
+ErrorNumber test_func_rma     ( TA_History *history );
 ErrorNumber test_func_po      ( TA_History *history );
 ErrorNumber test_func_macd    ( TA_History *history );
 ErrorNumber test_func_stddev  ( TA_History *history );

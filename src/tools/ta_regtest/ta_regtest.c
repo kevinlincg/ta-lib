@@ -769,6 +769,7 @@ static ErrorNumber testTAFunction_ALL( void )
    DO_TEST( test_func_per_hlc,  "CCI,WILLR,ULTOSC,NATR,ACCBANDS,WAD" );
    DO_TEST( test_func_per_ohlc, "BOP,AVGPRICE" );
    DO_TEST( test_func_rsi,      "RSI,CMO" );
+   DO_TEST( test_func_rma,      "RMA" );
    DO_TEST( test_func_imi, "IMI" );
    DO_TEST_LBL( test_func_minmax, "MIN,MAX,MININDEX,MAXINDEX,MINMAX,MINMAXINDEX,MIDPOINT",
                                 "Rolling min/max family, MIDPOINT" );
