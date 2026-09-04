@@ -1,0 +1,1760 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake:233 (message)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      The system is: Linux - 6.18.44-fc-v24 - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /usr/bin/cc 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is GNU, found in:
+        /home/user/ta-lib/cmake-build/CMakeFiles/3.28.3/CompilerIdC/a.out
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /usr/bin/c++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is GNU, found in:
+        /home/user/ta-lib/cmake-build/CMakeFiles/3.28.3/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:6 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-RBqDTj"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-RBqDTj"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-RBqDTj'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ee551/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ee551.dir/build.make CMakeFiles/cmTC_ee551.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-RBqDTj'
+        Building C object CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o
+        /usr/bin/cc   -v -o CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.28/Modules/CMakeCCompilerABI.c
+        Using built-in specs.
+        COLLECT_GCC=/usr/bin/cc
+        OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
+        OFFLOAD_TARGET_DEFAULT=1
+        Target: x86_64-linux-gnu
+        Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c,ada,c++,go,d,fortran,objc,obj-c++,m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr,amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ee551.dir/'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/cc1 -quiet -v -imultiarch x86_64-linux-gnu /usr/share/cmake-3.28/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_ee551.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccUwrhmW.s
+        GNU C17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)
+        	compiled by GNU C version 13.3.0, GMP version 6.3.0, MPFR version 4.2.1, MPC version 1.3.1, isl version isl-0.26-GMP
+        
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        ignoring nonexistent directory "/usr/local/include/x86_64-linux-gnu"
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed/x86_64-linux-gnu"
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed"
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/../../../../x86_64-linux-gnu/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/gcc/x86_64-linux-gnu/13/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        Compiler executable checksum: b220a7f1a1f69970d969d254ad9ec166
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ee551.dir/'
+         as -v --64 -o CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o /tmp/ccUwrhmW.s
+        GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42
+        COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
+        LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.'
+        Linking C executable cmTC_ee551
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ee551.dir/link.txt --verbose=1
+        /usr/bin/cc  -v CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o -o cmTC_ee551 
+        Using built-in specs.
+        COLLECT_GCC=/usr/bin/cc
+        COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper
+        OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
+        OFFLOAD_TARGET_DEFAULT=1
+        Target: x86_64-linux-gnu
+        Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c,ada,c++,go,d,fortran,objc,obj-c++,m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr,amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
+        COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
+        LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ee551' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ee551.'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/cceSbIKg.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_ee551 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ee551' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ee551.'
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-RBqDTj'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "/usr/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/gcc/x86_64-linux-gnu/13/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/13/include] ==> [/usr/lib/gcc/x86_64-linux-gnu/13/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/lib/gcc/x86_64-linux-gnu/13/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:159 (message)"
+      - "/usr/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-RBqDTj']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ee551/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_ee551.dir/build.make CMakeFiles/cmTC_ee551.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-RBqDTj']
+        ignore line: [Building C object CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/usr/bin/cc   -v -o CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.28/Modules/CMakeCCompilerABI.c]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/usr/bin/cc]
+        ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
+        ignore line: [OFFLOAD_TARGET_DEFAULT=1]
+        ignore line: [Target: x86_64-linux-gnu]
+        ignore line: [Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c ada c++ go d fortran objc obj-c++ m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32 m64 mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ee551.dir/']
+        ignore line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/cc1 -quiet -v -imultiarch x86_64-linux-gnu /usr/share/cmake-3.28/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_ee551.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccUwrhmW.s]
+        ignore line: [GNU C17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)]
+        ignore line: [	compiled by GNU C version 13.3.0  GMP version 6.3.0  MPFR version 4.2.1  MPC version 1.3.1  isl version isl-0.26-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [ignoring nonexistent directory "/usr/local/include/x86_64-linux-gnu"]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed/x86_64-linux-gnu"]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed"]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/../../../../x86_64-linux-gnu/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/13/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Compiler executable checksum: b220a7f1a1f69970d969d254ad9ec166]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ee551.dir/']
+        ignore line: [ as -v --64 -o CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o /tmp/ccUwrhmW.s]
+        ignore line: [GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42]
+        ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
+        ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.']
+        ignore line: [Linking C executable cmTC_ee551]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ee551.dir/link.txt --verbose=1]
+        ignore line: [/usr/bin/cc  -v CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o -o cmTC_ee551 ]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/usr/bin/cc]
+        ignore line: [COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper]
+        ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
+        ignore line: [OFFLOAD_TARGET_DEFAULT=1]
+        ignore line: [Target: x86_64-linux-gnu]
+        ignore line: [Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c ada c++ go d fortran objc obj-c++ m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32 m64 mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
+        ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
+        ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ee551' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ee551.']
+        link line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/cceSbIKg.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_ee551 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+          arg [/usr/libexec/gcc/x86_64-linux-gnu/13/collect2] ==> ignore
+          arg [-plugin] ==> ignore
+          arg [/usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so] ==> ignore
+          arg [-plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/cceSbIKg.res] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [-plugin-opt=-pass-through=-lc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--as-needed] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-znow] ==> ignore
+          arg [-zrelro] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_ee551] ==> ignore
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib] ==> dir [/lib/../lib]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../..]
+          arg [CMakeFiles/cmTC_ee551.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--push-state] ==> ignore
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--pop-state] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--push-state] ==> ignore
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--pop-state] ==> ignore
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+        collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> [/usr/lib/x86_64-linux-gnu/Scrt1.o]
+        collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> [/usr/lib/x86_64-linux-gnu/crti.o]
+        collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o] ==> [/usr/lib/x86_64-linux-gnu/crtn.o]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13] ==> [/usr/lib/gcc/x86_64-linux-gnu/13]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib] ==> [/usr/lib]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib] ==> [/lib]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib] ==> [/usr/lib]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../..] ==> [/usr/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/usr/lib/x86_64-linux-gnu/Scrt1.o;/usr/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o;/usr/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/13;/usr/lib/x86_64-linux-gnu;/usr/lib;/lib/x86_64-linux-gnu;/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:6 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-DJglMD"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-DJglMD"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-DJglMD'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_60116/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_60116.dir/build.make CMakeFiles/cmTC_60116.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-DJglMD'
+        Building CXX object CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o
+        /usr/bin/c++   -v -o CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp
+        Using built-in specs.
+        COLLECT_GCC=/usr/bin/c++
+        OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
+        OFFLOAD_TARGET_DEFAULT=1
+        Target: x86_64-linux-gnu
+        Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c,ada,c++,go,d,fortran,objc,obj-c++,m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr,amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_60116.dir/'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_60116.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccSTgqaQ.s
+        GNU C++17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)
+        	compiled by GNU C version 13.3.0, GMP version 6.3.0, MPFR version 4.2.1, MPC version 1.3.1, isl version isl-0.26-GMP
+        
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        ignoring duplicate directory "/usr/include/x86_64-linux-gnu/c++/13"
+        ignoring nonexistent directory "/usr/local/include/x86_64-linux-gnu"
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed/x86_64-linux-gnu"
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed"
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/../../../../x86_64-linux-gnu/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/include/c++/13
+         /usr/include/x86_64-linux-gnu/c++/13
+         /usr/include/c++/13/backward
+         /usr/lib/gcc/x86_64-linux-gnu/13/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        Compiler executable checksum: 7896445e4990772fdae9dc0659a99266
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_60116.dir/'
+         as -v --64 -o CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccSTgqaQ.s
+        GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42
+        COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
+        LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.'
+        Linking CXX executable cmTC_60116
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_60116.dir/link.txt --verbose=1
+        /usr/bin/c++  -v CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_60116 
+        Using built-in specs.
+        COLLECT_GCC=/usr/bin/c++
+        COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper
+        OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
+        OFFLOAD_TARGET_DEFAULT=1
+        Target: x86_64-linux-gnu
+        Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c,ada,c++,go,d,fortran,objc,obj-c++,m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr,amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
+        COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
+        LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_60116' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_60116.'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccX217en.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_60116 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_60116' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_60116.'
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-DJglMD'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "/usr/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/include/c++/13]
+          add: [/usr/include/x86_64-linux-gnu/c++/13]
+          add: [/usr/include/c++/13/backward]
+          add: [/usr/lib/gcc/x86_64-linux-gnu/13/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/include/c++/13] ==> [/usr/include/c++/13]
+        collapse include dir [/usr/include/x86_64-linux-gnu/c++/13] ==> [/usr/include/x86_64-linux-gnu/c++/13]
+        collapse include dir [/usr/include/c++/13/backward] ==> [/usr/include/c++/13/backward]
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/13/include] ==> [/usr/lib/gcc/x86_64-linux-gnu/13/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/include/c++/13;/usr/include/x86_64-linux-gnu/c++/13;/usr/include/c++/13/backward;/usr/lib/gcc/x86_64-linux-gnu/13/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:159 (message)"
+      - "/usr/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-DJglMD']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_60116/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_60116.dir/build.make CMakeFiles/cmTC_60116.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-DJglMD']
+        ignore line: [Building CXX object CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/usr/bin/c++   -v -o CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/usr/bin/c++]
+        ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
+        ignore line: [OFFLOAD_TARGET_DEFAULT=1]
+        ignore line: [Target: x86_64-linux-gnu]
+        ignore line: [Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c ada c++ go d fortran objc obj-c++ m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32 m64 mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_60116.dir/']
+        ignore line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_60116.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccSTgqaQ.s]
+        ignore line: [GNU C++17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)]
+        ignore line: [	compiled by GNU C version 13.3.0  GMP version 6.3.0  MPFR version 4.2.1  MPC version 1.3.1  isl version isl-0.26-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [ignoring duplicate directory "/usr/include/x86_64-linux-gnu/c++/13"]
+        ignore line: [ignoring nonexistent directory "/usr/local/include/x86_64-linux-gnu"]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed/x86_64-linux-gnu"]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/include-fixed"]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/13/../../../../x86_64-linux-gnu/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/include/c++/13]
+        ignore line: [ /usr/include/x86_64-linux-gnu/c++/13]
+        ignore line: [ /usr/include/c++/13/backward]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/13/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Compiler executable checksum: 7896445e4990772fdae9dc0659a99266]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_60116.dir/']
+        ignore line: [ as -v --64 -o CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccSTgqaQ.s]
+        ignore line: [GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42]
+        ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
+        ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.']
+        ignore line: [Linking CXX executable cmTC_60116]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_60116.dir/link.txt --verbose=1]
+        ignore line: [/usr/bin/c++  -v CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_60116 ]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/usr/bin/c++]
+        ignore line: [COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper]
+        ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
+        ignore line: [OFFLOAD_TARGET_DEFAULT=1]
+        ignore line: [Target: x86_64-linux-gnu]
+        ignore line: [Configured with: ../src/configure -v --with-pkgversion='Ubuntu 13.3.0-6ubuntu2~24.04.1' --with-bugurl=file:///usr/share/doc/gcc-13/README.Bugs --enable-languages=c ada c++ go d fortran objc obj-c++ m2 --prefix=/usr --with-gcc-major-version-only --program-suffix=-13 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/libexec --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-libstdcxx-backtrace --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --enable-default-pie --with-system-zlib --enable-libphobos-checking=release --with-target-system-zlib=auto --enable-objc-gc=auto --enable-multiarch --disable-werror --enable-cet --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32 m64 mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-nvptx/usr amdgcn-amdhsa=/build/gcc-13-EldibY/gcc-13-13.3.0/debian/tmp-gcn/usr --enable-offload-defaulted --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --with-build-config=bootstrap-lto-lean --enable-link-serialization=2]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
+        ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
+        ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_60116' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_60116.']
+        link line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccX217en.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_60116 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+          arg [/usr/libexec/gcc/x86_64-linux-gnu/13/collect2] ==> ignore
+          arg [-plugin] ==> ignore
+          arg [/usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so] ==> ignore
+          arg [-plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/ccX217en.res] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--as-needed] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-znow] ==> ignore
+          arg [-zrelro] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_60116] ==> ignore
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib] ==> dir [/lib/../lib]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../..]
+          arg [CMakeFiles/cmTC_60116.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+        collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> [/usr/lib/x86_64-linux-gnu/Scrt1.o]
+        collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> [/usr/lib/x86_64-linux-gnu/crti.o]
+        collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o] ==> [/usr/lib/x86_64-linux-gnu/crtn.o]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13] ==> [/usr/lib/gcc/x86_64-linux-gnu/13]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib] ==> [/usr/lib]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib] ==> [/lib]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib] ==> [/usr/lib]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../..] ==> [/usr/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/usr/lib/x86_64-linux-gnu/Scrt1.o;/usr/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o;/usr/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/13;/usr/lib/x86_64-linux-gnu;/usr/lib;/lib/x86_64-linux-gnu;/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/usr/share/cmake-3.28/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
+      - "CMakeLists.txt:99 (check_c_compiler_flag)"
+    checks:
+      - "Performing Test TA_HAS_NO_MATH_ERRNO"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-A9l6Nx"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-A9l6Nx"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "TA_HAS_NO_MATH_ERRNO"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-A9l6Nx'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_90b73/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_90b73.dir/build.make CMakeFiles/cmTC_90b73.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-A9l6Nx'
+        Building C object CMakeFiles/cmTC_90b73.dir/src.c.o
+        /usr/bin/cc -DTA_HAS_NO_MATH_ERRNO  -std=gnu11   -fno-math-errno -o CMakeFiles/cmTC_90b73.dir/src.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-A9l6Nx/src.c
+        Linking C executable cmTC_90b73
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_90b73.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_90b73.dir/src.c.o -o cmTC_90b73 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-A9l6Nx'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:241 (check_include_files)"
+    checks:
+      - "Looking for include file float.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-UWbwis"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-UWbwis"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_FLOAT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-UWbwis'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_87e2d/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_87e2d.dir/build.make CMakeFiles/cmTC_87e2d.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-UWbwis'
+        Building C object CMakeFiles/cmTC_87e2d.dir/HAVE_FLOAT_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_87e2d.dir/HAVE_FLOAT_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-UWbwis/HAVE_FLOAT_H.c
+        Linking C executable cmTC_87e2d
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_87e2d.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_87e2d.dir/HAVE_FLOAT_H.c.o -o cmTC_87e2d 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-UWbwis'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:242 (check_include_files)"
+    checks:
+      - "Looking for include file inttypes.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-PzbqVj"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-PzbqVj"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_INTTYPES_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-PzbqVj'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ab32d/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ab32d.dir/build.make CMakeFiles/cmTC_ab32d.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-PzbqVj'
+        Building C object CMakeFiles/cmTC_ab32d.dir/HAVE_INTTYPES_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_ab32d.dir/HAVE_INTTYPES_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-PzbqVj/HAVE_INTTYPES_H.c
+        Linking C executable cmTC_ab32d
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ab32d.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_ab32d.dir/HAVE_INTTYPES_H.c.o -o cmTC_ab32d 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-PzbqVj'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:243 (check_include_files)"
+    checks:
+      - "Looking for include file limits.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-qClQ7m"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-qClQ7m"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_LIMITS_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-qClQ7m'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_64225/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_64225.dir/build.make CMakeFiles/cmTC_64225.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-qClQ7m'
+        Building C object CMakeFiles/cmTC_64225.dir/HAVE_LIMITS_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_64225.dir/HAVE_LIMITS_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-qClQ7m/HAVE_LIMITS_H.c
+        Linking C executable cmTC_64225
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_64225.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_64225.dir/HAVE_LIMITS_H.c.o -o cmTC_64225 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-qClQ7m'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:244 (check_include_files)"
+    checks:
+      - "Looking for include file locale.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-1IJ9Uo"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-1IJ9Uo"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_LOCALE_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-1IJ9Uo'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_a4284/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_a4284.dir/build.make CMakeFiles/cmTC_a4284.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-1IJ9Uo'
+        Building C object CMakeFiles/cmTC_a4284.dir/HAVE_LOCALE_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_a4284.dir/HAVE_LOCALE_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-1IJ9Uo/HAVE_LOCALE_H.c
+        Linking C executable cmTC_a4284
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a4284.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_a4284.dir/HAVE_LOCALE_H.c.o -o cmTC_a4284 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-1IJ9Uo'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:245 (check_include_files)"
+    checks:
+      - "Looking for include file stddef.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-I2ekoZ"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-I2ekoZ"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STDDEF_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-I2ekoZ'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_98411/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_98411.dir/build.make CMakeFiles/cmTC_98411.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-I2ekoZ'
+        Building C object CMakeFiles/cmTC_98411.dir/HAVE_STDDEF_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_98411.dir/HAVE_STDDEF_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-I2ekoZ/HAVE_STDDEF_H.c
+        Linking C executable cmTC_98411
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_98411.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_98411.dir/HAVE_STDDEF_H.c.o -o cmTC_98411 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-I2ekoZ'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:246 (check_include_files)"
+    checks:
+      - "Looking for include file stdint.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-6GNQ2q"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-6GNQ2q"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STDINT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-6GNQ2q'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6f1e0/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6f1e0.dir/build.make CMakeFiles/cmTC_6f1e0.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-6GNQ2q'
+        Building C object CMakeFiles/cmTC_6f1e0.dir/HAVE_STDINT_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_6f1e0.dir/HAVE_STDINT_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-6GNQ2q/HAVE_STDINT_H.c
+        Linking C executable cmTC_6f1e0
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6f1e0.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_6f1e0.dir/HAVE_STDINT_H.c.o -o cmTC_6f1e0 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-6GNQ2q'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:247 (check_include_files)"
+    checks:
+      - "Looking for include file stdlib.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Zfy6tJ"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Zfy6tJ"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STDLIB_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Zfy6tJ'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_fda89/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_fda89.dir/build.make CMakeFiles/cmTC_fda89.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Zfy6tJ'
+        Building C object CMakeFiles/cmTC_fda89.dir/HAVE_STDLIB_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_fda89.dir/HAVE_STDLIB_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Zfy6tJ/HAVE_STDLIB_H.c
+        Linking C executable cmTC_fda89
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fda89.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_fda89.dir/HAVE_STDLIB_H.c.o -o cmTC_fda89 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Zfy6tJ'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:248 (check_include_files)"
+    checks:
+      - "Looking for include file string.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Hao0jf"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Hao0jf"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRING_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Hao0jf'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_5c65d/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_5c65d.dir/build.make CMakeFiles/cmTC_5c65d.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Hao0jf'
+        Building C object CMakeFiles/cmTC_5c65d.dir/HAVE_STRING_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_5c65d.dir/HAVE_STRING_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Hao0jf/HAVE_STRING_H.c
+        Linking C executable cmTC_5c65d
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5c65d.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_5c65d.dir/HAVE_STRING_H.c.o -o cmTC_5c65d 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-Hao0jf'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:249 (check_include_files)"
+    checks:
+      - "Looking for include file unistd.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-WxwdFd"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-WxwdFd"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_UNISTD_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-WxwdFd'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_9e457/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_9e457.dir/build.make CMakeFiles/cmTC_9e457.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-WxwdFd'
+        Building C object CMakeFiles/cmTC_9e457.dir/HAVE_UNISTD_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_9e457.dir/HAVE_UNISTD_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-WxwdFd/HAVE_UNISTD_H.c
+        Linking C executable cmTC_9e457
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9e457.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_9e457.dir/HAVE_UNISTD_H.c.o -o cmTC_9e457 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-WxwdFd'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:250 (check_include_files)"
+    checks:
+      - "Looking for include file wchar.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-U140o7"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-U140o7"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_WCHAR_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-U140o7'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6a849/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6a849.dir/build.make CMakeFiles/cmTC_6a849.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-U140o7'
+        Building C object CMakeFiles/cmTC_6a849.dir/HAVE_WCHAR_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_6a849.dir/HAVE_WCHAR_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-U140o7/HAVE_WCHAR_H.c
+        Linking C executable cmTC_6a849
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6a849.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_6a849.dir/HAVE_WCHAR_H.c.o -o cmTC_6a849 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-U140o7'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:251 (check_include_files)"
+    checks:
+      - "Looking for include file wctype.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-h1tHrL"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-h1tHrL"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_WCTYPE_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-h1tHrL'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_04a0e/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_04a0e.dir/build.make CMakeFiles/cmTC_04a0e.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-h1tHrL'
+        Building C object CMakeFiles/cmTC_04a0e.dir/HAVE_WCTYPE_H.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_04a0e.dir/HAVE_WCTYPE_H.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-h1tHrL/HAVE_WCTYPE_H.c
+        Linking C executable cmTC_04a0e
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_04a0e.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_04a0e.dir/HAVE_WCTYPE_H.c.o -o cmTC_04a0e 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-h1tHrL'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:252 (check_function_exists)"
+    checks:
+      - "Looking for floor"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_FLOOR"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_21473/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_21473.dir/build.make CMakeFiles/cmTC_21473.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI'
+        Building C object CMakeFiles/cmTC_21473.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=floor -std=gnu11 -o CMakeFiles/cmTC_21473.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘floor’; expected ‘double(double)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI/CheckFunctionExists.c:1:1: note: ‘floor’ is declared in header ‘<math.h>’
+          +++ |+#include <math.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_21473
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_21473.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=floor CMakeFiles/cmTC_21473.dir/CheckFunctionExists.c.o -o cmTC_21473 
+        /usr/bin/ld: CMakeFiles/cmTC_21473.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x14): undefined reference to `floor'
+        collect2: error: ld returned 1 exit status
+        gmake[1]: *** [CMakeFiles/cmTC_21473.dir/build.make:99: cmTC_21473] Error 1
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ShcoeI'
+        gmake: *** [Makefile:127: cmTC_21473/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:253 (check_function_exists)"
+    checks:
+      - "Looking for isascii"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-vGLX2v"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-vGLX2v"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_ISASCII"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-vGLX2v'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6b353/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6b353.dir/build.make CMakeFiles/cmTC_6b353.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-vGLX2v'
+        Building C object CMakeFiles/cmTC_6b353.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=isascii -std=gnu11 -o CMakeFiles/cmTC_6b353.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-vGLX2v/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘isascii’; expected ‘int(int)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-vGLX2v/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        Linking C executable cmTC_6b353
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6b353.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=isascii CMakeFiles/cmTC_6b353.dir/CheckFunctionExists.c.o -o cmTC_6b353 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-vGLX2v'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:254 (check_function_exists)"
+    checks:
+      - "Looking for localeconv"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-tYMwr7"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-tYMwr7"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_LOCALECONV"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-tYMwr7'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d06ba/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_d06ba.dir/build.make CMakeFiles/cmTC_d06ba.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-tYMwr7'
+        Building C object CMakeFiles/cmTC_d06ba.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=localeconv -std=gnu11 -o CMakeFiles/cmTC_d06ba.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-tYMwr7/CheckFunctionExists.c
+        Linking C executable cmTC_d06ba
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d06ba.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=localeconv CMakeFiles/cmTC_d06ba.dir/CheckFunctionExists.c.o -o cmTC_d06ba 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-tYMwr7'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:255 (check_function_exists)"
+    checks:
+      - "Looking for mblen"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-W8uTdr"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-W8uTdr"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_MBLEN"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-W8uTdr'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_b935a/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_b935a.dir/build.make CMakeFiles/cmTC_b935a.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-W8uTdr'
+        Building C object CMakeFiles/cmTC_b935a.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=mblen -std=gnu11 -o CMakeFiles/cmTC_b935a.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-W8uTdr/CheckFunctionExists.c
+        Linking C executable cmTC_b935a
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b935a.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=mblen CMakeFiles/cmTC_b935a.dir/CheckFunctionExists.c.o -o cmTC_b935a 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-W8uTdr'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:256 (check_function_exists)"
+    checks:
+      - "Looking for memmove"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_MEMMOVE"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_9d513/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_9d513.dir/build.make CMakeFiles/cmTC_9d513.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu'
+        Building C object CMakeFiles/cmTC_9d513.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=memmove -std=gnu11 -o CMakeFiles/cmTC_9d513.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘memmove’; expected ‘void *(void *, const void *, long unsigned int)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu/CheckFunctionExists.c:1:1: note: ‘memmove’ is declared in header ‘<string.h>’
+          +++ |+#include <string.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_9d513
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9d513.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=memmove CMakeFiles/cmTC_9d513.dir/CheckFunctionExists.c.o -o cmTC_9d513 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hBbhCu'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:257 (check_function_exists)"
+    checks:
+      - "Looking for memset"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_MEMSET"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6d1f0/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6d1f0.dir/build.make CMakeFiles/cmTC_6d1f0.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e'
+        Building C object CMakeFiles/cmTC_6d1f0.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=memset -std=gnu11 -o CMakeFiles/cmTC_6d1f0.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘memset’; expected ‘void *(void *, int,  long unsigned int)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e/CheckFunctionExists.c:1:1: note: ‘memset’ is declared in header ‘<string.h>’
+          +++ |+#include <string.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_6d1f0
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6d1f0.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=memset CMakeFiles/cmTC_6d1f0.dir/CheckFunctionExists.c.o -o cmTC_6d1f0 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-VwAg0e'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:258 (check_function_exists)"
+    checks:
+      - "Looking for modf"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_MODF"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f3325/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f3325.dir/build.make CMakeFiles/cmTC_f3325.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu'
+        Building C object CMakeFiles/cmTC_f3325.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=modf -std=gnu11 -o CMakeFiles/cmTC_f3325.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘modf’; expected ‘double(double,  double *)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu/CheckFunctionExists.c:1:1: note: ‘modf’ is declared in header ‘<math.h>’
+          +++ |+#include <math.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_f3325
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f3325.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=modf CMakeFiles/cmTC_f3325.dir/CheckFunctionExists.c.o -o cmTC_f3325 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZLIqvu'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:259 (check_function_exists)"
+    checks:
+      - "Looking for pow"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_POW"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_582e6/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_582e6.dir/build.make CMakeFiles/cmTC_582e6.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT'
+        Building C object CMakeFiles/cmTC_582e6.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pow -std=gnu11 -o CMakeFiles/cmTC_582e6.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘pow’; expected ‘double(double,  double)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT/CheckFunctionExists.c:1:1: note: ‘pow’ is declared in header ‘<math.h>’
+          +++ |+#include <math.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_582e6
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_582e6.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pow CMakeFiles/cmTC_582e6.dir/CheckFunctionExists.c.o -o cmTC_582e6 
+        /usr/bin/ld: CMakeFiles/cmTC_582e6.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x14): undefined reference to `pow'
+        collect2: error: ld returned 1 exit status
+        gmake[1]: *** [CMakeFiles/cmTC_582e6.dir/build.make:99: cmTC_582e6] Error 1
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-NBT6kT'
+        gmake: *** [Makefile:127: cmTC_582e6/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:260 (check_function_exists)"
+    checks:
+      - "Looking for sqrt"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SQRT"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_30ff8/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_30ff8.dir/build.make CMakeFiles/cmTC_30ff8.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B'
+        Building C object CMakeFiles/cmTC_30ff8.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=sqrt -std=gnu11 -o CMakeFiles/cmTC_30ff8.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘sqrt’; expected ‘double(double)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B/CheckFunctionExists.c:1:1: note: ‘sqrt’ is declared in header ‘<math.h>’
+          +++ |+#include <math.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_30ff8
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_30ff8.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=sqrt CMakeFiles/cmTC_30ff8.dir/CheckFunctionExists.c.o -o cmTC_30ff8 
+        /usr/bin/ld: CMakeFiles/cmTC_30ff8.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x14): undefined reference to `sqrt'
+        collect2: error: ld returned 1 exit status
+        gmake[1]: *** [CMakeFiles/cmTC_30ff8.dir/build.make:99: cmTC_30ff8] Error 1
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N78g8B'
+        gmake: *** [Makefile:127: cmTC_30ff8/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:261 (check_function_exists)"
+    checks:
+      - "Looking for strcasecmp"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hVF3Og"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hVF3Og"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRCASECMP"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hVF3Og'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_54b81/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_54b81.dir/build.make CMakeFiles/cmTC_54b81.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hVF3Og'
+        Building C object CMakeFiles/cmTC_54b81.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strcasecmp -std=gnu11 -o CMakeFiles/cmTC_54b81.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hVF3Og/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘strcasecmp’; expected ‘int(const char *, const char *)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hVF3Og/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        Linking C executable cmTC_54b81
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_54b81.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strcasecmp CMakeFiles/cmTC_54b81.dir/CheckFunctionExists.c.o -o cmTC_54b81 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-hVF3Og'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:262 (check_function_exists)"
+    checks:
+      - "Looking for strchr"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRCHR"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_fd3ac/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_fd3ac.dir/build.make CMakeFiles/cmTC_fd3ac.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT'
+        Building C object CMakeFiles/cmTC_fd3ac.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strchr -std=gnu11 -o CMakeFiles/cmTC_fd3ac.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘strchr’; expected ‘char *(const char *, int)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT/CheckFunctionExists.c:1:1: note: ‘strchr’ is declared in header ‘<string.h>’
+          +++ |+#include <string.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_fd3ac
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fd3ac.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strchr CMakeFiles/cmTC_fd3ac.dir/CheckFunctionExists.c.o -o cmTC_fd3ac 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-fRhWOT'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:263 (check_function_exists)"
+    checks:
+      - "Looking for strerror"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ekPeYF"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ekPeYF"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRERROR"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ekPeYF'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_4c3cc/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_4c3cc.dir/build.make CMakeFiles/cmTC_4c3cc.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ekPeYF'
+        Building C object CMakeFiles/cmTC_4c3cc.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strerror -std=gnu11 -o CMakeFiles/cmTC_4c3cc.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ekPeYF/CheckFunctionExists.c
+        Linking C executable cmTC_4c3cc
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4c3cc.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strerror CMakeFiles/cmTC_4c3cc.dir/CheckFunctionExists.c.o -o cmTC_4c3cc 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ekPeYF'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:264 (check_function_exists)"
+    checks:
+      - "Looking for strncasecmp"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-k3vY10"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-k3vY10"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRNCASECMP"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-k3vY10'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_b71c5/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_b71c5.dir/build.make CMakeFiles/cmTC_b71c5.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-k3vY10'
+        Building C object CMakeFiles/cmTC_b71c5.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strncasecmp -std=gnu11 -o CMakeFiles/cmTC_b71c5.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-k3vY10/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘strncasecmp’; expected ‘int(const char *, const char *, long unsigned int)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-k3vY10/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        Linking C executable cmTC_b71c5
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b71c5.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strncasecmp CMakeFiles/cmTC_b71c5.dir/CheckFunctionExists.c.o -o cmTC_b71c5 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-k3vY10'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:265 (check_function_exists)"
+    checks:
+      - "Looking for strrchr"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRRCHR"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_24cb7/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_24cb7.dir/build.make CMakeFiles/cmTC_24cb7.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo'
+        Building C object CMakeFiles/cmTC_24cb7.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strrchr -std=gnu11 -o CMakeFiles/cmTC_24cb7.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘strrchr’; expected ‘char *(const char *, int)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo/CheckFunctionExists.c:1:1: note: ‘strrchr’ is declared in header ‘<string.h>’
+          +++ |+#include <string.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_24cb7
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_24cb7.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strrchr CMakeFiles/cmTC_24cb7.dir/CheckFunctionExists.c.o -o cmTC_24cb7 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-LEZaoo'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:266 (check_function_exists)"
+    checks:
+      - "Looking for strstr"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRSTR"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_bc516/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_bc516.dir/build.make CMakeFiles/cmTC_bc516.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB'
+        Building C object CMakeFiles/cmTC_bc516.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strstr -std=gnu11 -o CMakeFiles/cmTC_bc516.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘strstr’; expected ‘char *(const char *, const char *)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB/CheckFunctionExists.c:1:1: note: ‘strstr’ is declared in header ‘<string.h>’
+          +++ |+#include <string.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_bc516
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bc516.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strstr CMakeFiles/cmTC_bc516.dir/CheckFunctionExists.c.o -o cmTC_bc516 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-a2ZliB'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:267 (check_function_exists)"
+    checks:
+      - "Looking for strtol"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-jxLBVX"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-jxLBVX"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRTOL"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-jxLBVX'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d8965/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_d8965.dir/build.make CMakeFiles/cmTC_d8965.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-jxLBVX'
+        Building C object CMakeFiles/cmTC_d8965.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strtol -std=gnu11 -o CMakeFiles/cmTC_d8965.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-jxLBVX/CheckFunctionExists.c
+        Linking C executable cmTC_d8965
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d8965.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strtol CMakeFiles/cmTC_d8965.dir/CheckFunctionExists.c.o -o cmTC_d8965 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-jxLBVX'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:268 (check_function_exists)"
+    checks:
+      - "Looking for strtoul"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N6bT5i"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N6bT5i"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRTOUL"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N6bT5i'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_92252/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_92252.dir/build.make CMakeFiles/cmTC_92252.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N6bT5i'
+        Building C object CMakeFiles/cmTC_92252.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strtoul -std=gnu11 -o CMakeFiles/cmTC_92252.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N6bT5i/CheckFunctionExists.c
+        Linking C executable cmTC_92252
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_92252.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strtoul CMakeFiles/cmTC_92252.dir/CheckFunctionExists.c.o -o cmTC_92252 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-N6bT5i'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:269 (check_function_exists)"
+    checks:
+      - "Looking for strcoll"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-dccvVL"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-dccvVL"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRCOLL"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-dccvVL'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_109c6/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_109c6.dir/build.make CMakeFiles/cmTC_109c6.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-dccvVL'
+        Building C object CMakeFiles/cmTC_109c6.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strcoll -std=gnu11 -o CMakeFiles/cmTC_109c6.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-dccvVL/CheckFunctionExists.c
+        Linking C executable cmTC_109c6
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_109c6.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strcoll CMakeFiles/cmTC_109c6.dir/CheckFunctionExists.c.o -o cmTC_109c6 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-dccvVL'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:270 (check_function_exists)"
+    checks:
+      - "Looking for strftime"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STRFTIME"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ca33b/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ca33b.dir/build.make CMakeFiles/cmTC_ca33b.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI'
+        Building C object CMakeFiles/cmTC_ca33b.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=strftime -std=gnu11 -o CMakeFiles/cmTC_ca33b.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘strftime’; expected ‘long unsigned int(char *, long unsigned int,  const char *, const void *)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI/CheckFunctionExists.c:1:1: note: ‘strftime’ is declared in header ‘<time.h>’
+          +++ |+#include <time.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_ca33b
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ca33b.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=strftime CMakeFiles/cmTC_ca33b.dir/CheckFunctionExists.c.o -o cmTC_ca33b 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-10nGOI'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:271 (check_function_exists)"
+    checks:
+      - "Looking for vprintf"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_VPRINTF"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_cf723/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_cf723.dir/build.make CMakeFiles/cmTC_cf723.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN'
+        Building C object CMakeFiles/cmTC_cf723.dir/CheckFunctionExists.c.o
+        /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=vprintf -std=gnu11 -o CMakeFiles/cmTC_cf723.dir/CheckFunctionExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN/CheckFunctionExists.c
+        <command-line>: warning: conflicting types for built-in function ‘vprintf’; expected ‘int(const char *, __va_list_tag *)’ [-Wbuiltin-declaration-mismatch]
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN/CheckFunctionExists.c:7:3: note: in expansion of macro ‘CHECK_FUNCTION_EXISTS’
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^~~~~~~~~~~~~~~~~~~~~
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN/CheckFunctionExists.c:1:1: note: ‘vprintf’ is declared in header ‘<stdio.h>’
+          +++ |+#include <stdio.h>
+            1 | #ifdef CHECK_FUNCTION_EXISTS
+        Linking C executable cmTC_cf723
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_cf723.dir/link.txt --verbose=1
+        /usr/bin/cc  -DCHECK_FUNCTION_EXISTS=vprintf CMakeFiles/cmTC_cf723.dir/CheckFunctionExists.c.o -o cmTC_cf723 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-i8s1jN'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/CheckTypeSize.cmake:250 (check_include_file)"
+      - "CMakeLists.txt:272 (check_type_size)"
+    checks:
+      - "Looking for sys/types.h"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZIE8dc"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZIE8dc"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_TYPES_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZIE8dc'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_4e838/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_4e838.dir/build.make CMakeFiles/cmTC_4e838.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZIE8dc'
+        Building C object CMakeFiles/cmTC_4e838.dir/CheckIncludeFile.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_4e838.dir/CheckIncludeFile.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZIE8dc/CheckIncludeFile.c
+        Linking C executable cmTC_4e838
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4e838.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_4e838.dir/CheckIncludeFile.c.o -o cmTC_4e838 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-ZIE8dc'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckTypeSize.cmake:146 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/CheckTypeSize.cmake:271 (__check_type_size_impl)"
+      - "CMakeLists.txt:272 (check_type_size)"
+    checks:
+      - "Check size of ptrdiff_t"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-5uDzvA"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-5uDzvA"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIZEOF_PTRDIFF_T"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-5uDzvA'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_463e0/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_463e0.dir/build.make CMakeFiles/cmTC_463e0.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-5uDzvA'
+        Building C object CMakeFiles/cmTC_463e0.dir/SIZEOF_PTRDIFF_T.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_463e0.dir/SIZEOF_PTRDIFF_T.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-5uDzvA/SIZEOF_PTRDIFF_T.c
+        Linking C executable cmTC_463e0
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_463e0.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_463e0.dir/SIZEOF_PTRDIFF_T.c.o -o cmTC_463e0 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-5uDzvA'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckTypeSize.cmake:146 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/CheckTypeSize.cmake:271 (__check_type_size_impl)"
+      - "CMakeLists.txt:278 (check_type_size)"
+    checks:
+      - "Check size of size_t"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-czsGz8"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-czsGz8"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIZEOF_SIZE_T"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-czsGz8'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_66e80/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_66e80.dir/build.make CMakeFiles/cmTC_66e80.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-czsGz8'
+        Building C object CMakeFiles/cmTC_66e80.dir/SIZEOF_SIZE_T.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_66e80.dir/SIZEOF_SIZE_T.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-czsGz8/SIZEOF_SIZE_T.c
+        Linking C executable cmTC_66e80
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_66e80.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_66e80.dir/SIZEOF_SIZE_T.c.o -o cmTC_66e80 
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-czsGz8'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/CheckSymbolExists.cmake:140 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/CheckSymbolExists.cmake:66 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "CMakeLists.txt:285 (check_symbol_exists)"
+    checks:
+      - "Looking for struct tm"
+    directories:
+      source: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f"
+      binary: "/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "TM_IN_SYS_TIME"
+      cached: true
+      stdout: |
+        Change Dir: '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_2ae42/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_2ae42.dir/build.make CMakeFiles/cmTC_2ae42.dir/build
+        gmake[1]: Entering directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f'
+        Building C object CMakeFiles/cmTC_2ae42.dir/CheckSymbolExists.c.o
+        /usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_2ae42.dir/CheckSymbolExists.c.o -c /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f/CheckSymbolExists.c
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f/CheckSymbolExists.c: In function ‘main’:
+        /home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f/CheckSymbolExists.c:7:19: error: expected expression before ‘struct’
+            7 |   return ((int*)(&struct tm))[argc];
+              |                   ^~~~~~
+        gmake[1]: *** [CMakeFiles/cmTC_2ae42.dir/build.make:78: CMakeFiles/cmTC_2ae42.dir/CheckSymbolExists.c.o] Error 1
+        gmake[1]: Leaving directory '/home/user/ta-lib/cmake-build/CMakeFiles/CMakeScratch/TryCompile-t2002f'
+        gmake: *** [Makefile:127: cmTC_2ae42/fast] Error 2
+        
+      exitCode: 2
+...

@@ -1,0 +1,6 @@
+# Build with the default target CPU (baseline x86-64 / aarch64).
+# This is what crates.io users get by default, so it is what the local
+# servers and benchmarks must measure — no native-tuning bias vs the
+# baseline-built C library and third-party comparison servers.
+# Opt into native tuning explicitly: RUSTFLAGS="-C target-cpu=native"
+[build]

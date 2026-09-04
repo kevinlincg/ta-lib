@@ -1,0 +1,17 @@
+/home/user/ta-lib/cmake-build/CMakeFiles/ta-lib.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/ta-lib-static.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/ta_regtest.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/ta_bench.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/ta_bench_direct.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/stage_benchmarks.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/ensure_ta_regtest_in_bin.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/test.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/regtest.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/package.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/package_source.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/edit_cache.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/rebuild_cache.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/list_install_components.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/install.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/install/local.dir
+/home/user/ta-lib/cmake-build/CMakeFiles/install/strip.dir

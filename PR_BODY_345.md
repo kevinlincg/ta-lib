@@ -142,9 +142,28 @@ pre-merge results for those legs are the ones quoted above.
 
 ### Internal-error site id
 
-`internal_error_ids.yaml` gives this branch's one new guard `FOSC.extrema: 405`.
-404 went to ZLEMA on dev, and 405-408 are staggered across the four unmerged
-new-function branches (FOSC 405, VHF 406, VORTEX 407, ER 408) so that they
-carry disjoint ids in any merge order. A git merge of two such branches does
-not conflict on the ledger's `sites:` map — the collision surfaces only as
-`one_id_names_one_guard`, which is why the numbers are separated up front.
+`internal_error_ids.yaml` gives this branch's one new guard `FOSC.extrema: 406`.
+404 went to ZLEMA and 405 to VHF, both now on dev; 406-409 are staggered across
+the remaining unmerged new-function branches (FOSC 406, VORTEX 407, ER 408,
+ERI 409) so that they carry disjoint ids in any merge order. The staggering was
+written while VHF was still unmerged and had reserved 406 for it; VHF landed on
+405 instead, the number FOSC was holding, so FOSC moved up to 406 in the dev
+merge below. A git merge of two such branches does not conflict on the ledger's
+`sites:` map — the collision surfaces only as `one_id_names_one_guard`, which is
+what caught this one.
+
+## Refreshed onto dev a second time (dev at c6a812eb)
+
+Since the refresh above, dev landed VHF (#346) and its follow-up. This branch now
+merges `upstream/dev` at `c6a812eb`. Every conflict was in a generated tier and was resolved by regenerating, except the ledger entry above: VHF's 405 and FOSC's 405 merged without a conflict, so FOSC was moved to 406 by hand and the `next:` high-water mark raised to 407.
+
+Re-run after this merge:
+
+- `scripts/build.py regen-check` — OK, "ta_codegen output matches the committed source"
+- `scripts/build.py test` — the full C reference suite, all tests succeeded
+- `cargo test --test internal_error_id_suite` in `ta_codegen/generator` — 4 passed,
+  including `one_id_names_one_guard`
+
+**I did not re-run** the rest of the generator's suite, any `--xlang-hash` leg, the
+cross-language `ta_regtest --codegen` run, `clippy`, or the C# build after this merge.
+The pre-merge results for those are the ones quoted above.

@@ -1,0 +1,1 @@
+/usr/bin/cc -O3 -DNDEBUG CMakeFiles/ta_bench_direct.dir/src/tools/ta_bench/ta_bench_direct.c.o -o bin/ta_bench_direct  libta-lib.a -lm 
