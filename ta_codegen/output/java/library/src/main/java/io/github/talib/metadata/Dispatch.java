@@ -593,6 +593,9 @@ final class Dispatch {
          case "WMA":
             return core.WMA(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "ZLEMA":
+            return core.ZLEMA(
+               startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
          default:
             throw new IllegalArgumentException("no such function: " + h.info().name());
       }
@@ -962,6 +965,8 @@ final class Dispatch {
             return core.WILLR_Lookback(h.intOpt(0));
          case "WMA":
             return core.WMA_Lookback(h.intOpt(0));
+         case "ZLEMA":
+            return core.ZLEMA_Lookback(h.intOpt(0));
          default:
             throw new IllegalArgumentException("no such function: " + h.info().name());
       }

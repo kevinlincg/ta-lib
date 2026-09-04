@@ -298,35 +298,88 @@ fn every_return_in_a_peek_answers_a_code() {
 }
 
 
-/// Replace every `sp-><buffer>[...]` with one token, so two bodies that differ
-/// only in which slot they name compare equal.
-fn mask_buffer_reads(body: &str, buffers: &BTreeSet<String>) -> String {
+/// Replace every read of a handle buffer with one token, so two bodies that
+/// differ only in which slot they name compare equal.
+///
+/// Both spellings, because the frames do not agree on one: update subscripts
+/// `sp->ring[...]` in place, while a peek frame binds the pointer first and
+/// subscripts the bound local. That is invisible until a function FUSES a
+/// buffer read -- the two spellings then reach the comparison below as
+/// different fma() text and read as a divergence that is not there.
+///
+/// The bound spelling is masked ONLY on a line carrying an `fma(`, which is
+/// where the two frames must agree character for character. Everywhere else the
+/// bound form stays as written and keeps being compared, so this buys the fused
+/// sites their equivalence without widening what the rest of the body erases.
+/// Answers how many bound-form reads it masked, which is the only thing that
+/// says that half still runs.
+fn mask_buffer_reads(body: &str, buffers: &BTreeSet<String>) -> (String, usize) {
+    let mut out = String::with_capacity(body.len());
+    let mut bound = 0usize;
+    for (n, line) in body.lines().enumerate() {
+        if n > 0 {
+            out.push('\n');
+        }
+        let (masked, b) = mask_line(line, buffers, line.contains("fma("));
+        out.push_str(&masked);
+        bound += b;
+    }
+    (out, bound)
+}
+
+/// [`mask_buffer_reads`] for one line. `allow_bound` admits the bound spelling.
+fn mask_line(body: &str, buffers: &BTreeSet<String>, allow_bound: bool) -> (String, usize) {
     let b: Vec<char> = body.chars().collect();
     let mut out = String::with_capacity(body.len());
+    let mut bound = 0usize;
     let mut i = 0usize;
+    // The close of the subscript opening at `at`, or None if it never closes.
+    let close = |at: usize| -> Option<usize> {
+        let mut depth = 0usize;
+        let mut k = at;
+        while k < b.len() {
+            match b[k] {
+                '[' => depth += 1,
+                ']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(k);
+                    }
+                }
+                _ => {}
+            }
+            k += 1;
+        }
+        None
+    };
     while i < b.len() {
         if b[i..].starts_with(&['s', 'p', '-', '>']) {
             let rest: String = b[i + 4..].iter().collect();
             if let Some(br) = rest.find('[') {
                 let name = &rest[..br];
                 if buffers.contains(name) {
-                    // Skip to the bracket that closes this subscript.
-                    let mut depth = 0usize;
-                    let mut k = i + 4 + br;
-                    while k < b.len() {
-                        match b[k] {
-                            '[' => depth += 1,
-                            ']' => {
-                                depth -= 1;
-                                if depth == 0 {
-                                    break;
-                                }
-                            }
-                            _ => {}
-                        }
-                        k += 1;
+                    if let Some(k) = close(i + 4 + br) {
+                        out.push_str("<BUF>");
+                        i = k + 1;
+                        continue;
                     }
+                }
+            }
+        }
+        // The same read through a bound local: an identifier that IS a handle
+        // buffer, at a word start, subscripted. `sp->` is handled above, so a
+        // name reached through the qualifier never arrives here.
+        let word_start = i == 0 || !(b[i - 1].is_alphanumeric() || b[i - 1] == '_' || b[i - 1] == '>');
+        if allow_bound && word_start && (b[i].is_alphabetic() || b[i] == '_') {
+            let mut e = i;
+            while e < b.len() && (b[e].is_alphanumeric() || b[e] == '_') {
+                e += 1;
+            }
+            let name: String = b[i..e].iter().collect();
+            if e < b.len() && b[e] == '[' && buffers.contains(&name) {
+                if let Some(k) = close(e) {
                     out.push_str("<BUF>");
+                    bound += 1;
                     i = k + 1;
                     continue;
                 }
@@ -335,7 +388,7 @@ fn mask_buffer_reads(body: &str, buffers: &BTreeSet<String>) -> String {
         out.push(b[i]);
         i += 1;
     }
-    out
+    (out, bound)
 }
 
 /// Collapse `(<idx> != pkSlotN) ? <read> : pkValN` down to `<read>` — the
@@ -515,8 +568,8 @@ fn assignments_to(body: &str, targets: &BTreeSet<String>) -> Vec<String> {
 /// the other. It is the same equivalence [`fma::stream_base`] classifies by,
 /// applied to BOTH bodies rather than to one, and the buffers are already
 /// masked by here, so nothing but a scalar field carries the prefix.
-fn unrewritten(body: &str, buffers: &BTreeSet<String>) -> (String, usize, usize, usize, usize) {
-    let masked = mask_buffer_reads(body, buffers);
+fn unrewritten(body: &str, buffers: &BTreeSet<String>) -> (String, usize, usize, usize, usize, usize) {
+    let (masked, bound) = mask_buffer_reads(body, buffers);
     let (mut collapsed, mut unbalanced, mut unqualified, mut binds) = (0, 0, 0, 0usize);
     let out: Vec<String> = masked
         .lines()
@@ -539,7 +592,7 @@ fn unrewritten(body: &str, buffers: &BTreeSet<String>) -> (String, usize, usize,
             q
         })
         .collect();
-    (out.join("\n"), collapsed, unbalanced, unqualified, binds)
+    (out.join("\n"), collapsed, unbalanced, unqualified, binds, bound)
 }
 
 /// `x = x;` — what an elected or localized scalar's bind collapses to once the
@@ -841,6 +894,7 @@ fn a_peek_frame_fuses_every_multiply_add_it_still_evaluates() {
     let (mut aligned, mut unanchored, mut collapsed) = (0usize, 0usize, 0usize);
     let (mut unqualified_step, mut unqualified_peek) = (0usize, 0usize);
     let (mut binds_step, mut binds_peek) = (0usize, 0usize);
+    let mut bound_masked = 0usize;
     let mut refused: Vec<String> = Vec::new();
     let mut mismatches: Vec<String> = Vec::new();
 
@@ -856,8 +910,9 @@ fn a_peek_frame_fuses_every_multiply_add_it_still_evaluates() {
         };
         pairs += 1;
         let buffers = handle_buffers(&src, &upper);
-        let (u, _, ub_step, q_step, b_step) = unrewritten(&step, &buffers);
-        let (p, n, ub_peek, q_peek, b_peek) = unrewritten(&peek, &buffers);
+        let (u, _, ub_step, q_step, b_step, _) = unrewritten(&step, &buffers);
+        let (p, n, ub_peek, q_peek, b_peek, bound_peek) = unrewritten(&peek, &buffers);
+        bound_masked += bound_peek;
         collapsed += n;
         unqualified_step += q_step;
         unqualified_peek += q_peek;
@@ -936,6 +991,12 @@ fn a_peek_frame_fuses_every_multiply_add_it_still_evaluates() {
         "{unqualified_step} update and {unqualified_peek} peek line(s) still read state \
          through `sp->` after their binds were dropped — a frame that read none would \
          make the comparisons above trivially equal"
+    );
+    assert!(
+        bound_masked >= 1,
+        "{bound_masked} peek buffer read(s) masked through a bound local -- at zero the \
+         mask's second spelling is dead, and a fused buffer read would go back to \
+         reading as a divergence"
     );
     assert!(
         binds_step >= 40 && binds_peek >= 200,

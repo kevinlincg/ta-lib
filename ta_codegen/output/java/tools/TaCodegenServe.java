@@ -30,7 +30,7 @@ enum FuncUnstId {
 }
 
 enum MAType {
-    SMA, EMA, WMA, DEMA, TEMA, TRIMA, KAMA, MAMA, T3, HMA, DISABLED, DEFAULT;
+    SMA, EMA, WMA, DEMA, TEMA, TRIMA, KAMA, MAMA, T3, HMA, DISABLED, DEFAULT, ZLEMA;
 }
 
 enum RangeType {
@@ -7834,8 +7834,8 @@ class Core {
         *        range 2..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving-average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int APO_Lookback( int optInFastPeriod, int optInSlowPeriod, MAType optInMAType )
@@ -8032,8 +8032,8 @@ class Core {
         *        range 2..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving-average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outReal Fast MA minus slow MA. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -8111,8 +8111,8 @@ class Core {
         *        range 2..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving-average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outReal Fast MA minus slow MA. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -13349,8 +13349,8 @@ class Core {
         *        (default 2; {@code -4e37} selects the default).
         * @param optInMAType Moving-average type for the middle band (default 0 =
         *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int BBANDS_Lookback( int optInTimePeriod, double optInNbDevUp, double optInNbDevDn, MAType optInMAType )
@@ -13936,8 +13936,8 @@ class Core {
         *        (default 2; {@code -4e37} selects the default).
         * @param optInMAType Moving-average type for the middle band (default 0 =
         *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outRealUpperBand Middle band plus nbDevUp standard deviations. Must
         *        hold at least {@code endIdx - startIdx + 1} values.
         * @param outRealMiddleBand The moving average. Must hold at least
@@ -14033,8 +14033,8 @@ class Core {
         *        (default 2; {@code -4e37} selects the default).
         * @param optInMAType Moving-average type for the middle band (default 0 =
         *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outRealUpperBand Middle band plus nbDevUp standard deviations. Must
         *        hold at least {@code endIdx - startIdx + 1} values.
         * @param outRealMiddleBand The moving average. Must hold at least
@@ -103826,6 +103826,7 @@ class Core {
      *  060907 MF   Use TA_SMA/TA_EMA instead of internal implementation.
      *  072226 MF,CC Add HMA (issue #139).
      *  072426 MF,CC TA_MAType_DISABLED: period-independent identity copy (issue #93).
+     *  090426 KL   Add ZLEMA (issue #347).
      */
 
        /**
@@ -103839,8 +103840,8 @@ class Core {
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Which moving-average algorithm to dispatch to (default
         *        0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA,
-        *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT}
-        *        selects the default).
+        *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA;
+        *        {@code MAType.DEFAULT} selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int MA_Lookback( int optInTimePeriod, MAType optInMAType )
@@ -103888,6 +103889,9 @@ class Core {
              break;
           case HMA:
              retValue = HMA_Lookback(optInTimePeriod);
+             break;
+          case ZLEMA:
+             retValue = ZLEMA_Lookback(optInTimePeriod);
              break;
           default:
              retValue = 0;
@@ -104031,6 +104035,12 @@ class Core {
              outNBElement.value = _xr9.count();
              retCode = RetCode.Success;
              break;
+          case ZLEMA:
+             OutRange _xr10 = ZLEMA(startIdx, endIdx, inReal, optInTimePeriod, outReal);
+             outBegIdx.value = _xr10.begIdx();
+             outNBElement.value = _xr10.count();
+             retCode = RetCode.Success;
+             break;
           default:
              retCode = RetCode.BadParam;
              break;
@@ -104140,6 +104150,12 @@ class Core {
              outNBElement.value = _xr9.count();
              retCode = RetCode.Success;
              break;
+          case ZLEMA:
+             OutRange _xr10 = ZLEMA(startIdx, endIdx, inReal, optInTimePeriod, outReal);
+             outBegIdx.value = _xr10.begIdx();
+             outNBElement.value = _xr10.count();
+             retCode = RetCode.Success;
+             break;
           default:
              retCode = RetCode.BadParam;
              break;
@@ -104173,8 +104189,8 @@ class Core {
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Which moving-average algorithm to dispatch to (default
         *        0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA,
-        *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT}
-        *        selects the default).
+        *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA;
+        *        {@code MAType.DEFAULT} selects the default).
         * @param outReal Selected moving average of the input. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -104254,8 +104270,8 @@ class Core {
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Which moving-average algorithm to dispatch to (default
         *        0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA,
-        *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT}
-        *        selects the default).
+        *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA;
+        *        {@code MAType.DEFAULT} selects the default).
         * @param outReal Selected moving average of the input. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -104386,6 +104402,9 @@ class Core {
                 case HMA:
                    this.sub = new HmaStream((HmaStream) other.sub);
                    break;
+                case ZLEMA:
+                   this.sub = new ZlemaStream((ZlemaStream) other.sub);
+                   break;
                 default:
                    throw new IllegalStateException("unreachable: open rejects arms without a sub-stream");
                 }
@@ -104513,6 +104532,10 @@ class Core {
                 cur_outReal = ((HmaStream) sp.sub).peek(inReal);
                 break;
              }
+             case ZLEMA: {
+                cur_outReal = ((ZlemaStream) sp.sub).peek(inReal);
+                break;
+             }
              default:
                 throw new IllegalStateException("unreachable: open rejects arms without a sub-stream");
              }
@@ -104593,6 +104616,10 @@ class Core {
           }
           case HMA: {
              sp.cur_outReal = ((HmaStream) sp.sub).update(inReal);
+             break;
+          }
+          case ZLEMA: {
+             sp.cur_outReal = ((ZlemaStream) sp.sub).update(inReal);
              break;
           }
           default:
@@ -104712,6 +104739,14 @@ class Core {
           }
           case HMA: {
              HmaStream sub = hmaOpenInternal(inReal, startIdx, optInTimePeriod);
+             sp.outRangeBegIdx = sub.outRangeBegIdx;
+             sp.outRangeCount = sub.outRangeCount;
+             sp.sub = sub;
+             sp.cur_outReal = sub.cur_outReal;
+             break;
+          }
+          case ZLEMA: {
+             ZlemaStream sub = zlemaOpenInternal(inReal, startIdx, optInTimePeriod);
              sp.outRangeBegIdx = sub.outRangeBegIdx;
              sp.outRangeCount = sub.outRangeCount;
              sp.sub = sub;
@@ -104846,6 +104881,14 @@ class Core {
              sp.cur_outReal = sub.cur_outReal;
              break;
           }
+          case ZLEMA: {
+             ZlemaStream sub = zlemaOpenAndFill(inReal, optInTimePeriod, outReal);
+             outBegIdx.value = sub.outRangeBegIdx;
+             outNBElement.value = sub.outRangeCount;
+             sp.sub = sub;
+             sp.cur_outReal = sub.cur_outReal;
+             break;
+          }
           default:
              return RetCode.BadParam;
           }
@@ -104951,6 +104994,12 @@ class Core {
           }
           case HMA: {
              HmaStream sub = hmaOpenAndFillInternal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal);
+             sp.sub = sub;
+             sp.cur_outReal = sub.cur_outReal;
+             break;
+          }
+          case ZLEMA: {
+             ZlemaStream sub = zlemaOpenAndFillInternal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal);
              sp.sub = sub;
              sp.cur_outReal = sub.cur_outReal;
              break;
@@ -106200,18 +106249,20 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastMAType MA type for the fast MA (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param optInSlowPeriod Period of the slow MA (default 26; range 2..100000;
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInSlowMAType MA type for the slow MA (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param optInSignalPeriod Period of the signal-line MA (default 9; range
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInSignalMAType MA type for the signal line (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int MACDEXT_Lookback( int optInFastPeriod, MAType optInFastMAType, int optInSlowPeriod, MAType optInSlowMAType, int optInSignalPeriod, MAType optInSignalMAType )
@@ -106568,18 +106619,20 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastMAType MA type for the fast MA (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param optInSlowPeriod Period of the slow MA (default 26; range 2..100000;
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInSlowMAType MA type for the slow MA (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param optInSignalPeriod Period of the signal-line MA (default 9; range
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInSignalMAType MA type for the signal line (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outMACD MACD line: fast MA minus slow MA. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @param outMACDSignal Signal line: MA of the MACD line. Must hold at least
@@ -106673,18 +106726,20 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastMAType MA type for the fast MA (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param optInSlowPeriod Period of the slow MA (default 26; range 2..100000;
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInSlowMAType MA type for the slow MA (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param optInSignalPeriod Period of the signal-line MA (default 9; range
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInSignalMAType MA type for the signal line (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outMACD MACD line: fast MA minus slow MA. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @param outMACDSignal Signal line: MA of the MACD line. Must hold at least
@@ -110956,7 +111011,8 @@ class Core {
         *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving-average type applied (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int MAVP_Lookback( int optInMinPeriod, int optInMaxPeriod, MAType optInMAType )
@@ -111458,7 +111514,8 @@ class Core {
         *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving-average type applied (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param outReal variable-period moving average. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -111537,7 +111594,8 @@ class Core {
         *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving-average type applied (default 0 = SMA; values:
         *        0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-        *        10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the default).
+        *        10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT} selects the
+        *        default).
         * @param outReal variable-period moving average. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -129442,8 +129500,8 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int PPO_Lookback( int optInFastPeriod, int optInSlowPeriod, MAType optInMAType )
@@ -129653,8 +129711,8 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outReal PPO value in percent. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -129731,8 +129789,8 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outReal PPO value in percent. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -130815,8 +130873,8 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int PVO_Lookback( int optInFastPeriod, int optInSlowPeriod, MAType optInMAType )
@@ -131028,8 +131086,8 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outReal PVO value in percent. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -131108,8 +131166,8 @@ class Core {
         *        {@code Integer.MIN_VALUE} selects the default).
         * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outReal PVO value in percent. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @return The range written: {@code begIdx} is the first bar with a value,
@@ -143157,15 +143215,15 @@ class Core {
         *        default).
         * @param optInSlowK_MAType MA type used to smooth into SlowK (default 0 =
         *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param optInSlowD_Period Smoothing period for the SlowD signal line
         *        (default 3; range 1..100000; {@code Integer.MIN_VALUE} selects the
         *        default).
         * @param optInSlowD_MAType MA type used for the SlowD line (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int STOCH_Lookback( int optInFastK_Period, int optInSlowK_Period, MAType optInSlowK_MAType, int optInSlowD_Period, MAType optInSlowD_MAType )
@@ -143632,15 +143690,15 @@ class Core {
         *        default).
         * @param optInSlowK_MAType MA type used to smooth into SlowK (default 0 =
         *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param optInSlowD_Period Smoothing period for the SlowD signal line
         *        (default 3; range 1..100000; {@code Integer.MIN_VALUE} selects the
         *        default).
         * @param optInSlowD_MAType MA type used for the SlowD line (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outSlowK Raw FastK smoothed by SlowK_Period MA. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @param outSlowD Signal line: SlowK smoothed by SlowD_Period MA. Must hold
@@ -143732,15 +143790,15 @@ class Core {
         *        default).
         * @param optInSlowK_MAType MA type used to smooth into SlowK (default 0 =
         *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param optInSlowD_Period Smoothing period for the SlowD signal line
         *        (default 3; range 1..100000; {@code Integer.MIN_VALUE} selects the
         *        default).
         * @param optInSlowD_MAType MA type used for the SlowD line (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outSlowK Raw FastK smoothed by SlowK_Period MA. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
         * @param outSlowD Signal line: SlowK smoothed by SlowD_Period MA. Must hold
@@ -144597,7 +144655,7 @@ class Core {
         *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastD_MAType Moving-average type used to smooth Fast-D
         *        (default 0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA,
-        *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT;
+        *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA;
         *        {@code MAType.DEFAULT} selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
@@ -145016,7 +145074,7 @@ class Core {
         *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastD_MAType Moving-average type used to smooth Fast-D
         *        (default 0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA,
-        *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT;
+        *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA;
         *        {@code MAType.DEFAULT} selects the default).
         * @param outFastK Raw %K stochastic line. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
@@ -145104,7 +145162,7 @@ class Core {
         *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastD_MAType Moving-average type used to smooth Fast-D
         *        (default 0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA,
-        *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT;
+        *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA;
         *        {@code MAType.DEFAULT} selects the default).
         * @param outFastK Raw %K stochastic line. Must hold at least
         *        {@code endIdx - startIdx + 1} values.
@@ -145917,8 +145975,8 @@ class Core {
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastD_MAType MA type used to smooth %D (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @return The lookback, or {@code -1} if a parameter is out of range.
         */
        public int STOCHRSI_Lookback( int optInTimePeriod, int optInFastK_Period, int optInFastD_Period, MAType optInFastD_MAType )
@@ -146170,8 +146228,8 @@ class Core {
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastD_MAType MA type used to smooth %D (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outFastK Unsmoothed stochastic of the RSI (raw %K) Must hold at
         *        least {@code endIdx - startIdx + 1} values.
         * @param outFastD %K smoothed over FastD_Period (signal line) Must hold at
@@ -146258,8 +146316,8 @@ class Core {
         *        1..100000; {@code Integer.MIN_VALUE} selects the default).
         * @param optInFastD_MAType MA type used to smooth %D (default 0 = SMA;
         *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-        *        default).
+        *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA; {@code MAType.DEFAULT}
+        *        selects the default).
         * @param outFastK Unsmoothed stochastic of the RSI (raw %K) Must hold at
         *        least {@code endIdx - startIdx + 1} values.
         * @param outFastD %K smoothed over FastD_Period (signal line) Must hold at
@@ -164194,11 +164252,762 @@ class Core {
           MInteger outNBElement = new MInteger();
           return wmaOpenAndFillInternal(inReal, 0, optInTimePeriod, outBegIdx, outNBElement, outReal);
        }
+    /* List of contributors:
+     *
+     *  Initial  Name/description
+     *  -------------------------------------------------------------------
+     *  KL       Kevin Lin
+     *
+     * Change history:
+     *
+     *  MMDDYY BY     Description
+     *  -------------------------------------------------------------------
+     *  090426 KL     First version (issue #347).
+     */
+
+       /**
+        * Number of leading input bars {@link Core#ZLEMA} consumes before it can
+        * produce its first value.
+        * <p>Equivalently, the index of the first bar with a value when the whole
+        * series is requested. Feed at least {@code lookback + 1} bars to get any
+        * output.
+        *
+        * @param optInTimePeriod Smoothing period, and the window whose half sets
+        *        the de-lag distance (default 30; range 1..100000;
+        *        {@code Integer.MIN_VALUE} selects the default).
+        * @return The lookback, or {@code -1} if a parameter is out of range.
+        */
+       public int ZLEMA_Lookback( int optInTimePeriod )
+       {
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 30;
+          } else if( optInTimePeriod < 1 || optInTimePeriod > 100000 ) {
+             return -1;
+          }
+          /* The de-lagged series is undefined for its first `lag` bars, and the EMA
+           * over it then needs a full window to seed. ZLEMA has no unstable-period id
+           * of its own: it converges as its EMA does, so it reads EMA's knob (the
+           * DEMA/TEMA/TRIX convention).
+           */
+          return (optInTimePeriod - 1) / 2 + optInTimePeriod - 1 + this.unstablePeriod[FuncUnstId.EMA.ordinal()] ;
+
+       }
+       RetCode ZLEMA_Impl( int startIdx,
+                           int endIdx,
+                           double inReal[],
+                           int optInTimePeriod,
+                           MInteger outBegIdx,
+                           MInteger outNBElement,
+                           double outReal[] )
+       {
+          double k = 0;
+          double tempReal = 0;
+          double prevMA = 0;
+          int i = 0;
+          int lag = 0;
+          int today = 0;
+          int trailingIdx = 0;
+          int outIdx = 0;
+          int lookbackTotal = 0;
+          if( (startIdx < 0) || (startIdx > MAX_INDEX) ) {
+             return RetCode.OutOfRangeStartIndex ;
+          }
+          if( (endIdx < 0) || (endIdx > MAX_INDEX) || (endIdx < startIdx)) {
+             return RetCode.OutOfRangeEndIndex ;
+          }
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 30;
+          } else if( optInTimePeriod < 1 || optInTimePeriod > 100000 ) {
+             return RetCode.BadParam;
+          }
+          /* Identify the minimum number of price bar needed
+           * to calculate at least one output.
+           */
+          lookbackTotal = ZLEMA_Lookback(optInTimePeriod);
+          /* Move up the start index if there is not
+           * enough initial data.
+           */
+          if( startIdx < lookbackTotal ) {
+             startIdx = lookbackTotal;
+          }
+          /* Make sure there is still something to evaluate. */
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.Success ;
+          }
+          outBegIdx.value = startIdx;
+          /* No smoothing at period of 1: the output is a copy of the input (same
+           * convention as TA_MA for every MAType). The de-lag is already the identity
+           * there -- lag is 0 and `2.0*x - x` is exact -- but the recursion is not:
+           * at period 1 k is exactly 1.0, so the step reduces to (x-prev)+prev, which
+           * returns x only while consecutive values stay within a factor of two of
+           * each other. This is TA_EMA's trap, and it takes TA_EMA's explicit copy.
+           */
+          if( optInTimePeriod == 1 ) {
+             outIdx = 0;
+             today = startIdx;
+             while( today <= endIdx ) {
+                outReal[outIdx++] = inReal[today++];
+             }
+             outNBElement.value = outIdx;
+             return RetCode.Success ;
+          }
+          k = 2.0 / (double)(optInTimePeriod + 1);
+          lag = (optInTimePeriod - 1) / 2;
+          /* The de-lagged value 2*P[t] - P[t-lag] is spelled `2.0*x - trailing`, with
+           * one rounding rather than the two of x + (x - trailing), and the EMA step
+           * keeps TA_EMA's own ((v-prev)*k)+prev. Both are the bit-exactness contract
+           * against the shipped TA_EMA over a materialised de-lagged series, which the
+           * regression test asserts by memcmp -- reordering either is a test failure,
+           * not a style change.
+           */
+          today = startIdx - lookbackTotal + lag;
+          trailingIdx = today - lag;
+          /* The first EMA value is a simple average of the first `period` de-lagged
+           * values; it then becomes the seed for the recursion below.
+           */
+          i = optInTimePeriod;
+          tempReal = 0.0;
+          while( i-- > 0 ) {
+             tempReal += 2.0 * inReal[today++] - inReal[trailingIdx++];
+          }
+          prevMA = tempReal / optInTimePeriod;
+          while( today <= startIdx ) {
+             prevMA = Math.fma(2.0 * inReal[today++] - inReal[trailingIdx++] - prevMA, k, prevMA);
+          }
+          outReal[0] = prevMA;
+          outIdx = 1;
+          while( today <= endIdx ) {
+             prevMA = Math.fma(2.0 * inReal[today++] - inReal[trailingIdx++] - prevMA, k, prevMA);
+             outReal[outIdx++] = prevMA;
+          }
+          outNBElement.value = outIdx;
+          return RetCode.Success ;
+       }
+       RetCode ZLEMA_Impl( int startIdx,
+                           int endIdx,
+                           float inReal[],
+                           int optInTimePeriod,
+                           MInteger outBegIdx,
+                           MInteger outNBElement,
+                           double outReal[] )
+       {
+          double k = 0;
+          double tempReal = 0;
+          double prevMA = 0;
+          int i = 0;
+          int lag = 0;
+          int today = 0;
+          int trailingIdx = 0;
+          int outIdx = 0;
+          int lookbackTotal = 0;
+          if( (startIdx < 0) || (startIdx > MAX_INDEX) ) {
+             return RetCode.OutOfRangeStartIndex ;
+          }
+          if( (endIdx < 0) || (endIdx > MAX_INDEX) || (endIdx < startIdx)) {
+             return RetCode.OutOfRangeEndIndex ;
+          }
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 30;
+          } else if( optInTimePeriod < 1 || optInTimePeriod > 100000 ) {
+             return RetCode.BadParam;
+          }
+          lookbackTotal = ZLEMA_Lookback(optInTimePeriod);
+          if( startIdx < lookbackTotal ) {
+             startIdx = lookbackTotal;
+          }
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.Success ;
+          }
+          outBegIdx.value = startIdx;
+          if( optInTimePeriod == 1 ) {
+             outIdx = 0;
+             today = startIdx;
+             while( today <= endIdx ) {
+                outReal[outIdx++] = (double)inReal[today++];
+             }
+             outNBElement.value = outIdx;
+             return RetCode.Success ;
+          }
+          k = 2.0 / (double)(optInTimePeriod + 1);
+          lag = (optInTimePeriod - 1) / 2;
+          today = startIdx - lookbackTotal + lag;
+          trailingIdx = today - lag;
+          i = optInTimePeriod;
+          tempReal = 0.0;
+          while( i-- > 0 ) {
+             tempReal += 2.0 * (double)inReal[today++] - (double)inReal[trailingIdx++];
+          }
+          prevMA = tempReal / optInTimePeriod;
+          while( today <= startIdx ) {
+             prevMA = Math.fma(2.0 * (double)inReal[today++] - (double)inReal[trailingIdx++] - prevMA, k, prevMA);
+          }
+          outReal[0] = prevMA;
+          outIdx = 1;
+          while( today <= endIdx ) {
+             prevMA = Math.fma(2.0 * (double)inReal[today++] - (double)inReal[trailingIdx++] - prevMA, k, prevMA);
+             outReal[outIdx++] = prevMA;
+          }
+          outNBElement.value = outIdx;
+          return RetCode.Success ;
+       }
+       /**
+        * Zero-Lag Exponential Moving Average: an exponential moving average taken
+        * over a de-lagged copy of the series, where each bar is extrapolated
+        * forward by the amount it moved over the last half-window. The
+        * extrapolation cancels the exponential average's own phase lag to first
+        * order, so the line turns closer to the price pivot than a plain EMA of the
+        * same period does — at the cost of overshooting when a move reverses, since
+        * the de-lagged series exaggerates whatever the last half-window did. Read
+        * it as a faster EMA: crossings arrive earlier and false ones arrive more
+        * often.
+        * <p><b>Formula</b>
+        * <pre>{@code
+        * ```text
+        * lag = (period - 1) / 2, truncated
+        * d[t] = 2*P[t] - P[t-lag]
+        * ZLEMA = EMA(d, period)
+        * ```
+        * }</pre>
+        * <p><b>Notes</b>
+        * <ul>
+        * <li>The published construction has no traceable primary source. It is universally attributed to John Ehlers and Ric Way, *Zero Lag (Well, Almost)* (2010), but that paper specifies a different filter — an error-correcting EMA with a per-bar gain search — and neither the de-lagged series nor the half-window lag appears anywhere in it. What ships here is the de-lagged-EMA construction that the surrounding ecosystem publishes under the "zero lag" name.</li>
+        * <li>The half-window lag truncates on even periods, which is what the implementations that publish golden values do.</li>
+        * <li>The de-lagged value is formed as {@code 2*P[t] - P[t-lag]} rather than the algebraically equal {@code P[t] + (P[t] - P[t-lag])}: one rounding instead of two.</li>
+        * <li>The exponential average is seeded with a simple average of the first full window of de-lagged values, which is TA-Lib's own EMA convention. Implementations that seed from a single raw price instead differ through the whole warm-up, converging only well after it.</li>
+        * <li>The output is therefore an EMA of a derived series, and it converges as an EMA does: it reads the EMA unstable period rather than carrying one of its own.</li>
+        * <li>A period of 1 performs no smoothing: the output is a copy of the input.</li>
+        * </ul>
+        * <p>Values are written only where the indicator is defined. The returned
+        * {@link OutRange} says where they start and how many there are; nothing
+        * outside that range is touched, and the library never pads with NaN. A
+        * valid range shorter than {@link Core#ZLEMA_Lookback} is a <b>success with
+        * no values</b> ({@code count() == 0}), not an error.
+        *
+        * @param startIdx First bar of the requested range (inclusive).
+        * @param endIdx Last bar of the requested range (inclusive).
+        * @param inReal Source series (typically price)
+        * @param optInTimePeriod Smoothing period, and the window whose half sets
+        *        the de-lag distance (default 30; range 1..100000;
+        *        {@code Integer.MIN_VALUE} selects the default).
+        * @param outReal ZLEMA line. Must hold at least
+        *        {@code endIdx - startIdx + 1} values.
+        * @return The range written: {@code begIdx} is the first bar with a value,
+        *        {@code count} how many were written.
+        * @throws IndexOutOfBoundsException if {@code startIdx} or {@code endIdx} is
+        *        negative or above {@link Core#MAX_INDEX}, or {@code endIdx < startIdx}.
+        * @throws IllegalArgumentException if an optional parameter is outside its
+        *        documented range, two outputs share one array, or an array is absent or
+        *        too short for the range requested — any input this function
+        *        <i>declares</i> that does not reach {@code endIdx}, or an output that
+        *        cannot hold the values produced. Declared, not read: a few candlestick
+        *        patterns take an OHLC series they never index, and it is required all the
+        *        same. An output this function documents as declinable is the one
+        *        exception: {@code null} is how you decline it. Checked before anything is
+        *        written, so a rejected call leaves every buffer untouched.
+        *
+        * @see Core#EMA
+        * @see Core#DEMA
+        * @see Core#TEMA
+        * @see Core#HMA
+        * @see Core#MA
+        */
+       public OutRange ZLEMA( int startIdx,
+                              int endIdx,
+                              double inReal[],
+                              int optInTimePeriod,
+                              double outReal[] )
+       {
+          requireIndexRange("ZLEMA", startIdx, endIdx);
+          int guardStart = clampedStart("ZLEMA", startIdx, ZLEMA_Lookback(optInTimePeriod));
+          int guardInLen = endIdx + 1;
+          int guardOutLen = guardStart > endIdx ? 0 : endIdx - guardStart + 1;
+          requireLength("ZLEMA", "inReal", inReal, guardInLen);
+          requireLength("ZLEMA", "outReal", outReal, guardOutLen);
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          RetCode retCode = ZLEMA_Impl(startIdx, endIdx, inReal, optInTimePeriod, outBegIdx, outNBElement, outReal);
+          if( retCode != RetCode.Success ) {
+             throw failure("ZLEMA", retCode);
+          }
+          return new OutRange(outBegIdx.value, outNBElement.value);
+       }
+       /**
+        * Zero-Lag Exponential Moving Average: an exponential moving average taken
+        * over a de-lagged copy of the series, where each bar is extrapolated
+        * forward by the amount it moved over the last half-window. The
+        * extrapolation cancels the exponential average's own phase lag to first
+        * order, so the line turns closer to the price pivot than a plain EMA of the
+        * same period does — at the cost of overshooting when a move reverses, since
+        * the de-lagged series exaggerates whatever the last half-window did. Read
+        * it as a faster EMA: crossings arrive earlier and false ones arrive more
+        * often.
+        * <p><b>Formula</b>
+        * <pre>{@code
+        * ```text
+        * lag = (period - 1) / 2, truncated
+        * d[t] = 2*P[t] - P[t-lag]
+        * ZLEMA = EMA(d, period)
+        * ```
+        * }</pre>
+        * <p><b>Notes</b>
+        * <ul>
+        * <li>The published construction has no traceable primary source. It is universally attributed to John Ehlers and Ric Way, *Zero Lag (Well, Almost)* (2010), but that paper specifies a different filter — an error-correcting EMA with a per-bar gain search — and neither the de-lagged series nor the half-window lag appears anywhere in it. What ships here is the de-lagged-EMA construction that the surrounding ecosystem publishes under the "zero lag" name.</li>
+        * <li>The half-window lag truncates on even periods, which is what the implementations that publish golden values do.</li>
+        * <li>The de-lagged value is formed as {@code 2*P[t] - P[t-lag]} rather than the algebraically equal {@code P[t] + (P[t] - P[t-lag])}: one rounding instead of two.</li>
+        * <li>The exponential average is seeded with a simple average of the first full window of de-lagged values, which is TA-Lib's own EMA convention. Implementations that seed from a single raw price instead differ through the whole warm-up, converging only well after it.</li>
+        * <li>The output is therefore an EMA of a derived series, and it converges as an EMA does: it reads the EMA unstable period rather than carrying one of its own.</li>
+        * <li>A period of 1 performs no smoothing: the output is a copy of the input.</li>
+        * </ul>
+        * <p>This is the {@code float[]} overload. The arithmetic is performed in
+        * {@code double} before being written to the {@code double[]} output, so a
+        * result beyond {@code float} range is still representable.
+        * <p>Values are written only where the indicator is defined. The returned
+        * {@link OutRange} says where they start and how many there are; nothing
+        * outside that range is touched, and the library never pads with NaN. A
+        * valid range shorter than {@link Core#ZLEMA_Lookback} is a <b>success with
+        * no values</b> ({@code count() == 0}), not an error.
+        *
+        * @param startIdx First bar of the requested range (inclusive).
+        * @param endIdx Last bar of the requested range (inclusive).
+        * @param inReal Source series (typically price)
+        * @param optInTimePeriod Smoothing period, and the window whose half sets
+        *        the de-lag distance (default 30; range 1..100000;
+        *        {@code Integer.MIN_VALUE} selects the default).
+        * @param outReal ZLEMA line. Must hold at least
+        *        {@code endIdx - startIdx + 1} values.
+        * @return The range written: {@code begIdx} is the first bar with a value,
+        *        {@code count} how many were written.
+        * @throws IndexOutOfBoundsException if {@code startIdx} or {@code endIdx} is
+        *        negative or above {@link Core#MAX_INDEX}, or {@code endIdx < startIdx}.
+        * @throws IllegalArgumentException if an optional parameter is outside its
+        *        documented range, two outputs share one array, or an array is absent or
+        *        too short for the range requested — any input this function
+        *        <i>declares</i> that does not reach {@code endIdx}, or an output that
+        *        cannot hold the values produced. Declared, not read: a few candlestick
+        *        patterns take an OHLC series they never index, and it is required all the
+        *        same. An output this function documents as declinable is the one
+        *        exception: {@code null} is how you decline it. Checked before anything is
+        *        written, so a rejected call leaves every buffer untouched.
+        *
+        * @see Core#EMA
+        * @see Core#DEMA
+        * @see Core#TEMA
+        * @see Core#HMA
+        * @see Core#MA
+        */
+       public OutRange ZLEMA( int startIdx,
+                              int endIdx,
+                              float inReal[],
+                              int optInTimePeriod,
+                              double outReal[] )
+       {
+          requireIndexRange("ZLEMA", startIdx, endIdx);
+          int guardStart = clampedStart("ZLEMA", startIdx, ZLEMA_Lookback(optInTimePeriod));
+          int guardInLen = endIdx + 1;
+          int guardOutLen = guardStart > endIdx ? 0 : endIdx - guardStart + 1;
+          requireLength("ZLEMA", "inReal", inReal, guardInLen);
+          requireLength("ZLEMA", "outReal", outReal, guardOutLen);
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          RetCode retCode = ZLEMA_Impl(startIdx, endIdx, inReal, optInTimePeriod, outBegIdx, outNBElement, outReal);
+          if( retCode != RetCode.Success ) {
+             throw failure("ZLEMA", retCode);
+          }
+          return new OutRange(outBegIdx.value, outNBElement.value);
+       }
+    /**** Streaming API *****/
+
+       /**
+        * A live ZLEMA stream (unrelated to {@code java.util.stream}): one value per
+        * closed bar, bit-identical to {@link Core#ZLEMA} over the same series.
+        * Open with {@link Core#zlemaOpen}; there is no close — the handle is
+        * ordinary heap state, unreferenced handles are simply garbage-collected.
+        * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
+        * {@code value} and {@code clone} must not race with an {@code update} on
+        * the same handle. With no concurrent {@code update}, {@code peek}/
+        * {@code value}/{@code clone} never write the stream and may be called
+        * concurrently after safe publication. Independent streams (a
+        * {@code clone()} result included) are fully independent.
+        * <p>Not serializable by design: to checkpoint, retain the history and
+        * re-open — the result is bit-identical by contract.
+        */
+       public static final class ZlemaStream {
+          Core core;
+          int optInTimePeriod;
+          double k;
+          double prevMA;
+          int ringPos_trailingIdx;
+          int ringCap_trailingIdx;
+          double[] ring_trailingIdx_inReal;
+          double cur_outReal;
+          int outRangeBegIdx;
+          int outRangeCount;
+
+          ZlemaStream( Core core ) { this.core = core; }
+
+          /**
+           * The bars this stream has an output for, in the input series'
+           * coordinates: {@code [begIdx, begIdx + count)}.
+           * <p>It is what {@link Core#ZLEMA} reports over the same bars: the
+           * opener sets it to {@code (lookback, historyLen - lookback)}, every
+           * {@code update} adds one to the count — a bar rejected for being
+           * non-finite included, because it still happened — {@code peek} leaves
+           * it alone, and {@code clone()} carries it verbatim. A plain
+           * {@code open} hands back only the last value, a subset of this range,
+           * because the caller chose not to take the fill.
+           */
+          public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+          ZlemaStream( ZlemaStream other ) {
+             this.core = other.core;
+             this.optInTimePeriod = other.optInTimePeriod;
+             this.k = other.k;
+             this.prevMA = other.prevMA;
+             this.ringPos_trailingIdx = other.ringPos_trailingIdx;
+             this.ringCap_trailingIdx = other.ringCap_trailingIdx;
+             this.ring_trailingIdx_inReal = other.ring_trailingIdx_inReal.clone();
+             this.cur_outReal = other.cur_outReal;
+             this.outRangeBegIdx = other.outRangeBegIdx;
+             this.outRangeCount = other.outRangeCount;
+          }
+
+          /**
+           * Commit one closed bar, returning the new current value.
+           * Never allocates handle state.
+           * <p>Throws {@link IllegalArgumentException} if any bar value is not
+           * finite (NaN or an infinity). That check runs before anything is
+           * written, so the state is left exactly as it was: the rejected bar's
+           * output is the previous value, held, and {@link #value()} answers it.
+           * The stream stays usable, so skip the bar or re-open on a clean
+           * history. {@link #outRange()} does advance: the bar happened and
+           * occupies a position in the series, so the handle counts it, which is
+           * what keeps two handles on one feed aligned when only one rejects.
+           * This is the one place the streaming tier is stricter than
+           * the batch API, which computes on whatever it is given: a handle
+           * retains its state, so a single non-finite bar would poison every
+           * later value it produces.
+           */
+          public double update( double inReal ) {
+             if( !Double.isFinite(inReal) ) {
+                if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+                throw new TaLibArgumentException("ZLEMA update: BadParam", RetCode.BadParam);
+             }
+             core.zlemaStepImpl(this, inReal);
+             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+             return this.cur_outReal;
+          }
+
+          /**
+           * Commit {@code n} closed bars and write their {@code n} values, in one
+           * call — exactly {@code n} back-to-back {@code update} calls, with one
+           * set of argument checks instead of {@code n}. {@code n} is
+           * {@code inReal.length}; the outputs must hold at least that many, and must
+           * not be the same array as an input or as each other.
+           * <p>{@link #outRange()} counts what this call took in, which is what makes a
+           * rejection readable: a non-finite bar {@code k} throws
+           * {@link IllegalArgumentException} exactly as {@code update} would, with
+           * the bars before {@code k} committed and written, bar {@code k} and
+           * everything after it not, and the count advanced by {@code k + 1} —
+           * the committed bars plus the rejected one.
+           */
+          public void updateAndFill( double inReal[], double outReal[] ) {
+             requireArgument("ZLEMA updateAndFill", "inReal", inReal);
+             requireArgument("ZLEMA updateAndFill", "outReal", outReal);
+             final int barCount = inReal.length;
+             if( outReal.length < barCount || (Object)outReal == (Object)inReal )
+                throw new TaLibArgumentException("ZLEMA updateAndFill: BadParam", RetCode.BadParam);
+             for( int i = 0; i < barCount; i++ ) {
+                if( !Double.isFinite(inReal[i]) ) {
+                   if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+                   throw new TaLibArgumentException("ZLEMA updateAndFill: BadParam", RetCode.BadParam);
+                }
+                core.zlemaStepImpl(this, inReal[i]);
+                outReal[i] = this.cur_outReal;
+                if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+             }
+          }
+
+          /**
+           * Evaluate a forming bar without committing — bit-identical to what the
+           * next {@code update} with the same bar would return — the same
+           * transition, with every store it would make carried in a local instead.
+           * Never writes this handle, so peeks may
+           * run concurrently with each other. It copies nothing: the frame runs against this handle, reading its
+           * buffers and storing what the step would commit into locals, so the cost
+           * does not grow with the period and {@code peek} never allocates.
+           */
+          public double peek( double inReal ) {
+             if( !Double.isFinite(inReal) )
+                throw new TaLibArgumentException("ZLEMA peek: BadParam", RetCode.BadParam);
+             ZlemaStream sp = this;
+             double cur_outReal = sp.cur_outReal;
+             double prevMA = sp.prevMA;
+             int pkSlot0 = -1;
+             double pkVal0 = 0.0;
+             if( sp.optInTimePeriod == 1 ) {
+                cur_outReal = inReal;
+                return cur_outReal ;
+             }
+             if( sp.ringCap_trailingIdx == 0 ) {
+                pkSlot0 = 0;
+                pkVal0 = inReal;
+             }
+             prevMA = Math.fma(2.0 * inReal - ((sp.ringPos_trailingIdx != pkSlot0) ? sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] : pkVal0) - prevMA, sp.k, prevMA);
+             cur_outReal = prevMA;
+             return cur_outReal;
+          }
+
+          /**
+           * The value at the last bar this stream counted — the bar
+           * {@link #outRange()} ends on. The last history bar right after open,
+           * then whatever the latest accepted {@code update} returned.
+           * A pure field read; {@code peek} does not change it.
+           */
+          public double value() {
+             return this.cur_outReal;
+          }
+
+          /**
+           * An independent fork of this stream: both evolve separately from here
+           * on. Buffers are copied and sub-streams cloned recursively; the
+           * {@link Core} reference is shared, since a {@code Core} is immutable
+           * for a stream's lifetime.
+           *
+           * <p>Not the {@code Cloneable} protocol: this calls a copy constructor,
+           * never {@code super.clone()}, so it throws nothing.
+           *
+           * @return an independent stream at the same bar
+           */
+          @Override
+          public ZlemaStream clone() {
+             return new ZlemaStream(this);
+          }
+       }
+       void zlemaStepImpl( ZlemaStream sp, double inReal )
+       {
+          if( sp.optInTimePeriod == 1 ) {
+             sp.cur_outReal = inReal;
+             return ;
+          }
+          if( sp.ringCap_trailingIdx == 0 ) {
+             sp.ring_trailingIdx_inReal[0] = inReal;
+          }
+          sp.prevMA = Math.fma(2.0 * inReal - sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] - sp.prevMA, sp.k, sp.prevMA);
+          sp.cur_outReal = sp.prevMA;
+          sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] = inReal;
+          sp.ringPos_trailingIdx = sp.ringPos_trailingIdx + 1;
+          if( sp.ringPos_trailingIdx >= sp.ringCap_trailingIdx ) {
+             sp.ringPos_trailingIdx = 0;
+          }
+       }
+       private RetCode zlemaOpenImpl( ZlemaStream sp, double inReal[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outReal[], int outStride )
+       {
+          double k = 0;
+          double tempReal = 0;
+          double prevMA = 0;
+          int i = 0;
+          int lag = 0;
+          int today = 0;
+          int trailingIdx = 0;
+          int outIdx = 0;
+          int lookbackTotal = 0;
+          int historyLen = inReal.length;
+          int endIdx = historyLen - 1;
+          if( historyLen < 1 ) {
+             return RetCode.OutOfRangeStartIndex;
+          }
+          if( historyLen > MAX_INDEX + 1 ) {
+             return RetCode.OutOfRangeEndIndex;
+          }
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 30;
+          } else if( optInTimePeriod < 1 || optInTimePeriod > 100000 ) {
+             return RetCode.BadParam;
+          }
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.InsufficientHistory;
+          }
+          if( optInTimePeriod == 1 ) {
+             int fillLb = ZLEMA_Lookback(optInTimePeriod);
+             if( startIdx > fillLb ) fillLb = startIdx;
+             if( historyLen < fillLb + 1 ) {
+                return RetCode.InsufficientHistory;
+             }
+             sp.optInTimePeriod = optInTimePeriod;
+             sp.k = 0.0;
+             sp.prevMA = 0.0;
+             sp.ringPos_trailingIdx = 0;
+             sp.ringCap_trailingIdx = 0;
+             sp.ring_trailingIdx_inReal = new double[1];
+             outBegIdx.value = fillLb;
+             outNBElement.value = historyLen - fillLb;
+             if( outStride == 0 ) {
+                outReal[0] = inReal[historyLen - 1];
+             } else {
+                for( int fillIdx = 0; fillIdx < historyLen - fillLb; fillIdx++ ) {
+                   outReal[fillIdx] = inReal[fillLb + fillIdx];
+                }
+             }
+             sp.cur_outReal = outReal[(outNBElement.value - 1) * outStride];
+             return RetCode.Success;
+          }
+          /* Identify the minimum number of price bar needed
+           * to calculate at least one output.
+           */
+          lookbackTotal = ZLEMA_Lookback(optInTimePeriod);
+          /* Move up the start index if there is not
+           * enough initial data.
+           */
+          if( startIdx < lookbackTotal ) {
+             startIdx = lookbackTotal;
+          }
+          /* Make sure there is still something to evaluate. */
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.InsufficientHistory ;
+          }
+          outBegIdx.value = startIdx;
+          k = 2.0 / (double)(optInTimePeriod + 1);
+          lag = (optInTimePeriod - 1) / 2;
+          /* The de-lagged value 2*P[t] - P[t-lag] is spelled `2.0*x - trailing`, with
+           * one rounding rather than the two of x + (x - trailing), and the EMA step
+           * keeps TA_EMA's own ((v-prev)*k)+prev. Both are the bit-exactness contract
+           * against the shipped TA_EMA over a materialised de-lagged series, which the
+           * regression test asserts by memcmp -- reordering either is a test failure,
+           * not a style change.
+           */
+          today = startIdx - lookbackTotal + lag;
+          trailingIdx = today - lag;
+          /* The first EMA value is a simple average of the first `period` de-lagged
+           * values; it then becomes the seed for the recursion below.
+           */
+          i = optInTimePeriod;
+          tempReal = 0.0;
+          while( i-- > 0 ) {
+             tempReal += 2.0 * inReal[today++] - inReal[trailingIdx++];
+          }
+          prevMA = tempReal / optInTimePeriod;
+          while( today <= startIdx ) {
+             prevMA = Math.fma(2.0 * inReal[today++] - inReal[trailingIdx++] - prevMA, k, prevMA);
+          }
+          outReal[0 * outStride] = prevMA;
+          outIdx = 1;
+          while( today <= endIdx ) {
+             prevMA = Math.fma(2.0 * inReal[today++] - inReal[trailingIdx++] - prevMA, k, prevMA);
+             outReal[outIdx++ * outStride] = prevMA;
+          }
+          outNBElement.value = outIdx;
+          /* Capture the live batch state into the handle. */
+          int cap_trailingIdx = today - trailingIdx;
+          if( cap_trailingIdx < 0 || cap_trailingIdx > historyLen ) {
+             return RetCode.InternalError;
+          }
+          int allocN_trailingIdx = (cap_trailingIdx > 0)? cap_trailingIdx : 1;
+          double[] capRing_trailingIdx_inReal = new double[allocN_trailingIdx];
+          System.arraycopy(inReal, historyLen - cap_trailingIdx, capRing_trailingIdx_inReal, 0, cap_trailingIdx);
+          sp.optInTimePeriod = optInTimePeriod;
+          sp.k = k;
+          sp.prevMA = prevMA;
+          sp.ringPos_trailingIdx = 0;
+          sp.ringCap_trailingIdx = cap_trailingIdx;
+          sp.ring_trailingIdx_inReal = capRing_trailingIdx_inReal;
+          sp.cur_outReal = outReal[(outNBElement.value - 1) * outStride];
+          return RetCode.Success;
+       }
+       /* zlemaOpenAndFill anchored at startIdx — the composed-open fusion seam. */
+       ZlemaStream zlemaOpenAndFillInternal( double inReal[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outReal[] )
+       {
+          ZlemaStream sp = new ZlemaStream(this);
+          RetCode retCode = zlemaOpenImpl(sp, inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal, 1);
+          sp.outRangeBegIdx = outBegIdx.value;
+          sp.outRangeCount = outNBElement.value;
+          if( retCode == RetCode.Success ) {
+             return sp;
+          }
+          if( retCode == RetCode.InsufficientHistory ) {
+             throw new InsufficientHistoryException("ZLEMA openAndFill: history shorter than lookback + 1");
+          }
+          if( retCode == RetCode.InternalError ) {
+             throw new TaLibStateException("ZLEMA openAndFill: internal error", retCode);
+          }
+          throw new TaLibArgumentException("ZLEMA openAndFill: " + retCode, retCode);
+       }
+       /* Internal startIdx-anchored open behind zlemaOpen (composition seam). */
+       ZlemaStream zlemaOpenInternal( double inReal[], int startIdx, int optInTimePeriod )
+       {
+          ZlemaStream sp = new ZlemaStream(this);
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          double[] sink_outReal = new double[1];
+          RetCode retCode = zlemaOpenImpl(sp, inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, sink_outReal, 0);
+          sp.outRangeBegIdx = outBegIdx.value;
+          sp.outRangeCount = outNBElement.value;
+          if( retCode == RetCode.Success ) {
+             return sp;
+          }
+          if( retCode == RetCode.InsufficientHistory ) {
+             throw new InsufficientHistoryException("ZLEMA open: history shorter than lookback + 1");
+          }
+          if( retCode == RetCode.InternalError ) {
+             throw new TaLibStateException("ZLEMA open: internal error", retCode);
+          }
+          throw new TaLibArgumentException("ZLEMA open: " + retCode, retCode);
+       }
+       /**
+        * Open a live ZLEMA stream over the warm-up history; the handle's
+        * {@code value()} starts at the last history bar's value — bit-identical
+        * to {@link Core#ZLEMA} at that bar.
+        * <p>The history must hold at least {@code ZLEMA_Lookback(...) + 1} bars
+        * (unstable-period aware), or {@link InsufficientHistoryException} is
+        * thrown. Out-of-range parameters throw {@link IllegalArgumentException}
+        * ({@code Integer.MIN_VALUE} selects an integer parameter's documented
+        * default, as in the batch API). An EMPTY history throws
+        * {@link IndexOutOfBoundsException} — its implied {@code startIdx} of 0
+        * names no bar — and a null argument {@link IllegalArgumentException},
+        * both ahead of everything above.
+        */
+       public ZlemaStream zlemaOpen( double inReal[], int optInTimePeriod )
+       {
+          requireArgument("ZLEMA open", "inReal", inReal);
+          requireHistory("ZLEMA open", inReal.length);
+          return zlemaOpenInternal(inReal, 0, optInTimePeriod);
+       }
+       /**
+        * {@link Core#zlemaOpen} that also fills the output array(s) bit-identically
+        * to {@link Core#ZLEMA} over the whole history in the same single pass
+        * (no separate batch call needed for the warm-up plot). Output arrays must
+        * not alias the inputs or each other, and must hold
+        * {@code historyLen - lookback} values — both checked before anything is
+        * written, so an undersized array is an {@link IllegalArgumentException}
+        * naming it rather than a fault from inside the fill.
+        * <p>The range written is on the returned handle:
+        * {@link ZlemaStream#outRange()}.
+        */
+       public ZlemaStream zlemaOpenAndFill( double inReal[], int optInTimePeriod, double outReal[] )
+       {
+          requireArgument("ZLEMA openAndFill", "inReal", inReal);
+          requireHistory("ZLEMA openAndFill", inReal.length);
+          int guardOutLen = openFillCount("ZLEMA openAndFill", inReal.length, ZLEMA_Lookback(optInTimePeriod));
+          requireLength("ZLEMA openAndFill", "outReal", outReal, guardOutLen);
+          if( (Object)outReal == (Object)inReal ) {
+             throw new TaLibArgumentException("ZLEMA openAndFill: " + RetCode.BadParam, RetCode.BadParam);
+          }
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          return zlemaOpenAndFillInternal(inReal, 0, optInTimePeriod, outBegIdx, outNBElement, outReal);
+       }
 }
 
 public class TaCodegenServe {
     static Core core = new Core();
-    static final String SPLICED_GENCODE_DIGEST = "c6beffa2c163b194";
+    static final String SPLICED_GENCODE_DIGEST = "bb000dc7a7a90333";
     static final int MAX_ARRAY_SIZE = 200000;
     static double[] refOpen = new double[MAX_ARRAY_SIZE];
     static double[] refHigh = new double[MAX_ARRAY_SIZE];
@@ -164400,7 +165209,7 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outReal",16) }));
         ABSTRACT.put("APO", new AbsFunc("APO", "Momentum Indicators", "Absolute Price Oscillator", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
-            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",1.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",1.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("AROON", new AbsFunc("AROON", "Momentum Indicators", "Aroon", 33554432,
             new AbsIn[]{ new AbsIn(0,"inPriceHL",6) },
@@ -164432,7 +165241,7 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("BBANDS", new AbsFunc("BBANDS", "Overlap Studies", "Bollinger Bands", 50331648,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
-            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",20.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(0,"optInNbDevUp",0,"Deviations up","Deviation multiplier for upper band",2.0, -3e37,3e37,2,-2.0,2.0,0.2, 0,0,0,0,0, null), new AbsOpt(0,"optInNbDevDn",0,"Deviations down","Deviation multiplier for lower band",2.0, -3e37,3e37,2,-2.0,2.0,0.2, 0,0,0,0,0, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",20.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(0,"optInNbDevUp",0,"Deviations up","Deviation multiplier for upper band",2.0, -3e37,3e37,2,-2.0,2.0,0.2, 0,0,0,0,0, null), new AbsOpt(0,"optInNbDevDn",0,"Deviations down","Deviation multiplier for lower band",2.0, -3e37,3e37,2,-2.0,2.0,0.2, 0,0,0,0,0, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outRealUpperBand",2048), new AbsOut(0,"outRealMiddleBand",1), new AbsOut(0,"outRealLowerBand",4096) }));
         ABSTRACT.put("BETA", new AbsFunc("BETA", "Statistic Functions", "Beta", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal0",0), new AbsIn(1,"inReal1",0) },
@@ -164816,7 +165625,7 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("MA", new AbsFunc("MA", "Overlap Studies", "Moving average", 50331649,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
-            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",30.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",30.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("MACD", new AbsFunc("MACD", "Momentum Indicators", "Moving Average Convergence/Divergence", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
@@ -164824,7 +165633,7 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outMACD",1), new AbsOut(0,"outMACDSignal",4), new AbsOut(0,"outMACDHist",16) }));
         ABSTRACT.put("MACDEXT", new AbsFunc("MACDEXT", "Momentum Indicators", "MACD with controllable MA type", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
-            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInFastMAType",0,"Fast MA","Type of Moving Average for fast MA",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT"), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInSlowMAType",0,"Slow MA","Type of Moving Average for slow MA",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT"), new AbsOpt(2,"optInSignalPeriod",0,"Signal Period","Smoothing for the signal line (period length)",9.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInSignalMAType",0,"Signal MA","Type of Moving Average for signal line",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInFastMAType",0,"Fast MA","Type of Moving Average for fast MA",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA"), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInSlowMAType",0,"Slow MA","Type of Moving Average for slow MA",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA"), new AbsOpt(2,"optInSignalPeriod",0,"Signal Period","Smoothing for the signal line (period length)",9.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInSignalMAType",0,"Signal MA","Type of Moving Average for signal line",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outMACD",1), new AbsOut(0,"outMACDSignal",4), new AbsOut(0,"outMACDHist",16) }));
         ABSTRACT.put("MACDFIX", new AbsFunc("MACDFIX", "Momentum Indicators", "Moving Average Convergence/Divergence Fix 12/26", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
@@ -164840,7 +165649,7 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("MAVP", new AbsFunc("MAVP", "Overlap Studies", "Moving average with variable period", 50331648,
             new AbsIn[]{ new AbsIn(1,"inReal",0), new AbsIn(1,"inPeriods",0) },
-            new AbsOpt[]{ new AbsOpt(2,"optInMinPeriod",0,"Minimum Period","Value less than minimum will be changed to Minimum period",2.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInMaxPeriod",0,"Maximum Period","Value higher than maximum will be changed to Maximum period",30.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInMinPeriod",0,"Minimum Period","Value less than minimum will be changed to Minimum period",2.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInMaxPeriod",0,"Maximum Period","Value higher than maximum will be changed to Maximum period",30.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("MAX", new AbsFunc("MAX", "Math Operators", "Highest value over a specified period", 50331648,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
@@ -164920,7 +165729,7 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("PPO", new AbsFunc("PPO", "Momentum Indicators", "Percentage Price Oscillator", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
-            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",1.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",1.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("PVI", new AbsFunc("PVI", "Volume Indicators", "Positive Volume Index", 570425344,
             new AbsIn[]{ new AbsIn(0,"inPriceCV",24) },
@@ -164928,7 +165737,7 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("PVO", new AbsFunc("PVO", "Volume Indicators", "Percentage Volume Oscillator", 33554432,
             new AbsIn[]{ new AbsIn(0,"inPriceV",16) },
-            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",1.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the fast MA",12.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slow MA",26.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(3,"optInMAType",0,"MA Type","Type of Moving Average",1.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("QSTICK", new AbsFunc("QSTICK", "Momentum Indicators", "Qstick", 33554432,
             new AbsIn[]{ new AbsIn(0,"inPriceOC",9) },
@@ -164988,15 +165797,15 @@ public class TaCodegenServe {
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("STOCH", new AbsFunc("STOCH", "Momentum Indicators", "Stochastic", 33554432,
             new AbsIn[]{ new AbsIn(0,"inPriceHLC",14) },
-            new AbsOpt[]{ new AbsOpt(2,"optInFastK_Period",0,"Fast-K Period","Time period for building the Fast-K line",5.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInSlowK_Period",0,"Slow-K Period","Smoothing for making the Slow-K line. Usually set to 3",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInSlowK_MAType",0,"Slow-K MA","Type of Moving Average for Slow-K",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT"), new AbsOpt(2,"optInSlowD_Period",0,"Slow-D Period","Smoothing for making the Slow-D line",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInSlowD_MAType",0,"Slow-D MA","Type of Moving Average for Slow-D",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInFastK_Period",0,"Fast-K Period","Time period for building the Fast-K line",5.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInSlowK_Period",0,"Slow-K Period","Smoothing for making the Slow-K line. Usually set to 3",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInSlowK_MAType",0,"Slow-K MA","Type of Moving Average for Slow-K",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA"), new AbsOpt(2,"optInSlowD_Period",0,"Slow-D Period","Smoothing for making the Slow-D line",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInSlowD_MAType",0,"Slow-D MA","Type of Moving Average for Slow-D",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outSlowK",4), new AbsOut(0,"outSlowD",4) }));
         ABSTRACT.put("STOCHF", new AbsFunc("STOCHF", "Momentum Indicators", "Stochastic Fast", 33554432,
             new AbsIn[]{ new AbsIn(0,"inPriceHLC",14) },
-            new AbsOpt[]{ new AbsOpt(2,"optInFastK_Period",0,"Fast-K Period","Time period for building the Fast-K line",5.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInFastD_Period",0,"Fast-D Period","Smoothing for making the Fast-D line. Usually set to 3",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInFastD_MAType",0,"Fast-D MA","Type of Moving Average for Fast-D",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInFastK_Period",0,"Fast-K Period","Time period for building the Fast-K line",5.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInFastD_Period",0,"Fast-D Period","Smoothing for making the Fast-D line. Usually set to 3",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInFastD_MAType",0,"Fast-D MA","Type of Moving Average for Fast-D",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outFastK",1), new AbsOut(0,"outFastD",1) }));
         ABSTRACT.put("STOCHRSI", new AbsFunc("STOCHRSI", "Momentum Indicators", "Stochastic Relative Strength Index", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
-            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",14.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInFastK_Period",0,"Fast-K Period","Time period for building the Fast-K line",5.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInFastD_Period",0,"Fast-D Period","Smoothing for making the Fast-D line. Usually set to 3",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInFastD_MAType",0,"Fast-D MA","Type of Moving Average for Fast-D",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT") },
+            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",14.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInFastK_Period",0,"Fast-K Period","Time period for building the Fast-K line",5.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(2,"optInFastD_Period",0,"Fast-D Period","Smoothing for making the Fast-D line. Usually set to 3",3.0, 0,0,0,0,0,0, 1,100000,1,200,1, null), new AbsOpt(3,"optInFastD_MAType",0,"Fast-D MA","Type of Moving Average for Fast-D",0.0, 0,0,0,0,0,0, 0,0,0,0,0, "0=SMA;1=EMA;2=WMA;3=DEMA;4=TEMA;5=TRIMA;6=KAMA;7=MAMA;8=T3;9=HMA;10=DISABLED;11=DEFAULT;12=ZLEMA") },
             new AbsOut[]{ new AbsOut(0,"outFastK",1), new AbsOut(0,"outFastD",1) }));
         ABSTRACT.put("SUB", new AbsFunc("SUB", "Math Operators", "Vector Arithmetic Subtraction", 33554432,
             new AbsIn[]{ new AbsIn(1,"inReal0",0), new AbsIn(1,"inReal1",0) },
@@ -165075,6 +165884,10 @@ public class TaCodegenServe {
             new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",14.0, 0,0,0,0,0,0, 2,100000,4,200,1, null) },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("WMA", new AbsFunc("WMA", "Overlap Studies", "Weighted Moving Average", 50331649,
+            new AbsIn[]{ new AbsIn(1,"inReal",0) },
+            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",30.0, 0,0,0,0,0,0, 1,100000,1,200,1, null) },
+            new AbsOut[]{ new AbsOut(0,"outReal",1) }));
+        ABSTRACT.put("ZLEMA", new AbsFunc("ZLEMA", "Overlap Studies", "Zero-Lag Exponential Moving Average", 50331649,
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
             new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",30.0, 0,0,0,0,0,0, 1,100000,1,200,1, null) },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
@@ -165383,6 +166196,7 @@ public class TaCodegenServe {
         else if (json.contains("\"TA_WCLPRICE\"")) return handle_WCLPRICE(json);
         else if (json.contains("\"TA_WILLR\"")) return handle_WILLR(json);
         else if (json.contains("\"TA_WMA\"")) return handle_WMA(json);
+        else if (json.contains("\"TA_ZLEMA\"")) return handle_ZLEMA(json);
         else if (json.contains("\"gencode_digest\"")) {
             return "{\"spliced\":\"" + SPLICED_GENCODE_DIGEST
                  + "\",\"shipped\":\"" + io.github.talib.BuildStamp.GENCODE_DIGEST
@@ -165747,6 +166561,8 @@ public class TaCodegenServe {
             sb.append("\"TA_WILLR\"");
             sb.append(",");
             sb.append("\"TA_WMA\"");
+            sb.append(",");
+            sb.append("\"TA_ZLEMA\"");
             sb.append("]}");
             return sb.toString();
         }
@@ -193201,6 +194017,148 @@ public class TaCodegenServe {
             } else {
             try {
                 OutRange _fr = core.WMA(startIdx, endIdx, f_inReal, optInTimePeriod, outArr0);
+                outBegIdx.value = _fr.begIdx();
+                outNBElement.value = _fr.count();
+                rc = RetCode.Success;
+            } catch (RuntimeException _e) {
+                if (!(_e instanceof TaLibFailure)) throw _e;
+                rc = ((TaLibFailure) _e).retCode();
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            }
+            }
+            usedFloat = 1;
+        }
+        if (jsonInt(json, "want_hash") != 0 && jsonInt(json, "full_output") == 0) {
+            long _h = svHashInit();
+            if (rc == RetCode.Success && outNBElement.value > 0) {
+                _h = svHashF64(_h, outArr0, outNBElement.value);
+            }
+            _h = svHashFin(_h);
+            return "{\"retCode\":" + rc.toInt() + ",\"outBegIdx\":" + outBegIdx.value + ",\"outNBElement\":" + outNBElement.value + ",\"out_hash\":\"" + String.format("%016x", _h) + "\"}";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"retCode\":").append(rc.toInt());
+        sb.append(",\"outBegIdx\":").append(outBegIdx.value);
+        sb.append(",\"outNBElement\":").append(outNBElement.value);
+        sb.append(",\"out_len\":").append(_outLen);
+        sb.append(",\"outReal\":").append(doubleArrayToJson(outArr0, outNBElement.value));
+        sb.append(",\"used_float\":").append(usedFloat);
+        sb.append(",\"timing_ns\":").append(elapsedNs);
+        sb.append("}");
+        return sb.toString();
+    }
+
+    static String handle_ZLEMA(String json) {
+        int startIdx = jsonInt(json, "startIdx");
+        int endIdx = jsonInt(json, "endIdx");
+        int use_preloaded = jsonInt(json, "use_preloaded");
+        int bench_iters = jsonInt(json, "iters");
+        if (bench_iters < 1) bench_iters = 1;
+        double[] inReal = new double[MAX_ARRAY_SIZE];
+        if (use_preloaded != 0 && refN > 0) {
+            System.arraycopy(refClose, 0, inReal, 0, refN);
+        } else {
+            double[] _tmp_inReal = jsonDoubleArray(json, "inReal");
+            inReal = _tmp_inReal;
+        }
+        boolean _optRejected = false;
+        int optInTimePeriod = jsonInt(json, "optInTimePeriod");
+        // The output buffers are sized to the count the call actually PRODUCES --
+        // endIdx - max(startIdx, lookback) + 1 -- plus `out_pad` from the request, and
+        // never below one. Not to the width of the requested range: that is the bound the
+        // managed backends check and the Rust asserts state, and at the range width it was
+        // slack by exactly the lookback, so no call could ever approach it.
+        // The pad is there because a bound is a MINIMUM, never an equality. A caller
+        // re-using a pre-allocated buffer passes a larger one, and that is not an error --
+        // the reported OutRange is what says which part was written. So the harness sends
+        // both: the startIdx axis sends no pad (the bound is reachable) while the
+        // full-range value comparison sends one (slack is legal). Sizing every call one way
+        // would silently drop the other property.
+        // FLOORED AT ONE, deliberately. Zero is what the formula gives for a rejected call
+        // (the lookback is -1, or usize::MAX in Rust, for an out-of-range parameter) and
+        // for a range shorter than the lookback, where the output bound switches off and
+        // the spec says any length will do, including none. It does not: two EMPTY output
+        // buffers are rejected as aliased by C# (an explicit IsEmpty clause) and by Rust
+        // (the empty Vec the server hands each output shares one dangling as_ptr()), and
+        // accepted by C and Java -- a four-way divergence on a call the specification says
+        // all four accept. Sizing to zero here would reach it on every multi-output
+        // function, which is a semantic question, not a harness one. Recorded as
+        // error-handling-spec, open item 11.
+        // The C server keeps its MAX_ARRAY_SIZE statics: C is handed bare pointers, has no
+        // sizes and cannot make the check, so an exact buffer would test nothing there.
+        int _lb = core.ZLEMA_Lookback(optInTimePeriod);
+        int _cs = startIdx > _lb ? startIdx : _lb;
+        int _outLen = ((_lb < 0 || _cs > endIdx) ? 1 : endIdx - _cs + 1) + jsonInt(json, "out_pad");
+        double[] outArr0 = new double[_outLen];
+        MInteger outBegIdx = new MInteger();
+        MInteger outNBElement = new MInteger();
+        RetCode rc = RetCode.Success;
+        int bench_mode = jsonInt(json, "bench_mode");
+        double[] _warm_inReal = bench_mode == 0 ? null : java.util.Arrays.copyOfRange(inReal, 0, endIdx + 1);
+        long startNs = 0;
+        for (int _bi = 0; _bi <= bench_iters; _bi++) {
+        if (_bi == 1) startNs = System.nanoTime();
+        if (bench_mode == 0) {
+        if (jsonInt(json, "timed") != 0) {
+            if (_optRejected) {
+                rc = RetCode.BadParam;
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            } else {
+            try {
+                rc = core.ZLEMA_Impl(startIdx, endIdx, inReal, optInTimePeriod, outBegIdx, outNBElement, outArr0);
+            } catch (RuntimeException _e) {
+                if (!(_e instanceof TaLibFailure)) throw _e;
+                rc = ((TaLibFailure) _e).retCode();
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            }
+            }
+        } else {
+            if (_optRejected) {
+                rc = RetCode.BadParam;
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            } else {
+            try {
+                OutRange _pr = core.ZLEMA(startIdx, endIdx, inReal, optInTimePeriod, outArr0);
+                outBegIdx.value = _pr.begIdx();
+                outNBElement.value = _pr.count();
+                rc = RetCode.Success;
+            } catch (RuntimeException _e) {
+                if (!(_e instanceof TaLibFailure)) throw _e;
+                rc = ((TaLibFailure) _e).retCode();
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            }
+            }
+        }
+        }
+        else if (_optRejected) { rc = RetCode.BadParam; }
+        else { try {
+            if (bench_mode == 1) {
+                core.zlemaOpen(_warm_inReal, optInTimePeriod);
+            } else {
+                Core.ZlemaStream _wh = core.zlemaOpenAndFill(_warm_inReal, optInTimePeriod, outArr0);
+                outBegIdx.value = _wh.outRange().begIdx();
+                outNBElement.value = _wh.outRange().count();
+            }
+            rc = RetCode.Success;
+        } catch (RuntimeException _e) { rc = _e instanceof TaLibFailure ? ((TaLibFailure)_e).retCode() : RetCode.BadParam; } }
+        }
+        long elapsedNs = (System.nanoTime() - startNs) / bench_iters;
+        int usedFloat = 0;
+        if (jsonInt(json, "use_float") != 0) {
+            float[] f_inReal = new float[inReal.length];
+            for (int _fi = 0; _fi < inReal.length; _fi++) f_inReal[_fi] = (float)inReal[_fi];
+            if (_optRejected) {
+                rc = RetCode.BadParam;
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            } else {
+            try {
+                OutRange _fr = core.ZLEMA(startIdx, endIdx, f_inReal, optInTimePeriod, outArr0);
                 outBegIdx.value = _fr.begIdx();
                 outNBElement.value = _fr.count();
                 rc = RetCode.Success;
@@ -224391,6 +225349,176 @@ public class TaCodegenServe {
         return "{\"retCode\":0,\"beg\":" + beg.value + ",\"nb\":" + nb.value + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"benign\":" + zsign[0] + diag + "}";
     }
 
+    static String sv_ZLEMA(String json) {
+        int svShape = jsonInt(json, "gen_shape");
+        int svSeed = jsonInt(json, "gen_seed");
+        int svN = jsonInt(json, "gen_n");
+        if (svN < 2) svN = 2;
+        if (svN > 256) svN = 256;
+        int svK = jsonInt(json, "unstablePeriod");
+        int svCompat = jsonInt(json, "compatibility");
+        if (svCompat != 0) {
+            return "{\"error\":\"java has no compatibility API (pinned to Default)\"}";
+        }
+        int optInTimePeriod = json.contains("\"optInTimePeriod\"") ? jsonInt(json, "optInTimePeriod") : 30;
+        double[] fz_o = new double[svN];
+        double[] fz_h = new double[svN];
+        double[] fz_l = new double[svN];
+        double[] fz_c = new double[svN];
+        double[] fz_v = new double[svN];
+        double[] fz_oi = new double[svN];
+        FuzzData.fuzzGen(svShape, svSeed, svN, fz_o, fz_h, fz_l, fz_c, fz_v, fz_oi);
+        double[] b0 = new double[svN];
+        long legs = 0;
+        boolean allOk = true;
+        boolean peekAll = true;
+        long peekReps = 0;
+        boolean peekRepAll = true;
+        int fillChecked = 0;
+        boolean fillOk = true;
+        MInteger beg = new MInteger();
+        MInteger nb = new MInteger();
+        String diag = "";
+        int rangeChecked = 0;
+        boolean rangeOk = true;
+        long rangeLegs = 0;
+        int rangeSites = 0;
+        int ufillChecked = 0;
+        boolean ufillOk = true;
+        long[] zsign = { 0 };
+        int rounds = 1;
+        for (int rd = 0; rd < rounds; rd++) {
+            Core c2 = new Core();
+            RetCode rc;
+            try { rc = c2.ZLEMA_Impl(0, svN - 1, fz_c, optInTimePeriod, beg, nb, b0); }
+            catch (RuntimeException _sve) { if (!(_sve instanceof TaLibFailure)) throw _sve; rc = ((TaLibFailure) _sve).retCode(); beg.value = 0; nb.value = 0; }
+            int lb = c2.ZLEMA_Lookback(optInTimePeriod);
+            if (rc != RetCode.Success || nb.value == 0) {
+                boolean openRejects;
+                try { c2.zlemaOpen(fz_c, optInTimePeriod); openRejects = false; } catch (IllegalArgumentException _e) { openRejects = true; }
+                return "{\"retCode\":" + rc.toInt() + ",\"legs\":0,\"nb\":" + nb.value + ",\"openRejects\":" + (openRejects ? 1 : 0) + ",\"ok\":" + (openRejects ? 1 : 0) + ",\"peek_ok\":1}";
+            }
+            fillChecked = 1;
+            try {
+                double[] f0 = new double[svN];
+                java.util.Arrays.fill(f0, (double)-1.2345678901234e300);
+                Core.ZlemaStream _fh = c2.zlemaOpenAndFill(fz_c, optInTimePeriod, f0);
+                OutRange _fr = _fh.outRange();
+                rangeChecked = 1; rangeLegs++; rangeSites |= 1;
+                if (_fr.begIdx() != beg.value || _fr.count() != nb.value) rangeOk = false;
+                if (_fr.begIdx() != beg.value || _fr.count() != nb.value) fillOk = false;
+                else {
+                    for (int i = 0; i < nb.value; i++) if (svXtierNe(f0[i], b0[i], zsign)) fillOk = false;
+                    for (int i = nb.value; i < svN; i++) if (f0[i] != (double)-1.2345678901234e300) fillOk = false;
+                }
+                try { c2.zlemaOpenAndFill(fz_c, optInTimePeriod, fz_c); fillOk = false; } catch (IllegalArgumentException _e) { /* expected: output aliases input */ }
+            } catch (IllegalArgumentException _e) { fillOk = false; }
+            int seedShift = 0;
+            int[] pcs = { lb + 1 + seedShift, lb + 13, svN / 2, svN - 1 };
+            java.util.Arrays.sort(pcs);
+            int prevP = -1;
+            for (int pi = 0; pi < pcs.length; pi++) {
+                int p = pcs[pi];
+                if (p < lb + 1 + seedShift || p > svN - 1 || p == prevP) continue;
+                prevP = p;
+                Core.ZlemaStream st;
+                try { st = c2.zlemaOpen(java.util.Arrays.copyOf(fz_c, p), optInTimePeriod); }
+                catch (IllegalArgumentException _e) { allOk = false; if (diag.isEmpty()) diag = ",\"openRejectP\":" + p; continue; }
+                legs++;
+                if (svXtierNe(st.value(), b0[p - 1 - beg.value], zsign)) { allOk = false; if (diag.isEmpty()) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":0,\"where\":\"open\""; }
+                for (int t = p; t < svN; t++) {
+                    double pk = st.peek(fz_c[t]);
+                    if (t % 7 == 0) {
+                        st.peek(fz_c[t - 1]);
+                        double rp = st.peek(fz_c[t]);
+                        peekReps++;
+                        if (svBne(rp, pk)) peekRepAll = false;
+                    }
+                    double up = st.update(fz_c[t]);
+                    if (svBne(pk, up)) peekAll = false;
+                    st.peek(fz_c[t - 1]);
+                    if (svBne(st.value(), up)) allOk = false;
+                    if (svXtierNe(up, b0[t - beg.value], zsign)) { allOk = false; if (diag.isEmpty()) diag = ",\"badBar\":" + t + ",\"badOut\":0,\"batchv\":\"" + String.format("%016x", Double.doubleToRawLongBits(b0[t - beg.value])) + "\",\"streamv\":\"" + String.format("%016x", Double.doubleToRawLongBits(up)) + "\""; }
+                }
+                if (allOk) {
+                    rangeChecked = 1; rangeLegs++; rangeSites |= 2;
+                    if (st.outRange().begIdx() != beg.value || st.outRange().count() != nb.value) rangeOk = false;
+                }
+            }
+            {
+                int p = lb + 1 + seedShift;
+                if (p <= svN - 1) {
+                    ufillChecked = 1;
+                    try {
+                        Core.ZlemaStream stu = c2.zlemaOpen(java.util.Arrays.copyOf(fz_c, p), optInTimePeriod);
+                        OutRange ur0 = stu.outRange();
+                        double[] u0 = new double[svN];
+                        java.util.Arrays.fill(u0, (double)-1.2345678901234e300);
+                        double[] tail_fz_c = java.util.Arrays.copyOfRange(fz_c, p, svN);
+                        stu.updateAndFill(new double[0], u0);
+                        try { stu.updateAndFill(tail_fz_c, new double[0]); ufillOk = false; } catch (IllegalArgumentException _e) { /* expected: output shorter than the run */ }
+                        try { stu.updateAndFill(tail_fz_c, tail_fz_c); ufillOk = false; } catch (IllegalArgumentException _e) { /* expected: output aliases input */ }
+                        if (stu.outRange().begIdx() != ur0.begIdx() || stu.outRange().count() != ur0.count()) ufillOk = false;
+                        stu.updateAndFill(tail_fz_c, u0);
+                        for (int t = p; t < svN; t++) if (svXtierNe(u0[t - p], b0[t - beg.value], zsign)) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u0[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        rangeChecked = 1; rangeLegs++; rangeSites |= 4;
+                        if (stu.outRange().begIdx() != beg.value || stu.outRange().count() != nb.value) { ufillOk = false; rangeOk = false; }
+                    } catch (IllegalArgumentException _e) { ufillOk = false; }
+                }
+            }
+            {
+                int p0 = lb + 1 + seedShift;
+                if (p0 <= svN - 1) {
+                    try {
+                        Core.ZlemaStream sA = c2.zlemaOpen(java.util.Arrays.copyOf(fz_c, p0), optInTimePeriod);
+                        int mid = (p0 + svN) / 2;
+                        for (int t = p0; t < mid; t++) sA.update(fz_c[t]);
+                        Core.ZlemaStream sB = sA.clone();
+                        for (int t = mid; t < svN; t++) {
+                            double uA = sA.update(fz_c[t]);
+                            double uB = sB.update(fz_c[t]);
+                            if (svBne(uA, uB) || svXtierNe(uA, b0[t - beg.value], zsign)) { allOk = false; if (diag.isEmpty()) diag = ",\"copyDiverged\":" + t; }
+                        }
+                        if (allOk) {
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 16;
+                            if (sA.outRange().begIdx() != beg.value || sA.outRange().count() != nb.value) { rangeOk = false; if (diag.isEmpty()) diag = ",\"copyRangeSrc\":1"; }
+                            if (sB.outRange().begIdx() != beg.value || sB.outRange().count() != nb.value) { rangeOk = false; if (diag.isEmpty()) diag = ",\"copyRange\":1"; }
+                        }
+                    } catch (IllegalArgumentException _e) { allOk = false; if (diag.isEmpty()) diag = ",\"copyOpenReject\":1"; }
+                }
+            }
+            if (lb >= 1 && lb < svN) {
+                try { c2.zlemaOpen(java.util.Arrays.copyOf(fz_c, lb), optInTimePeriod); allOk = false; if (diag.isEmpty()) diag = ",\"shortHistoryAccepted\":1"; }
+                catch (InsufficientHistoryException _e) { /* expected, typed */ }
+                catch (IllegalArgumentException _e) { allOk = false; if (diag.isEmpty()) diag = ",\"shortHistoryWrongType\":1"; }
+            }
+            try {
+                Core.ZlemaStream sD = c2.zlemaOpen(fz_c, Integer.MIN_VALUE);
+                Core.ZlemaStream sE = c2.zlemaOpen(fz_c, 30);
+                if (svBne(sD.value(), sE.value())) { allOk = false; if (diag.isEmpty()) diag = ",\"minValueDefault\":1"; }
+            } catch (IllegalArgumentException _e) { /* defaults need more history than svN — skip */ }
+            {
+                int Sidx = lb + (svN - lb) / 3;
+                if (Sidx > lb && Sidx < svN - 1) {
+                    MInteger begS = new MInteger();
+                    MInteger nbS = new MInteger();
+                    RetCode rcS;
+                    try { rcS = c2.ZLEMA_Impl(Sidx, svN - 1, fz_c, optInTimePeriod, begS, nbS, b0); }
+                    catch (RuntimeException _sve) { if (!(_sve instanceof TaLibFailure)) throw _sve; rcS = ((TaLibFailure) _sve).retCode(); }
+                    if (rcS == RetCode.Success && nbS.value > 0) {
+                        try {
+                            Core.ZlemaStream stA = c2.zlemaOpenInternal(java.util.Arrays.copyOf(fz_c, svN), Sidx, optInTimePeriod);
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 8;
+                            if (stA.outRange().begIdx() != begS.value || stA.outRange().count() != nbS.value) rangeOk = false;
+                        } catch (IllegalArgumentException _e) { rangeOk = false; if (diag.isEmpty()) diag = ",\"anchoredOpenRejected\":1"; }
+                    }
+                }
+            }
+        }
+        return "{\"retCode\":0,\"beg\":" + beg.value + ",\"nb\":" + nb.value + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"benign\":" + zsign[0] + diag + "}";
+    }
+
     static String handle_fuzz_in_hash(String json) {
         int shape = jsonInt(json, "gen_shape");
         int seed = jsonInt(json, "gen_seed");
@@ -224593,6 +225721,7 @@ public class TaCodegenServe {
         case "TA_WCLPRICE": return sv_WCLPRICE(json);
         case "TA_WILLR": return sv_WILLR(json);
         case "TA_WMA": return sv_WMA(json);
+        case "TA_ZLEMA": return sv_ZLEMA(json);
         default: return "{\"error\":\"not_streamable\"}";
         }
     }

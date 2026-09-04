@@ -746,6 +746,9 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"PVO",          TA_FUNC_UNST_EMA},
     /* EFI smooths its force series with the same EMA. */
     {"EFI",          TA_FUNC_UNST_EMA},
+    /* ZLEMA is an EMA over a de-lagged copy of the input: same recursion, same
+     * seeding, so it warms with UNST_EMA and reads that knob in its lookback. */
+    {"ZLEMA",        TA_FUNC_UNST_EMA},
     /* KC is recursive through BOTH of its callees -- EMA of the typical price
      * and the Wilder ATR -- so it is converging, not finite-window, and it is
      * the first function here whose legs carry DIFFERENT ids. BOTH rows are

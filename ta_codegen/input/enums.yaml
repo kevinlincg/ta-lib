@@ -33,6 +33,9 @@ MAType:
     # DEFAULT (#182): the validation prologue substitutes it before the body
     # runs, so it never reaches a switch arm either.
     - { name: DEFAULT,  value: 11 }
+    # A real average again, appended after the two pseudo-members because the
+    # list is append-only. The reading order is cosmetic; renumbering is ABI.
+    - { name: ZLEMA, value: 12 }
 
 # FuncUnstId — the unstable-period function IDs. This list IS the source of truth
 # for the FuncUnstId enum generated into the GENCODE section of include/ta_defs.h
