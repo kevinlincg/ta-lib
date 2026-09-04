@@ -91,3 +91,25 @@ reports the output byte-identical — but I did not run them.
 `.claude/skills/new-ta-func/SKILL.md`'s `stream` guidance said "Nothing catches
 that" and described a `StreamSmokeTest` failure mode that `6e018348` had
 already replaced. Corrected to the refusal.
+
+## Rebased onto dev `ce5f5748`
+
+Dev moved after the verification above was taken: `46577145` (c_hygiene, the
+post-emission `(void)` sweep), `b128cbf5` (a short `--function` token names a
+whole component) and `ce5f5748` (#344, the Open head that declares only what its
+body uses). This branch is rebased onto `ce5f5748` with no conflicts, and
+`git patch-id` says its net diff against dev is byte-identical to the one this
+body describes — nothing about the change itself moved.
+
+Re-checked on the rebased head, at these tiers only:
+
+- `scripts/build.py regen-check`: green, exit 0, 179 functions.
+- `cargo test --release` in `ta_codegen/generator`: 916 passed / 0 failed.
+- `cargo clippy --release --all-targets -- -D warnings`: clean.
+
+Dev `ce5f5748` itself passes the same three commands, so that is a baseline for
+the rebase and not a control that goes red.
+
+**Not re-run on the rebase:** `scripts/synth_gate.py`, the nightly legs, and the
+two red controls — I did not re-remove `stream` from `sma.yaml` on the rebased
+head. Those numbers are the ones measured on `af4cdede`.
