@@ -192,9 +192,14 @@ abstract sweep compares values strictly.
   the in-tree differential.
 - `--fuzz-064` was not run (VHF post-dates 0.6.4, so it is auto-skipped there).
 
-## One thing for you to decide
+## The error-number slot
 
-`ta_error_number.h` gets `TA_VHF_DIFFERENTIAL_VACUOUS = **1656**`, skipping
-1655 because the unmerged `issue-349-vortex` branch claims 1655. If #349 lands
-differently, renumber this one -- the enum is append-only and I did not want
-two branches claiming one slot.
+`ta_error_number.h` gets `TA_VHF_DIFFERENTIAL_VACUOUS = **1656**`. 1655 is
+dev's own `TA_RMA_ORACLE_VACUOUS`, which landed with RMA after this branch was
+written; the unmerged `issue-349-vortex` branch, which had also claimed 1655,
+has been moved to 1657. So the three slots are disjoint whichever order the
+branches land in, and nothing here needs renumbering.
+
+This branch now carries a merge of dev (RMA included): the merge resolved the
+generated registries by regenerating, and `regen-check` plus the full
+`ta_regtest` C suite are green on the merged tree.
