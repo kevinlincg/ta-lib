@@ -978,30 +978,18 @@ impl WmaStream {
             let mut rw: usize = 0_usize;
             let mut tempReal: f64 = 0.0_f64;
             let mut barsSinceReseed = sp.barsSinceReseed;
-            let mut cur_outReal = sp.cur_outReal;
-            let mut periodSub = sp.periodSub;
             let mut periodSum = sp.periodSum;
-            let mut trailingValue = sp.trailingValue;
-            let mut pkSlot0: usize = usize::MAX;
-            let mut pkVal0: f64 = 0.0_f64;
             let mut pkSlot1: usize = usize::MAX;
             let mut pkVal1: f64 = 0.0_f64;
             if sp.optInTimePeriod == 1 {
                 (*outReal) = inReal;
-                cur_outReal = (*outReal);
                 return Ok((*outReal));
-            }
-            if sp.ringCap_trailingIdx == 0 {
-                pkSlot0 = 0;
-                pkVal0 = inReal;
             }
             pkSlot1 = sp.winPos_j as usize;
             pkVal1 = inReal;
             // Add the current price bar to the sum
             // who are carried through the iterations.
             tempReal = inReal;
-            periodSub += tempReal;
-            periodSub -= trailingValue;
             periodSum += tempReal * ((sp.optInTimePeriod) as f64);
             // Re-anchor: rebuild both totals from the window itself.
             //
@@ -1048,25 +1036,18 @@ impl WmaStream {
             barsSinceReseed -= 1;
             if barsSinceReseed <= 0 {
                 barsSinceReseed = (8 * sp.optInTimePeriod) as usize;
-                periodSub = 0.0 as f64;
                 periodSum = 0.0 as f64;
                 rw = 1;
                 // for( j = sp.lookbackWin; j >= 0; j -= 1 )
                 j = sp.lookbackWin;
                 loop {
                     tempReal = (if ((if sp.winPos_j + sp.winCap_j - j >= sp.winCap_j { sp.winPos_j + sp.winCap_j - j - sp.winCap_j } else { sp.winPos_j + sp.winCap_j - j }) as usize) != pkSlot1 { sp.win_j_inReal[((if sp.winPos_j + sp.winCap_j - j >= sp.winCap_j { sp.winPos_j + sp.winCap_j - j - sp.winCap_j } else { sp.winPos_j + sp.winCap_j - j })) as usize] } else { pkVal1 });
-                    periodSub += tempReal;
                     periodSum += tempReal * ((rw) as f64);
                     rw += 1;
                     if j == 0 { break; }
                     j -= 1;
                 }
             }
-            // Save the trailing value for being substract at
-            // the next iteration.
-            // (must be saved here just in case outReal and
-            //  inReal are the same buffer).
-            trailingValue = (if (sp.ringPos_trailingIdx as usize) != pkSlot0 { sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] } else { pkVal0 });
             // Calculate the WMA for this price bar.
             (*outReal) = periodSum / sp.divider;
         }

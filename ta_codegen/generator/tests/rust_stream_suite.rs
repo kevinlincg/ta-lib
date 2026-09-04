@@ -566,6 +566,109 @@ fn no_rust_peek_copies_the_handle() {
     );
 }
 
+/// The identifiers `text` mentions, comments stripped, as whole tokens.
+///
+/// Substring matching would fuse `periodSub` into `periodSubSqrt` and hold a
+/// dead accumulator alive by its own longer-named neighbour; the comments have
+/// to go for the same reason — WMA's re-anchor prose names `periodSub` at
+/// length, and the frame it sits in is exactly the one that must not keep it.
+fn rust_idents(text: &str) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for line in text.lines() {
+        let code = line.split_once("//").map_or(line, |(c, _)| c);
+        let mut cur = String::new();
+        for ch in code.chars() {
+            if ch.is_alphanumeric() || ch == '_' {
+                cur.push(ch);
+            } else if !cur.is_empty() {
+                out.insert(std::mem::take(&mut cur));
+            }
+        }
+        if !cur.is_empty() {
+            out.insert(cur);
+        }
+    }
+    out
+}
+
+/// Every local a Rust peek frame declares is read by that frame.
+///
+/// The three shapes a frame declares are a state field moved to a local, a
+/// transition temp, and a buffer shadow's `pkSlot`/`pkVal` pair; a store to any
+/// of them that nothing reads leaves the declaration carrying it dead too, and
+/// for a moved state field the declaration is also a field load per call
+/// (issue #353). Rust is the backend where nothing else can say so: `lib.rs`
+/// blanket-allows `unused_variables`, `unused_assignments` and `unused_mut`, so
+/// rustc is silent, and the stores are dead by definition, so no value gate can
+/// see them either.
+///
+/// Read off the rendered text rather than the IR, because what is asserted is
+/// that the RENDERED frame carries no dead bind — an emitter that computed the
+/// right live set and then printed the whole list anyway would satisfy a check
+/// over the analysis and fail this one.
+#[test]
+fn no_rust_peek_binds_a_dead_local() {
+    let mut swept = 0usize;
+    let mut declared = 0usize;
+    let mut dead: Vec<String> = Vec::new();
+    for name in streaming_indicators() {
+        let s = rust_stream_section(&name);
+        let Some(at) = s.find("    pub fn peek(&self") else { continue };
+        let end = s[at..].find("\n    }").map_or(s.len(), |k| at + k);
+        let peek = &s[at..end];
+        swept += 1;
+        for (i, line) in peek.lines().enumerate() {
+            // `let mut <name>` with or without a type ascription; a `let` with
+            // no `mut` is a read-only bind the frame provably consumes.
+            let Some(rest) = line.trim().strip_prefix("let mut ") else { continue };
+            let local = rest
+                .split_once(':')
+                .map_or_else(|| rest.split_once(" =").map(|(n, _)| n), |(n, _)| Some(n));
+            let Some(local) = local.map(str::trim) else { continue };
+            if local.is_empty() || !local.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                continue;
+            }
+            declared += 1;
+            // Every other line, with a whole-variable store to this local
+            // reduced to its right-hand side: `x = f(x)` reads it, `x = 1` does
+            // not. A compound store drops its HEAD self-read only — the rule
+            // `streaming::names_read` states, and what retires an accumulator
+            // whose running total nothing ever reads. `x += x * 2` still reads.
+            let mut reads = false;
+            for (j, other) in peek.lines().enumerate() {
+                if j == i {
+                    continue;
+                }
+                let code = other.trim();
+                let considered = match code.strip_prefix(local) {
+                    Some(tail) if tail.starts_with(" = ") => &tail[3..],
+                    Some(tail)
+                        if ["+= ", "-= ", "*= ", "/= "]
+                            .iter()
+                            .any(|op| tail.strip_prefix(' ').is_some_and(|t| t.starts_with(op))) =>
+                    {
+                        &tail[4..]
+                    }
+                    _ => code,
+                };
+                if rust_idents(considered).contains(local) {
+                    reads = true;
+                    break;
+                }
+            }
+            if !reads {
+                dead.push(format!("{name}: {local}"));
+            }
+        }
+    }
+    // Non-vacuity floors: the slice must have found the corpus AND the
+    // declarations. A needle that stopped matching `peek` would zero `swept`;
+    // a parse that stopped recognising a bind would zero `declared`.
+    assert!(swept > 170, "only {swept} peek frame(s) swept");
+    assert!(declared > 400, "only {declared} peek local(s) parsed");
+    assert!(dead.is_empty(), "a peek frame binds a local it never reads:\n{}", dead.join("\n"));
+}
+
 /// The APO/PPO/PVO period swap is a MEMORY-SAFETY precondition, not a
 /// normalization convenience.
 ///

@@ -1429,14 +1429,6 @@ impl HtPhasorStream {
             let mut prev_detrender_Odd = sp.prev_detrender_Odd;
             let mut prev_detrender_input_Even = sp.prev_detrender_input_Even;
             let mut prev_detrender_input_Odd = sp.prev_detrender_input_Odd;
-            let mut prev_jI_Even = sp.prev_jI_Even;
-            let mut prev_jI_Odd = sp.prev_jI_Odd;
-            let mut prev_jI_input_Even = sp.prev_jI_input_Even;
-            let mut prev_jI_input_Odd = sp.prev_jI_input_Odd;
-            let mut prev_jQ_Even = sp.prev_jQ_Even;
-            let mut prev_jQ_Odd = sp.prev_jQ_Odd;
-            let mut prev_jQ_input_Even = sp.prev_jQ_input_Even;
-            let mut prev_jQ_input_Odd = sp.prev_jQ_input_Odd;
             let mut trailingWMAValue = sp.trailingWMAValue;
             let mut pkSlot0: usize = usize::MAX;
             let mut pkVal0: f64 = 0.0_f64;
@@ -1473,11 +1465,7 @@ impl HtPhasorStream {
                 (*outQuadrature) = Q1;
                 (*outInPhase) = I1ForEvenPrev3;
                 hilbertTempReal = sp.a * I1ForEvenPrev3;
-                prev_jI_Even = sp.b * prev_jI_input_Even;
-                prev_jI_input_Even = I1ForEvenPrev3;
                 hilbertTempReal = sp.a * Q1;
-                prev_jQ_Even = sp.b * prev_jQ_input_Even;
-                prev_jQ_input_Even = Q1;
                 if { hilbertIdx += 1; hilbertIdx } == 3 {
                     hilbertIdx = 0;
                 }
@@ -1509,11 +1497,7 @@ impl HtPhasorStream {
                 (*outQuadrature) = Q1;
                 (*outInPhase) = I1ForOddPrev3;
                 hilbertTempReal = sp.a * I1ForOddPrev3;
-                prev_jI_Odd = sp.b * prev_jI_input_Odd;
-                prev_jI_input_Odd = I1ForOddPrev3;
                 hilbertTempReal = sp.a * Q1;
-                prev_jQ_Odd = sp.b * prev_jQ_input_Odd;
-                prev_jQ_input_Odd = Q1;
                 // The varaiable I1 is the detrender delayed for
                 // 3 price bars.
                 //

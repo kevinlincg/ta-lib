@@ -1259,6 +1259,48 @@ fn peek_frame_arm(
     }
     let bufs = streaming::transition_buffers(model, names);
     let (locals, body_ir) = localize_state_writes(func, &pt.body, &rebased, &bufs)?;
+    // Localizing turns a store into the handle that nothing read into a store to
+    // a local that nothing reads, and the bind carrying it is then a dead field
+    // load per call (issue #353). Both go, as in C — and the fixpoint has to
+    // reach the shadow pair as well: WMA's `pkSlot0`/`pkVal0` are read by the
+    // one store that goes, so purging the local alone would leave a fresh dead
+    // pair behind. The rebase is emitted as text beside the frame, so no
+    // statement shows the read that keeps its targets alive: hold them out of
+    // the purge entirely.
+    //
+    // Both helpers key on the NAME; a peek local is `let`-bound and inferred
+    // here, so there is no declared type to hand them.
+    let pinned: HashSet<&str> = rebased.iter().map(String::as_str).collect();
+    let mut purgeable: Vec<(String, VarType)> = locals
+        .iter()
+        .filter(|n| !pinned.contains(n.as_str()))
+        .map(|n| (n.clone(), VarType::Real))
+        .collect();
+    for sh in &pt.shadows {
+        purgeable.push((sh.slot_var.clone(), VarType::Real));
+        purgeable.push((sh.val_var.clone(), VarType::Real));
+    }
+    for t in &pt.slot_temps {
+        purgeable.push((t.clone(), VarType::Real));
+    }
+    let body_ir = streaming::purge_dead_temp_stores(&body_ir, &purgeable);
+    let kept: HashSet<String> = streaming::temps_used(&purgeable, &body_ir)
+        .into_iter()
+        .map(|(n, _)| n)
+        .collect();
+    let locals: Vec<String> = locals
+        .into_iter()
+        .filter(|n| pinned.contains(n.as_str()) || kept.contains(n))
+        .collect();
+    // `pt.body` is spent: the localized, purged body is `body_ir` from here on,
+    // and keeping the pre-localization copy reachable is a stale read waiting to
+    // happen. Take the two lists the render still needs and drop the rest.
+    let streaming::PeekTransition { shadows, slot_temps, .. } = pt;
+    let shadows: Vec<_> = shadows
+        .into_iter()
+        .filter(|sh| kept.contains(&sh.slot_var) || kept.contains(&sh.val_var))
+        .collect();
+    let slot_temps: Vec<_> = slot_temps.into_iter().filter(|t| kept.contains(t)).collect();
     // A localized field keeps its own name, so the renderer must classify the
     // bare spelling exactly as it classified `sp.<name>` — the sets carry both,
     // and the extrema override touches only one of the pair. Mirror the
@@ -1329,12 +1371,12 @@ fn peek_frame_arm(
     for name in &locals {
         let _ = writeln!(out, "{pad}let mut {name} = sp.{name};");
     }
-    for sh in &pt.shadows {
+    for sh in &shadows {
         let (t, z) = if sh.int_elem { ("i32", "0_i32") } else { ("f64", "0.0_f64") };
         let _ = writeln!(out, "{pad}let mut {}: usize = usize::MAX;", sh.slot_var);
         let _ = writeln!(out, "{pad}let mut {}: {t} = {z};", sh.val_var);
     }
-    for t in &pt.slot_temps {
+    for t in &slot_temps {
         let _ = writeln!(out, "{pad}let mut {t}: usize = 0;");
     }
     if let Some(ex) = model.extrema() {

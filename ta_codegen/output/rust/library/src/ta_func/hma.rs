@@ -1716,13 +1716,11 @@ impl HmaStream {
                 let mut dRing_Idx = sp.dRing_Idx;
                 let mut periodSubFull = sp.periodSubFull;
                 let mut periodSubHalf = sp.periodSubHalf;
-                let mut periodSubSqrt = sp.periodSubSqrt;
                 let mut periodSumFull = sp.periodSumFull;
                 let mut periodSumHalf = sp.periodSumHalf;
                 let mut periodSumSqrt = sp.periodSumSqrt;
                 let mut trailingFull = sp.trailingFull;
                 let mut trailingHalf = sp.trailingHalf;
-                let mut trailingSqrt = sp.trailingSqrt;
                 let mut pkSlot0: usize = usize::MAX;
                 let mut pkVal0: f64 = 0.0_f64;
                 let mut pkSlot1: usize = usize::MAX;
@@ -1791,8 +1789,6 @@ impl HmaStream {
                 halfOut = periodSumHalf / sp.dividerHalf;
                 periodSumHalf -= periodSubHalf;
                 diffReal = 2.0 * halfOut - fullOut;
-                periodSubSqrt += diffReal;
-                periodSubSqrt -= trailingSqrt;
                 periodSumSqrt += diffReal * ((sp.sqrtPeriod) as f64);
                 // The outer WMA consumes a DERIVED series that is never
                 // materialised, so its rescan walks the de-lag ring: dRing_Idx is
@@ -1802,7 +1798,6 @@ impl HmaStream {
                 barsSinceReseedSqrt -= 1;
                 if barsSinceReseedSqrt <= 0 {
                     barsSinceReseedSqrt = 8 * sp.sqrtPeriod;
-                    periodSubSqrt = 0.0;
                     periodSumSqrt = 0.0;
                     rw = 1;
                     ringWalk = dRing_Idx;
@@ -1810,7 +1805,6 @@ impl HmaStream {
                     q = 0;
                     while q < sp.ringSize {
                         tempReal2 = sp.cb_dRing[ringWalk];
-                        periodSubSqrt += tempReal2;
                         periodSumSqrt += tempReal2 * ((rw) as f64);
                         rw += 1;
                         ringWalk += 1;
@@ -1819,10 +1813,8 @@ impl HmaStream {
                         }
                         q += 1;
                     }
-                    periodSubSqrt += diffReal;
                     periodSumSqrt += diffReal * ((sp.sqrtPeriod) as f64);
                 }
-                trailingSqrt = sp.cb_dRing[dRing_Idx];
                 dRing_Idx = dRing_Idx + 1;
                 if dRing_Idx > sp.maxIdx_dRing {
                     dRing_Idx = 0;
