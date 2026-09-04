@@ -865,6 +865,81 @@ impl StreamModel<'_> {
 // IR walking helpers
 // ---------------------------------------------------------------------------
 
+/// What a linear scan of a statement list concluded about one scalar local.
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum FirstUse {
+    NotMentioned,
+    WriteFirst,
+    ReadOrUnknown,
+}
+
+/// Whether seeding `var` from the handle at the top of a peek frame is dead:
+/// every path that mentions it WRITES it before any read (issue #343). The
+/// analysis is deliberately conservative — a mention inside a loop or switch,
+/// a compound assignment, or an `if` whose arms disagree all answer `false`,
+/// which keeps the seed. `false` never mis-renders; it only leaves the one
+/// field load this exists to drop.
+pub fn peek_seed_is_dead(body: &[Statement], var: &str) -> bool {
+    // Any reference form counts, `*p` and `arr[i]` included: a mention this
+    // pass cannot model has to keep the seed, never drop it.
+    fn reads(e: &Expr, var: &str) -> bool {
+        let mut names = BTreeSet::new();
+        expr_var_names(e, &mut names);
+        names.contains(var)
+    }
+    fn mentions(st: &Statement, var: &str) -> bool {
+        let mut names = BTreeSet::new();
+        stmt_var_names(st, &mut names);
+        names.contains(var)
+    }
+    fn scan(list: &[Statement], var: &str) -> FirstUse {
+        for st in list {
+            match st {
+                Statement::Assign { target: Expr::Var(t), value, compound } if t == var => {
+                    if *compound || reads(value, var) {
+                        return FirstUse::ReadOrUnknown;
+                    }
+                    return FirstUse::WriteFirst;
+                }
+                Statement::If { condition, then_body, else_body, .. } => {
+                    if reads(condition, var) {
+                        return FirstUse::ReadOrUnknown;
+                    }
+                    let t = scan(then_body, var);
+                    let e = scan(else_body, var);
+                    // An arm that ends in `return` never rejoins the code
+                    // below the `if`; writing there settles that path for
+                    // good. This is the period-1 identity branch's exact
+                    // shape: `if( p == 1 ) { cur_x = in; return cur_x; }`.
+                    let t_exits = matches!(then_body.last(), Some(Statement::Return { .. }));
+                    let e_exits = matches!(else_body.last(), Some(Statement::Return { .. }));
+                    match (t, e) {
+                        (FirstUse::NotMentioned, FirstUse::NotMentioned) => {}
+                        (FirstUse::WriteFirst, FirstUse::WriteFirst) => {
+                            return FirstUse::WriteFirst;
+                        }
+                        (FirstUse::WriteFirst, FirstUse::NotMentioned) if t_exits => {}
+                        (FirstUse::NotMentioned, FirstUse::WriteFirst) if e_exits => {}
+                        // One arm writes without exiting and the other does not
+                        // touch it: the untouched path leaves the seed live
+                        // downstream.
+                        _ => return FirstUse::ReadOrUnknown,
+                    }
+                }
+                // A loop may run zero times and a switch arm is data-picked;
+                // any mention inside is treated as a read.
+                other => {
+                    if mentions(other, var) {
+                        return FirstUse::ReadOrUnknown;
+                    }
+                }
+            }
+        }
+        FirstUse::NotMentioned
+    }
+    scan(body, var) == FirstUse::WriteFirst
+}
+
 /// Visit every expression held by a statement tree (conditions, initializers,
 /// targets, values), recursing into nested statements.
 pub fn walk_stmt_exprs(s: &Statement, f: &mut dyn FnMut(&Expr)) {
@@ -10071,4 +10146,152 @@ mod tests {
         let m = analyze(&f).expect("analyzes");
         assert_eq!(names(&m.state), ["buf"]);
     }
+
+
+    // ---- peek_seed_is_dead -------------------------------------------------
+
+    fn out_local() -> &'static str {
+        "cur_outReal"
+    }
+
+    // Owned rather than a slice so the cases below stay `dead(vec![..])`; the
+    // lint is right that nothing consumes it, and wrong that it matters here.
+    #[allow(clippy::needless_pass_by_value)]
+    fn dead(body: Vec<Statement>) -> bool {
+        peek_seed_is_dead(&body, out_local())
+    }
+
+    fn ret_it() -> Statement {
+        Statement::Return { value: Some(var(out_local())) }
+    }
+
+    fn branch(condition: Expr, then_body: Vec<Statement>, else_body: Vec<Statement>) -> Statement {
+        Statement::If { condition, then_body, else_body, cond_comments: vec![] }
+    }
+
+    #[test]
+    fn an_unconditional_write_ahead_of_every_read_drops_the_seed() {
+        assert!(dead(vec![assign(var(out_local()), var("t")), ret_it()]));
+    }
+
+    /// The frame's own early exit is rewritten to `return cur_x`, so an exit
+    /// that computes nothing reads the seed and must keep it.
+    #[test]
+    fn an_early_exit_that_writes_nothing_keeps_the_seed() {
+        assert!(!dead(vec![
+            branch(var("degenerate"), vec![ret_it()], vec![]),
+            assign(var(out_local()), var("t")),
+        ]));
+    }
+
+    /// The period-1 identity arm (EMA, ZLEMA): it writes and leaves, so the
+    /// path that skips it still reaches the unconditional write below.
+    #[test]
+    fn an_arm_that_writes_and_returns_leaves_the_fallthrough_provable() {
+        assert!(dead(vec![
+            branch(
+                var("period1"),
+                vec![assign(var(out_local()), var("inReal")), ret_it()],
+                vec![],
+            ),
+            assign(var(out_local()), var("t")),
+        ]));
+    }
+
+    #[test]
+    fn an_else_arm_that_writes_and_returns_counts_the_same_as_a_then_arm() {
+        assert!(dead(vec![
+            branch(
+                var("ok"),
+                vec![],
+                vec![assign(var(out_local()), var("inReal")), ret_it()],
+            ),
+            assign(var(out_local()), var("t")),
+        ]));
+    }
+
+    #[test]
+    fn both_arms_writing_drops_the_seed() {
+        assert!(dead(vec![branch(
+            var("odd"),
+            vec![assign(var(out_local()), var("a"))],
+            vec![assign(var(out_local()), var("b"))],
+        )]));
+    }
+
+    /// One arm writes and rejoins, the other never mentions it: the rejoined
+    /// path leaves the seed live for whatever reads it below.
+    #[test]
+    fn an_arm_that_writes_without_leaving_keeps_the_seed() {
+        assert!(!dead(vec![
+            branch(var("odd"), vec![assign(var(out_local()), var("a"))], vec![]),
+            ret_it(),
+        ]));
+    }
+
+    #[test]
+    fn a_compound_assignment_keeps_the_seed() {
+        assert!(!dead(vec![Statement::Assign {
+            target: var(out_local()),
+            value: var("t"),
+            compound: true,
+        }]));
+    }
+
+    #[test]
+    fn a_write_whose_value_reads_it_keeps_the_seed() {
+        assert!(!dead(vec![assign(
+            var(out_local()),
+            add(var(out_local()), Expr::IntLiteral(1)),
+        )]));
+    }
+
+    #[test]
+    fn a_condition_that_reads_it_keeps_the_seed() {
+        assert!(!dead(vec![
+            branch(
+                le(var(out_local()), Expr::IntLiteral(0)),
+                vec![assign(var(out_local()), var("a"))],
+                vec![assign(var(out_local()), var("b"))],
+            ),
+            ret_it(),
+        ]));
+    }
+
+    /// IMI's shape, and the one seed the corpus still carries: the sole store
+    /// sits in the period loop, and a loop body is not provably entered.
+    #[test]
+    fn a_write_only_a_loop_body_makes_keeps_the_seed() {
+        assert!(!dead(vec![
+            Statement::ForC {
+                init: Box::new(assign(var("i"), Expr::IntLiteral(0))),
+                condition: le(var("i"), var("n")),
+                update: Box::new(assign(var("i"), add(var("i"), Expr::IntLiteral(1)))),
+                body: vec![assign(var(out_local()), var("t"))],
+            },
+            ret_it(),
+        ]));
+    }
+
+    /// A composed frame forwards the sub-stream's value from a switch arm,
+    /// which is data-picked: no arm is provably taken.
+    #[test]
+    fn a_write_only_a_switch_arm_makes_keeps_the_seed() {
+        assert!(!dead(vec![
+            Statement::Switch {
+                expr: var("maType"),
+                cases: vec![("0".to_string(), vec![assign(var(out_local()), var("sub"))])],
+                default: vec![],
+            },
+            ret_it(),
+        ]));
+    }
+
+    /// Not mentioning it at all is not the same as writing it: the emitter
+    /// keeps the seed rather than reasoning about a local nothing touches.
+    #[test]
+    fn a_body_that_never_mentions_it_keeps_the_seed() {
+        assert!(!dead(vec![assign(var("other"), var("t"))]));
+    }
+
 }

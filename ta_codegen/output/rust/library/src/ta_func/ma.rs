@@ -59,6 +59,8 @@
  *  060907 MF   Use TA_SMA/TA_EMA instead of internal implementation.
  *  072226 MF,CC Add HMA (issue #139).
  *  072426 MF,CC TA_MAType_DISABLED: period-independent identity copy (issue #93).
+ *  090426 MF,CC Add ZLEMA (issue #347).
+ *  090426 MF,CC Add RMA (issue #348).
  */
 
 // Import types from parent module
@@ -79,7 +81,7 @@ impl Core {
     /// * `optInTimePeriod` — Averaging window length (default 30, range 1..=100000)
     /// * `optInMAType` — Which moving-average algorithm to dispatch to (default 0 = SMA, values:
     ///   0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-    ///   11=DEFAULT, `MAType::DEFAULT` selects the default)
+    ///   11=DEFAULT, 12=ZLEMA, 13=RMA, `MAType::DEFAULT` selects the default)
     ///
     /// # Errors
     ///
@@ -130,6 +132,12 @@ impl Core {
             }
             MAType::HMA => {
                 retValue = self.HMA_Lookback(optInTimePeriod)?;
+            }
+            MAType::ZLEMA => {
+                retValue = self.ZLEMA_Lookback(optInTimePeriod)?;
+            }
+            MAType::RMA => {
+                retValue = self.RMA_Lookback(optInTimePeriod)?;
             }
             _ => {
                 retValue = 0;
@@ -283,6 +291,18 @@ impl Core {
                 (*outNBElement) = _xr9.count;
                 retCode = RetCode::Success;
             }
+            MAType::ZLEMA => {
+                let _xr10 = match self.ZLEMA(startIdx, endIdx, inReal, optInTimePeriod, outReal) { Ok(_r) => _r, Err(_e) => return _e };
+                (*outBegIdx) = _xr10.beg_idx;
+                (*outNBElement) = _xr10.count;
+                retCode = RetCode::Success;
+            }
+            MAType::RMA => {
+                let _xr11 = match self.RMA(startIdx, endIdx, inReal, optInTimePeriod, outReal) { Ok(_r) => _r, Err(_e) => return _e };
+                (*outBegIdx) = _xr11.beg_idx;
+                (*outNBElement) = _xr11.count;
+                retCode = RetCode::Success;
+            }
             _ => {
                 retCode = RetCode::BadParam;
             }
@@ -302,7 +322,7 @@ impl Core {
     /// * `optInTimePeriod` — Averaging window length (default 30, range 1..=100000)
     /// * `optInMAType` — Which moving-average algorithm to dispatch to (default 0 = SMA, values:
     ///   0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-    ///   11=DEFAULT, `MAType::DEFAULT` selects the default)
+    ///   11=DEFAULT, 12=ZLEMA, 13=RMA, `MAType::DEFAULT` selects the default)
     /// * `outReal` — Selected moving average of the input.
     ///
     /// Integer parameters accept [`Core::INTEGER_DEFAULT`] to select their default value.
@@ -344,7 +364,8 @@ impl Core {
     /// # See also
     ///
     /// [`Core::SMA`] · [`Core::EMA`] · [`Core::WMA`] · [`Core::DEMA`] · [`Core::TEMA`] ·
-    /// [`Core::TRIMA`] · [`Core::KAMA`] · [`Core::MAMA`] · [`Core::T3`] · [`Core::HMA`]
+    /// [`Core::TRIMA`] · [`Core::KAMA`] · [`Core::MAMA`] · [`Core::T3`] · [`Core::HMA`] ·
+    /// [`Core::ZLEMA`] · [`Core::RMA`]
     #[doc(alias = "TA_MA")]
     #[doc(alias = "MovingAverage")]
     pub fn MA(
@@ -429,6 +450,8 @@ enum MaSub {
     Mama(MamaStream),
     T3(T3Stream),
     Hma(HmaStream),
+    Zlema(ZlemaStream),
+    Rma(RmaStream),
 }
 
 #[allow(unused_variables)]
@@ -475,6 +498,12 @@ impl Core {
                 (*outReal) = sub.update(inReal)?;
             }
             MaSub::Hma(sub) => {
+                (*outReal) = sub.update(inReal)?;
+            }
+            MaSub::Zlema(sub) => {
+                (*outReal) = sub.update(inReal)?;
+            }
+            MaSub::Rma(sub) => {
                 (*outReal) = sub.update(inReal)?;
             }
         }
@@ -562,6 +591,16 @@ impl Core {
                 let (sub, subValue) = self.hma_open_internal(inReal, startIdx, optInTimePeriod)?;
                 let subRange = sub.out_range();
                 (MaSub::Hma(sub), subValue, subRange)
+            }
+            MAType::ZLEMA => {
+                let (sub, subValue) = self.zlema_open_internal(inReal, startIdx, optInTimePeriod)?;
+                let subRange = sub.out_range();
+                (MaSub::Zlema(sub), subValue, subRange)
+            }
+            MAType::RMA => {
+                let (sub, subValue) = self.rma_open_internal(inReal, startIdx, optInTimePeriod)?;
+                let subRange = sub.out_range();
+                (MaSub::Rma(sub), subValue, subRange)
             }
             _ => return Err(RetCode::BadParam),
         };
@@ -707,6 +746,14 @@ impl Core {
                 let (sub, fillRange) = self.hma_open_and_fill(inReal, optInTimePeriod, outReal)?;
                 (MaSub::Hma(sub), fillRange)
             }
+            MAType::ZLEMA => {
+                let (sub, fillRange) = self.zlema_open_and_fill(inReal, optInTimePeriod, outReal)?;
+                (MaSub::Zlema(sub), fillRange)
+            }
+            MAType::RMA => {
+                let (sub, fillRange) = self.rma_open_and_fill(inReal, optInTimePeriod, outReal)?;
+                (MaSub::Rma(sub), fillRange)
+            }
             _ => return Err(RetCode::BadParam),
         };
         let state = MaStreamState { optInTimePeriod, optInMAType, sub, cur_outReal: outReal[fillRange.count - 1], };
@@ -782,6 +829,12 @@ impl Core {
             ),
             MAType::HMA => MaSub::Hma(
                 self.hma_open_and_fill_internal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal)?,
+            ),
+            MAType::ZLEMA => MaSub::Zlema(
+                self.zlema_open_and_fill_internal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal)?,
+            ),
+            MAType::RMA => MaSub::Rma(
+                self.rma_open_and_fill_internal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal)?,
             ),
             _ => return Err(RetCode::BadParam),
         };
@@ -907,6 +960,8 @@ impl MaStream {
                 }
                 MaSub::T3(sub) => { outReal = sub.peek(inReal)?; }
                 MaSub::Hma(sub) => { outReal = sub.peek(inReal)?; }
+                MaSub::Zlema(sub) => { outReal = sub.peek(inReal)?; }
+                MaSub::Rma(sub) => { outReal = sub.peek(inReal)?; }
             }
         }
         Ok(outReal)

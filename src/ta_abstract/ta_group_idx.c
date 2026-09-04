@@ -183,6 +183,7 @@ extern const TA_FuncDef TA_DEF_PPO;
 extern const TA_FuncDef TA_DEF_PVI;
 extern const TA_FuncDef TA_DEF_PVO;
 extern const TA_FuncDef TA_DEF_QSTICK;
+extern const TA_FuncDef TA_DEF_RMA;
 extern const TA_FuncDef TA_DEF_ROC;
 extern const TA_FuncDef TA_DEF_ROCP;
 extern const TA_FuncDef TA_DEF_ROCR;
@@ -219,6 +220,7 @@ extern const TA_FuncDef TA_DEF_WAD;
 extern const TA_FuncDef TA_DEF_WCLPRICE;
 extern const TA_FuncDef TA_DEF_WILLR;
 extern const TA_FuncDef TA_DEF_WMA;
+extern const TA_FuncDef TA_DEF_ZLEMA;
 
 const TA_FuncDef *TA_PerGroupFunc_0[] = {
 &TA_DEF_ADD,
@@ -269,6 +271,7 @@ const TA_FuncDef *TA_PerGroupFunc_2[] = {
 &TA_DEF_MAVP,
 &TA_DEF_MIDPOINT,
 &TA_DEF_MIDPRICE,
+&TA_DEF_RMA,
 &TA_DEF_SAR,
 &TA_DEF_SAREXT,
 &TA_DEF_SMA,
@@ -278,6 +281,7 @@ const TA_FuncDef *TA_PerGroupFunc_2[] = {
 &TA_DEF_TRIMA,
 &TA_DEF_VWMA,
 &TA_DEF_WMA,
+&TA_DEF_ZLEMA,
 NULL };
 #define SIZE_GROUP_2 ((sizeof(TA_PerGroupFunc_2)/sizeof(const TA_FuncDef *))-1)
 

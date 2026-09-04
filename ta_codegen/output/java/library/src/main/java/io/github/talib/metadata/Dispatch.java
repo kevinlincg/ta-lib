@@ -485,6 +485,9 @@ final class Dispatch {
          case "QSTICK":
             return core.QSTICK(
                startIdx, endIdx, h.price(0, 0), h.price(0, 3), h.intOpt(0), h.realOutput(0));
+         case "RMA":
+            return core.RMA(
+               startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
          case "ROC":
             return core.ROC(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
@@ -592,6 +595,9 @@ final class Dispatch {
                startIdx, endIdx, h.price(0, 1), h.price(0, 2), h.price(0, 3), h.intOpt(0), h.realOutput(0));
          case "WMA":
             return core.WMA(
+               startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "ZLEMA":
+            return core.ZLEMA(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
          default:
             throw new IllegalArgumentException("no such function: " + h.info().name());
@@ -890,6 +896,8 @@ final class Dispatch {
             return core.PVO_Lookback(h.intOpt(0), h.intOpt(1), h.maTypeOpt(2));
          case "QSTICK":
             return core.QSTICK_Lookback(h.intOpt(0));
+         case "RMA":
+            return core.RMA_Lookback(h.intOpt(0));
          case "ROC":
             return core.ROC_Lookback(h.intOpt(0));
          case "ROCP":
@@ -962,6 +970,8 @@ final class Dispatch {
             return core.WILLR_Lookback(h.intOpt(0));
          case "WMA":
             return core.WMA_Lookback(h.intOpt(0));
+         case "ZLEMA":
+            return core.ZLEMA_Lookback(h.intOpt(0));
          default:
             throw new IllegalArgumentException("no such function: " + h.info().name());
       }

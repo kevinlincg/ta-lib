@@ -1188,6 +1188,10 @@ const V_APO: &[(&str, i32, i32, MAType)] = &[
     ("optInMAType=DISABLED, periods doubled", 24i32, 52i32, MAType::DISABLED),
     ("optInMAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT),
     ("optInMAType=DEFAULT, periods doubled", 24i32, 52i32, MAType::DEFAULT),
+    ("optInMAType=ZLEMA", i32::MIN, i32::MIN, MAType::ZLEMA),
+    ("optInMAType=ZLEMA, periods doubled", 24i32, 52i32, MAType::ZLEMA),
+    ("optInMAType=RMA", i32::MIN, i32::MIN, MAType::RMA),
+    ("optInMAType=RMA, periods doubled", 24i32, 52i32, MAType::RMA),
 ];
 
 fn sub_APO(r: &mut Report) {
@@ -1782,6 +1786,10 @@ const V_BBANDS: &[(&str, i32, f64, f64, MAType)] = &[
     ("optInMAType=DISABLED, periods doubled", 40i32, Core::REAL_DEFAULT, Core::REAL_DEFAULT, MAType::DISABLED),
     ("optInMAType=DEFAULT", i32::MIN, Core::REAL_DEFAULT, Core::REAL_DEFAULT, MAType::DEFAULT),
     ("optInMAType=DEFAULT, periods doubled", 40i32, Core::REAL_DEFAULT, Core::REAL_DEFAULT, MAType::DEFAULT),
+    ("optInMAType=ZLEMA", i32::MIN, Core::REAL_DEFAULT, Core::REAL_DEFAULT, MAType::ZLEMA),
+    ("optInMAType=ZLEMA, periods doubled", 40i32, Core::REAL_DEFAULT, Core::REAL_DEFAULT, MAType::ZLEMA),
+    ("optInMAType=RMA", i32::MIN, Core::REAL_DEFAULT, Core::REAL_DEFAULT, MAType::RMA),
+    ("optInMAType=RMA, periods doubled", 40i32, Core::REAL_DEFAULT, Core::REAL_DEFAULT, MAType::RMA),
 ];
 
 fn sub_BBANDS(r: &mut Report) {
@@ -10582,6 +10590,10 @@ const V_MA: &[(&str, i32, MAType)] = &[
     ("optInMAType=DISABLED, periods doubled", 60i32, MAType::DISABLED),
     ("optInMAType=DEFAULT", i32::MIN, MAType::DEFAULT),
     ("optInMAType=DEFAULT, periods doubled", 60i32, MAType::DEFAULT),
+    ("optInMAType=ZLEMA", i32::MIN, MAType::ZLEMA),
+    ("optInMAType=ZLEMA, periods doubled", 60i32, MAType::ZLEMA),
+    ("optInMAType=RMA", i32::MIN, MAType::RMA),
+    ("optInMAType=RMA, periods doubled", 60i32, MAType::RMA),
 ];
 
 fn sub_MA(r: &mut Report) {
@@ -10731,6 +10743,10 @@ const V_MACDEXT: &[(&str, i32, MAType, i32, MAType, i32, MAType)] = &[
     ("optInFastMAType=DISABLED, periods doubled", 24i32, MAType::DISABLED, 52i32, MAType::DEFAULT, 18i32, MAType::DEFAULT),
     ("optInFastMAType=DEFAULT", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
     ("optInFastMAType=DEFAULT, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DEFAULT, 18i32, MAType::DEFAULT),
+    ("optInFastMAType=ZLEMA", i32::MIN, MAType::ZLEMA, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
+    ("optInFastMAType=ZLEMA, periods doubled", 24i32, MAType::ZLEMA, 52i32, MAType::DEFAULT, 18i32, MAType::DEFAULT),
+    ("optInFastMAType=RMA", i32::MIN, MAType::RMA, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
+    ("optInFastMAType=RMA, periods doubled", 24i32, MAType::RMA, 52i32, MAType::DEFAULT, 18i32, MAType::DEFAULT),
     ("optInSlowMAType=SMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::SMA, i32::MIN, MAType::DEFAULT),
     ("optInSlowMAType=SMA, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::SMA, 18i32, MAType::DEFAULT),
     ("optInSlowMAType=EMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::EMA, i32::MIN, MAType::DEFAULT),
@@ -10755,6 +10771,10 @@ const V_MACDEXT: &[(&str, i32, MAType, i32, MAType, i32, MAType)] = &[
     ("optInSlowMAType=DISABLED, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DISABLED, 18i32, MAType::DEFAULT),
     ("optInSlowMAType=DEFAULT", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
     ("optInSlowMAType=DEFAULT, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DEFAULT, 18i32, MAType::DEFAULT),
+    ("optInSlowMAType=ZLEMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::ZLEMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowMAType=ZLEMA, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::ZLEMA, 18i32, MAType::DEFAULT),
+    ("optInSlowMAType=RMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::RMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowMAType=RMA, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::RMA, 18i32, MAType::DEFAULT),
     ("optInSignalMAType=SMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::SMA),
     ("optInSignalMAType=SMA, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DEFAULT, 18i32, MAType::SMA),
     ("optInSignalMAType=EMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::EMA),
@@ -10779,6 +10799,10 @@ const V_MACDEXT: &[(&str, i32, MAType, i32, MAType, i32, MAType)] = &[
     ("optInSignalMAType=DISABLED, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DEFAULT, 18i32, MAType::DISABLED),
     ("optInSignalMAType=DEFAULT", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
     ("optInSignalMAType=DEFAULT, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DEFAULT, 18i32, MAType::DEFAULT),
+    ("optInSignalMAType=ZLEMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::ZLEMA),
+    ("optInSignalMAType=ZLEMA, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DEFAULT, 18i32, MAType::ZLEMA),
+    ("optInSignalMAType=RMA", i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::RMA),
+    ("optInSignalMAType=RMA, periods doubled", 24i32, MAType::DEFAULT, 52i32, MAType::DEFAULT, 18i32, MAType::RMA),
 ];
 
 fn sub_MACDEXT(r: &mut Report) {
@@ -11087,6 +11111,10 @@ const V_MAVP: &[(&str, i32, i32, MAType)] = &[
     ("optInMAType=DISABLED, periods doubled", 4i32, 60i32, MAType::DISABLED),
     ("optInMAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT),
     ("optInMAType=DEFAULT, periods doubled", 4i32, 60i32, MAType::DEFAULT),
+    ("optInMAType=ZLEMA", i32::MIN, i32::MIN, MAType::ZLEMA),
+    ("optInMAType=ZLEMA, periods doubled", 4i32, 60i32, MAType::ZLEMA),
+    ("optInMAType=RMA", i32::MIN, i32::MIN, MAType::RMA),
+    ("optInMAType=RMA, periods doubled", 4i32, 60i32, MAType::RMA),
 ];
 
 fn sub_MAVP(r: &mut Report) {
@@ -12520,6 +12548,10 @@ const V_PPO: &[(&str, i32, i32, MAType)] = &[
     ("optInMAType=DISABLED, periods doubled", 24i32, 52i32, MAType::DISABLED),
     ("optInMAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT),
     ("optInMAType=DEFAULT, periods doubled", 24i32, 52i32, MAType::DEFAULT),
+    ("optInMAType=ZLEMA", i32::MIN, i32::MIN, MAType::ZLEMA),
+    ("optInMAType=ZLEMA, periods doubled", 24i32, 52i32, MAType::ZLEMA),
+    ("optInMAType=RMA", i32::MIN, i32::MIN, MAType::RMA),
+    ("optInMAType=RMA, periods doubled", 24i32, 52i32, MAType::RMA),
 ];
 
 fn sub_PPO(r: &mut Report) {
@@ -12673,6 +12705,10 @@ const V_PVO: &[(&str, i32, i32, MAType)] = &[
     ("optInMAType=DISABLED, periods doubled", 24i32, 52i32, MAType::DISABLED),
     ("optInMAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT),
     ("optInMAType=DEFAULT, periods doubled", 24i32, 52i32, MAType::DEFAULT),
+    ("optInMAType=ZLEMA", i32::MIN, i32::MIN, MAType::ZLEMA),
+    ("optInMAType=ZLEMA, periods doubled", 24i32, 52i32, MAType::ZLEMA),
+    ("optInMAType=RMA", i32::MIN, i32::MIN, MAType::RMA),
+    ("optInMAType=RMA, periods doubled", 24i32, 52i32, MAType::RMA),
 ];
 
 fn sub_PVO(r: &mut Report) {
@@ -12799,6 +12835,63 @@ fn legs_QSTICK(r: &mut Report) {
         }));
     }
     r.legs_done("QSTICK", 2);
+}
+
+const V_RMA: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 1i32),
+];
+
+fn sub_RMA(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_RMA {
+        let Ok(lb) = core.RMA_Lookback(optInTimePeriod) else { continue; };
+        r.control("RMA", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RMA_Impl(0, lb, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("RMA", label); continue; }
+        r.quiet("RMA", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RMA_Impl(0, lb - 1, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_RMA(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.RMA_Lookback(optInTimePeriod) else { r.no_legs("RMA"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("RMA", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RMA_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("RMA", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RMA_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("RMA", 1);
 }
 
 const V_ROC: &[(&str, i32)] = &[
@@ -13643,6 +13736,10 @@ const V_STOCH: &[(&str, i32, i32, MAType, i32, MAType)] = &[
     ("optInSlowK_MAType=DISABLED, periods doubled", 10i32, 6i32, MAType::DISABLED, 6i32, MAType::DEFAULT),
     ("optInSlowK_MAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
     ("optInSlowK_MAType=DEFAULT, periods doubled", 10i32, 6i32, MAType::DEFAULT, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=ZLEMA", i32::MIN, i32::MIN, MAType::ZLEMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=ZLEMA, periods doubled", 10i32, 6i32, MAType::ZLEMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=RMA", i32::MIN, i32::MIN, MAType::RMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=RMA, periods doubled", 10i32, 6i32, MAType::RMA, 6i32, MAType::DEFAULT),
     ("optInSlowD_MAType=SMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::SMA),
     ("optInSlowD_MAType=SMA, periods doubled", 10i32, 6i32, MAType::DEFAULT, 6i32, MAType::SMA),
     ("optInSlowD_MAType=EMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::EMA),
@@ -13667,6 +13764,10 @@ const V_STOCH: &[(&str, i32, i32, MAType, i32, MAType)] = &[
     ("optInSlowD_MAType=DISABLED, periods doubled", 10i32, 6i32, MAType::DEFAULT, 6i32, MAType::DISABLED),
     ("optInSlowD_MAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
     ("optInSlowD_MAType=DEFAULT, periods doubled", 10i32, 6i32, MAType::DEFAULT, 6i32, MAType::DEFAULT),
+    ("optInSlowD_MAType=ZLEMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::ZLEMA),
+    ("optInSlowD_MAType=ZLEMA, periods doubled", 10i32, 6i32, MAType::DEFAULT, 6i32, MAType::ZLEMA),
+    ("optInSlowD_MAType=RMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::RMA),
+    ("optInSlowD_MAType=RMA, periods doubled", 10i32, 6i32, MAType::DEFAULT, 6i32, MAType::RMA),
 ];
 
 fn sub_STOCH(r: &mut Report) {
@@ -13790,6 +13891,10 @@ const V_STOCHF: &[(&str, i32, i32, MAType)] = &[
     ("optInFastD_MAType=DISABLED, periods doubled", 10i32, 6i32, MAType::DISABLED),
     ("optInFastD_MAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT),
     ("optInFastD_MAType=DEFAULT, periods doubled", 10i32, 6i32, MAType::DEFAULT),
+    ("optInFastD_MAType=ZLEMA", i32::MIN, i32::MIN, MAType::ZLEMA),
+    ("optInFastD_MAType=ZLEMA, periods doubled", 10i32, 6i32, MAType::ZLEMA),
+    ("optInFastD_MAType=RMA", i32::MIN, i32::MIN, MAType::RMA),
+    ("optInFastD_MAType=RMA, periods doubled", 10i32, 6i32, MAType::RMA),
 ];
 
 fn sub_STOCHF(r: &mut Report) {
@@ -13911,6 +14016,10 @@ const V_STOCHRSI: &[(&str, i32, i32, i32, MAType)] = &[
     ("optInFastD_MAType=DISABLED, periods doubled", 28i32, 10i32, 6i32, MAType::DISABLED),
     ("optInFastD_MAType=DEFAULT", i32::MIN, i32::MIN, i32::MIN, MAType::DEFAULT),
     ("optInFastD_MAType=DEFAULT, periods doubled", 28i32, 10i32, 6i32, MAType::DEFAULT),
+    ("optInFastD_MAType=ZLEMA", i32::MIN, i32::MIN, i32::MIN, MAType::ZLEMA),
+    ("optInFastD_MAType=ZLEMA, periods doubled", 28i32, 10i32, 6i32, MAType::ZLEMA),
+    ("optInFastD_MAType=RMA", i32::MIN, i32::MIN, i32::MIN, MAType::RMA),
+    ("optInFastD_MAType=RMA, periods doubled", 28i32, 10i32, 6i32, MAType::RMA),
 ];
 
 fn sub_STOCHRSI(r: &mut Report) {
@@ -15412,6 +15521,63 @@ fn legs_WMA(r: &mut Report) {
     r.legs_done("WMA", 1);
 }
 
+const V_ZLEMA: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 1i32),
+];
+
+fn sub_ZLEMA(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_ZLEMA {
+        let Ok(lb) = core.ZLEMA_Lookback(optInTimePeriod) else { continue; };
+        r.control("ZLEMA", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ZLEMA_Impl(0, lb, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("ZLEMA", label); continue; }
+        r.quiet("ZLEMA", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ZLEMA_Impl(0, lb - 1, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_ZLEMA(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.ZLEMA_Lookback(optInTimePeriod) else { r.no_legs("ZLEMA"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("ZLEMA", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ZLEMA_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("ZLEMA", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ZLEMA_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("ZLEMA", 1);
+}
+
 type Probe = fn(&mut Report);
 
 /// Every indicator in the corpus, name-sorted, with its two probes.
@@ -15559,6 +15725,7 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("PVI", sub_PVI, legs_PVI),
     ("PVO", sub_PVO, legs_PVO),
     ("QSTICK", sub_QSTICK, legs_QSTICK),
+    ("RMA", sub_RMA, legs_RMA),
     ("ROC", sub_ROC, legs_ROC),
     ("ROCP", sub_ROCP, legs_ROCP),
     ("ROCR", sub_ROCR, legs_ROCR),
@@ -15595,6 +15762,7 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("WCLPRICE", sub_WCLPRICE, legs_WCLPRICE),
     ("WILLR", sub_WILLR, legs_WILLR),
     ("WMA", sub_WMA, legs_WMA),
+    ("ZLEMA", sub_ZLEMA, legs_ZLEMA),
 ];
 
 #[test]
@@ -15633,7 +15801,7 @@ fn no_phantom_io() {
     // The corpus is the generator's, not a list kept by hand: a probe that
     // stopped being emitted is a shrinking sweep, which is the one way this
     // file can fail open.
-    assert_eq!(PROBES.len(), 179, "probe count");
+    assert_eq!(PROBES.len(), 181, "probe count");
     assert_eq!(
         PROBES.len(),
         crate::abstract_api::funcs().count(),
