@@ -105,7 +105,7 @@ On the original tree, Linux x86-64, JDK 21 through the committed Maven wrapper:
 - `regtest.py --language=c,java` against the pinned-tag oracle: C 161 passed /
   0 failed, Java 161 / 0, 967 acknowledged float comparisons.
 
-On the tree as pushed, merged with dev `af4cdede`:
+On the earlier head, merged with dev `af4cdede`:
 
 - `generate` then `git status`: clean (`regen-check` exit 0, 179 functions).
 - The generator suite: 902 passed / 0 failed.
@@ -133,7 +133,9 @@ branch collides with dev on exactly the two lines carrying it:
 `BuildStamp.GENCODE_DIGEST` and its spliced copy
 `TaCodegenServe.SPLICED_GENCODE_DIGEST`. Dev landed first — #338 as `67936169`,
 then DONCHIAN through `af4cdede` — so the collision is this branch's to resolve,
-and the head merge commit does it.
+and the branch's own commit does it. (The head is rebased onto dev
+rather than merged — see "Rebased onto dev `ce5f5748`" at the end — so there is
+no merge commit; the digest below is what the single commit carries.)
 
 Neither side's value is correct for the combined tree, so the resolution is one
 `generate` run, not a pick from either side. Measured on the merged head against
@@ -148,5 +150,32 @@ dev `af4cdede`:
 
 DONCHIAN also makes the merge more than a digest pick: it is a multi-output
 stream, so the regeneration gives it the sink-less overload as well — that is
-the 18th method, and the only non-digest content the merge commit adds. Every
-other file in the two diffs auto-merged and regenerated identically.
+the 18th method, and the only non-digest content this branch adds beyond the
+`update` split itself. Every other file in the two diffs auto-merged and
+regenerated identically.
+
+## Rebased onto dev `ce5f5748`
+
+Dev moved after the verification above was taken: `46577145` (c_hygiene, the
+post-emission `(void)` sweep), `b128cbf5` (a short `--function` token names a
+whole component) and `ce5f5748` (#344, the Open head that declares only what its
+body uses). This branch is rebased onto `ce5f5748` with no conflicts, and
+`git patch-id` says its net diff against dev is byte-identical to the one this
+body describes — nothing about the change itself moved.
+
+Re-checked on the rebased head, at these tiers only:
+
+- `scripts/build.py regen-check`: green, exit 0, 179 functions.
+- `cargo test --release` in `ta_codegen/generator`: 916 passed / 0 failed.
+- `cargo clippy --release --all-targets -- -D warnings`: clean.
+
+Dev `ce5f5748` itself passes the same three commands, so that is a baseline for
+the rebase and not a control that goes red.
+
+**Not re-run on the rebase:** the Java jar, javadoc and `regtest.py` legs, and
+`--language=rust,csharp` — no JDK and no .NET SDK leg was executed this round
+either. What was checked instead is the one thing the rebase could have moved:
+the Java gencode digest. This branch still writes `fe336d7433975c86` and dev
+`ce5f5748` still carries `c6beffa2c163b194`, so the collision section above
+stands as written — `ce5f5748`, `b128cbf5` and `46577145` change generated C
+and Rust, not generated Java.
