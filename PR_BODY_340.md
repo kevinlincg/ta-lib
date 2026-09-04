@@ -7,9 +7,10 @@ measurement did not justify either, and the issue asks for them only if it had.
 ## The answer
 
 `--xlang-hash`, C# row, measured on upstream `dev` at `7065d886`, with the FMA3
-intrinsic disabled for the spawned server (the branch's head now merges dev
-`af4cdede`, which is `7065d886` plus two dist bumps, #338 and DONCHIAN — see the
-note at the end of this section, and the last bullet under Verified, for what
+intrinsic disabled for the spawned server (the branch's head is now rebased onto
+dev `ce5f5748`, which is `7065d886` plus two dist bumps, #338, DONCHIAN and the
+three commits under "Rebased onto dev `ce5f5748`" at the end — see that section,
+the note at the end of this one, and the last bullets under Verified, for what
 that does and does not change about these rows):
 
 | run | C# cases | mismatches |
@@ -134,3 +135,29 @@ just inferred from `Fma.IsSupported`.
   of generated C# files calling `Math.FusedMultiplyAdd` is still 32 on the merged
   head, and `Core_DONCHIAN.cs` contains no call — DONCHIAN is max/min/midpoint,
   so it adds no FMA site and cannot widen the exposure this body measures.
+
+## Rebased onto dev `ce5f5748`
+
+Dev moved after the verification above was taken: `46577145` (c_hygiene, the
+post-emission `(void)` sweep), `b128cbf5` (a short `--function` token names a
+whole component) and `ce5f5748` (#344, the Open head that declares only what its
+body uses). This branch is rebased onto `ce5f5748` with no conflicts, and
+`git patch-id` says its net diff against dev is byte-identical to the one this
+body describes — nothing about the change itself moved.
+
+Re-checked on the rebased head, at these tiers only:
+
+- `scripts/build.py regen-check`: green, exit 0, 179 functions.
+- `cargo test --release` in `ta_codegen/generator`: 916 passed / 0 failed.
+- `cargo clippy --release --all-targets -- -D warnings`: clean.
+
+Dev `ce5f5748` itself passes the same three commands, so that is a baseline for
+the rebase and not a control that goes red.
+
+**Not re-run on the rebase:** every `--xlang-hash` row and the primitive-level
+differential — there is still no .NET SDK on this box, so every C# number in
+this body remains the one measured on `67936169`. The two structural checks that
+are the only way the three new dev commits could have moved them were re-run on
+the rebased head: 32 generated C# files still call `Math.FusedMultiplyAdd`, and
+`Core_DONCHIAN.cs` still contains none. All three commits change generated C and
+Rust; none of them writes a C# file.
