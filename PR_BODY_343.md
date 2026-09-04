@@ -106,3 +106,27 @@ Both reverted; the tree pushed is the unsabotaged one.
 
 The commit says `refactor(streaming)`, not `perf(streaming)`. It was written as a
 perf change; the numbers above do not support that word, so it lost it.
+
+## Rebased onto dev `ce5f5748`
+
+Dev moved after the verification above was taken: `46577145` (c_hygiene, the
+post-emission `(void)` sweep), `b128cbf5` (a short `--function` token names a
+whole component) and `ce5f5748` (#344, the Open head that declares only what its
+body uses). This branch is rebased onto `ce5f5748` with no conflicts, and
+`git patch-id` says its net diff against dev is byte-identical to the one this
+body describes — nothing about the change itself moved.
+
+Re-checked on the rebased head, at these tiers only:
+
+- `scripts/build.py regen-check`: green, exit 0, 179 functions.
+- `cargo test --release` in `ta_codegen/generator`: 917 passed / 0 failed —
+  the count the new gate adds to dev's 916.
+- `cargo clippy --release --all-targets -- -D warnings`: clean.
+
+Dev `ce5f5748` itself passes the same three commands and reports 916, so that is
+a baseline for the rebase and not a control that goes red.
+
+**Not re-run on the rebase:** the `stream_ab.py` rows, the two sabotage runs, and
+the line-by-line classification of the generated diff. `--xlang-hash` is still
+unrun — there is still no .NET SDK on the box. Those all describe the pre-rebase
+tip, whose net diff `git patch-id` reports byte-identical to this one.
