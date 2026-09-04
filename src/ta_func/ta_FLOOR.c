@@ -136,7 +136,6 @@ struct TA_FLOOR_Stream {
 /* Private function, not in public API. */
 static void TA_FLOOR_StepImpl( struct TA_FLOOR_Stream *sp, double inReal, double *outReal )
 {
-   (void)sp;
    *outReal= floor(inReal);
    sp->cur_outReal = *outReal;
 }
@@ -145,8 +144,6 @@ static TA_RetCode TA_FLOOR_OpenImpl( struct TA_FLOOR_Stream **stream, const doub
 {
    struct TA_FLOOR_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -161,9 +158,6 @@ static TA_RetCode TA_FLOOR_OpenImpl( struct TA_FLOOR_Stream **stream, const doub
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -244,11 +238,8 @@ TA_LIB_API TA_RetCode TA_FLOOR_Update( TA_FLOOR_Stream *stream, double inReal, d
 
 TA_LIB_API TA_RetCode TA_FLOOR_Peek( const TA_FLOOR_Stream *stream, double inReal, double *outReal )
 {
-   const struct TA_FLOOR_Stream *sp = stream;
-
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   (void)sp;
    *outReal= floor(inReal);
    return TA_SUCCESS;
 }

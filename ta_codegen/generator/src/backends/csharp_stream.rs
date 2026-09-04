@@ -1634,6 +1634,14 @@ fn peek_frame_arm_named(
         let (cty, default) = field_type_and_default(ty);
         let _ = writeln!(out, "{pad}{cty} {name} = {default};");
     }
+    // A peek commits nothing, so the previous bar's output is never an input
+    // to the transition (issue #343) and seeding it is a dead field load.
+    let dead_seeds: BTreeSet<String> = func
+        .outputs
+        .iter()
+        .map(|o| format!("cur_{}", o.name))
+        .filter(|n| locals.contains(n) && streaming::peek_seed_is_dead(&body_ir, n))
+        .collect();
     for name in &locals {
         if predeclared.contains(name) {
             continue;
@@ -1645,6 +1653,9 @@ fn peek_frame_arm_named(
         if let Some(elem) = cty.strip_suffix("[]") {
             let _ = writeln!(out, "{pad}{cty} {name} = new {elem}[sp.{name}.Length];");
             let _ = writeln!(out, "{pad}Array.Copy( sp.{name}, {name}, sp.{name}.Length );");
+        } else if dead_seeds.contains(name) {
+            let zero = if cty == "int" { "0" } else { "0.0" };
+            let _ = writeln!(out, "{pad}{cty} {name} = {zero};");
         } else {
             let _ = writeln!(out, "{pad}{cty} {name} = sp.{name};");
         }

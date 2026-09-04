@@ -26,15 +26,19 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
   - PVI: Positive Volume Index (#126)
   - PVO: Percentage Volume Oscillator (#119)
   - QSTICK: Qstick (#226)
+  - RMA: Wilder's Smoothed Moving Average (#348)
   - SMI: Stochastic Momentum Index (#238)
   - SUPERTREND: SuperTrend, an ATR-scaled trailing band with a trend flag (#272)
   - VWAP: Volume Weighted Average Price (#237)
   - VWMA: Volume Weighted Moving Average (#131)
   - WAD: Williams' Accumulation/Distribution (#200)
+  - ZLEMA: Zero-Lag Exponential Moving Average (#347)
 - New MAType (for MA, BBANDS, STOCH etc...):
   - TA_MAType_HMA (#139)
   - TA_MAType_DISABLED — no smoothing at any period; the output is a copy of the input (#93)
   - TA_MAType_DEFAULT — selects that parameter's documented MA type (#182)
+  - TA_MAType_ZLEMA (#347)
+  - TA_MAType_RMA (#348)
 
 ### Faster
 - ~8x: MACD, MACDFIX and MACDEXT (when MA type is EMA).

@@ -136,7 +136,6 @@ struct TA_CEIL_Stream {
 /* Private function, not in public API. */
 static void TA_CEIL_StepImpl( struct TA_CEIL_Stream *sp, double inReal, double *outReal )
 {
-   (void)sp;
    *outReal= ceil(inReal);
    sp->cur_outReal = *outReal;
 }
@@ -145,8 +144,6 @@ static TA_RetCode TA_CEIL_OpenImpl( struct TA_CEIL_Stream **stream, const double
 {
    struct TA_CEIL_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -161,9 +158,6 @@ static TA_RetCode TA_CEIL_OpenImpl( struct TA_CEIL_Stream **stream, const double
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -244,11 +238,8 @@ TA_LIB_API TA_RetCode TA_CEIL_Update( TA_CEIL_Stream *stream, double inReal, dou
 
 TA_LIB_API TA_RetCode TA_CEIL_Peek( const TA_CEIL_Stream *stream, double inReal, double *outReal )
 {
-   const struct TA_CEIL_Stream *sp = stream;
-
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   (void)sp;
    *outReal= ceil(inReal);
    return TA_SUCCESS;
 }

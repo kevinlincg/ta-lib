@@ -219,6 +219,23 @@ int main( int argc, char **argv )
    printf( "Random seed: %u  (replay with --seed=%u)\n", randSeed, randSeed );
    srand( randSeed );
 
+   /* The output-arity cap must hold before anything sizes or clamps by it
+    * (issue #352) — checked here rather than inside test_codegen() because
+    * --fuzz-baseline and --xlang-hash below are self-contained early returns
+    * that never reach it, and their buffers clamp at the same cap. */
+   {
+      ErrorNumber arityRet;
+      if( TA_Initialize() != TA_SUCCESS )
+      {
+         printf( "TA_Initialize failed\n" );
+         return TA_TESTUTIL_INIT_FAILED;
+      }
+      arityRet = codegen_output_arity_within_cap();
+      TA_Shutdown();
+      if( arityRet != TA_TEST_PASS )
+         return arityRet;
+   }
+
    /* Opt-in bit-exact differential fuzz vs the released baseline (ta_baseline_serve).
     * Self-contained: init the lib, run the fuzz, done — skips the rest. */
    if( doFuzzBaseline )
@@ -665,6 +682,34 @@ static int tagPrefixMatches(const char *tags, const char *token)
    return 0;
 }
 
+/* Does any comma-separated element of `tags` accept this short token, by the
+ * '_'-component rule in test_codegen.h? The group tag is a list of names, so the
+ * rule applies per element: "DI" reaches the tag holding PLUS_DI and MINUS_DI.
+ */
+static int tagHasShortToken(const char *tags, const char *token)
+{
+   char elem[128];
+   const char *p = tags;
+
+   while( *p )
+   {
+      const char *end = strchr(p, ',');
+      size_t elemLen = (end == NULL) ? strlen(p) : (size_t)(end - p);
+
+      if( elemLen < sizeof(elem) )
+      {
+         memcpy(elem, p, elemLen);
+         elem[elemLen] = '\0';
+         if( codegen_short_filter_token_matches(elem, token) )
+            return 1;
+      }
+      if( end == NULL )
+         return 0;
+      p = end + 1;
+   }
+   return 0;
+}
+
 static int matchesFilter(const char *filter, const char *tags)
 {
    char filterCopy[1024];
@@ -679,7 +724,12 @@ static int matchesFilter(const char *filter, const char *tags)
    token = strtok(filterCopy, ",");
    while( token != NULL )
    {
-      if( strstr(tags, token) != NULL )
+      if( strlen(token) <= 2 )
+      {
+         if( tagHasShortToken(tags, token) )
+            return 1;
+      }
+      else if( strstr(tags, token) != NULL )
          return 1;
       if( tagPrefixMatches(tags, token) )
          return 1;
@@ -801,10 +851,12 @@ static ErrorNumber testTAFunction_ALL( void )
    DO_TEST( test_func_cmf,       "CMF" );
    DO_TEST( test_func_kc,        "KC" );
    DO_TEST( test_func_donchian,  "DONCHIAN" );
+   DO_TEST( test_func_rma,       "RMA" );
    DO_TEST( test_func_supertrend, "SUPERTREND" );
    DO_TEST( test_func_mfi,       "MFI" );
    DO_TEST( test_func_vwap,      "VWAP" );
    DO_TEST( test_func_cmou,      "CMOU" );
+   DO_TEST( test_func_zlema,     "ZLEMA" );
    DO_TEST( test_func_variants,  "TA_S_,VARIANT" );
    DO_TEST( test_candle_precision, "CDLDOJI,CANDLE,VARIANT,PRECISION" );
    DO_TEST_LBL( test_func_rolling_extremum,

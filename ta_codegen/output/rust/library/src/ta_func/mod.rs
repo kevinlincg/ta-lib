@@ -38,6 +38,10 @@ pub enum MAType {
     DISABLED = 10,
     /// Not a moving average: selects the documented default of whichever parameter it is passed to.
     DEFAULT = 11,
+    /// The `TA_MAType_ZLEMA` moving average.
+    ZLEMA = 12,
+    /// The `TA_MAType_RMA` moving average.
+    RMA = 13,
 }
 
 impl TryFrom<i32> for MAType {
@@ -69,6 +73,8 @@ impl TryFrom<i32> for MAType {
             9 => Self::HMA,
             10 => Self::DISABLED,
             11 => Self::DEFAULT,
+            12 => Self::ZLEMA,
+            13 => Self::RMA,
             i32::MIN => Self::DEFAULT,
             _ => return Err(RetCode::BadParam),
         })
@@ -233,6 +239,7 @@ mod ppo;
 mod pvi;
 mod pvo;
 mod qstick;
+mod rma;
 mod roc;
 mod rocp;
 mod rocr;
@@ -269,6 +276,7 @@ mod wad;
 mod wclprice;
 mod willr;
 mod wma;
+mod zlema;
 
 // Generated stream handles (one per streamable indicator):
 pub use ac::AcStream;
@@ -414,6 +422,7 @@ pub use ppo::PpoStream;
 pub use pvi::PviStream;
 pub use pvo::PvoStream;
 pub use qstick::QstickStream;
+pub use rma::RmaStream;
 pub use roc::RocStream;
 pub use rocp::RocpStream;
 pub use rocr::RocrStream;
@@ -450,3 +459,4 @@ pub use wad::WadStream;
 pub use wclprice::WclpriceStream;
 pub use willr::WillrStream;
 pub use wma::WmaStream;
+pub use zlema::ZlemaStream;

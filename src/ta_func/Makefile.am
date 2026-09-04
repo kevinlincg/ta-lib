@@ -146,6 +146,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_PVI.c \
 	ta_PVO.c \
 	ta_QSTICK.c \
+	ta_RMA.c \
 	ta_ROC.c \
 	ta_ROCP.c \
 	ta_ROCR.c \
@@ -181,7 +182,8 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_WAD.c \
 	ta_WCLPRICE.c \
 	ta_WILLR.c \
-	ta_WMA.c
+	ta_WMA.c \
+	ta_ZLEMA.c
 
 libta_funcdir=$(includedir)/ta-lib/
 libta_func_HEADERS = ../../include/ta_defs.h \

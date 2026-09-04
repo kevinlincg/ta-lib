@@ -61,5 +61,7 @@ public enum MAType
    /** Not a moving average: the input is copied through unchanged. */
    DISABLED,
    /** Not a moving average: selects the documented default of whichever parameter it is passed to. */
-   DEFAULT
+   DEFAULT,
+   ZLEMA,
+   RMA
 };

@@ -348,6 +348,7 @@ typedef enum
   TA_CODEGEN_RANGE_VACUOUS           = 1115,
   TA_CODEGEN_GENCODE_DIGEST_SKEW     = 1116,
   TA_CODEGEN_GENCODE_DIGEST_VACUOUS  = 1117,
+  TA_CODEGEN_OUTPUT_ARITY_EXCEEDS_CAP = 1118,
 
   /* Abstract codegen test errors */
   TA_ABSTRACT_LOOKBACK_MISMATCH      = 1200,
@@ -495,6 +496,8 @@ typedef enum
   TA_MAVP_VACUOUS                    = 1652,
   TA_UNSTABLE_MAP_INCOMPLETE         = 1653,
   TA_DONCHIAN_ORACLE_VACUOUS         = 1654,
+  TA_RMA_ORACLE_VACUOUS              = 1655,
+  TA_ZLEMA_VACUOUS                   = 1656,
 
   /* --function= named something no test group covers, on a run that had
    * nothing else to do. Reported rather than passed silently. */

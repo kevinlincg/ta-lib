@@ -136,7 +136,6 @@ struct TA_EXP_Stream {
 /* Private function, not in public API. */
 static void TA_EXP_StepImpl( struct TA_EXP_Stream *sp, double inReal, double *outReal )
 {
-   (void)sp;
    *outReal= exp(inReal);
    sp->cur_outReal = *outReal;
 }
@@ -145,8 +144,6 @@ static TA_RetCode TA_EXP_OpenImpl( struct TA_EXP_Stream **stream, const double i
 {
    struct TA_EXP_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -161,9 +158,6 @@ static TA_RetCode TA_EXP_OpenImpl( struct TA_EXP_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -244,11 +238,8 @@ TA_LIB_API TA_RetCode TA_EXP_Update( TA_EXP_Stream *stream, double inReal, doubl
 
 TA_LIB_API TA_RetCode TA_EXP_Peek( const TA_EXP_Stream *stream, double inReal, double *outReal )
 {
-   const struct TA_EXP_Stream *sp = stream;
-
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   (void)sp;
    *outReal= exp(inReal);
    return TA_SUCCESS;
 }
