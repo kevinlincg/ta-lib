@@ -1815,15 +1815,21 @@ class Core {
            */
           public void update( double inHigh, double inLow, double inClose, AccbandsOut out ) {
              requireArgument("ACCBANDS update", "out", out);
+             update( inHigh, inLow, inClose );
+             out.realUpperBand = this.cur_outRealUpperBand;
+             out.realMiddleBand = this.cur_outRealMiddleBand;
+             out.realLowerBand = this.cur_outRealLowerBand;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outRealUpperBand / cur_outRealMiddleBand / cur_outRealLowerBand instead. */
+          void update( double inHigh, double inLow, double inClose ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("ACCBANDS update: BadParam", RetCode.BadParam);
              }
              core.accbandsStepImpl(this, inHigh, inLow, inClose);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.realUpperBand = this.cur_outRealUpperBand;
-             out.realMiddleBand = this.cur_outRealMiddleBand;
-             out.realLowerBand = this.cur_outRealLowerBand;
           }
 
           /**
@@ -8989,14 +8995,20 @@ class Core {
            */
           public void update( double inHigh, double inLow, AroonOut out ) {
              requireArgument("AROON update", "out", out);
+             update( inHigh, inLow );
+             out.aroonDown = this.cur_outAroonDown;
+             out.aroonUp = this.cur_outAroonUp;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outAroonDown / cur_outAroonUp instead. */
+          void update( double inHigh, double inLow ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("AROON update: BadParam", RetCode.BadParam);
              }
              core.aroonStepImpl(this, inHigh, inLow);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.aroonDown = this.cur_outAroonDown;
-             out.aroonUp = this.cur_outAroonUp;
           }
 
           /**
@@ -14170,15 +14182,21 @@ class Core {
            */
           public void update( double inReal, BbandsOut out ) {
              requireArgument("BBANDS update", "out", out);
+             update( inReal );
+             out.realUpperBand = this.cur_outRealUpperBand;
+             out.realMiddleBand = this.cur_outRealMiddleBand;
+             out.realLowerBand = this.cur_outRealLowerBand;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outRealUpperBand / cur_outRealMiddleBand / cur_outRealLowerBand instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("BBANDS update: BadParam", RetCode.BadParam);
              }
              core.bbandsStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.realUpperBand = this.cur_outRealUpperBand;
-             out.realMiddleBand = this.cur_outRealMiddleBand;
-             out.realLowerBand = this.cur_outRealLowerBand;
           }
 
           /**
@@ -77089,15 +77107,21 @@ class Core {
            */
           public void update( double inHigh, double inLow, DonchianOut out ) {
              requireArgument("DONCHIAN update", "out", out);
+             update( inHigh, inLow );
+             out.realUpperBand = this.cur_outRealUpperBand;
+             out.realMiddleBand = this.cur_outRealMiddleBand;
+             out.realLowerBand = this.cur_outRealLowerBand;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outRealUpperBand / cur_outRealMiddleBand / cur_outRealLowerBand instead. */
+          void update( double inHigh, double inLow ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("DONCHIAN update: BadParam", RetCode.BadParam);
              }
              core.donchianStepImpl(this, inHigh, inLow);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.realUpperBand = this.cur_outRealUpperBand;
-             out.realMiddleBand = this.cur_outRealMiddleBand;
-             out.realLowerBand = this.cur_outRealLowerBand;
           }
 
           /**
@@ -88411,14 +88435,20 @@ class Core {
            */
           public void update( double inReal, HtPhasorOut out ) {
              requireArgument("HT_PHASOR update", "out", out);
+             update( inReal );
+             out.inPhase = this.cur_outInPhase;
+             out.quadrature = this.cur_outQuadrature;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outInPhase / cur_outQuadrature instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("HT_PHASOR update: BadParam", RetCode.BadParam);
              }
              core.htPhasorStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.inPhase = this.cur_outInPhase;
-             out.quadrature = this.cur_outQuadrature;
           }
 
           /**
@@ -90375,14 +90405,20 @@ class Core {
            */
           public void update( double inReal, HtSineOut out ) {
              requireArgument("HT_SINE update", "out", out);
+             update( inReal );
+             out.sine = this.cur_outSine;
+             out.leadSine = this.cur_outLeadSine;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outSine / cur_outLeadSine instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("HT_SINE update: BadParam", RetCode.BadParam);
              }
              core.htSineStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.sine = this.cur_outSine;
-             out.leadSine = this.cur_outLeadSine;
           }
 
           /**
@@ -98443,15 +98479,21 @@ class Core {
            */
           public void update( double inHigh, double inLow, double inClose, KcOut out ) {
              requireArgument("KC update", "out", out);
+             update( inHigh, inLow, inClose );
+             out.realUpperBand = this.cur_outRealUpperBand;
+             out.realMiddleBand = this.cur_outRealMiddleBand;
+             out.realLowerBand = this.cur_outRealLowerBand;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outRealUpperBand / cur_outRealMiddleBand / cur_outRealLowerBand instead. */
+          void update( double inHigh, double inLow, double inClose ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("KC update: BadParam", RetCode.BadParam);
              }
              core.kcStepImpl(this, inHigh, inLow, inClose);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.realUpperBand = this.cur_outRealUpperBand;
-             out.realMiddleBand = this.cur_outRealMiddleBand;
-             out.realLowerBand = this.cur_outRealLowerBand;
           }
 
           /**
@@ -105061,9 +105103,8 @@ class Core {
              break;
           }
           case MAMA: {
-             MamaOut subOut = new MamaOut();
-             ((MamaStream) sp.sub).update(inReal, subOut);
-             sp.cur_outReal = subOut.mama;
+             ((MamaStream) sp.sub).update(inReal);
+             sp.cur_outReal = ((MamaStream) sp.sub).cur_outMAMA;
              break;
           }
           case T3: {
@@ -106250,15 +106291,21 @@ class Core {
            */
           public void update( double inReal, MacdOut out ) {
              requireArgument("MACD update", "out", out);
+             update( inReal );
+             out.macd = this.cur_outMACD;
+             out.macdSignal = this.cur_outMACDSignal;
+             out.macdHist = this.cur_outMACDHist;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outMACD / cur_outMACDSignal / cur_outMACDHist instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("MACD update: BadParam", RetCode.BadParam);
              }
              core.macdStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.macd = this.cur_outMACD;
-             out.macdSignal = this.cur_outMACDSignal;
-             out.macdHist = this.cur_outMACDHist;
           }
 
           /**
@@ -107365,15 +107412,21 @@ class Core {
            */
           public void update( double inReal, MacdextOut out ) {
              requireArgument("MACDEXT update", "out", out);
+             update( inReal );
+             out.macd = this.cur_outMACD;
+             out.macdSignal = this.cur_outMACDSignal;
+             out.macdHist = this.cur_outMACDHist;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outMACD / cur_outMACDSignal / cur_outMACDHist instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("MACDEXT update: BadParam", RetCode.BadParam);
              }
              core.macdextStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.macd = this.cur_outMACD;
-             out.macdSignal = this.cur_outMACDSignal;
-             out.macdHist = this.cur_outMACDHist;
           }
 
           /**
@@ -108340,15 +108393,21 @@ class Core {
            */
           public void update( double inReal, MacdfixOut out ) {
              requireArgument("MACDFIX update", "out", out);
+             update( inReal );
+             out.macd = this.cur_outMACD;
+             out.macdSignal = this.cur_outMACDSignal;
+             out.macdHist = this.cur_outMACDHist;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outMACD / cur_outMACDSignal / cur_outMACDHist instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("MACDFIX update: BadParam", RetCode.BadParam);
              }
              core.macdfixStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.macd = this.cur_outMACD;
-             out.macdSignal = this.cur_outMACDSignal;
-             out.macdHist = this.cur_outMACDHist;
           }
 
           /**
@@ -109875,14 +109934,20 @@ class Core {
            */
           public void update( double inReal, MamaOut out ) {
              requireArgument("MAMA update", "out", out);
+             update( inReal );
+             out.mama = this.cur_outMAMA;
+             out.fama = this.cur_outFAMA;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outMAMA / cur_outFAMA instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("MAMA update: BadParam", RetCode.BadParam);
              }
              core.mamaStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.mama = this.cur_outMAMA;
-             out.fama = this.cur_outFAMA;
           }
 
           /**
@@ -119766,14 +119831,20 @@ class Core {
            */
           public void update( double inReal, MinmaxOut out ) {
              requireArgument("MINMAX update", "out", out);
+             update( inReal );
+             out.min = this.cur_outMin;
+             out.max = this.cur_outMax;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outMin / cur_outMax instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("MINMAX update: BadParam", RetCode.BadParam);
              }
              core.minmaxStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.min = this.cur_outMin;
-             out.max = this.cur_outMax;
           }
 
           /**
@@ -120674,14 +120745,20 @@ class Core {
            */
           public void update( double inReal, MinmaxindexOut out ) {
              requireArgument("MINMAXINDEX update", "out", out);
+             update( inReal );
+             out.minIdx = this.cur_outMinIdx;
+             out.maxIdx = this.cur_outMaxIdx;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outMinIdx / cur_outMaxIdx instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("MINMAXINDEX update: BadParam", RetCode.BadParam);
              }
              core.minmaxindexStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.minIdx = this.cur_outMinIdx;
-             out.maxIdx = this.cur_outMaxIdx;
           }
 
           /**
@@ -142567,14 +142644,20 @@ class Core {
            */
           public void update( double inHigh, double inLow, double inClose, SmiOut out ) {
              requireArgument("SMI update", "out", out);
+             update( inHigh, inLow, inClose );
+             out.smi = this.cur_outSMI;
+             out.smiSignal = this.cur_outSMISignal;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outSMI / cur_outSMISignal instead. */
+          void update( double inHigh, double inLow, double inClose ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("SMI update: BadParam", RetCode.BadParam);
              }
              core.smiStepImpl(this, inHigh, inLow, inClose);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.smi = this.cur_outSMI;
-             out.smiSignal = this.cur_outSMISignal;
           }
 
           /**
@@ -145142,14 +145225,20 @@ class Core {
            */
           public void update( double inHigh, double inLow, double inClose, StochOut out ) {
              requireArgument("STOCH update", "out", out);
+             update( inHigh, inLow, inClose );
+             out.slowK = this.cur_outSlowK;
+             out.slowD = this.cur_outSlowD;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outSlowK / cur_outSlowD instead. */
+          void update( double inHigh, double inLow, double inClose ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("STOCH update: BadParam", RetCode.BadParam);
              }
              core.stochStepImpl(this, inHigh, inLow, inClose);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.slowK = this.cur_outSlowK;
-             out.slowD = this.cur_outSlowD;
           }
 
           /**
@@ -146498,14 +146587,20 @@ class Core {
            */
           public void update( double inHigh, double inLow, double inClose, StochfOut out ) {
              requireArgument("STOCHF update", "out", out);
+             update( inHigh, inLow, inClose );
+             out.fastK = this.cur_outFastK;
+             out.fastD = this.cur_outFastD;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outFastK / cur_outFastD instead. */
+          void update( double inHigh, double inLow, double inClose ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("STOCHF update: BadParam", RetCode.BadParam);
              }
              core.stochfStepImpl(this, inHigh, inLow, inClose);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.fastK = this.cur_outFastK;
-             out.fastD = this.cur_outFastD;
           }
 
           /**
@@ -147630,14 +147725,20 @@ class Core {
            */
           public void update( double inReal, StochrsiOut out ) {
              requireArgument("STOCHRSI update", "out", out);
+             update( inReal );
+             out.fastK = this.cur_outFastK;
+             out.fastD = this.cur_outFastD;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outFastK / cur_outFastD instead. */
+          void update( double inReal ) {
              if( !Double.isFinite(inReal) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("STOCHRSI update: BadParam", RetCode.BadParam);
              }
              core.stochrsiStepImpl(this, inReal);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.fastK = this.cur_outFastK;
-             out.fastD = this.cur_outFastD;
           }
 
           /**
@@ -147759,12 +147860,9 @@ class Core {
           double cur_outFastD = 0.0;
           /* Pipeline the new bar through the sub-streams (batch tail order). */
           cur_tempRSIBuffer = sp.sub0.update(inReal);
-          {
-             StochfOut subOut1 = new StochfOut();
-             sp.sub1.update(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer, subOut1);
-             cur_outFastK = subOut1.fastK;
-             cur_outFastD = subOut1.fastD;
-          }
+          sp.sub1.update(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer);
+          cur_outFastK = sp.sub1.cur_outFastK;
+          cur_outFastD = sp.sub1.cur_outFastD;
           sp.cur_outFastK = cur_outFastK;
           sp.cur_outFastD = cur_outFastD;
        }
@@ -149715,14 +149813,20 @@ class Core {
            */
           public void update( double inHigh, double inLow, double inClose, SupertrendOut out ) {
              requireArgument("SUPERTREND update", "out", out);
+             update( inHigh, inLow, inClose );
+             out.real = this.cur_outReal;
+             out.integer = this.cur_outInteger;
+          }
+
+          /* Commit with no sink to write: a caller inside this package reads the
+             outputs off cur_outReal / cur_outInteger instead. */
+          void update( double inHigh, double inLow, double inClose ) {
              if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
                 if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
                 throw new TaLibArgumentException("SUPERTREND update: BadParam", RetCode.BadParam);
              }
              core.supertrendStepImpl(this, inHigh, inLow, inClose);
              if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-             out.real = this.cur_outReal;
-             out.integer = this.cur_outInteger;
           }
 
           /**
@@ -166217,7 +166321,7 @@ class Core {
 
 public class TaCodegenServe {
     static Core core = new Core();
-    static final String SPLICED_GENCODE_DIGEST = "742712a042391041";
+    static final String SPLICED_GENCODE_DIGEST = "16022d40770d6761";
     static final int MAX_ARRAY_SIZE = 200000;
     static double[] refOpen = new double[MAX_ARRAY_SIZE];
     static double[] refHigh = new double[MAX_ARRAY_SIZE];
