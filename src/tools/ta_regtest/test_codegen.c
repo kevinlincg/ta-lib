@@ -3296,6 +3296,15 @@ static void sweep_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
  * then one per data shape from MONO_UP up (FUZZ_NSHAPES - 1 of them). */
 #define STREAM_NVARIANT (3 + FUZZ_NSHAPES - 1)
 
+/* Every leg the servers fold into the aggregate `ok`. Kept beside the walk that
+ * reads it: a leg that folds without an entry here is invisible to the walk and
+ * reopens #355 — an `ok` of 0 that no reported flag explains. Absent keys read
+ * -1, so a language that does not run a leg is not mistaken for one failing it. */
+static const char * const STREAM_OK_COMPONENTS[] = {
+    "\"base_ok\":", "\"fill_ok\":", "\"ufill_ok\":", "\"range_ok\":",
+    "\"value_ok\":", "\"state_ok\":", "\"clone_ok\":"
+};
+
 static int stream_flag(const char *resp, const char *key)
 {
     const char *p = strstr(resp, key);
@@ -3958,9 +3967,55 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
                     return;
                 }
             }
+            /* Base leg: the Open/Update value comparison, and the empty-batch
+             * open-reject precheck that shares its verdict. No `_checked`
+             * companion — it is the one leg that always runs. Every other leg
+             * reports a flag this driver names on failure; this one reported
+             * none, so when it was what failed the run said only `ok:0` and the
+             * reader had to re-derive the cause from the server source (#355).
+             * Checked before the generic flag so the failure names the leg. */
+            if( stream_flag(ctx->responseBuf, "\"base_ok\":") == 0 )
+            {
+                printf("STREAM BASE MISMATCH [TA_%s] vector=%d K=%d compat=%d\n"
+                       "  Open/Update did not answer the batch over the same bars\n"
+                       "  (or the batch produced nothing and Open accepted anyway)\n"
+                       "  request:  %s\n  response: %s\n",
+                       funcInfo->name, v, K, compat,
+                       ctx->requestBuf, ctx->responseBuf);
+                ctx->failed++;
+                ctx->error = TA_CODEGEN_STREAM_MISMATCH;
+                return;
+            }
             if( stream_flag(ctx->responseBuf, "\"ok\":") != 1 ||
                 stream_flag(ctx->responseBuf, "\"peek_ok\":") != 1 )
             {
+                /* Reaching here with every component the aggregate folds
+                 * reading 1 means it folds a leg that reports no flag at all.
+                 * Say so: the alternative is what #355 cost — a response that
+                 * states only that something failed, and a source read to find
+                 * out what. A leg added to the servers' fold needs an entry in
+                 * STREAM_OK_COMPONENTS or it lands here. */
+                if( stream_flag(ctx->responseBuf, "\"ok\":") != 1 )
+                {
+                    unsigned c;
+                    int named = 0;
+                    for( c = 0; c < sizeof(STREAM_OK_COMPONENTS) /
+                                    sizeof(STREAM_OK_COMPONENTS[0]); c++ )
+                        if( stream_flag(ctx->responseBuf, STREAM_OK_COMPONENTS[c]) == 0 )
+                            named = 1;
+                    if( !named )
+                    {
+                        printf("STREAM OK UNEXPLAINED [TA_%s] vector=%d K=%d compat=%d\n"
+                               "  ok:0 while every reported component flag reads 1 —\n"
+                               "  the aggregate folds a leg that reports no flag of its own\n"
+                               "  request:  %s\n  response: %s\n",
+                               funcInfo->name, v, K, compat,
+                               ctx->requestBuf, ctx->responseBuf);
+                        ctx->failed++;
+                        ctx->error = TA_CODEGEN_STREAM_MISMATCH;
+                        return;
+                    }
+                }
                 printf("STREAM MISMATCH [TA_%s] vector=%d K=%d compat=%d\n"
                        "  request:  %s\n  response: %s\n",
                        funcInfo->name, v, K, compat,

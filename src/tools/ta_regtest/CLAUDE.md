@@ -303,6 +303,15 @@ cd ../bin && ./ta_regtest --codegen --language=c,rust --function=SMA,RSI
 One request drives eight families against one seeded series. They are not
 interchangeable, and the coverage they add is very uneven:
 
+**Every leg the aggregate `ok` folds reports a flag of its own** — the base leg
+(the `Open`/`Update` value comparison and the empty-batch open-reject precheck)
+as `base_ok`, the rest as `fill_ok` / `ufill_ok` / `range_ok` / `value_ok` /
+`state_ok` / `clone_ok`. That is a contract, not a convenience: the driver names
+the leg in the failure it prints, and an `ok` of 0 that no reported flag explains
+is itself a failure (`STREAM OK UNEXPLAINED`). Adding a leg to a server's fold
+means adding its flag and an entry in `STREAM_OK_COMPONENTS`; skip that and the
+response says only that something failed.
+
 | family | what it compares | blind to |
 |---|---|---|
 | `Open` prefix sweep | `Open(P)` + updates to `n-1`, every bar vs batch | nothing structurally — this IS the Update path |

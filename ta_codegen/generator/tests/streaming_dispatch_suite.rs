@@ -1572,6 +1572,61 @@ fn sv_range_sites_mask_matches_the_declared_set() {
     }
 }
 
+/// Every `stream_verify` response reports the BASE leg's own verdict (#355).
+///
+/// The aggregate `ok` folds several legs. All but one report a flag the driver
+/// can name on failure; the base leg — Open/Update against batch, plus the
+/// empty-batch open-reject precheck — reported none, so when it was what failed
+/// the response said `ok:0` with every flag it did report reading 1, and the
+/// cause could only be recovered by reading the server source.
+///
+/// Pinned on emitted text and in all four backends at once, because the run-time
+/// observer cannot see it: a backend that stopped reporting `base_ok` would go
+/// back to answering the anonymous aggregate, which is green until something
+/// fails. Counting is the check — one `base_ok` per `ok` — since a response that
+/// carries the aggregate and not its base leg is exactly the hole.
+///
+/// `peek_rejects` rides along: Java and C# emitted it twice in one object, which
+/// only the first reader survives.
+#[test]
+fn sv_every_response_reports_the_base_leg() {
+    let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../ta_codegen/input");
+    let enums = parser::enums::load_enums(&base.join("enums.yaml"));
+    let funcs: Vec<ir::FuncDef> = discover_indicators().iter().map(|n| load_indicator(n).0).collect();
+
+    let servers = [
+        ("c", ta_codegen_lib::server_gen::generate_c_server(&funcs, &enums)),
+        ("java", ta_codegen_lib::server_gen::generate_java_server(&funcs, &enums)),
+        ("csharp", ta_codegen_lib::server_gen::generate_csharp_server(&funcs, &enums)),
+        ("rust", ta_codegen_lib::server_gen::generate_rust_server(&funcs, &enums)),
+    ];
+
+    // The key as it appears in the EMITTED source: a JSON key inside a string
+    // literal, so the quote is escaped. `\"ok\":` therefore cannot match inside
+    // `\"peek_ok\":` or `\"base_ok\":`, where an `_` sits where the quote would.
+    let count = |src: &str, key: &str| src.matches(key).count();
+
+    for (lang, src) in &servers {
+        let ok = count(src, "\\\"ok\\\":");
+        let base_ok = count(src, "\\\"base_ok\\\":");
+        assert!(ok > 0, "{lang}: server emits no stream_verify verdict at all");
+        assert_eq!(
+            ok, base_ok,
+            "{lang}: {ok} stream_verify response(s) report `ok`, {base_ok} report `base_ok`. \
+             A response carrying the aggregate without its base leg answers `ok:0` with nothing \
+             to point at."
+        );
+
+        let reps = count(src, "\\\"peek_rep_ok\\\":");
+        let rejects = count(src, "\\\"peek_rejects\\\":");
+        assert_eq!(
+            reps, rejects,
+            "{lang}: {reps} response(s) report `peek_rep_ok` and {rejects} report \
+             `peek_rejects` — one per response, emitted once each."
+        );
+    }
+}
+
 /// The #240 state-equivalence leg, pinned where #229 taught us to pin: as the
 /// EMITTED text of the comparison, not as the election that produced it.
 ///

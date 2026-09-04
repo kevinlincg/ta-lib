@@ -5629,6 +5629,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         int optInSignalPeriod = json_find_int(json, "optInSignalPeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -5654,7 +5655,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_AC_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_AC_Open(&st, sv_h, sv_l, svN, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_AC_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -5900,6 +5901,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -5908,13 +5910,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_ACCBANDS", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -5940,7 +5943,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ACCBANDS_Stream *st = NULL; double v0 = 0.0; double v1 = 0.0; double v2 = 0.0; TA_RetCode orc = TA_ACCBANDS_Open(&st, sv_h, sv_l, sv_c, svN, optInTimePeriod, &v0, &v1, &v2);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ACCBANDS_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -6233,6 +6236,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -6241,12 +6245,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_ACOS", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -6272,7 +6277,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ACOS_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ACOS_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ACOS_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -6518,6 +6523,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -6526,12 +6532,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 5 && strncmp(fn, "TA_AD", 5) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -6557,7 +6564,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_AD_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_AD_Open(&st, sv_h, sv_l, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_AD_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -6803,6 +6810,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -6811,12 +6819,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_ADD", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -6842,7 +6851,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ADD_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ADD_Open(&st, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ADD_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -7088,6 +7097,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -7096,7 +7106,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_ADOSC", 8) == 0 ) {
@@ -7104,6 +7114,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         int optInSlowPeriod = json_find_int(json, "optInSlowPeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -7131,7 +7142,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ADOSC_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -7378,6 +7389,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -7386,13 +7398,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_ADX", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -7420,7 +7433,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ADX_Close(st); }
             TA_SetUnstablePeriod(0, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -7667,6 +7680,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(0, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -7675,13 +7689,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_ADXR", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -7709,7 +7724,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ADXR_Close(st); }
             TA_SetUnstablePeriod(0, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -7956,6 +7971,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(0, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -7964,7 +7980,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 5 && strncmp(fn, "TA_AO", 5) == 0 ) {
@@ -7972,6 +7988,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         int optInSlowPeriod = json_find_int(json, "optInSlowPeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -7997,7 +8014,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_AO_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_AO_Open(&st, sv_h, sv_l, svN, optInFastPeriod, optInSlowPeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_AO_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -8243,6 +8260,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -8251,7 +8269,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_APO", 6) == 0 ) {
@@ -8260,6 +8278,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInMAType = (TA_MAType)json_find_int(json, "optInMAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -8295,7 +8314,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -8546,6 +8565,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -8554,13 +8574,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_AROON", 8) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -8586,7 +8607,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_AROON_Stream *st = NULL; double v0 = 0.0; double v1 = 0.0; TA_RetCode orc = TA_AROON_Open(&st, sv_h, sv_l, svN, optInTimePeriod, &v0, &v1);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_AROON_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -8859,6 +8880,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -8867,13 +8889,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_AROONOSC", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -8899,7 +8922,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_AROONOSC_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_AROONOSC_Open(&st, sv_h, sv_l, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_AROONOSC_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -9145,6 +9168,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -9153,12 +9177,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_ASIN", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -9184,7 +9209,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ASIN_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ASIN_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ASIN_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -9430,6 +9455,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -9438,12 +9464,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_ATAN", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -9469,7 +9496,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ATAN_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ATAN_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ATAN_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -9715,6 +9742,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -9723,13 +9751,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_ATR", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -9757,7 +9786,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ATR_Close(st); }
             TA_SetUnstablePeriod(2, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -10004,6 +10033,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(2, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -10012,13 +10042,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_AVGDEV", 9) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -10044,7 +10075,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_AVGDEV_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_AVGDEV_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_AVGDEV_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -10290,6 +10321,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -10298,12 +10330,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_AVGPRICE", 11) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -10329,7 +10362,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_AVGPRICE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_AVGPRICE_Open(&st, sv_o, sv_h, sv_l, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_AVGPRICE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -10575,6 +10608,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -10583,7 +10617,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_BBANDS", 9) == 0 ) {
@@ -10593,6 +10627,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInMAType = (TA_MAType)json_find_int(json, "optInMAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -10628,7 +10663,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -10926,6 +10961,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -10934,13 +10970,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_BETA", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -10966,7 +11003,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_BETA_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_BETA_Open(&st, sv_c, sv_v, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_BETA_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -11212,6 +11249,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -11220,12 +11258,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_BOP", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -11251,7 +11290,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_BOP_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_BOP_Open(&st, sv_o, sv_h, sv_l, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_BOP_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -11497,6 +11536,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -11505,13 +11545,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_CCI", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -11537,7 +11578,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_CCI_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_CCI_Open(&st, sv_h, sv_l, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_CCI_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -11783,6 +11824,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -11791,12 +11833,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_CDL2CROWS", 12) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -11830,7 +11873,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -12070,6 +12113,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -12078,12 +12122,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDL3BLACKCROWS", 17) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -12117,7 +12162,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -12357,6 +12402,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -12365,12 +12411,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 13 && strncmp(fn, "TA_CDL3INSIDE", 13) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -12404,7 +12451,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -12644,6 +12691,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -12652,12 +12700,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDL3LINESTRIKE", 17) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -12691,7 +12740,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -12931,6 +12980,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -12939,12 +12989,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_CDL3OUTSIDE", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -12978,7 +13029,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -13218,6 +13269,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -13226,12 +13278,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 19 && strncmp(fn, "TA_CDL3STARSINSOUTH", 19) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -13265,7 +13318,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -13505,6 +13558,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -13513,12 +13567,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 20 && strncmp(fn, "TA_CDL3WHITESOLDIERS", 20) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -13552,7 +13607,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -13792,6 +13847,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -13800,13 +13856,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 19 && strncmp(fn, "TA_CDLABANDONEDBABY", 19) == 0 ) {
         double optInPenetration = json_find_double(json, "optInPenetration");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -13840,7 +13897,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -14080,6 +14137,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -14088,12 +14146,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 18 && strncmp(fn, "TA_CDLADVANCEBLOCK", 18) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -14127,7 +14186,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -14367,6 +14426,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -14375,12 +14435,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_CDLBELTHOLD", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -14414,7 +14475,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -14654,6 +14715,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -14662,12 +14724,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 15 && strncmp(fn, "TA_CDLBREAKAWAY", 15) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -14701,7 +14764,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -14941,6 +15004,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -14949,12 +15013,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 21 && strncmp(fn, "TA_CDLCLOSINGMARUBOZU", 21) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -14988,7 +15053,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -15228,6 +15293,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -15236,12 +15302,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 22 && strncmp(fn, "TA_CDLCONCEALBABYSWALL", 22) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -15275,7 +15342,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -15515,6 +15582,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -15523,12 +15591,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 19 && strncmp(fn, "TA_CDLCOUNTERATTACK", 19) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -15562,7 +15631,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -15802,6 +15871,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -15810,13 +15880,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 20 && strncmp(fn, "TA_CDLDARKCLOUDCOVER", 20) == 0 ) {
         double optInPenetration = json_find_double(json, "optInPenetration");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -15850,7 +15921,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -16090,6 +16161,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -16098,12 +16170,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 10 && strncmp(fn, "TA_CDLDOJI", 10) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -16137,7 +16210,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -16377,6 +16450,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -16385,12 +16459,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_CDLDOJISTAR", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -16424,7 +16499,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -16664,6 +16739,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -16672,12 +16748,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 19 && strncmp(fn, "TA_CDLDRAGONFLYDOJI", 19) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -16711,7 +16788,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -16951,6 +17028,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -16959,12 +17037,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 15 && strncmp(fn, "TA_CDLENGULFING", 15) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -16998,7 +17077,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -17238,6 +17317,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -17246,13 +17326,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 21 && strncmp(fn, "TA_CDLEVENINGDOJISTAR", 21) == 0 ) {
         double optInPenetration = json_find_double(json, "optInPenetration");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -17286,7 +17367,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -17526,6 +17607,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -17534,13 +17616,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDLEVENINGSTAR", 17) == 0 ) {
         double optInPenetration = json_find_double(json, "optInPenetration");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -17574,7 +17657,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -17814,6 +17897,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -17822,12 +17906,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 22 && strncmp(fn, "TA_CDLGAPSIDESIDEWHITE", 22) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -17861,7 +17946,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -18101,6 +18186,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -18109,12 +18195,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 20 && strncmp(fn, "TA_CDLGRAVESTONEDOJI", 20) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -18148,7 +18235,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -18388,6 +18475,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -18396,12 +18484,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_CDLHAMMER", 12) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -18435,7 +18524,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -18675,6 +18764,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -18683,12 +18773,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 16 && strncmp(fn, "TA_CDLHANGINGMAN", 16) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -18722,7 +18813,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -18962,6 +19053,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -18970,12 +19062,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_CDLHARAMI", 12) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -19009,7 +19102,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -19249,6 +19342,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -19257,12 +19351,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDLHARAMICROSS", 17) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -19296,7 +19391,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -19536,6 +19631,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -19544,12 +19640,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_CDLHIGHWAVE", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -19583,7 +19680,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -19823,6 +19920,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -19831,12 +19929,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 13 && strncmp(fn, "TA_CDLHIKKAKE", 13) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -19870,7 +19969,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -20110,6 +20209,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -20118,12 +20218,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 16 && strncmp(fn, "TA_CDLHIKKAKEMOD", 16) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -20157,7 +20258,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -20397,6 +20498,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -20405,12 +20507,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 18 && strncmp(fn, "TA_CDLHOMINGPIGEON", 18) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -20444,7 +20547,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -20684,6 +20787,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -20692,12 +20796,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 21 && strncmp(fn, "TA_CDLIDENTICAL3CROWS", 21) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -20731,7 +20836,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -20971,6 +21076,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -20979,12 +21085,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_CDLINNECK", 12) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -21018,7 +21125,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -21258,6 +21365,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -21266,12 +21374,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 20 && strncmp(fn, "TA_CDLINVERTEDHAMMER", 20) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -21305,7 +21414,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -21545,6 +21654,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -21553,12 +21663,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 13 && strncmp(fn, "TA_CDLKICKING", 13) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -21592,7 +21703,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -21832,6 +21943,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -21840,12 +21952,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 21 && strncmp(fn, "TA_CDLKICKINGBYLENGTH", 21) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -21879,7 +21992,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -22119,6 +22232,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -22127,12 +22241,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 18 && strncmp(fn, "TA_CDLLADDERBOTTOM", 18) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -22166,7 +22281,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -22406,6 +22521,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -22414,12 +22530,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 20 && strncmp(fn, "TA_CDLLONGLEGGEDDOJI", 20) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -22453,7 +22570,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -22693,6 +22810,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -22701,12 +22819,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_CDLLONGLINE", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -22740,7 +22859,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -22980,6 +23099,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -22988,12 +23108,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_CDLMARUBOZU", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -23027,7 +23148,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -23267,6 +23388,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -23275,12 +23397,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDLMATCHINGLOW", 17) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -23314,7 +23437,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -23554,6 +23677,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -23562,13 +23686,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 13 && strncmp(fn, "TA_CDLMATHOLD", 13) == 0 ) {
         double optInPenetration = json_find_double(json, "optInPenetration");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -23602,7 +23727,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -23842,6 +23967,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -23850,13 +23976,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 21 && strncmp(fn, "TA_CDLMORNINGDOJISTAR", 21) == 0 ) {
         double optInPenetration = json_find_double(json, "optInPenetration");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -23890,7 +24017,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -24130,6 +24257,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -24138,13 +24266,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDLMORNINGSTAR", 17) == 0 ) {
         double optInPenetration = json_find_double(json, "optInPenetration");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -24178,7 +24307,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -24418,6 +24547,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -24426,12 +24556,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_CDLONNECK", 12) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -24465,7 +24596,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -24705,6 +24836,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -24713,12 +24845,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_CDLPIERCING", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -24752,7 +24885,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -24992,6 +25125,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -25000,12 +25134,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDLRICKSHAWMAN", 17) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -25039,7 +25174,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -25279,6 +25414,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -25287,12 +25423,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 22 && strncmp(fn, "TA_CDLRISEFALL3METHODS", 22) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -25326,7 +25463,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -25566,6 +25703,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -25574,12 +25712,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 21 && strncmp(fn, "TA_CDLSEPARATINGLINES", 21) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -25613,7 +25752,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -25853,6 +25992,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -25861,12 +26001,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 18 && strncmp(fn, "TA_CDLSHOOTINGSTAR", 18) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -25900,7 +26041,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -26140,6 +26281,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -26148,12 +26290,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 15 && strncmp(fn, "TA_CDLSHORTLINE", 15) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -26187,7 +26330,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -26427,6 +26570,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -26435,12 +26579,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 17 && strncmp(fn, "TA_CDLSPINNINGTOP", 17) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -26474,7 +26619,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -26714,6 +26859,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -26722,12 +26868,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 20 && strncmp(fn, "TA_CDLSTALLEDPATTERN", 20) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -26761,7 +26908,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -27001,6 +27148,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -27009,12 +27157,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 19 && strncmp(fn, "TA_CDLSTICKSANDWICH", 19) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -27048,7 +27197,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -27288,6 +27437,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -27296,12 +27446,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_CDLTAKURI", 12) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -27335,7 +27486,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -27575,6 +27726,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -27583,12 +27735,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 15 && strncmp(fn, "TA_CDLTASUKIGAP", 15) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -27622,7 +27775,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -27862,6 +28015,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -27870,12 +28024,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 15 && strncmp(fn, "TA_CDLTHRUSTING", 15) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -27909,7 +28064,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -28149,6 +28304,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -28157,12 +28313,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 13 && strncmp(fn, "TA_CDLTRISTAR", 13) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -28196,7 +28353,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -28436,6 +28593,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -28444,12 +28602,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 18 && strncmp(fn, "TA_CDLUNIQUE3RIVER", 18) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -28483,7 +28642,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -28723,6 +28882,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -28731,12 +28891,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 21 && strncmp(fn, "TA_CDLUPSIDEGAP2CROWS", 21) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -28770,7 +28931,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -29010,6 +29171,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -29018,12 +29180,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 22 && strncmp(fn, "TA_CDLXSIDEGAP3METHODS", 22) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -29057,7 +29220,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             if( rd + 1 < rounds ) continue;
             TA_SetCompatibility((TA_Compatibility)savedCompat);
             TA_RestoreCandleDefaultSettings( TA_AllCandleSettings );
-            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
+            pos = json_appendf(resp, resp_size, pos, ",\"rrc\":%d,\"legs\":%d,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"benign\":%d}", (int)rc, lgi, svNb, openRejects, allOk ? 1 : 0, allOk ? 1 : 0, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, svZsign);
             return;
         }
         {
@@ -29297,6 +29460,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -29305,12 +29469,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"beg\":%d,\"nb\":%d,\"legs\":%d,\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_CEIL", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -29336,7 +29501,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_CEIL_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_CEIL_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_CEIL_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -29582,6 +29747,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -29590,13 +29756,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_CMF", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -29622,7 +29789,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_CMF_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_CMF_Open(&st, sv_h, sv_l, sv_c, sv_v, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_CMF_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -29868,6 +30035,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -29876,13 +30044,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_CMO", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -29910,7 +30079,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_CMO_Close(st); }
             TA_SetUnstablePeriod(3, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -30157,6 +30326,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(3, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -30165,13 +30335,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_CMOU", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -30197,7 +30368,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_CMOU_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_CMOU_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_CMOU_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -30443,6 +30614,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -30451,13 +30623,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_CORREL", 9) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -30483,7 +30656,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_CORREL_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_CORREL_Open(&st, sv_c, sv_v, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_CORREL_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -30729,6 +30902,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -30737,12 +30911,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_COS", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -30768,7 +30943,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_COS_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_COS_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_COS_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -31014,6 +31189,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -31022,12 +31198,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_COSH", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -31053,7 +31230,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_COSH_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_COSH_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_COSH_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -31299,6 +31476,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -31307,13 +31485,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_DEMA", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -31341,7 +31520,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_DEMA_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -31588,6 +31767,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -31596,12 +31776,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_DIV", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -31627,7 +31808,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_DIV_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_DIV_Open(&st, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_DIV_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -31873,6 +32054,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -31881,13 +32063,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_DONCHIAN", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -31913,7 +32096,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_DONCHIAN_Stream *st = NULL; double v0 = 0.0; double v1 = 0.0; double v2 = 0.0; TA_RetCode orc = TA_DONCHIAN_Open(&st, sv_h, sv_l, svN, optInTimePeriod, &v0, &v1, &v2);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_DONCHIAN_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -32206,6 +32389,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -32214,13 +32398,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 5 && strncmp(fn, "TA_DX", 5) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -32248,7 +32433,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_DX_Close(st); }
             TA_SetUnstablePeriod(4, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -32495,6 +32680,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(4, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -32503,13 +32689,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_EFI", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -32535,7 +32722,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_EFI_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_EFI_Open(&st, sv_c, sv_v, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_EFI_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -32781,6 +32968,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -32789,13 +32977,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_EMA", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -32823,7 +33012,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_EMA_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -33070,6 +33259,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -33078,12 +33268,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_EXP", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -33109,7 +33300,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_EXP_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_EXP_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_EXP_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -33355,6 +33546,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -33363,12 +33555,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_FLOOR", 8) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -33394,7 +33587,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_FLOOR_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_FLOOR_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_FLOOR_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -33640,6 +33833,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -33648,13 +33842,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_HMA", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -33680,7 +33875,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_HMA_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_HMA_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_HMA_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -33926,6 +34121,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -33934,12 +34130,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_HT_DCPERIOD", 14) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -33967,7 +34164,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_HT_DCPERIOD_Close(st); }
             TA_SetUnstablePeriod(6, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -34214,6 +34411,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(6, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -34222,12 +34420,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 13 && strncmp(fn, "TA_HT_DCPHASE", 13) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -34255,7 +34454,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_HT_DCPHASE_Close(st); }
             TA_SetUnstablePeriod(7, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -34502,6 +34701,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(7, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -34510,12 +34710,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_HT_PHASOR", 12) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -34543,7 +34744,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_HT_PHASOR_Close(st); }
             TA_SetUnstablePeriod(8, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -34817,6 +35018,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(8, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -34825,12 +35027,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 10 && strncmp(fn, "TA_HT_SINE", 10) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -34858,7 +35061,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_HT_SINE_Close(st); }
             TA_SetUnstablePeriod(9, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -35132,6 +35335,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(9, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -35140,12 +35344,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 15 && strncmp(fn, "TA_HT_TRENDLINE", 15) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -35173,7 +35378,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_HT_TRENDLINE_Close(st); }
             TA_SetUnstablePeriod(10, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -35420,6 +35625,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(10, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -35428,12 +35634,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 15 && strncmp(fn, "TA_HT_TRENDMODE", 15) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -35461,7 +35668,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_HT_TRENDMODE_Close(st); }
             TA_SetUnstablePeriod(11, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -35700,6 +35907,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(11, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -35708,13 +35916,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_IMI", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -35740,7 +35949,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_IMI_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_IMI_Open(&st, sv_o, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_IMI_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -35986,6 +36195,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -35994,13 +36204,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_KAMA", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -36028,7 +36239,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_KAMA_Close(st); }
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -36275,6 +36486,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -36283,7 +36495,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 5 && strncmp(fn, "TA_KC", 5) == 0 ) {
@@ -36292,6 +36504,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInNbDev = json_find_double(json, "optInNbDev");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -36321,7 +36534,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(2, 0);
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -36616,6 +36829,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(2, 0);
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -36624,13 +36838,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 12 && strncmp(fn, "TA_LINEARREG", 12) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -36656,7 +36871,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_LINEARREG_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_LINEARREG_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_LINEARREG_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -36902,6 +37117,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -36910,13 +37126,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 18 && strncmp(fn, "TA_LINEARREG_ANGLE", 18) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -36942,7 +37159,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_LINEARREG_ANGLE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_LINEARREG_ANGLE_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_LINEARREG_ANGLE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -37188,6 +37405,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -37196,13 +37414,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 22 && strncmp(fn, "TA_LINEARREG_INTERCEPT", 22) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -37228,7 +37447,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_LINEARREG_INTERCEPT_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_LINEARREG_INTERCEPT_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_LINEARREG_INTERCEPT_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -37474,6 +37693,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -37482,13 +37702,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 18 && strncmp(fn, "TA_LINEARREG_SLOPE", 18) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -37514,7 +37735,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_LINEARREG_SLOPE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_LINEARREG_SLOPE_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_LINEARREG_SLOPE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -37760,6 +37981,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -37768,12 +37990,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 5 && strncmp(fn, "TA_LN", 5) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -37799,7 +38022,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_LN_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_LN_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_LN_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -38045,6 +38268,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -38053,12 +38277,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_LOG10", 8) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -38084,7 +38309,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_LOG10_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_LOG10_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_LOG10_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -38330,6 +38555,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -38338,7 +38564,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 5 && strncmp(fn, "TA_MA", 5) == 0 ) {
@@ -38346,6 +38572,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInMAType = (TA_MAType)json_find_int(json, "optInMAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -38381,7 +38608,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -38632,6 +38859,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -38640,7 +38868,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_MACD", 7) == 0 ) {
@@ -38649,6 +38877,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         int optInSignalPeriod = json_find_int(json, "optInSignalPeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -38676,7 +38905,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MACD_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -38970,6 +39199,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -38978,7 +39208,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 10 && strncmp(fn, "TA_MACDEXT", 10) == 0 ) {
@@ -38990,6 +39220,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInSignalMAType = (TA_MAType)json_find_int(json, "optInSignalMAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -39025,7 +39256,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -39323,6 +39554,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -39331,13 +39563,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 10 && strncmp(fn, "TA_MACDFIX", 10) == 0 ) {
         int optInSignalPeriod = json_find_int(json, "optInSignalPeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -39365,7 +39598,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MACDFIX_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -39659,6 +39892,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -39667,7 +39901,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_MAMA", 7) == 0 ) {
@@ -39675,6 +39909,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInSlowLimit = json_find_double(json, "optInSlowLimit");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -39702,7 +39937,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MAMA_Close(st); }
             TA_SetUnstablePeriod(14, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -39976,6 +40211,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(14, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -39984,12 +40220,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MARKETFI", 11) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -40015,7 +40252,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MARKETFI_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MARKETFI_Open(&st, sv_h, sv_l, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MARKETFI_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -40261,6 +40498,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -40269,7 +40507,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_MAVP", 7) == 0 ) {
@@ -40279,6 +40517,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         { int _pi; for( _pi = 0; _pi < svN; _pi++ ) sv_v[_pi] = (double)(optInMinPeriod + (_pi % (optInMaxPeriod - optInMinPeriod + 3)) - 1); }
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -40314,7 +40553,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -40565,6 +40804,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -40573,13 +40813,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_MAX", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -40605,7 +40846,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MAX_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MAX_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MAX_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -40851,6 +41092,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -40859,13 +41101,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MAXINDEX", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -40891,7 +41134,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MAXINDEX_Stream *st = NULL; int v0 = 0; TA_RetCode orc = TA_MAXINDEX_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MAXINDEX_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -41129,6 +41372,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -41137,12 +41381,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MEDPRICE", 11) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -41168,7 +41413,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MEDPRICE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MEDPRICE_Open(&st, sv_h, sv_l, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MEDPRICE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -41414,6 +41659,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -41422,13 +41668,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_MFI", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -41454,7 +41701,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MFI_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MFI_Open(&st, sv_h, sv_l, sv_c, sv_v, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MFI_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -41700,6 +41947,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -41708,13 +41956,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MIDPOINT", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -41740,7 +41989,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MIDPOINT_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MIDPOINT_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MIDPOINT_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -41986,6 +42235,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -41994,13 +42244,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MIDPRICE", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -42026,7 +42277,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MIDPRICE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MIDPRICE_Open(&st, sv_h, sv_l, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MIDPRICE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -42272,6 +42523,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -42280,13 +42532,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_MIN", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -42312,7 +42565,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MIN_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MIN_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MIN_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -42558,6 +42811,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -42566,13 +42820,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MININDEX", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -42598,7 +42853,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MININDEX_Stream *st = NULL; int v0 = 0; TA_RetCode orc = TA_MININDEX_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MININDEX_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -42836,6 +43091,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -42844,13 +43100,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_MINMAX", 9) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -42876,7 +43133,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MINMAX_Stream *st = NULL; double v0 = 0.0; double v1 = 0.0; TA_RetCode orc = TA_MINMAX_Open(&st, sv_c, svN, optInTimePeriod, &v0, &v1);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MINMAX_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -43149,6 +43406,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -43157,13 +43415,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 14 && strncmp(fn, "TA_MINMAXINDEX", 14) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -43189,7 +43448,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MINMAXINDEX_Stream *st = NULL; int v0 = 0; int v1 = 0; TA_RetCode orc = TA_MINMAXINDEX_Open(&st, sv_c, svN, optInTimePeriod, &v0, &v1);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MINMAXINDEX_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -43454,6 +43713,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -43462,13 +43722,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MINUS_DI", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -43496,7 +43757,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MINUS_DI_Close(st); }
             TA_SetUnstablePeriod(16, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -43743,6 +44004,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(16, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -43751,13 +44013,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_MINUS_DM", 11) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -43785,7 +44048,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MINUS_DM_Close(st); }
             TA_SetUnstablePeriod(17, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -44032,6 +44295,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(17, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -44040,13 +44304,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_MOM", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -44072,7 +44337,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MOM_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MOM_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MOM_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -44318,6 +44583,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -44326,12 +44592,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_MULT", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -44357,7 +44624,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_MULT_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_MULT_Open(&st, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_MULT_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -44603,6 +44870,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -44611,13 +44879,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_NATR", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -44645,7 +44914,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_NATR_Close(st); }
             TA_SetUnstablePeriod(18, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -44892,6 +45161,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(18, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -44900,12 +45170,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_NVI", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -44931,7 +45202,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_NVI_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_NVI_Open(&st, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_NVI_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -45177,6 +45448,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -45185,12 +45457,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_OBV", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -45216,7 +45489,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_OBV_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_OBV_Open(&st, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_OBV_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -45462,6 +45735,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -45470,13 +45744,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 10 && strncmp(fn, "TA_PLUS_DI", 10) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -45504,7 +45779,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_PLUS_DI_Close(st); }
             TA_SetUnstablePeriod(19, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -45751,6 +46026,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(19, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -45759,13 +46035,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 10 && strncmp(fn, "TA_PLUS_DM", 10) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -45793,7 +46070,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_PLUS_DM_Close(st); }
             TA_SetUnstablePeriod(20, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -46040,6 +46317,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(20, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -46048,7 +46326,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_PPO", 6) == 0 ) {
@@ -46057,6 +46335,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInMAType = (TA_MAType)json_find_int(json, "optInMAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -46092,7 +46371,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -46343,6 +46622,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -46351,12 +46631,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_PVI", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -46382,7 +46663,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_PVI_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_PVI_Open(&st, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_PVI_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -46628,6 +46909,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -46636,7 +46918,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_PVO", 6) == 0 ) {
@@ -46645,6 +46927,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInMAType = (TA_MAType)json_find_int(json, "optInMAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -46680,7 +46963,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -46931,6 +47214,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -46939,13 +47223,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_QSTICK", 9) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -46971,7 +47256,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_QSTICK_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_QSTICK_Open(&st, sv_o, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_QSTICK_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -47217,6 +47502,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -47225,13 +47511,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_RMA", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -47259,7 +47546,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_RMA_Close(st); }
             TA_SetUnstablePeriod(24, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -47506,6 +47793,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(24, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -47514,13 +47802,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_ROC", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -47546,7 +47835,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ROC_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ROC_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ROC_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -47792,6 +48081,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -47800,13 +48090,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_ROCP", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -47832,7 +48123,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ROCP_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ROCP_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ROCP_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -48078,6 +48369,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -48086,13 +48378,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_ROCR", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -48118,7 +48411,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ROCR_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ROCR_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ROCR_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -48364,6 +48657,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -48372,13 +48666,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 10 && strncmp(fn, "TA_ROCR100", 10) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -48404,7 +48699,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ROCR100_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ROCR100_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ROCR100_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -48650,6 +48945,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -48658,13 +48954,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_RSI", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -48692,7 +48989,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_RSI_Close(st); }
             TA_SetUnstablePeriod(21, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -48939,6 +49236,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(21, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -48947,7 +49245,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_SAR", 6) == 0 ) {
@@ -48955,6 +49253,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInMaximum = json_find_double(json, "optInMaximum");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -48980,7 +49279,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SAR_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SAR_Open(&st, sv_h, sv_l, svN, optInAcceleration, optInMaximum, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SAR_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -49226,6 +49525,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -49234,7 +49534,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_SAREXT", 9) == 0 ) {
@@ -49248,6 +49548,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInAccelerationMaxShort = json_find_double(json, "optInAccelerationMaxShort");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -49273,7 +49574,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SAREXT_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SAREXT_Open(&st, sv_h, sv_l, svN, optInStartValue, optInOffsetOnReverse, optInAccelerationInitLong, optInAccelerationLong, optInAccelerationMaxLong, optInAccelerationInitShort, optInAccelerationShort, optInAccelerationMaxShort, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SAREXT_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -49519,6 +49820,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -49527,12 +49829,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_SIN", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -49558,7 +49861,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SIN_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SIN_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SIN_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -49804,6 +50107,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -49812,12 +50116,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_SINH", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -49843,7 +50148,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SINH_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SINH_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SINH_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -50089,6 +50394,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -50097,13 +50403,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_SMA", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -50129,7 +50436,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SMA_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SMA_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SMA_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -50375,6 +50682,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -50383,7 +50691,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_SMI", 6) == 0 ) {
@@ -50393,6 +50701,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         int optInSignalPeriod = json_find_int(json, "optInSignalPeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -50420,7 +50729,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SMI_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -50694,6 +51003,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -50702,12 +51012,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_SQRT", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -50733,7 +51044,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SQRT_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SQRT_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SQRT_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -50979,6 +51290,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -50987,7 +51299,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_STDDEV", 9) == 0 ) {
@@ -50995,6 +51307,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInNbDev = json_find_double(json, "optInNbDev");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -51020,7 +51333,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_STDDEV_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_STDDEV_Open(&st, sv_c, svN, optInTimePeriod, optInNbDev, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_STDDEV_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -51266,6 +51579,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -51274,7 +51588,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_STOCH", 8) == 0 ) {
@@ -51285,6 +51599,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInSlowD_MAType = (TA_MAType)json_find_int(json, "optInSlowD_MAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -51320,7 +51635,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -51598,6 +51913,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -51606,7 +51922,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_STOCHF", 9) == 0 ) {
@@ -51615,6 +51931,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInFastD_MAType = (TA_MAType)json_find_int(json, "optInFastD_MAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -51650,7 +51967,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(14, 0);
             TA_SetUnstablePeriod(13, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -51928,6 +52245,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(14, 0);
         TA_SetUnstablePeriod(13, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -51936,7 +52254,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_STOCHRSI", 11) == 0 ) {
@@ -51946,6 +52264,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_MAType optInFastD_MAType = (TA_MAType)json_find_int(json, "optInFastD_MAType");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -51983,7 +52302,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             TA_SetUnstablePeriod(13, 0);
             TA_SetUnstablePeriod(21, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -52262,6 +52581,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         TA_SetUnstablePeriod(13, 0);
         TA_SetUnstablePeriod(21, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -52270,12 +52590,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_SUB", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -52301,7 +52622,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SUB_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SUB_Open(&st, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SUB_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -52547,6 +52868,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -52555,13 +52877,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_SUM", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -52587,7 +52910,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_SUM_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_SUM_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SUM_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -52833,6 +53156,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -52841,7 +53165,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 13 && strncmp(fn, "TA_SUPERTREND", 13) == 0 ) {
@@ -52849,6 +53173,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInMultiplier = json_find_double(json, "optInMultiplier");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -52876,7 +53201,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_SUPERTREND_Close(st); }
             TA_SetUnstablePeriod(2, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -53143,6 +53468,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(2, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -53151,7 +53477,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 5 && strncmp(fn, "TA_T3", 5) == 0 ) {
@@ -53159,6 +53485,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInVFactor = json_find_double(json, "optInVFactor");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -53186,7 +53513,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_T3_Close(st); }
             TA_SetUnstablePeriod(23, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -53433,6 +53760,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(23, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -53441,12 +53769,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_TAN", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -53472,7 +53801,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_TAN_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_TAN_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TAN_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -53718,6 +54047,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -53726,12 +54056,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_TANH", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -53757,7 +54088,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_TANH_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_TANH_Open(&st, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TANH_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -54003,6 +54334,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -54011,13 +54343,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_TEMA", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -54045,7 +54378,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TEMA_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -54292,6 +54625,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -54300,12 +54634,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_TRANGE", 9) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -54331,7 +54666,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_TRANGE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_TRANGE_Open(&st, sv_h, sv_l, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TRANGE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -54577,6 +54912,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -54585,13 +54921,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_TRIMA", 8) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -54617,7 +54954,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_TRIMA_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_TRIMA_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TRIMA_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -54863,6 +55200,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -54871,13 +55209,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_TRIX", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -54905,7 +55244,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TRIX_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -55152,6 +55491,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -55160,13 +55500,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_TSF", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -55192,7 +55533,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_TSF_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_TSF_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TSF_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -55438,6 +55779,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -55446,12 +55788,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_TYPPRICE", 11) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -55477,7 +55820,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_TYPPRICE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_TYPPRICE_Open(&st, sv_h, sv_l, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_TYPPRICE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -55723,6 +56066,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -55731,7 +56075,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 9 && strncmp(fn, "TA_ULTOSC", 9) == 0 ) {
@@ -55740,6 +56084,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         int optInTimePeriod3 = json_find_int(json, "optInTimePeriod3");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -55765,7 +56110,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_ULTOSC_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_ULTOSC_Open(&st, sv_h, sv_l, sv_c, svN, optInTimePeriod1, optInTimePeriod2, optInTimePeriod3, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ULTOSC_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -56011,6 +56356,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -56019,7 +56365,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_VAR", 6) == 0 ) {
@@ -56027,6 +56373,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         double optInNbDev = json_find_double(json, "optInNbDev");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -56052,7 +56399,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_VAR_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_VAR_Open(&st, sv_c, svN, optInTimePeriod, optInNbDev, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_VAR_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -56298,6 +56645,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -56306,12 +56654,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_VWAP", 7) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -56337,7 +56686,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_VWAP_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_VWAP_Open(&st, sv_h, sv_l, sv_c, sv_v, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_VWAP_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -56583,6 +56932,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -56591,13 +56941,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 7 && strncmp(fn, "TA_VWMA", 7) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -56623,7 +56974,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_VWMA_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_VWMA_Open(&st, sv_c, sv_v, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_VWMA_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -56869,6 +57220,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -56877,12 +57229,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_WAD", 6) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -56908,7 +57261,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_WAD_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_WAD_Open(&st, sv_h, sv_l, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_WAD_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -57154,6 +57507,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -57162,12 +57516,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 11 && strncmp(fn, "TA_WCLPRICE", 11) == 0 ) {
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -57193,7 +57548,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_WCLPRICE_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_WCLPRICE_Open(&st, sv_h, sv_l, sv_c, svN, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_WCLPRICE_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -57439,6 +57794,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -57447,13 +57803,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_WILLR", 8) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -57479,7 +57836,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_WILLR_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_WILLR_Open(&st, sv_h, sv_l, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_WILLR_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -57725,6 +58082,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -57733,13 +58091,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 6 && strncmp(fn, "TA_WMA", 6) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -57765,7 +58124,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             { TA_WMA_Stream *st = NULL; double v0 = 0.0; TA_RetCode orc = TA_WMA_Open(&st, sv_c, svN, optInTimePeriod, &v0);
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_WMA_Close(st); }
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -58011,6 +58370,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             }
         }
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -58019,13 +58379,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     else if( fnLen == 8 && strncmp(fn, "TA_ZLEMA", 8) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         TA_RetCode rc;
         int svBeg = 0, svNb = 0, lb, li, npref, pos, allOk = 1, peekAll = 1;
+        int baseOk = 1;
         int peekChecked = 0;
         int peekReps = 0, peekRepAll = 1;
         int peekRejects = 0;
@@ -58053,7 +58414,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               if( orc != TA_SUCCESS && !st ) openRejects = 1; else TA_ZLEMA_Close(st); }
             TA_SetUnstablePeriod(5, 0);
             TA_SetCompatibility((TA_Compatibility)savedCompat);
-            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects);
+            snprintf(resp, resp_size, "{\"retCode\":%d,\"legs\":0,\"nb\":%d,\"openRejects\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_ok\":1}", (int)rc, svNb, openRejects, openRejects, openRejects);
             return;
         }
         {
@@ -58300,6 +58661,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         }
         TA_SetUnstablePeriod(5, 0);
         TA_SetCompatibility((TA_Compatibility)savedCompat);
+        baseOk = allOk;
         if( fillChecked && !fillOk ) allOk = 0;
         if( ufillChecked && !ufillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
@@ -58308,7 +58670,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"state_checked\":%d,\"state_legs\":%d,\"state_ok\":%d,\"state_bad\":\"%s\"", stateChecked, stateLegs, stateOk, stateWhat);
         if( rangeChecked && !rangeOk ) allOk = 0;
         pos = json_appendf(resp, resp_size, pos, ",\"range_checked\":%d,\"range_legs\":%d,\"range_sites\":%d,\"range_sites_all\":31,\"range_ok\":%d", rangeChecked, rangeLegs, rangeSites, rangeOk);
-        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
+        pos = json_appendf(resp, resp_size, pos, ",\"fill_checked\":%d,\"fill_ok\":%d,\"fill_bars\":%d,\"ufill_checked\":%d,\"ufill_ok\":%d,\"ufill_bars\":%d,\"base_ok\":%d,\"ok\":%d,\"peek_checked\":%d,\"peek_ok\":%d,\"peek_reps\":%d,\"peek_rep_ok\":%d,\"peek_rejects\":%d,\"clone_checked\":%d,\"clone_legs\":%d,\"clone_ok\":%d,\"clone_bad\":\"%s\",\"value_checked\":%d,\"value_legs\":%d,\"value_ok\":%d,\"value_bad\":\"%s\",\"benign\":%d}", fillChecked, fillOk, fillBars, ufillChecked, ufillOk, ufillBars, baseOk, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);
         return;
     }
     TA_SetCompatibility((TA_Compatibility)savedCompat);
