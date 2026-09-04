@@ -121,3 +121,30 @@ No `ta_trading_signals` arm was added (the issue notes it would be one line in
 `trading_signals_serve/capture.mjs`); that repo is not in this checkout. Live
 `tulip_serve` capture likewise did not run — the goldens here are the checked-in
 printed vectors, which is what fixed the tolerance above.
+
+## Refreshed onto dev (dev at ee28a826)
+
+The branch now merges `upstream/dev` at `ee28a826`, which added ZLEMA, RMA and
+`TA_MAType_RMA = 13` after this work was written. The merge touched only
+generated artifactsplus the ledger entry below; every conflict was resolved by taking dev's side and
+regenerating.
+
+Re-run after the merge:
+
+- `scripts/build.py regen-check` — OK, "ta_codegen output matches the committed source"
+- `cargo test` in `ta_codegen/generator` — all suites green (including `one_id_names_one_guard`)
+- `bin/ta_regtest --xlang-hash --language=rust` — PASS, 182 functions swept,
+  bit-identical at zero tolerance against the in-process C library
+
+Not re-run after the merge: the Java and C# `--xlang-hash` legs (no .NET SDK on
+the machine that did the refresh; the Java leg was not driven either). The
+pre-merge results for those legs are the ones quoted above.
+
+### Internal-error site id
+
+`internal_error_ids.yaml` gives this branch's one new guard `FOSC.extrema: 405`.
+404 went to ZLEMA on dev, and 405-408 are staggered across the four unmerged
+new-function branches (FOSC 405, VHF 406, VORTEX 407, ER 408) so that they
+carry disjoint ids in any merge order. A git merge of two such branches does
+not conflict on the ledger's `sites:` map — the collision surfaces only as
+`one_id_names_one_guard`, which is why the numbers are separated up front.
