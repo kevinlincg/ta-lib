@@ -130,9 +130,12 @@ legs fail.
 (the second `generate` is a fixed point); `check-source-lists`; generator
 `cargo test`; `clippy -D warnings` over both crates; generated crate
 `cargo test --lib` (73) and `--doc` (550, VHF's own doctest among them);
-`cargo doc --no-deps` warning-free; `--xlang-hash --language=c,rust,java
---function=VHF` **PASS, bit-identical at zero tolerance** (Rust 1948 cases /
-Java 1948 cases, 0 mismatches; input-port and array-transport self-checks OK).
+`cargo doc --no-deps` warning-free; `build.py servers` including the Java
+library through `./mvnw clean package` (StreamSmokeTest 4711 checks,
+MetadataTest 1763, DivZeroTest 91, CoreApiTest 66, all pass);
+`--xlang-hash --language=c,rust,java --function=VHF` **PASS, bit-identical at
+zero tolerance** (Rust 1948 cases / Java 1948 cases, 0 mismatches; input-port
+and array-transport self-checks OK).
 
 `--codegen --language=c,rust,java --function=VHF` runs the structural legs on
 all three servers and the fuzz-port self-check (9/9 shapes bit-identical), and
@@ -158,15 +161,17 @@ Failed for [VHF][inputRandDblEpsilon]
 period 28; an exact `0` is what a flat window gives. So the two sides appear to
 have computed on different data rather than differing numerically.
 
-It has **not** recurred in eight subsequent runs -- per-language (c / rust /
-java separately), all three together, six different `--seed=` values including
-a replay of the failing run's own seed `1788522031`, and the later run with the
-reference oracle present. The failing run started while `build.py servers` was
-still writing the server binaries and relinking `bin/ta_regtest`, which is my
-best guess and is not a diagnosis. **I did not root-cause it, and I am not
-claiming it was a flake.** If it reappears in CI, the discontinuity worth
-looking at first is this function's exact `path > 0.0` guard on epsilon-scale
-input.
+It has **not** recurred in fifteen subsequent runs of that sweep: each language
+alone (c / rust / java), all three together, four of those replaying the
+failing run's own seed `1788522031`, five other `--seed=` values, the run with
+the reference oracle present, and a final run against freshly rebuilt servers.
+The failing run had started while `build.py servers` was still writing the
+server binaries and relinking `bin/ta_regtest`; that is my best guess and not a
+diagnosis. **I did not root-cause it, and I am not calling it a flake.** If it
+reappears in CI, the thing to look at first is this function's exact
+`path > 0.0` guard on epsilon-scale input -- an exact `0` against `1/14` is the
+discontinuity that guard can produce, and the epsilon dataset is where the
+abstract sweep compares values strictly.
 
 ## What else I did not check
 
