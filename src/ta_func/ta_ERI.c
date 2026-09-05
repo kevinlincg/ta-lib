@@ -666,26 +666,6 @@ TA_LIB_API TA_RetCode TA_ERI_Peek( const TA_ERI_Stream *stream, double inHigh, d
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_ERI_UpdateAndFill( TA_ERI_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outBullPower[], double outBearPower[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outBullPower || !outBearPower ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outBullPower == (const void *)inHigh || (const void *)outBullPower == (const void *)inLow || (const void *)outBullPower == (const void *)inClose || (const void *)outBearPower == (const void *)inHigh || (const void *)outBearPower == (const void *)inLow || (const void *)outBearPower == (const void *)inClose || (const void *)outBullPower == (const void *)outBearPower ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_ERI_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outBullPower[i], &outBearPower[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_ERI_Close( TA_ERI_Stream *stream )
 {
    if( stream ) TA_Free( stream );

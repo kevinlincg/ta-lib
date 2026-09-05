@@ -258,7 +258,16 @@ impl Core {
         // fastest adaptation, for every window of an instrument quoted below it
         // (issue #253). A genuinely flat window is now recognized by the exact bar
         // count above instead.
-        if sumROC1 <= periodROC {
+        //
+        // `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+        // beside it compares against the SIGNED numerator, so it is false whenever
+        // periodROC < 0 and cannot stand in for one. sumROC1 is a running
+        // add/subtract of fabs terms, so an addend absorbed on the way in and
+        // subtracted later at full precision drives it to exactly 0.0 on a window
+        // that is not flat; without this clause that bar divides by zero and the
+        // +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+        // carried until #350).
+        if sumROC1 <= 0.0 || sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sumROC1).abs();
@@ -300,7 +309,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -344,7 +353,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -542,7 +551,7 @@ impl Core {
         // and outReal can be pointers to the same buffer.
         sp.trailingValue = tempReal2;
         // Calculate the efficiency ratio
-        if sp.sumROC1 <= periodROC {
+        if sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sp.sumROC1).abs();
@@ -698,7 +707,16 @@ impl Core {
         // fastest adaptation, for every window of an instrument quoted below it
         // (issue #253). A genuinely flat window is now recognized by the exact bar
         // count above instead.
-        if sumROC1 <= periodROC {
+        //
+        // `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+        // beside it compares against the SIGNED numerator, so it is false whenever
+        // periodROC < 0 and cannot stand in for one. sumROC1 is a running
+        // add/subtract of fabs terms, so an addend absorbed on the way in and
+        // subtracted later at full precision drives it to exactly 0.0 on a window
+        // that is not flat; without this clause that bar divides by zero and the
+        // +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+        // carried until #350).
+        if sumROC1 <= 0.0 || sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sumROC1).abs();
@@ -740,7 +758,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -784,7 +802,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -964,44 +982,6 @@ impl KamaStream {
         Ok(outReal)
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inReal.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what this call took in, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k + 1` — the committed bars, plus the rejected one, which is counted
-    /// but never written.
-    #[doc(alias = "TA_KAMA_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inReal: &[f64], outReal: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inReal.len();
-        if outReal.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inReal[i].is_finite() {
-                if self.out.count < Core::MAX_INDEX {
-                    self.out.count += 1;
-                }
-                return Err(RetCode::BadParam);
-            }
-            Core::kama_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -1066,7 +1046,7 @@ impl KamaStream {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -1084,7 +1064,7 @@ impl KamaStream {
 
     /// The value(s) at the last bar the stream counted — the bar
     /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
-    /// refreshed by every accepted `update` and `update_and_fill`, and left
+    /// refreshed by every accepted `update`, and left
     /// alone by `peek`.
     ///
     /// A clone carries them verbatim, so a forked handle can be asked its

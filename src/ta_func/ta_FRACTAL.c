@@ -652,26 +652,6 @@ TA_LIB_API TA_RetCode TA_FRACTAL_Peek( const TA_FRACTAL_Stream *stream, double i
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_FRACTAL_UpdateAndFill( TA_FRACTAL_Stream *stream, const double inHigh[], const double inLow[], int barCount, int outSwingHigh[], int outSwingLow[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !outSwingHigh || !outSwingLow ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outSwingHigh == (const void *)inHigh || (const void *)outSwingHigh == (const void *)inLow || (const void *)outSwingLow == (const void *)inHigh || (const void *)outSwingLow == (const void *)inLow || (const void *)outSwingHigh == (const void *)outSwingLow ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_FRACTAL_StepImpl( stream, inHigh[i], inLow[i], &outSwingHigh[i], &outSwingLow[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_FRACTAL_Close( TA_FRACTAL_Stream *stream )
 {
    TA_FRACTAL_ReleaseImpl( stream );

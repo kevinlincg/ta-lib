@@ -1072,26 +1072,6 @@ TA_LIB_API TA_RetCode TA_VORTEX_Peek( const TA_VORTEX_Stream *stream, double inH
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_VORTEX_UpdateAndFill( TA_VORTEX_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outPlusVI[], double outMinusVI[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outPlusVI || !outMinusVI ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outPlusVI == (const void *)inHigh || (const void *)outPlusVI == (const void *)inLow || (const void *)outPlusVI == (const void *)inClose || (const void *)outMinusVI == (const void *)inHigh || (const void *)outMinusVI == (const void *)inLow || (const void *)outMinusVI == (const void *)inClose || (const void *)outPlusVI == (const void *)outMinusVI ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_VORTEX_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outPlusVI[i], &outMinusVI[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_VORTEX_Close( TA_VORTEX_Stream *stream )
 {
    TA_VORTEX_ReleaseImpl( stream );

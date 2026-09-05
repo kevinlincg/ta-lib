@@ -198,7 +198,6 @@ sites:
   LINEARREG_SLOPE.extrema: 342
   MA.dispatch.Peek: 344
   MA.dispatch.Update: 343
-  MA.dispatch.UpdateAndFill: 345
   MAMA.ringcap.trailingWMAIdx: 346
   MASSI.cbsize.ratioRing: 419
   MASSI.circbuf.ratioRing: 418
