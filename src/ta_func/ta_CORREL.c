@@ -519,10 +519,12 @@ TA_RetCode TA_S_CORREL( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_CORREL_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_CORREL_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    double sumXY;
    double sumX;
@@ -743,6 +745,7 @@ static void TA_CORREL_StepImpl( struct TA_CORREL_Stream *sp, double inReal0, dou
    sumY -= trailingY;
    sumY2 -= sp->leavingY;
    sp->today += 1;
+   sp->cur_outReal = *outReal;
    sp->sumXY = sumXY;
    sp->sumX = sumX;
    sp->sumY = sumY;
@@ -754,8 +757,6 @@ static TA_RetCode TA_CORREL_OpenImpl( struct TA_CORREL_Stream **stream, const do
 {
    struct TA_CORREL_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -774,9 +775,6 @@ static TA_RetCode TA_CORREL_OpenImpl( struct TA_CORREL_Stream **stream, const do
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       double sumXY = 0.0;
@@ -1060,6 +1058,7 @@ static TA_RetCode TA_CORREL_OpenImpl( struct TA_CORREL_Stream **stream, const do
       }
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -1110,7 +1109,11 @@ TA_RetCode TA_CORREL_OpenAndFillInternal( struct TA_CORREL_Stream **stream, cons
 TA_LIB_API TA_RetCode TA_CORREL_Update( TA_CORREL_Stream *stream, double inReal0, double inReal1, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal0 ) || !TA_IS_FINITE( inReal1 ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal0 ) || !TA_IS_FINITE( inReal1 ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_CORREL_StepImpl( stream, inReal0, inReal1, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -1118,22 +1121,27 @@ TA_LIB_API TA_RetCode TA_CORREL_Update( TA_CORREL_Stream *stream, double inReal0
 
 TA_LIB_API TA_RetCode TA_CORREL_Peek( const TA_CORREL_Stream *stream, double inReal0, double inReal1, double *outReal )
 {
-   struct TA_CORREL_Stream scratch;
-   struct TA_CORREL_Stream *sp = &scratch;
+   const struct TA_CORREL_Stream *sp = stream;
    double x;
    double y;
-   double trailingX;
-   double trailingY;
    double ssX;
    double ssY;
    double spXY;
    double tempReal;
    int windowStart;
-   double sumXY;
+   int barsSinceReseed;
+   int j;
+   double shiftX;
+   double shiftY;
    double sumX;
-   double sumY;
    double sumX2;
+   double sumXY;
+   double sumY;
    double sumY2;
+   int today;
+   int trailingIdx;
+   double *x_inReal0;
+   double *x_inReal1;
    int pkSlot0 = -1;
    double pkVal0 = 0.0;
    int pkSlot1 = -1;
@@ -1141,28 +1149,35 @@ TA_LIB_API TA_RetCode TA_CORREL_Peek( const TA_CORREL_Stream *stream, double inR
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal0 ) || !TA_IS_FINITE( inReal1 ) ) return TA_BAD_PARAM;
-   scratch = *stream;
-   sumXY = sp->sumXY;
+   barsSinceReseed = sp->barsSinceReseed;
+   j = sp->j;
+   shiftX = sp->shiftX;
+   shiftY = sp->shiftY;
    sumX = sp->sumX;
-   sumY = sp->sumY;
    sumX2 = sp->sumX2;
+   sumXY = sp->sumXY;
+   sumY = sp->sumY;
    sumY2 = sp->sumY2;
-   if( sp->today >= 1073741824 )
+   today = sp->today;
+   trailingIdx = sp->trailingIdx;
+   x_inReal0 = sp->x_inReal0;
+   x_inReal1 = sp->x_inReal1;
+   if( today >= 1073741824 )
    {
-      int rebaseShift = sp->trailingIdx & ~sp->xMask;
-      sp->today -= rebaseShift;
-      sp->trailingIdx -= rebaseShift;
-      sp->j -= rebaseShift;
+      int rebaseShift = trailingIdx & ~sp->xMask;
+      today -= rebaseShift;
+      trailingIdx -= rebaseShift;
+      j -= rebaseShift;
    }
-   pkSlot0 = sp->today & sp->xMask;
+   pkSlot0 = today & sp->xMask;
    pkVal0 = inReal0;
-   pkSlot1 = sp->today & sp->xMask;
+   pkSlot1 = today & sp->xMask;
    pkVal1 = inReal1;
    /* Add the incoming value, measured against the shift. */
-   x = (((sp->today & sp->xMask) != pkSlot0) ? sp->x_inReal0[sp->today & sp->xMask] : pkVal0) - sp->shiftX;
+   x = (((today & sp->xMask) != pkSlot0) ? x_inReal0[today & sp->xMask] : pkVal0) - shiftX;
    sumX += x;
    sumX2 += x * x;
-   y = (((sp->today & sp->xMask) != pkSlot1) ? sp->x_inReal1[sp->today & sp->xMask] : pkVal1) - sp->shiftY;
+   y = (((today & sp->xMask) != pkSlot1) ? x_inReal1[today & sp->xMask] : pkVal1) - shiftY;
    sumXY += x * y;
    sumY += y;
    sumY2 += y * y;
@@ -1195,35 +1210,35 @@ TA_LIB_API TA_RetCode TA_CORREL_Peek( const TA_CORREL_Stream *stream, double inR
     * outputs written so far occupy [0, outIdx-1] while windowStart is
     * startIdx-lookbackTotal+outIdx, which is >= outIdx.
     */
-   sp->barsSinceReseed -= 1;
-   if( ssX < 0.000001 * sumX2 || ssY < 0.000001 * sumY2 || sp->leavingX > 1000000.0 * sumX2 || sp->leavingY > 1000000.0 * sumY2 || sp->barsSinceReseed <= 0 )
+   barsSinceReseed -= 1;
+   if( ssX < 0.000001 * sumX2 || ssY < 0.000001 * sumY2 || sp->leavingX > 1000000.0 * sumX2 || sp->leavingY > 1000000.0 * sumY2 || barsSinceReseed <= 0 )
    {
-      sp->barsSinceReseed = 32 * sp->optInTimePeriod;
-      windowStart = sp->today - sp->lookbackTotal;
+      barsSinceReseed = 32 * sp->optInTimePeriod;
+      windowStart = today - sp->lookbackTotal;
       /* Both means in one pass over the window: the rebuild below is the
        * only O(period) work on this function's hot path, so it is walked
        * twice, not three times.
        */
       tempReal = 0.0;
-      sp->shiftY = 0.0;
-      for( sp->j = windowStart; sp->j <= sp->today; sp->j += 1 )
+      shiftY = 0.0;
+      for( j = windowStart; j <= today; j += 1 )
       {
-         tempReal += ((sp->j & sp->xMask) != pkSlot0) ? sp->x_inReal0[sp->j & sp->xMask] : pkVal0;
-         sp->shiftY += ((sp->j & sp->xMask) != pkSlot1) ? sp->x_inReal1[sp->j & sp->xMask] : pkVal1;
+         tempReal += ((j & sp->xMask) != pkSlot0) ? x_inReal0[j & sp->xMask] : pkVal0;
+         shiftY += ((j & sp->xMask) != pkSlot1) ? x_inReal1[j & sp->xMask] : pkVal1;
       }
-      sp->shiftX = tempReal * sp->invPeriod;
-      sp->shiftY = sp->shiftY * sp->invPeriod;
+      shiftX = tempReal * sp->invPeriod;
+      shiftY = shiftY * sp->invPeriod;
       sumY2 = 0.0;
       sumX2 = sumY2;
       sumY = sumX2;
       sumX = sumY;
       sumXY = sumX;
-      for( sp->j = windowStart; sp->j <= sp->today; sp->j += 1 )
+      for( j = windowStart; j <= today; j += 1 )
       {
-         x = (((sp->j & sp->xMask) != pkSlot0) ? sp->x_inReal0[sp->j & sp->xMask] : pkVal0) - sp->shiftX;
+         x = (((j & sp->xMask) != pkSlot0) ? x_inReal0[j & sp->xMask] : pkVal0) - shiftX;
          sumX += x;
          sumX2 += x * x;
-         y = (((sp->j & sp->xMask) != pkSlot1) ? sp->x_inReal1[sp->j & sp->xMask] : pkVal1) - sp->shiftY;
+         y = (((j & sp->xMask) != pkSlot1) ? x_inReal1[j & sp->xMask] : pkVal1) - shiftY;
          sumXY += x * y;
          sumY += y;
          sumY2 += y * y;
@@ -1249,12 +1264,7 @@ TA_LIB_API TA_RetCode TA_CORREL_Peek( const TA_CORREL_Stream *stream, double inR
          ssY = 0.0;
       }
    }
-   /* Save the trailing values before writing the output, since the input
-    * and output might be the same array.
-    */
-   trailingX = (((sp->trailingIdx & sp->xMask) != pkSlot0) ? sp->x_inReal0[sp->trailingIdx & sp->xMask] : pkVal0) - sp->shiftX;
-   trailingY = (((sp->trailingIdx & sp->xMask) != pkSlot1) ? sp->x_inReal1[sp->trailingIdx & sp->xMask] : pkVal1) - sp->shiftY;
-   sp->trailingIdx += 1;
+   trailingIdx += 1;
    /* Output the new coefficient.
     *
     * Each sum of squares is tested against its OWN scale, not the pair
@@ -1305,42 +1315,45 @@ TA_LIB_API TA_RetCode TA_CORREL_Peek( const TA_CORREL_Stream *stream, double inR
    {
       *outReal= 0.0;
    }
-   /* Remove the trailing values (prepares the next window). */
-   sp->leavingX = trailingX * trailingX;
-   sp->leavingY = trailingY * trailingY;
-   sumX -= trailingX;
-   sumX2 -= sp->leavingX;
-   sumXY -= trailingX * trailingY;
-   sumY -= trailingY;
-   sumY2 -= sp->leavingY;
-   sp->today += 1;
-   sp->sumXY = sumXY;
-   sp->sumX = sumX;
-   sp->sumY = sumY;
-   sp->sumX2 = sumX2;
-   sp->sumY2 = sumY2;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_CORREL_UpdateAndFill( TA_CORREL_Stream *stream, const double inReal0[], const double inReal1[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal0 || !inReal1 || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal0 || (const void *)outReal == (const void *)inReal1 ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal0[i] ) || !TA_IS_FINITE( inReal1[i] ) ) return TA_BAD_PARAM;
-      TA_CORREL_StepImpl( stream, inReal0[i], inReal1[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_CORREL_Close( TA_CORREL_Stream *stream )
 {
    TA_CORREL_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CORREL_Value( const TA_CORREL_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CORREL_Clone( const TA_CORREL_Stream *stream, TA_CORREL_Stream **clone )
+{
+   struct TA_CORREL_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_CORREL_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->x_inReal0 = NULL;
+   sp->x_inReal1 = NULL;
+   if( stream->x_inReal0 )
+   { size_t copyN = (size_t)(sp->xPhys);
+     sp->x_inReal0 = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->x_inReal0 ) { TA_CORREL_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->x_inReal0, stream->x_inReal0, sizeof(double) * copyN ); }
+   if( stream->x_inReal1 )
+   { size_t copyN = (size_t)(sp->xPhys);
+     sp->x_inReal1 = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->x_inReal1 ) { TA_CORREL_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->x_inReal1, stream->x_inReal1, sizeof(double) * copyN ); }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

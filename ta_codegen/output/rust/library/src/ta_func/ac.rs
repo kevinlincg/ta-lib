@@ -80,6 +80,7 @@ impl Core {
     ///
     /// [`RetCode::BadParam`] when a parameter is out of range. Integer parameters accept
     /// [`Core::INTEGER_DEFAULT`] to select their default value.
+    #[doc(alias = "TA_AC_Lookback")]
     #[inline]
     pub fn AC_Lookback(&self, mut optInFastPeriod: i32, mut optInSlowPeriod: i32, mut optInSignalPeriod: i32) -> Result<usize, RetCode> {
         if ((optInFastPeriod) as i32) == (i32::MIN) {
@@ -379,6 +380,7 @@ impl Core {
     ///   reports its first value at the same bar. Its moving average re-sums the stored window on
     ///   every bar where TA-Lib rolls a running total, so the two agree to rounding rather than to
     ///   the bit.
+    #[doc(alias = "TA_AC")]
     #[doc(alias = "AcceleratorOscillator")]
     #[doc(alias = "DeceleratorOscillator")]
     #[doc(alias = "AcceleratorDecelerator")]
@@ -440,13 +442,13 @@ impl Core {
 /// over the same series. Open with [`Core::ac_open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
 ///
-/// [`Self::out_range`] reports the bars it has produced a value for.
+/// [`Self::out_range`] reports the bars this handle has an output for.
 #[must_use = "a stream does nothing unless updated; dropping it closes the stream"]
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_AC_Stream")]
 pub struct AcStream {
     state: AcStreamState,
-    /// The bars this handle has produced a value for — see [`Self::out_range`].
+    /// The bars this handle has an output for — see [`Self::out_range`].
     out: OutRange,
 }
 
@@ -469,6 +471,7 @@ struct AcStreamState {
     ring_trailingSlowIdx_derived: Vec<f64>,
     cbSize_oscBuffer: usize,
     cb_oscBuffer: Vec<f64>,
+    cur_outReal: f64,
 }
 
 #[allow(unused_variables)]
@@ -515,6 +518,7 @@ impl Core {
         // that admitting a signal period of 1 would not silently reintroduce
         // the collision ao.c has to guard against.
         (*outReal) = tempReal;
+        sp.cur_outReal = (*outReal);
         sp.ring_trailingFastIdx_derived[sp.ringPos_trailingFastIdx] = (inHigh + inLow) / 2.0;
         sp.ringPos_trailingFastIdx = sp.ringPos_trailingFastIdx + 1;
         if sp.ringPos_trailingFastIdx >= sp.ringCap_trailingFastIdx {
@@ -750,6 +754,7 @@ impl Core {
             sumSignal,
             oscBuffer_Idx,
             maxIdx_oscBuffer,
+            cur_outReal: outReal[(*outNBElement - 1) * outStride],
             ringPos_trailingFastIdx: 0_usize,
             ringCap_trailingFastIdx: cap_trailingFastIdx as usize,
             ring_trailingFastIdx_derived,
@@ -880,15 +885,22 @@ impl AcStream {
     /// # Errors
     ///
     /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).
-    /// That check runs before anything is written, so the handle is left
-    /// exactly as it was and the stream stays usable:
-    /// skip the bar, or close and re-open on a clean history. This is the
-    /// one place the streaming tier is stricter than the batch API, which
-    /// computes on whatever it is given — a handle retains its state, so a
-    /// single non-finite bar would poison every later value it produces.
+    /// That check runs before anything is written, so the handle's state is
+    /// left exactly as it was and the stream stays usable: skip the bar, or
+    /// close and re-open on a clean history. This is the one place the
+    /// streaming tier is stricter than the batch API, which computes on
+    /// whatever it is given — a handle retains its state, so a single
+    /// non-finite bar would poison every later value it produces.
+    ///
+    /// [`Self::out_range`] counts the rejected bar all the same: it happened,
+    /// so two handles fed the same series stay positionally aligned even when
+    /// one rejects a bar the other accepts.
     #[doc(alias = "TA_AC_Update")]
     pub fn update(&mut self, inHigh: f64, inLow: f64) -> Result<f64, RetCode> {
         if !inHigh.is_finite() || !inLow.is_finite() {
+            if self.out.count < Core::MAX_INDEX {
+                self.out.count += 1;
+            }
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
@@ -897,40 +909,6 @@ impl AcStream {
             self.out.count += 1;
         }
         Ok(outReal)
-    }
-
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inHigh.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what was committed, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k`.
-    #[doc(alias = "TA_AC_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inHigh: &[f64], inLow: &[f64], outReal: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inHigh.len();
-        if inLow.len() != inHigh.len() || outReal.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inHigh[i].is_finite() || !inLow[i].is_finite() {
-                return Err(RetCode::BadParam);
-            }
-            Core::ac_step_impl(&mut self.state, inHigh[i], inLow[i], &mut outReal[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
     }
 
     /// Evaluate a forming bar without committing — bit-identical to what the
@@ -942,8 +920,9 @@ impl AcStream {
     ///
     /// # Errors
     ///
-    /// [`RetCode::BadParam`] if any bar value is not finite, exactly as
-    /// `update` rejects it.
+    /// [`RetCode::BadParam`] if any bar value is not finite, on the same test
+    /// `update` applies — but a rejected peek changes nothing at all, where a
+    /// rejected `update` still counts the bar in [`Self::out_range`].
     #[doc(alias = "TA_AC_Peek")]
     pub fn peek(&self, inHigh: f64, inLow: f64) -> Result<f64, RetCode> {
         if !inHigh.is_finite() || !inLow.is_finite() {
@@ -957,8 +936,6 @@ impl AcStream {
             let mut osc: f64 = 0.0_f64;
             let mut tempReal: f64 = 0.0_f64;
             let mut oscBuffer_Idx = sp.oscBuffer_Idx;
-            let mut ringPos_trailingFastIdx = sp.ringPos_trailingFastIdx;
-            let mut ringPos_trailingSlowIdx = sp.ringPos_trailingSlowIdx;
             let mut sumFast = sp.sumFast;
             let mut sumSignal = sp.sumSignal;
             let mut sumSlow = sp.sumSlow;
@@ -982,8 +959,8 @@ impl AcStream {
             // Snapshot the oscillator before either total drops its trailing bar,
             // mirroring the add-new / snapshot / subtract-old order of TA_SMA.
             osc = sumFast / (sp.optInFastPeriod as f64) - sumSlow / (sp.optInSlowPeriod as f64);
-            sumFast -= (if (ringPos_trailingFastIdx as usize) != pkSlot0 { sp.ring_trailingFastIdx_derived[ringPos_trailingFastIdx] } else { pkVal0 });
-            sumSlow -= (if (ringPos_trailingSlowIdx as usize) != pkSlot1 { sp.ring_trailingSlowIdx_derived[ringPos_trailingSlowIdx] } else { pkVal1 });
+            sumFast -= (if (sp.ringPos_trailingFastIdx as usize) != pkSlot0 { sp.ring_trailingFastIdx_derived[sp.ringPos_trailingFastIdx] } else { pkVal0 });
+            sumSlow -= (if (sp.ringPos_trailingSlowIdx as usize) != pkSlot1 { sp.ring_trailingSlowIdx_derived[sp.ringPos_trailingSlowIdx] } else { pkVal1 });
             // Today's oscillator enters the signal window at its own slot, and the
             // bar leaving that window is read only after the ring has advanced onto
             // it -- writing first is what makes the slot the loop is about to
@@ -1005,24 +982,30 @@ impl AcStream {
             // that admitting a signal period of 1 would not silently reintroduce
             // the collision ao.c has to guard against.
             (*outReal) = tempReal;
-            ringPos_trailingFastIdx = ringPos_trailingFastIdx + 1;
-            if ringPos_trailingFastIdx >= sp.ringCap_trailingFastIdx {
-                ringPos_trailingFastIdx = 0;
-            }
-            ringPos_trailingSlowIdx = ringPos_trailingSlowIdx + 1;
-            if ringPos_trailingSlowIdx >= sp.ringCap_trailingSlowIdx {
-                ringPos_trailingSlowIdx = 0;
-            }
         }
         Ok(outReal)
     }
 
-    /// The bars this stream has produced a value for, in the input series'
+    /// The value(s) at the last bar the stream counted — the bar
+    /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
+    /// refreshed by every accepted `update`, and left
+    /// alone by `peek`.
+    ///
+    /// A clone carries them verbatim, so a forked handle can be asked its
+    /// current value without committing a bar to find out.
+    #[must_use]
+    #[doc(alias = "TA_AC_Value")]
+    pub fn value(&self) -> f64 {
+        self.state.cur_outReal
+    }
+
+    /// The bars this stream has an output for, in the input series'
     /// coordinates: `[beg_idx, beg_idx + count)`.
     ///
     /// It is what [`Core::AC`] reports over the same bars: the opener sets it
-    /// to `(lookback, historyLen - lookback)`, every accepted `update` adds one
-    /// to the count, `peek` leaves it alone, and a clone carries it verbatim.
+    /// to `(lookback, historyLen - lookback)`, every `update` adds one to the
+    /// count — a bar rejected for being non-finite included, because it still
+    /// happened — `peek` leaves it alone, and a clone carries it verbatim.
     /// A plain `Open` hands back only the last value, a subset of this range,
     /// because the caller chose not to take the fill.
     #[doc(alias = "TA_StreamOutRange")]

@@ -52,8 +52,30 @@ ta_regtest_SOURCES = ta_regtest.c \
 	ta_test_func/test_marketfi.c \
 	ta_test_func/test_vwap.c \
 	ta_test_func/test_cmf.c \
+	ta_test_func/test_kc.c \
+	ta_test_func/test_donchian.c \
+	ta_test_func/test_rma.c \
+	ta_test_func/test_supertrend.c \
 	ta_test_func/test_mfi.c \
 	ta_test_func/test_cmou.c \
+	ta_test_func/test_vortex.c \
+	ta_test_func/test_eri.c \
+	ta_test_func/test_cumsum.c \
+	ta_test_func/test_zlema.c \
+	ta_test_func/test_vhf.c \
+	ta_test_func/test_rvi.c \
+	ta_test_func/test_fractal.c \
+	ta_test_func/test_ha.c \
+	ta_test_func/test_tsi.c \
+	ta_test_func/test_kdj.c \
+	ta_test_func/test_fosc.c \
+	ta_test_func/test_dpo.c \
+	ta_test_func/test_percentrank.c \
+	ta_test_func/test_percentile.c \
+	ta_test_func/test_cvi.c \
+	ta_test_func/test_massi.c \
+	ta_test_func/test_adr.c \
+	ta_test_func/test_rvol.c \
 	ta_test_func/test_variants.c \
 	ta_test_legacy.c \
 	test_internals.c

@@ -80,12 +80,6 @@
 /* None */
 
 /**** Global variables definitions.    ****/
-int nbProfiledCall;
-double timeInProfiledCall;
-double worstProfiledCall;
-int insufficientClockPrecision;
-int doExtensiveProfiling;
-
 /* CSV list of function names to test (NULL = test all) */
 static const char *functionFilter = NULL;
 static int doCodegenTest = 0;
@@ -126,21 +120,29 @@ static int svLanguageEnabled( const char *filter, const char *name )
    return 0;
 }
 
+/* The tag a group is declared with is the `--function=` filter key, so it spells
+ * out every function it covers and can run to any length. What gets printed is
+ * width-bounded instead, so the "Testing" column lines up: a group whose tag
+ * overflows gives a short label saying what it covers, and anything still too
+ * long is cut with an ellipsis rather than pushing the column right. */
+#define TAG_W 50
+
+static const char *displayTag( const char *tag, const char *label )
+{
+   static char buf[TAG_W+1];
+   const char *s = label ? label : tag;
+
+   if( strlen(s) <= TAG_W )
+      return s;
+   memcpy( buf, s, TAG_W-3 );
+   memcpy( buf+TAG_W-3, "...", 4 );
+   return buf;
+}
+
 /**** Global functions definitions.   ****/
 int main( int argc, char **argv )
 {
-#ifdef WIN32
-	LARGE_INTEGER QPFrequency;
-#endif
-   double freq;
-
    ErrorNumber retValue;
-
-   insufficientClockPrecision = 0;
-   timeInProfiledCall = 0.0;
-   worstProfiledCall = 0.0;
-   nbProfiledCall = 0;
-   doExtensiveProfiling = 0;
 
    printf( "\n" );
    printf( "ta_regtest V%s - Regression Tests of TA-Lib code\n", TA_GetVersionString() );
@@ -150,11 +152,7 @@ int main( int argc, char **argv )
       int i;
       for( i = 1; i < argc; i++ )
       {
-         if( (argv[i][0] == '-') && (argv[i][1] == 'p') && (argv[i][2] == '\0') )
-         {
-            doExtensiveProfiling = 1;
-         }
-         else if( strncmp(argv[i], "--function=", 11) == 0 )
+         if( strncmp(argv[i], "--function=", 11) == 0 )
          {
             functionFilter = argv[i] + 11;
          }
@@ -221,6 +219,23 @@ int main( int argc, char **argv )
    printf( "Random seed: %u  (replay with --seed=%u)\n", randSeed, randSeed );
    srand( randSeed );
 
+   /* The output-arity cap must hold before anything sizes or clamps by it
+    * (issue #352) — checked here rather than inside test_codegen() because
+    * --fuzz-064 and --xlang-hash below are self-contained early returns that
+    * never reach it, and their buffers clamp at the same cap. */
+   {
+      ErrorNumber arityRet;
+      if( TA_Initialize() != TA_SUCCESS )
+      {
+         printf( "TA_Initialize failed\n" );
+         return TA_TESTUTIL_INIT_FAILED;
+      }
+      arityRet = codegen_output_arity_within_cap();
+      TA_Shutdown();
+      if( arityRet != TA_TEST_PASS )
+         return arityRet;
+   }
+
    /* Opt-in bit-exact differential fuzz vs released v0.6.4 (ta_064_serve).
     * Self-contained: init the lib, run the fuzz, done — skips the rest. */
    if( doFuzz064 )
@@ -255,12 +270,26 @@ int main( int argc, char **argv )
    }
 
    /* Test utility like List/Stack/Dictionary/Memory Allocation etc... */
+   printf( "%*s: Testing....", TAG_W, "Utility functions" );
+   fflush(stdout);
+   showFeedback();
    retValue = test_internals();
    if( retValue != TA_TEST_PASS )
    {
       printf( "\nFailed an internal test with code=%d\n", retValue );
       return retValue;
    }
+   /* Shares this group's output line: the range sweep's unstable-id table is
+    * harness state, and a bare run must not be able to leave it inconsistent. */
+   retValue = test_codegen_unstable_map();
+   if( retValue != TA_TEST_PASS )
+   {
+      printf( "\nFailed the unstable-period map check with code=%d\n", retValue );
+      return retValue;
+   }
+   hideFeedback();
+   printf( "done.\n" );
+   fflush(stdout);
 
    /* A server that will not start is only a legitimate skip when the caller
     * did not ask for that language. `--language=csharp` on a box without the
@@ -285,7 +314,12 @@ int main( int argc, char **argv )
 
    /* Test abstract interface.
     * When codegen mode is active, also verify each call against the server.
+    * The line covers the whole phase, cross-language legs included, so it closes
+    * at the retValue check below rather than at test_abstract() itself.
     */
+   printf( "%*s: Testing....", TAG_W, "Abstract interface" );
+   fflush(stdout);
+   showFeedback();
    {
       CodegenPipe abstractPipe;
       int abstractPipeOpen = 0;
@@ -316,7 +350,6 @@ int main( int argc, char **argv )
          {
             test_abstract_set_server(&abstractPipe, "c");
             abstractPipeOpen = 1;
-            printf( "  (with server verification)\n" );
             /* The control arm. C's server answers the metadata RPCs from the
              * very ta_abstract this compares against, so a failure here is a
              * defect in the comparator, not in a backend — which is what makes
@@ -367,7 +400,6 @@ int main( int argc, char **argv )
          if( codegen_pipe_open(&rustAbstractPipe, rustArgv) == TA_TEST_PASS )
          {
             ErrorNumber e;
-            printf( "Testing Abstract metadata parity (Rust server vs C)\n" );
             test_abstract_set_server(&rustAbstractPipe, "rust");
             e = test_abstract_server_metadata(functionFilter);
             /* Full dynamic-dispatch path (abstract_call / abstract_get_lookback /
@@ -375,7 +407,6 @@ int main( int argc, char **argv )
              * VALUES to the C for every function. */
             if( e == TA_TEST_PASS )
             {
-               printf( "Testing Abstract dynamic dispatch (Rust server vs C)\n" );
                e = test_abstract();
             }
             test_abstract_set_server(NULL, NULL);
@@ -403,12 +434,10 @@ int main( int argc, char **argv )
       if( codegen_pipe_open(&javaAbstractPipe, javaArgv) == TA_TEST_PASS )
       {
          ErrorNumber e;
-         printf( "Testing Abstract metadata parity (Java server vs C)\n" );
          test_abstract_set_server(&javaAbstractPipe, "java");
          e = test_abstract_server_metadata(functionFilter);
          if( e == TA_TEST_PASS )
          {
-            printf( "Testing Abstract dynamic dispatch (Java server vs C)\n" );
             e = test_abstract();
          }
          test_abstract_set_server(NULL, NULL);
@@ -440,12 +469,10 @@ int main( int argc, char **argv )
       if( codegen_pipe_open(&csharpAbstractPipe, csharpArgv) == TA_TEST_PASS )
       {
          ErrorNumber e;
-         printf( "Testing Abstract metadata parity (C# server vs C)\n" );
          test_abstract_set_server(&csharpAbstractPipe, "csharp");
          e = test_abstract_server_metadata(functionFilter);
          if( e == TA_TEST_PASS )
          {
-            printf( "Testing Abstract dynamic dispatch (C# server vs C)\n" );
             e = test_abstract();
          }
          test_abstract_set_server(NULL, NULL);
@@ -462,120 +489,96 @@ int main( int argc, char **argv )
 
    if( retValue != TA_TEST_PASS )
    {
-      printf( "Failed: Abstract interface Tests (error number = %d)\n", retValue );
+      printf( "\nFailed: Abstract interface Tests (error number = %d)\n", retValue );
       return retValue;
    }
+   hideFeedback();
+   printf( "done.\n" );
+   fflush(stdout);
 
-   /* Perform all regresstions tests (except when ta_regtest is executed for profiling only). */
-   if( !doExtensiveProfiling )
    {
-      {
-         /* When codegen mode is active, also verify hand-written tests
-          * against every available language server (C, Rust, Java, C#),
-          * honoring --language=CSV. The Java/C# launch commands are
-          * relative to the bin directory (same as test_codegen.c).
-          */
-         CodegenPipe svPipes[SV_MAX_PIPES];
-         const char *svPipeLang[SV_MAX_PIPES] = {0};
-         int nbSvPipes = 0;
-         if( doCodegenTest )
-         {
-            char svPathC[1024];
-            char svPathRust[1024];
-            const char *self = argv[0];
-            const char *lastSlash = strrchr(self, '/');
-            if( lastSlash ) {
-               int dirLen = (int)(lastSlash - self + 1);
-               snprintf(svPathC, sizeof(svPathC), "%.*sta_codegen_serve_c",
-                        dirLen, self);
-               snprintf(svPathRust, sizeof(svPathRust), "%.*sta_codegen_serve_rust",
-                        dirLen, self);
-            } else {
-               snprintf(svPathC, sizeof(svPathC), "./ta_codegen_serve_c");
-               snprintf(svPathRust, sizeof(svPathRust), "./ta_codegen_serve_rust");
-            }
-            const char *const svArgvC[]      = {svPathC, NULL};
-            const char *const svArgvRust[]   = {svPathRust, NULL};
-            const char *const svArgvJava[]   = {"java", "-cp", "ta_codegen_java",
-                                                "TaCodegenServe", NULL};
-            const char *const svArgvCsharp[] = {"dotnet",
-                                                "ta_codegen_csharp/TaCodegenServe.dll", NULL};
-            const struct { const char *lang; const char *const *argvSv; } svServers[] = {
-               { "c",      svArgvC },
-               { "rust",   svArgvRust },
-               { "java",   svArgvJava },
-               { "csharp", svArgvCsharp },
-            };
-            unsigned int svIdx;
-            for( svIdx = 0; svIdx < sizeof(svServers)/sizeof(svServers[0]); svIdx++ )
-            {
-               if( !svLanguageEnabled(codegenLanguageFilter, svServers[svIdx].lang) )
-                  continue;
-               if( codegen_pipe_open(&svPipes[nbSvPipes], svServers[svIdx].argvSv) == TA_TEST_PASS )
-               {
-                  svPipeLang[nbSvPipes] = svServers[svIdx].lang;
-                  nbSvPipes++;
-               }
-               else
-                  printf( "  (%s server not available for hand-written test verification)\n",
-                          svServers[svIdx].lang );
-            }
-            if( nbSvPipes > 0 )
-            {
-               CodegenPipe *pipes[SV_MAX_PIPES];
-               int p;
-               for( p = 0; p < nbSvPipes; p++ )
-                  pipes[p] = &svPipes[p];
-               server_verify_init(pipes, svPipeLang, nbSvPipes);
-               printf( "  (hand-written tests verified against %d language server(s))\n",
-                       nbSvPipes );
-            }
-         }
-
-         retValue = test_with_simulator();
-
-         if( nbSvPipes > 0 )
-         {
-            int p;
-            server_verify_shutdown();
-            for( p = 0; p < nbSvPipes; p++ )
-               codegen_pipe_close(&svPipes[p]);
-         }
-
-         if( retValue != TA_TEST_PASS )
-            return retValue;
-      }
-
+      /* When codegen mode is active, also verify hand-written tests
+       * against every available language server (C, Rust, Java, C#),
+       * honoring --language=CSV. The Java/C# launch commands are
+       * relative to the bin directory (same as test_codegen.c).
+       */
+      CodegenPipe svPipes[SV_MAX_PIPES];
+      const char *svPipeLang[SV_MAX_PIPES] = {0};
+      int nbSvPipes = 0;
       if( doCodegenTest )
       {
-         retValue = test_codegen_with_simulator();
-         if( retValue != TA_TEST_PASS )
-            return retValue;
+         char svPathC[1024];
+         char svPathRust[1024];
+         const char *self = argv[0];
+         const char *lastSlash = strrchr(self, '/');
+         if( lastSlash ) {
+            int dirLen = (int)(lastSlash - self + 1);
+            snprintf(svPathC, sizeof(svPathC), "%.*sta_codegen_serve_c",
+                     dirLen, self);
+            snprintf(svPathRust, sizeof(svPathRust), "%.*sta_codegen_serve_rust",
+                     dirLen, self);
+         } else {
+            snprintf(svPathC, sizeof(svPathC), "./ta_codegen_serve_c");
+            snprintf(svPathRust, sizeof(svPathRust), "./ta_codegen_serve_rust");
+         }
+         const char *const svArgvC[]      = {svPathC, NULL};
+         const char *const svArgvRust[]   = {svPathRust, NULL};
+         const char *const svArgvJava[]   = {"java", "-cp", "ta_codegen_java",
+                                             "TaCodegenServe", NULL};
+         const char *const svArgvCsharp[] = {"dotnet",
+                                             "ta_codegen_csharp/TaCodegenServe.dll", NULL};
+         const struct { const char *lang; const char *const *argvSv; } svServers[] = {
+            { "c",      svArgvC },
+            { "rust",   svArgvRust },
+            { "java",   svArgvJava },
+            { "csharp", svArgvCsharp },
+         };
+         unsigned int svIdx;
+         for( svIdx = 0; svIdx < sizeof(svServers)/sizeof(svServers[0]); svIdx++ )
+         {
+            if( !svLanguageEnabled(codegenLanguageFilter, svServers[svIdx].lang) )
+               continue;
+            if( codegen_pipe_open(&svPipes[nbSvPipes], svServers[svIdx].argvSv) == TA_TEST_PASS )
+            {
+               svPipeLang[nbSvPipes] = svServers[svIdx].lang;
+               nbSvPipes++;
+            }
+            else
+               printf( "  (%s server not available for hand-written test verification)\n",
+                       svServers[svIdx].lang );
+         }
+         if( nbSvPipes > 0 )
+         {
+            CodegenPipe *pipes[SV_MAX_PIPES];
+            int p;
+            for( p = 0; p < nbSvPipes; p++ )
+               pipes[p] = &svPipes[p];
+            server_verify_init(pipes, svPipeLang, nbSvPipes);
+         }
       }
 
-      if( insufficientClockPrecision != 0 )
-      {
-   	   printf( "\nWarning: Code profiling not supported for this platform.\n" );
-      }
-      else if( nbProfiledCall > 0 )
-      {
-         printf( "\nNumber profiled function call       = %d function calls", nbProfiledCall );
+      retValue = test_with_simulator();
 
-#ifdef WIN32
-         QueryPerformanceFrequency(&QPFrequency);
-         freq = (double)QPFrequency.QuadPart;
-         printf( "\nTotal execution time                = %g milliseconds", (timeInProfiledCall/freq)*1000.0 );
-         printf( "\nWorst single function call          = %g milliseconds", (worstProfiledCall/freq)*1000.0 );
-         printf( "\nAverage execution time per function = %g microseconds\n", ((timeInProfiledCall/freq)*1000000.0)/((double)nbProfiledCall) );
-#else
-         freq = (double)CLOCKS_PER_SEC;
-         printf( "\nTotal execution time                = %g milliseconds", timeInProfiledCall/freq/1000.0 );
-         printf( "\nWorst single function call          = %g milliseconds", worstProfiledCall/freq/1000.0 );
-         printf( "\nAverage execution time per function = %g microseconds\n", (timeInProfiledCall/freq/1000000.0)/((double)nbProfiledCall) );
-#endif
+      if( nbSvPipes > 0 )
+      {
+         int p;
+         server_verify_shutdown();
+         for( p = 0; p < nbSvPipes; p++ )
+            codegen_pipe_close(&svPipes[p]);
       }
-      printf( "\n* All tests succeeded. Enjoy the library. *\n" );
+
+      if( retValue != TA_TEST_PASS )
+         return retValue;
    }
+
+   if( doCodegenTest )
+   {
+      retValue = test_codegen_with_simulator();
+      if( retValue != TA_TEST_PASS )
+         return retValue;
+   }
+
+   printf( "\n* All tests succeeded. Enjoy the library. *\n" );
 
 
    return TA_TEST_PASS; /* Everything succeed !!! */
@@ -679,6 +682,34 @@ static int tagPrefixMatches(const char *tags, const char *token)
    return 0;
 }
 
+/* Does any comma-separated element of `tags` accept this short token, by the
+ * '_'-component rule in test_codegen.h? The group tag is a list of names, so the
+ * rule applies per element: "DI" reaches the tag holding PLUS_DI and MINUS_DI.
+ */
+static int tagHasShortToken(const char *tags, const char *token)
+{
+   char elem[128];
+   const char *p = tags;
+
+   while( *p )
+   {
+      const char *end = strchr(p, ',');
+      size_t elemLen = (end == NULL) ? strlen(p) : (size_t)(end - p);
+
+      if( elemLen < sizeof(elem) )
+      {
+         memcpy(elem, p, elemLen);
+         elem[elemLen] = '\0';
+         if( codegen_short_filter_token_matches(elem, token) )
+            return 1;
+      }
+      if( end == NULL )
+         return 0;
+      p = end + 1;
+   }
+   return 0;
+}
+
 static int matchesFilter(const char *filter, const char *tags)
 {
    char filterCopy[1024];
@@ -693,7 +724,12 @@ static int matchesFilter(const char *filter, const char *tags)
    token = strtok(filterCopy, ",");
    while( token != NULL )
    {
-      if( strstr(tags, token) != NULL )
+      if( strlen(token) <= 2 )
+      {
+         if( tagHasShortToken(tags, token) )
+            return 1;
+      }
+      else if( strstr(tags, token) != NULL )
          return 1;
       if( tagPrefixMatches(tags, token) )
          return 1;
@@ -718,17 +754,16 @@ static ErrorNumber testTAFunction_ALL( void )
                                      "unused arrays are NULL" contract so readers
                                      (test_variants.c build_regime) can trust it */
 
-   printf( "Testing the TA functions\n" );
-
    initGlobalBuffer();
 
    /* Make tests for each TA functions. */
-   #define DO_TEST(func,str) \
+   #define DO_TEST(func,str) DO_TEST_LBL(func,str,NULL)
+   #define DO_TEST_LBL(func,str,label) \
       { \
       if( matchesFilter(functionFilter, str) ) \
       { \
          nbGroupsRun++; \
-         printf( "%50s: Testing....", str ); \
+         printf( "%*s: Testing....", TAG_W, displayTag(str,label) ); \
          fflush(stdout); \
          showFeedback(); \
          TA_SetCompatibility( TA_COMPATIBILITY_DEFAULT ); \
@@ -740,23 +775,27 @@ static ErrorNumber testTAFunction_ALL( void )
          fflush(stdout); \
       } \
       }
-   DO_TEST( test_func_1in_1out, "MATH,VECTOR,DCPERIOD/PHASE,TRENDLINE/MODE,"
-                                "HT_DCPERIOD,HT_DCPHASE,HT_TRENDLINE,HT_TRENDMODE,MEDPRICE" );
-   DO_TEST( test_func_ma,       "All Moving Averages,"
-                                "SMA,EMA,WMA,DEMA,TEMA,TRIMA,KAMA,MAMA,T3,MA" );
+   DO_TEST_LBL( test_func_1in_1out, "MATH,VECTOR,DCPERIOD/PHASE,TRENDLINE/MODE,"
+                                "HT_DCPERIOD,HT_DCPHASE,HT_TRENDLINE,HT_TRENDMODE,MEDPRICE",
+                                "Math, vector, Hilbert Transforms, MEDPRICE" );
+   DO_TEST_LBL( test_func_ma,   "All Moving Averages,"
+                                "SMA,EMA,WMA,DEMA,TEMA,TRIMA,KAMA,MAMA,T3,MA",
+                                "All Moving Averages (SMA..T3, MA)" );
    DO_TEST( test_func_wma,      "WMA,HMA/RESEED" );
    DO_TEST( test_func_per_hl,   "AROON,AROONOSC,CORREL,BETA,MIDPRICE" );
    DO_TEST( test_func_per_hlc,  "CCI,WILLR,ULTOSC,NATR,ACCBANDS,WAD" );
    DO_TEST( test_func_per_ohlc, "BOP,AVGPRICE" );
    DO_TEST( test_func_rsi,      "RSI,CMO" );
    DO_TEST( test_func_imi, "IMI" );
-   DO_TEST( test_func_minmax,   "MIN,MAX,MININDEX,MAXINDEX,MINMAX,MINMAXINDEX,MIDPOINT" );
+   DO_TEST_LBL( test_func_minmax, "MIN,MAX,MININDEX,MAXINDEX,MINMAX,MINMAXINDEX,MIDPOINT",
+                                "Rolling min/max family, MIDPOINT" );
    DO_TEST( test_func_po,       "PO,APO,PPO" );
-   DO_TEST( test_func_adx,      "ADX,ADXR,DI,DM,DX,PLUS_DI,PLUS_DM,MINUS_DI,MINUS_DM" );
+   DO_TEST_LBL( test_func_adx,  "ADX,ADXR,DI,DM,DX,PLUS_DI,PLUS_DM,MINUS_DI,MINUS_DM",
+                                "Wilder Directional Movement (ADX/DI/DM)" );
    DO_TEST( test_func_sar,      "SAR,SAREXT" );
    DO_TEST( test_func_stoch,    "STOCH,STOCHF,STOCHRSI" );
    DO_TEST( test_func_per_hlcv, "MFI,AD,ADOSC" );
-   DO_TEST( test_func_per_cv,   "NVI,PVI" );
+   DO_TEST( test_func_per_cv,   "NVI,PVI,PVT" );
    DO_TEST( test_func_1in_2out, "PHASOR,SINE,HT_PHASOR,HT_SINE" );
    DO_TEST( test_func_per_ema,  "TRIX" );
    DO_TEST( test_func_macd,     "MACD,MACDFIX,MACDEXT" );
@@ -768,7 +807,8 @@ static ErrorNumber testTAFunction_ALL( void )
     * table took test_func_stddev down first and the one diagnostic that would
     * name the real cause never ran -- the leg would have been silent in exactly
     * the case it exists for. */
-   DO_TEST( test_func_reference, "REFERENCE,GOLDEN,ORACLE,NUMERICS" );
+   DO_TEST_LBL( test_func_reference, "REFERENCE,GOLDEN,ORACLE,NUMERICS",
+                                "Statistical reference: NIST StRD, Wilkinson" );
    DO_TEST( test_func_stddev,   "STDDEV,VAR" );
    /* CORREL numerical robustness (#242). Separate from the per_hl group so the
     * probes can be reached on their own; --function=CORREL matches both. */
@@ -781,8 +821,9 @@ static ErrorNumber testTAFunction_ALL( void )
     * stability_class(). This file adds the reference datasets and the
     * arbitrary-value goldens, and does NOT subsume either -- no leg here exceeds
     * period 60. */
-   DO_TEST( test_func_linearreg,
-            "LINEARREG,LINEARREG_SLOPE,LINEARREG_ANGLE,LINEARREG_INTERCEPT,TSF" );
+   DO_TEST_LBL( test_func_linearreg,
+            "LINEARREG,LINEARREG_SLOPE,LINEARREG_ANGLE,LINEARREG_INTERCEPT,TSF",
+            "Linear regression family, TSF" );
    DO_TEST( test_func_avgdev,   "AVGDEV" );
    DO_TEST( test_func_bbands,   "BBANDS" );
    DO_TEST( test_func_period_boundary, "PERIOD1/BOUNDARY" );
@@ -805,19 +846,43 @@ static ErrorNumber testTAFunction_ALL( void )
     * and a single file had grown past 4000 lines. Each carries its own tag, so
     * --function= reaches the members of whichever file they live in. */
    DO_TEST( test_func_composite1, "PVO,VWMA,CMF,HMA,EFI,QSTICK,AO,AC,SUM" );
-   DO_TEST( test_func_composite2, "SMI" );
+   DO_TEST( test_func_composite2, "SMI,COPPOCK,ER" );
    DO_TEST( test_func_marketfi, "MARKETFI" );
    DO_TEST( test_func_cmf,       "CMF" );
+   DO_TEST( test_func_kc,        "KC" );
+   DO_TEST( test_func_donchian,  "DONCHIAN" );
+   DO_TEST( test_func_rma,       "RMA" );
+   DO_TEST( test_func_supertrend, "SUPERTREND" );
    DO_TEST( test_func_mfi,       "MFI" );
    DO_TEST( test_func_vwap,      "VWAP" );
    DO_TEST( test_func_cmou,      "CMOU" );
+   DO_TEST( test_func_vortex,    "VORTEX" );
+   DO_TEST( test_func_eri,       "ERI" );
+   DO_TEST( test_func_cumsum,    "CUMSUM" );
+   DO_TEST( test_func_zlema,     "ZLEMA" );
+   DO_TEST( test_func_vhf,       "VHF" );
+   DO_TEST( test_func_rvi,       "RVI" );
+   DO_TEST( test_func_fractal,   "FRACTAL" );
+   DO_TEST( test_func_ha,        "HA" );
+   DO_TEST( test_func_tsi,       "TSI" );
+   DO_TEST( test_func_kdj,       "KDJ" );
+   DO_TEST( test_func_adr,       "ADR" );
+   DO_TEST( test_func_fosc,      "FOSC" );
+   DO_TEST( test_func_dpo,       "DPO" );
+   DO_TEST( test_func_percentrank, "PERCENTRANK" );
+   DO_TEST( test_func_percentile, "PERCENTILE" );
+   DO_TEST( test_func_cvi,       "CVI" );
+   DO_TEST( test_func_massi,     "MASSI" );
+   DO_TEST( test_func_rvol,      "RVOL" );
    DO_TEST( test_func_variants,  "TA_S_,VARIANT" );
    DO_TEST( test_candle_precision, "CDLDOJI,CANDLE,VARIANT,PRECISION" );
-   DO_TEST( test_func_rolling_extremum,
-            "MIN,MAX,MINMAX,MIDPOINT,MIDPRICE,WILLR,ROLLING,BLOCKSCAN" );
+   DO_TEST_LBL( test_func_rolling_extremum,
+            "MIN,MAX,MINMAX,MIDPOINT,MIDPRICE,WILLR,ROLLING,BLOCKSCAN",
+            "Rolling extremum block scan" );
    DO_TEST( test_func_legacy,    "LEGACY,064,FROZEN" );
-   DO_TEST( test_func_stream_finite,
-            "SMA,MINUS_DI,MA,MAVP,BBANDS,STOCH,CDLDOJI,STREAM,FINITE" );
+   DO_TEST_LBL( test_func_stream_finite,
+            "SMA,MINUS_DI,MA,MAVP,BBANDS,STOCH,CDLDOJI,STREAM,FINITE",
+            "Streaming finite-input gate" );
 
    /* A filter that matched nothing must not read as success. The group tags are
     * hand-maintained and cover far fewer names than the library exports, so a
@@ -848,7 +913,7 @@ static ErrorNumber testTAFunction_ALL( void )
 
 static void printUsage(void)
 {
-      printf( "Usage: ta_regtest [-p] [--function=NAME[,NAME,...]]\n" );
+      printf( "Usage: ta_regtest [--function=NAME[,NAME,...]]\n" );
       printf( "\n" );
       printf( "   No parameter needed for regression testing.\n" );
       printf( "\n" );
@@ -859,10 +924,6 @@ static void printUsage(void)
       printf( "   ** Must be run from the 'bin' directory.\n" );
       printf( "\n" );
       printf( "   OPTIONS:\n" );
-      printf( "    -p Only generate profiling data on stdout. This is\n" );
-      printf( "       intended only for the TA-Lib developers. It is\n" );
-      printf( "       not further documented for general use.\n" );
-      printf( "\n" );
       printf( "    --function=NAME[,NAME,...]\n" );
       printf( "       Only run test groups whose tags contain at least\n" );
       printf( "       one of the given names (substring match).\n" );

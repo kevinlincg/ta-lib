@@ -376,10 +376,12 @@ TA_RetCode TA_S_TRIX( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_TRIX_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_TRIX_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    double prevEMA1;
    double prevEMA2;
@@ -403,14 +405,13 @@ static void TA_TRIX_StepImpl( struct TA_TRIX_Stream *sp, double inReal, double *
    {
       *outReal= 0.0;
    }
+   sp->cur_outReal = *outReal;
 }
 
 static TA_RetCode TA_TRIX_OpenImpl( struct TA_TRIX_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[], int outStride )
 {
    struct TA_TRIX_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -429,9 +430,6 @@ static TA_RetCode TA_TRIX_OpenImpl( struct TA_TRIX_Stream **stream, const double
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       double prevEMA1 = 0.0;
@@ -588,6 +586,7 @@ static TA_RetCode TA_TRIX_OpenImpl( struct TA_TRIX_Stream **stream, const double
       sp->optInK_1 = optInK_1;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -638,28 +637,37 @@ TA_RetCode TA_TRIX_OpenAndFillInternal( struct TA_TRIX_Stream **stream, const do
 TA_LIB_API TA_RetCode TA_TRIX_Update( TA_TRIX_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_TRIX_StepImpl( stream, inReal, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_TRIX_Peek( const TA_TRIX_Stream *stream, double inReal, double *outReal )
 {
-   struct TA_TRIX_Stream scratch;
-   struct TA_TRIX_Stream *sp = &scratch;
+   const struct TA_TRIX_Stream *sp = stream;
    double tempReal;
+   double prevEMA1;
+   double prevEMA2;
+   double prevEMA3;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   scratch = *stream;
-   tempReal = sp->prevEMA3;
-   sp->prevEMA1 = fma(inReal - sp->prevEMA1, sp->optInK_1, sp->prevEMA1);
-   sp->prevEMA2 = fma(sp->prevEMA1 - sp->prevEMA2, sp->optInK_1, sp->prevEMA2);
-   sp->prevEMA3 = fma(sp->prevEMA2 - sp->prevEMA3, sp->optInK_1, sp->prevEMA3);
+   prevEMA1 = sp->prevEMA1;
+   prevEMA2 = sp->prevEMA2;
+   prevEMA3 = sp->prevEMA3;
+   tempReal = prevEMA3;
+   prevEMA1 = fma(inReal - prevEMA1, sp->optInK_1, prevEMA1);
+   prevEMA2 = fma(prevEMA1 - prevEMA2, sp->optInK_1, prevEMA2);
+   prevEMA3 = fma(prevEMA2 - prevEMA3, sp->optInK_1, prevEMA3);
    if( tempReal != 0.0 )
    {
-      *outReal= (sp->prevEMA3 / tempReal - 1.0) * 100.0;
+      *outReal= (prevEMA3 / tempReal - 1.0) * 100.0;
    } else 
    {
       *outReal= 0.0;
@@ -667,25 +675,30 @@ TA_LIB_API TA_RetCode TA_TRIX_Peek( const TA_TRIX_Stream *stream, double inReal,
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_TRIX_UpdateAndFill( TA_TRIX_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      TA_TRIX_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_TRIX_Close( TA_TRIX_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_TRIX_Value( const TA_TRIX_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_TRIX_Clone( const TA_TRIX_Stream *stream, TA_TRIX_Stream **clone )
+{
+   struct TA_TRIX_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_TRIX_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   *clone = sp;
    return TA_SUCCESS;
 }
 

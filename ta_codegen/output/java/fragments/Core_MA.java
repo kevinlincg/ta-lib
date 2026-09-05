@@ -17,6 +17,8 @@
  *  060907 MF   Use TA_SMA/TA_EMA instead of internal implementation.
  *  072226 MF,CC Add HMA (issue #139).
  *  072426 MF,CC TA_MAType_DISABLED: period-independent identity copy (issue #93).
+ *  090426 MF,CC Add ZLEMA (issue #347).
+ *  090426 MF,CC Add RMA (issue #348).
  */
 
    /**
@@ -30,8 +32,8 @@
     *        1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInMAType Which moving-average algorithm to dispatch to (default
     *        0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA,
-    *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT}
-    *        selects the default).
+    *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @return The lookback, or {@code -1} if a parameter is out of range.
     */
    public int MA_Lookback( int optInTimePeriod, MAType optInMAType )
@@ -79,6 +81,12 @@
          break;
       case HMA:
          retValue = HMA_Lookback(optInTimePeriod);
+         break;
+      case ZLEMA:
+         retValue = ZLEMA_Lookback(optInTimePeriod);
+         break;
+      case RMA:
+         retValue = RMA_Lookback(optInTimePeriod);
          break;
       default:
          retValue = 0;
@@ -222,6 +230,18 @@
          outNBElement.value = _xr9.count();
          retCode = RetCode.Success;
          break;
+      case ZLEMA:
+         OutRange _xr10 = ZLEMA(startIdx, endIdx, inReal, optInTimePeriod, outReal);
+         outBegIdx.value = _xr10.begIdx();
+         outNBElement.value = _xr10.count();
+         retCode = RetCode.Success;
+         break;
+      case RMA:
+         OutRange _xr11 = RMA(startIdx, endIdx, inReal, optInTimePeriod, outReal);
+         outBegIdx.value = _xr11.begIdx();
+         outNBElement.value = _xr11.count();
+         retCode = RetCode.Success;
+         break;
       default:
          retCode = RetCode.BadParam;
          break;
@@ -331,6 +351,18 @@
          outNBElement.value = _xr9.count();
          retCode = RetCode.Success;
          break;
+      case ZLEMA:
+         OutRange _xr10 = ZLEMA(startIdx, endIdx, inReal, optInTimePeriod, outReal);
+         outBegIdx.value = _xr10.begIdx();
+         outNBElement.value = _xr10.count();
+         retCode = RetCode.Success;
+         break;
+      case RMA:
+         OutRange _xr11 = RMA(startIdx, endIdx, inReal, optInTimePeriod, outReal);
+         outBegIdx.value = _xr11.begIdx();
+         outNBElement.value = _xr11.count();
+         retCode = RetCode.Success;
+         break;
       default:
          retCode = RetCode.BadParam;
          break;
@@ -364,8 +396,8 @@
     *        1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInMAType Which moving-average algorithm to dispatch to (default
     *        0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA,
-    *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT}
-    *        selects the default).
+    *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outReal Selected moving average of the input. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
     * @return The range written: {@code begIdx} is the first bar with a value,
@@ -392,6 +424,8 @@
     * @see Core#MAMA
     * @see Core#T3
     * @see Core#HMA
+    * @see Core#ZLEMA
+    * @see Core#RMA
     */
    public OutRange MA( int startIdx,
                        int endIdx,
@@ -445,8 +479,8 @@
     *        1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInMAType Which moving-average algorithm to dispatch to (default
     *        0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA,
-    *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT}
-    *        selects the default).
+    *        7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outReal Selected moving average of the input. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
     * @return The range written: {@code begIdx} is the first bar with a value,
@@ -473,6 +507,8 @@
     * @see Core#MAMA
     * @see Core#T3
     * @see Core#HMA
+    * @see Core#ZLEMA
+    * @see Core#RMA
     */
    public OutRange MA( int startIdx,
                        int endIdx,
@@ -504,11 +540,11 @@
     * Open with {@link Core#maOpen}; there is no close — the handle is
     * ordinary heap state, unreferenced handles are simply garbage-collected.
     * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
-    * {@code value} and {@code copy} must not race with an {@code update} on
+    * {@code value} and {@code clone} must not race with an {@code update} on
     * the same handle. With no concurrent {@code update}, {@code peek}/
-    * {@code value}/{@code copy} never write the handle and may be called
-    * concurrently after safe publication. Independent handles (including
-    * {@code copy()} results) are fully independent.
+    * {@code value}/{@code clone} never write the stream and may be called
+    * concurrently after safe publication. Independent streams (a
+    * {@code clone()} result included) are fully independent.
     * <p>Not serializable by design: to checkpoint, retain the history and
     * re-open — the result is bit-identical by contract.
     */
@@ -525,12 +561,13 @@
       MaStream( Core core ) { this.core = core; }
 
       /**
-       * The bars this stream has produced a value for, in the input series'
+       * The bars this stream has an output for, in the input series'
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * accepted {@code update} adds one to the count, {@code peek} leaves
-       * it alone, and {@code copy()} carries it verbatim. A plain
+       * {@code update} adds one to the count — a bar rejected for being
+       * non-finite included, because it still happened — {@code peek} leaves
+       * it alone, and {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
@@ -576,6 +613,12 @@
             case HMA:
                this.sub = new HmaStream((HmaStream) other.sub);
                break;
+            case ZLEMA:
+               this.sub = new ZlemaStream((ZlemaStream) other.sub);
+               break;
+            case RMA:
+               this.sub = new RmaStream((RmaStream) other.sub);
+               break;
             default:
                throw new IllegalStateException("unreachable: open rejects arms without a sub-stream");
             }
@@ -589,46 +632,25 @@
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the handle is left exactly as it was —
-       * the stream stays usable, so skip the bar or re-open on a clean
-       * history. This is the one place the streaming tier is stricter than
+       * written, so the state is left exactly as it was: the rejected bar's
+       * output is the previous value, held, and {@link #value()} answers it.
+       * The stream stays usable, so skip the bar or re-open on a clean
+       * history. {@link #outRange()} does advance: the bar happened and
+       * occupies a position in the series, so the handle counts it, which is
+       * what keeps two handles on one feed aligned when only one rejects.
+       * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) )
+         if( !Double.isFinite(inReal) ) {
+            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("MA update: BadParam", RetCode.BadParam);
+         }
          core.maStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what was committed, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * bars {@code 0..k} committed and written, bar {@code k} and everything
-       * after it not, and the count advanced by {@code k}.
-       */
-      public void updateAndFill( double inReal[], double outReal[] ) {
-         requireArgument("MA updateAndFill", "inReal", inReal);
-         requireArgument("MA updateAndFill", "outReal", outReal);
-         final int barCount = inReal.length;
-         if( outReal.length < barCount || (Object)outReal == (Object)inReal )
-            throw new TaLibArgumentException("MA updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) )
-               throw new TaLibArgumentException("MA updateAndFill: BadParam", RetCode.BadParam);
-            core.maStepImpl(this, inReal[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**
@@ -636,9 +658,10 @@
        * next {@code update} with the same bar would return — the same
        * transition, with every store it would make carried in a local instead.
        * Never writes this handle, so peeks may
-       * run concurrently with each other. It copies nothing: the frame runs against this handle, reading its
+       * run concurrently with each other. It copies no buffer: the frame runs against this handle, reading its
        * buffers and storing what the step would commit into locals, so the cost
-       * does not grow with the period and {@code peek} never allocates.
+       * does not grow with the period. It does allocate a small bounded amount
+       * per call — a size fixed by the indicator, never by the period.
        */
       public double peek( double inReal ) {
          if( !Double.isFinite(inReal) )
@@ -680,8 +703,9 @@
             break;
          }
          case MAMA: {
-            MamaStream.Value subValue = ((MamaStream) sp.sub).peek(inReal);
-            cur_outReal = subValue.mama();
+            MamaOut subValue = new MamaOut();
+            ((MamaStream) sp.sub).peek(inReal, subValue);
+            cur_outReal = subValue.mama;
             break;
          }
          case T3: {
@@ -692,6 +716,14 @@
             cur_outReal = ((HmaStream) sp.sub).peek(inReal);
             break;
          }
+         case ZLEMA: {
+            cur_outReal = ((ZlemaStream) sp.sub).peek(inReal);
+            break;
+         }
+         case RMA: {
+            cur_outReal = ((RmaStream) sp.sub).peek(inReal);
+            break;
+         }
          default:
             throw new IllegalStateException("unreachable: open rejects arms without a sub-stream");
          }
@@ -699,8 +731,9 @@
       }
 
       /**
-       * The value at the most recently committed bar — the last history bar
-       * right after open, then whatever the latest {@code update} returned.
+       * The value at the last bar this stream counted — the bar
+       * {@link #outRange()} ends on. The last history bar right after open,
+       * then whatever the latest accepted {@code update} returned.
        * A pure field read; {@code peek} does not change it.
        */
       public double value() {
@@ -708,10 +741,18 @@
       }
 
       /**
-       * An independent deep copy of this stream: both evolve separately from
-       * here on (the Java rendering of the Rust handle's {@code Clone}).
+       * An independent fork of this stream: both evolve separately from here
+       * on. Buffers are copied and sub-streams cloned recursively; the
+       * {@link Core} reference is shared, since a {@code Core} is immutable
+       * for a stream's lifetime.
+       *
+       * <p>Not the {@code Cloneable} protocol: this calls a copy constructor,
+       * never {@code super.clone()}, so it throws nothing.
+       *
+       * @return an independent stream at the same bar
        */
-      public MaStream copy() {
+      @Override
+      public MaStream clone() {
          return new MaStream(this);
       }
    }
@@ -752,8 +793,9 @@
          break;
       }
       case MAMA: {
-         MamaStream.Value subValue = ((MamaStream) sp.sub).update(inReal);
-         sp.cur_outReal = subValue.mama();
+         MamaOut subOut = new MamaOut();
+         ((MamaStream) sp.sub).update(inReal, subOut);
+         sp.cur_outReal = subOut.mama;
          break;
       }
       case T3: {
@@ -762,6 +804,14 @@
       }
       case HMA: {
          sp.cur_outReal = ((HmaStream) sp.sub).update(inReal);
+         break;
+      }
+      case ZLEMA: {
+         sp.cur_outReal = ((ZlemaStream) sp.sub).update(inReal);
+         break;
+      }
+      case RMA: {
+         sp.cur_outReal = ((RmaStream) sp.sub).update(inReal);
          break;
       }
       default:
@@ -881,6 +931,22 @@
       }
       case HMA: {
          HmaStream sub = hmaOpenInternal(inReal, startIdx, optInTimePeriod);
+         sp.outRangeBegIdx = sub.outRangeBegIdx;
+         sp.outRangeCount = sub.outRangeCount;
+         sp.sub = sub;
+         sp.cur_outReal = sub.cur_outReal;
+         break;
+      }
+      case ZLEMA: {
+         ZlemaStream sub = zlemaOpenInternal(inReal, startIdx, optInTimePeriod);
+         sp.outRangeBegIdx = sub.outRangeBegIdx;
+         sp.outRangeCount = sub.outRangeCount;
+         sp.sub = sub;
+         sp.cur_outReal = sub.cur_outReal;
+         break;
+      }
+      case RMA: {
+         RmaStream sub = rmaOpenInternal(inReal, startIdx, optInTimePeriod);
          sp.outRangeBegIdx = sub.outRangeBegIdx;
          sp.outRangeCount = sub.outRangeCount;
          sp.sub = sub;
@@ -1015,6 +1081,22 @@
          sp.cur_outReal = sub.cur_outReal;
          break;
       }
+      case ZLEMA: {
+         ZlemaStream sub = zlemaOpenAndFill(inReal, optInTimePeriod, outReal);
+         outBegIdx.value = sub.outRangeBegIdx;
+         outNBElement.value = sub.outRangeCount;
+         sp.sub = sub;
+         sp.cur_outReal = sub.cur_outReal;
+         break;
+      }
+      case RMA: {
+         RmaStream sub = rmaOpenAndFill(inReal, optInTimePeriod, outReal);
+         outBegIdx.value = sub.outRangeBegIdx;
+         outNBElement.value = sub.outRangeCount;
+         sp.sub = sub;
+         sp.cur_outReal = sub.cur_outReal;
+         break;
+      }
       default:
          return RetCode.BadParam;
       }
@@ -1120,6 +1202,18 @@
       }
       case HMA: {
          HmaStream sub = hmaOpenAndFillInternal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal);
+         sp.sub = sub;
+         sp.cur_outReal = sub.cur_outReal;
+         break;
+      }
+      case ZLEMA: {
+         ZlemaStream sub = zlemaOpenAndFillInternal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal);
+         sp.sub = sub;
+         sp.cur_outReal = sub.cur_outReal;
+         break;
+      }
+      case RMA: {
+         RmaStream sub = rmaOpenAndFillInternal(inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal);
          sp.sub = sub;
          sp.cur_outReal = sub.cur_outReal;
          break;

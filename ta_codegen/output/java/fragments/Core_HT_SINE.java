@@ -931,11 +931,11 @@
     * Open with {@link Core#htSineOpen}; there is no close — the handle is
     * ordinary heap state, unreferenced handles are simply garbage-collected.
     * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
-    * {@code value} and {@code copy} must not race with an {@code update} on
+    * {@code value} and {@code clone} must not race with an {@code update} on
     * the same handle. With no concurrent {@code update}, {@code peek}/
-    * {@code value}/{@code copy} never write the handle and may be called
-    * concurrently after safe publication. Independent handles (including
-    * {@code copy()} results) are fully independent.
+    * {@code value}/{@code clone} never write the stream and may be called
+    * concurrently after safe publication. Independent streams (a
+    * {@code clone()} result included) are fully independent.
     * <p>Not serializable by design: to checkpoint, retain the history and
     * re-open — the result is bit-identical by contract.
     */
@@ -995,19 +995,19 @@
       double[] cb_smoothPrice;
       double cur_outSine;
       double cur_outLeadSine;
-      Value cachedValue;
       int outRangeBegIdx;
       int outRangeCount;
 
       HtSineStream( Core core ) { this.core = core; }
 
       /**
-       * The bars this stream has produced a value for, in the input series'
+       * The bars this stream has an output for, in the input series'
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HT_SINE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * accepted {@code update} adds one to the count, {@code peek} leaves
-       * it alone, and {@code copy()} carries it verbatim. A plain
+       * {@code update} adds one to the count — a bar rejected for being
+       * non-finite included, because it still happened — {@code peek} leaves
+       * it alone, and {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
@@ -1069,91 +1069,49 @@
          this.cb_smoothPrice = other.cb_smoothPrice.clone();
          this.cur_outSine = other.cur_outSine;
          this.cur_outLeadSine = other.cur_outLeadSine;
-         this.cachedValue = other.cachedValue;
          this.outRangeBegIdx = other.outRangeBegIdx;
          this.outRangeCount = other.outRangeCount;
       }
 
       /**
-       * One output set, in batch output order. Immutable.
-       *
-       * <p>{@code equals} compares every component bitwise, so {@code NaN}
-       * equals {@code NaN} and {@code 0.0} does not equal {@code -0.0}.
-       * {@code hashCode} is consistent with it but its exact value is
-       * unspecified — do not persist it or compare it across JVM versions.
-       *
-       * @param sine Sine of the dominant-cycle phase.
-       * @param leadSine Sine of the phase advanced 45 degrees (lead)
-       */
-      public record Value(double sine, double leadSine) { }
-
-      /**
-       * Commit one closed bar, returning the new current value.
+       * Commit one closed bar, writing the new current values into the {@code out} the CALLER owns.
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the handle is left exactly as it was —
-       * the stream stays usable, so skip the bar or re-open on a clean
-       * history. This is the one place the streaming tier is stricter than
+       * written, so the state is left exactly as it was: the rejected bar's
+       * output is the previous value, held, and {@link #value(HtSineOut)} answers it.
+       * The stream stays usable, so skip the bar or re-open on a clean
+       * history. {@link #outRange()} does advance: the bar happened and
+       * occupies a position in the series, so the handle counts it, which is
+       * what keeps two handles on one feed aligned when only one rejects.
+       * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
-      public Value update( double inReal ) {
-         if( !Double.isFinite(inReal) )
+      public void update( double inReal, HtSineOut out ) {
+         requireArgument("HT_SINE update", "out", out);
+         if( !Double.isFinite(inReal) ) {
+            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("HT_SINE update: BadParam", RetCode.BadParam);
+         }
          core.htSineStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         this.cachedValue = new Value(this.cur_outSine, this.cur_outLeadSine);
-         return this.cachedValue;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what was committed, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * bars {@code 0..k} committed and written, bar {@code k} and everything
-       * after it not, and the count advanced by {@code k}.
-       */
-      public void updateAndFill( double inReal[], double outSine[], double outLeadSine[] ) {
-         requireArgument("HT_SINE updateAndFill", "inReal", inReal);
-         requireArgument("HT_SINE updateAndFill", "outSine", outSine);
-         requireArgument("HT_SINE updateAndFill", "outLeadSine", outLeadSine);
-         final int barCount = inReal.length;
-         if( outSine.length < barCount || outLeadSine.length < barCount || (Object)outSine == (Object)inReal || (Object)outLeadSine == (Object)inReal || (Object)outSine == (Object)outLeadSine )
-            throw new TaLibArgumentException("HT_SINE updateAndFill: BadParam", RetCode.BadParam);
-         int done = 0;
-         try {
-            for( int i = 0; i < barCount; i++ ) {
-               if( !Double.isFinite(inReal[i]) )
-                  throw new TaLibArgumentException("HT_SINE updateAndFill: BadParam", RetCode.BadParam);
-               core.htSineStepImpl(this, inReal[i]);
-               outSine[i] = this.cur_outSine;
-               outLeadSine[i] = this.cur_outLeadSine;
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               done = i + 1;
-            }
-         } finally {
-            if( done > 0 ) this.cachedValue = new Value(this.cur_outSine, this.cur_outLeadSine);
-         }
+         out.sine = this.cur_outSine;
+         out.leadSine = this.cur_outLeadSine;
       }
 
       /**
        * Evaluate a forming bar without committing — bit-identical to what the
-       * next {@code update} with the same bar would return — the same
+       * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.
        * Never writes this handle, so peeks may
-       * run concurrently with each other. It copies no buffer: the frame runs against this handle, reading its
+       * run concurrently with each other. It copies nothing: the frame runs against this handle, reading its
        * buffers and storing what the step would commit into locals, so the cost
-       * does not grow with the period. It does allocate a small bounded amount
-       * per call — a size fixed by the indicator, never by the period.
+       * does not grow with the period and {@code peek} never allocates.
        */
-      public Value peek( double inReal ) {
+      public void peek( double inReal, HtSineOut out ) {
+         requireArgument("HT_SINE peek", "out", out);
          if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HT_SINE peek: BadParam", RetCode.BadParam);
          HtSineStream sp = this;
@@ -1182,8 +1140,8 @@
          double I1ForOddPrev3 = sp.I1ForOddPrev3;
          double Im = sp.Im;
          double Re = sp.Re;
-         double cur_outLeadSine = sp.cur_outLeadSine;
-         double cur_outSine = sp.cur_outSine;
+         double cur_outLeadSine = 0.0;
+         double cur_outSine = 0.0;
          int hilbertIdx = sp.hilbertIdx;
          double period = sp.period;
          double periodWMASub = sp.periodWMASub;
@@ -1206,10 +1164,7 @@
          double prev_jQ_Odd = sp.prev_jQ_Odd;
          double prev_jQ_input_Even = sp.prev_jQ_input_Even;
          double prev_jQ_input_Odd = sp.prev_jQ_input_Odd;
-         int ringPos_trailingWMAIdx = sp.ringPos_trailingWMAIdx;
          double smoothPeriod = sp.smoothPeriod;
-         int smoothPrice_Idx = sp.smoothPrice_Idx;
-         int streamParity = sp.streamParity;
          double trailingWMAValue = sp.trailingWMAValue;
          int pkSlot0 = -1;
          double pkVal0 = 0.0;
@@ -1224,15 +1179,15 @@
          periodWMASub += todayValue;
          periodWMASub -= trailingWMAValue;
          periodWMASum += todayValue * 4.0;
-         trailingWMAValue = (ringPos_trailingWMAIdx != pkSlot0) ? sp.ring_trailingWMAIdx_inReal[ringPos_trailingWMAIdx] : pkVal0;
+         trailingWMAValue = (sp.ringPos_trailingWMAIdx != pkSlot0) ? sp.ring_trailingWMAIdx_inReal[sp.ringPos_trailingWMAIdx] : pkVal0;
          smoothedValue = periodWMASum * 0.1;
          periodWMASum -= periodWMASub;
          /* Remember the smoothedValue into the smoothPrice
           * circular buffer.
           */
-         pkSlot1 = smoothPrice_Idx;
+         pkSlot1 = sp.smoothPrice_Idx;
          pkVal1 = smoothedValue;
-         if( streamParity == 0 ) {
+         if( sp.streamParity == 0 ) {
             /* Do the Hilbert Transforms for even price bar */
             hilbertTempReal = sp.a * smoothedValue;
             detrender = 0 - sp.detrender_Even[hilbertIdx];
@@ -1356,7 +1311,7 @@
          /* idx is used to iterate for up to 50 of the last
           * value of smoothPrice.
           */
-         idx = smoothPrice_Idx;
+         idx = sp.smoothPrice_Idx;
          for( i = 0; i < DCPeriodInt; i += 1 ) {
             tempReal = (double)i * sp.constDeg2RadBy360 / (double)DCPeriodInt;
             tempReal2 = (idx != pkSlot1) ? sp.cb_smoothPrice[idx] : pkVal1;
@@ -1389,35 +1344,59 @@
          }
          cur_outSine = Math.sin(DCPhase * sp.deg2Rad);
          cur_outLeadSine = Math.sin((DCPhase + 45) * sp.deg2Rad);
-         /* Ooof... let's do the next price bar now! */
-         smoothPrice_Idx = smoothPrice_Idx + 1;
-         if( smoothPrice_Idx > sp.maxIdx_smoothPrice ) {
-            smoothPrice_Idx = 0;
-         }
-         ringPos_trailingWMAIdx = ringPos_trailingWMAIdx + 1;
-         if( ringPos_trailingWMAIdx >= sp.ringCap_trailingWMAIdx ) {
-            ringPos_trailingWMAIdx = 0;
-         }
-         streamParity = 1 - streamParity;
-         return new Value(cur_outSine, cur_outLeadSine);
+         out.sine = cur_outSine;
+         out.leadSine = cur_outLeadSine;
       }
 
       /**
-       * The value at the most recently committed bar — the last history bar
-       * right after open, then whatever the latest {@code update} returned.
-       * A pure field read; {@code peek} does not change it.
+       * The value at the last bar this stream counted — the bar
+       * {@link #outRange()} ends on. The last history bar right after open,
+       * then whatever the latest accepted {@code update} wrote.
+       * A pure field read; {@code peek} does not change it. Overwrites {@code out}, allocating nothing.
        */
-      public Value value() {
-         return this.cachedValue;
+      public void value( HtSineOut out ) {
+         requireArgument("HT_SINE value", "out", out);
+         out.sine = this.cur_outSine;
+         out.leadSine = this.cur_outLeadSine;
       }
 
       /**
-       * An independent deep copy of this stream: both evolve separately from
-       * here on (the Java rendering of the Rust handle's {@code Clone}).
+       * An independent fork of this stream: both evolve separately from here
+       * on. Buffers are copied and sub-streams cloned recursively; the
+       * {@link Core} reference is shared, since a {@code Core} is immutable
+       * for a stream's lifetime.
+       *
+       * <p>Not the {@code Cloneable} protocol: this calls a copy constructor,
+       * never {@code super.clone()}, so it throws nothing.
+       *
+       * @return an independent stream at the same bar
        */
-      public HtSineStream copy() {
+      @Override
+      public HtSineStream clone() {
          return new HtSineStream(this);
       }
+   }
+
+   /**
+    * The outputs of one HT_SINE bar, written by the stream into an object the
+    * CALLER owns. Allocate one and reuse it: {@code update}, {@code peek}
+    * and {@code value} overwrite its fields, so the sink itself costs
+    * nothing per bar.
+    *
+    * <p><b>Its contents are only valid until the next call that writes it.</b>
+    * It is a mutable buffer, not a reading: a reference kept past that call,
+    * or one put in a collection, sees the value change underneath it. Copy the
+    * fields out if the reading has to outlive the call.
+    *
+    * <p>Deliberately no {@code equals} or {@code hashCode}: a mutable type
+    * with value equality breaks the {@code HashMap}/{@code HashSet}
+    * invariant the moment a reused instance becomes a key. Compare the fields.
+    */
+   public static final class HtSineOut {
+      /** Sine of the dominant-cycle phase. */
+      public double sine;
+      /** Sine of the phase advanced 45 degrees (lead) */
+      public double leadSine;
    }
    void htSineStepImpl( HtSineStream sp, double inReal )
    {
@@ -2108,7 +2087,6 @@
       sp.cb_smoothPrice = smoothPrice;
       sp.cur_outSine = outSine[(outNBElement.value - 1) * outStride];
       sp.cur_outLeadSine = outLeadSine[(outNBElement.value - 1) * outStride];
-      sp.cachedValue = new HtSineStream.Value(sp.cur_outSine, sp.cur_outLeadSine);
       return RetCode.Success;
    }
    /* htSineOpenAndFill anchored at startIdx — the composed-open fusion seam. */

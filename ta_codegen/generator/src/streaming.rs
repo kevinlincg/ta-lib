@@ -247,8 +247,8 @@ pub struct CalleeSig {
     /// The callee is YAML `stream`-flagged (its public stream API exists).
     pub streaming: bool,
     /// The callee is YAML `nan_inf_output`-flagged: a *successful* call of it can
-    /// return NaN or ±Inf (#191 — the seven domain holes: ACOS, ASIN, LN, LOG10,
-    /// SQRT, DIV, VWMA). Such a function may not be composed into another
+    /// return NaN or ±Inf (#191 — the eight domain holes: ACOS, ASIN, LN, LOG10,
+    /// SQRT, DIV, VWMA, RVOL). Such a function may not be composed into another
     /// function's stream; see [`reject_nonfinite_callees`].
     pub nan_inf_output: bool,
     /// Number of input ARRAYS (price components expanded).
@@ -486,9 +486,9 @@ pub struct SeriesFree {
 /// materializing an intermediate series, then a tail of whole-range
 /// sub-calls over materialized series + tail-aligning copies + guards/frees.
 /// Composition goes through the callees' PUBLIC stream handles. A peek frame
-/// calls sub-`Peek` where the update frame calls sub-`Update`: the sub-handles
-/// are heap pointers a struct copy shares rather than clones, so routing is the
-/// only thing that keeps a peek off them.
+/// calls sub-`Peek` where the update frame calls sub-`Update`: a sub-handle is a
+/// heap pointer the frame reads, so routing is the only thing that keeps a peek
+/// off it.
 #[derive(Debug)]
 pub struct ComposedPlan<'a> {
     pub func: &'a FuncDef,
@@ -865,6 +865,98 @@ impl StreamModel<'_> {
 // IR walking helpers
 // ---------------------------------------------------------------------------
 
+/// What a linear scan of a statement list concluded about one scalar local.
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum FirstUse {
+    NotMentioned,
+    WriteFirst,
+    ReadOrUnknown,
+}
+
+/// Whether the peek transition never reads `var` at all — a wholly dead local
+/// (issue #353), where the declaration and every store to it go together.
+/// Distinct from [`peek_seed_is_dead`] below: that proves only the SEED value
+/// unread and keeps a local the frame still writes and reads; this one holds
+/// only when the frame answers through something else entirely, so the local
+/// has no reason to exist. A compound store's self-read does not rescue it:
+/// [`names_read`] counts only the RHS of the canonical `v op= e` shape, and a
+/// self-feeding chain nothing else reads is dead with the rest. Any mention
+/// shape the walker cannot model lands in the read set and keeps the local.
+/// Callers strip the stores with [`purge_dead_temp_stores`].
+#[must_use]
+pub fn peek_local_is_never_read(body: &[Statement], var: &str) -> bool {
+    let mut read = BTreeSet::new();
+    names_read(body, &mut read);
+    !read.contains(var)
+}
+
+/// Whether seeding `var` from the handle at the top of a peek frame is dead:
+/// every path that mentions it WRITES it before any read (issue #343). The
+/// analysis is deliberately conservative — a mention inside a loop or switch,
+/// a compound assignment, or an `if` whose arms disagree all answer `false`,
+/// which keeps the seed. `false` never mis-renders; it only leaves the one
+/// field load this exists to drop.
+pub fn peek_seed_is_dead(body: &[Statement], var: &str) -> bool {
+    // Any reference form counts, `*p` and `arr[i]` included: a mention this
+    // pass cannot model has to keep the seed, never drop it.
+    fn reads(e: &Expr, var: &str) -> bool {
+        let mut names = BTreeSet::new();
+        expr_var_names(e, &mut names);
+        names.contains(var)
+    }
+    fn mentions(st: &Statement, var: &str) -> bool {
+        let mut names = BTreeSet::new();
+        stmt_var_names(st, &mut names);
+        names.contains(var)
+    }
+    fn scan(list: &[Statement], var: &str) -> FirstUse {
+        for st in list {
+            match st {
+                Statement::Assign { target: Expr::Var(t), value, compound } if t == var => {
+                    if *compound || reads(value, var) {
+                        return FirstUse::ReadOrUnknown;
+                    }
+                    return FirstUse::WriteFirst;
+                }
+                Statement::If { condition, then_body, else_body, .. } => {
+                    if reads(condition, var) {
+                        return FirstUse::ReadOrUnknown;
+                    }
+                    let t = scan(then_body, var);
+                    let e = scan(else_body, var);
+                    // An arm that ends in `return` never rejoins the code
+                    // below the `if`; writing there settles that path for
+                    // good. This is the period-1 identity branch's exact
+                    // shape: `if( p == 1 ) { cur_x = in; return cur_x; }`.
+                    let t_exits = matches!(then_body.last(), Some(Statement::Return { .. }));
+                    let e_exits = matches!(else_body.last(), Some(Statement::Return { .. }));
+                    match (t, e) {
+                        (FirstUse::NotMentioned, FirstUse::NotMentioned) => {}
+                        (FirstUse::WriteFirst, FirstUse::WriteFirst) => {
+                            return FirstUse::WriteFirst;
+                        }
+                        (FirstUse::WriteFirst, FirstUse::NotMentioned) if t_exits => {}
+                        (FirstUse::NotMentioned, FirstUse::WriteFirst) if e_exits => {}
+                        // One arm writes without exiting and the other does not
+                        // touch it: the untouched path leaves the seed live
+                        // downstream.
+                        _ => return FirstUse::ReadOrUnknown,
+                    }
+                }
+                // A loop may run zero times and a switch arm is data-picked;
+                // any mention inside is treated as a read.
+                other => {
+                    if mentions(other, var) {
+                        return FirstUse::ReadOrUnknown;
+                    }
+                }
+            }
+        }
+        FirstUse::NotMentioned
+    }
+    scan(body, var) == FirstUse::WriteFirst
+}
+
 /// Visit every expression held by a statement tree (conditions, initializers,
 /// targets, values), recursing into nested statements.
 pub fn walk_stmt_exprs(s: &Statement, f: &mut dyn FnMut(&Expr)) {
@@ -1075,8 +1167,8 @@ pub fn input_array_names(func: &FuncDef) -> Vec<String> {
 /// - `return <retCodeVar>` error propagation (mapped verbatim).
 ///
 /// Anything else — an early success path that produces outputs (T3's
-/// period==1 identity loop) or a delegating `return other_func(...)`
-/// (ATR/NATR period<=1 → TRANGE) — computes values the transition function
+/// period==1 identity loop) or a delegating `return other_func(...)` —
+/// computes values the transition function
 /// cannot reproduce, so the function is rejected until it gets explicit
 /// stream support (the "open-time delegation" class in the proposal).
 /// `<param> == 1` / `<param> <= 1` — the classic period-1 no-smoothing guard.
@@ -5953,6 +6045,17 @@ fn transition_state_names(model: &StreamModel) -> BTreeSet<String> {
 /// the arm bodies.
 #[must_use]
 pub fn identity_step_branch(model: &StreamModel, names: &dyn NameMap) -> Option<Statement> {
+    identity_branch(model, names, true)
+}
+
+/// The identity short-circuit for a PEEK frame: the same arm without the value
+/// retain. Peek commits nothing, so it must not write `cur_` — C would write a
+/// discarded scratch and Rust would not compile, and both are the same rule.
+pub fn identity_peek_branch(model: &StreamModel, names: &dyn NameMap) -> Option<Statement> {
+    identity_branch(model, names, false)
+}
+
+fn identity_branch(model: &StreamModel, names: &dyn NameMap, retain: bool) -> Option<Statement> {
     let idp = model.identity.as_ref()?;
     let state_names = transition_state_names(model);
     let condition = rewrite_expr(&idp.condition, &|e| match e {
@@ -5968,6 +6071,20 @@ pub fn identity_step_branch(model: &StreamModel, names: &dyn NameMap) -> Option<
             compound: false,
         })
         .collect();
+    // Retain here too: this arm returns before the transition's own tail, and a
+    // handle that skipped the retain would disagree with one opened directly at
+    // the same bar — which is exactly what the state-equivalence gate compares.
+    for (out, _) in &idp.pairs {
+        let target = Expr::Var(names.state(&format!("cur_{out}")));
+        let value = names.output(out);
+        if retain && target != value {
+            then_body.push(Statement::Assign {
+                target,
+                value,
+                compound: false,
+            });
+        }
+    }
     then_body.push(Statement::Return { value: None });
     Some(Statement::If {
         condition,
@@ -6048,6 +6165,64 @@ pub fn build_transition(model: &StreamModel, names: &dyn NameMap) -> Result<Vec<
         out.push(Statement::Assign {
             target: Expr::Var(names.state(&format!("lastOut_{name}"))),
             value: names.output(name),
+            compound: false,
+        });
+    }
+    // Retain this bar's output(s) for the value accessor. Emitted only where
+    // the body did not already write the field: Java and C# map an output
+    // straight onto `cur_<name>`, so for them source and target are the same
+    // expression and the store would be `x = x`. C and Rust write through an
+    // out-pointer, so they pay one store per output per bar — which is what
+    // buys a handle that can be asked its current value after a fork.
+    for name in &model.outputs {
+        // `model.outputs` carries the producer's intermediates too (STOCH's
+        // `tempBuffer` feeds a sub-stream and is never handed to a caller).
+        // Only a real output of the function has a `cur_` field to retain into.
+        if !model.func.outputs.iter().any(|o| &o.name == name) {
+            continue;
+        }
+        let target = Expr::Var(names.state(&format!("cur_{name}")));
+        let sink = names.output(name);
+        if target == sink {
+            continue;
+        }
+        // Normally read the sink back — it is a local the body just wrote, so
+        // the copy is free. A DECLINABLE output (MAMA's FAMA, the corpus's
+        // only one) cannot be: its sink may be NULL, and the retained value has
+        // to be right whether or not the caller wanted it. Those take the value
+        // the body assigned instead, which `assert_nullable_stores_are_guardable`
+        // guarantees is a single un-cursored store, so there is exactly one
+        // expression to take.
+        let declinable = model
+            .func
+            .outputs
+            .iter()
+            .any(|o| &o.name == name && o.is_nullable());
+        let value = if declinable {
+            let mut assigned: Option<Expr> = None;
+            for st in &out {
+                if let Statement::Assign { target: t, value: v, compound: false } = st {
+                    if *t == sink {
+                        assigned = Some(v.clone());
+                    }
+                }
+            }
+            // Name a carried variable the way the rest of the transition names
+            // it. A bare `Var` here would be a fresh reference to a state field
+            // and the localizer would promote it, rewriting the body's own
+            // store for no reason.
+            let state_names = transition_state_names(model);
+            match assigned {
+                Some(Expr::Var(v)) if state_names.contains(&v) => Expr::Var(names.state(&v)),
+                Some(other) => other,
+                None => sink,
+            }
+        } else {
+            sink
+        };
+        out.push(Statement::Assign {
+            target,
+            value,
             compound: false,
         });
     }
@@ -7316,11 +7491,98 @@ pub fn peek_transition_widest(
     transition: &[Statement],
     slot_cast: Option<VarType>,
 ) -> Result<PeekTransition, String> {
+    // The buffer set is elected on the UNTRIMMED transition, deliberately. The
+    // trim only removes statements, so it can only make `validate_peekable`
+    // accept where it used to refuse — and an election that flipped would
+    // shadow-rewrite a read in the KEPT prefix, moving arithmetic this pass has
+    // no business moving.
     let wide = transition_buffers_with_state_arrays(model, names);
-    if let Ok(pt) = peek_transition(transition, &wide, slot_cast.clone()) {
-        return Ok(pt);
+    let elected = if peek_transition(transition, &wide, &model.temps, slot_cast.clone()).is_ok() {
+        wide
+    } else {
+        transition_buffers(model, names)
+    };
+    peek_transition(
+        &peek_tail_trimmed(model, names, transition),
+        &elected,
+        &model.temps,
+        slot_cast,
+    )
+}
+
+/// `transition` with every statement below its last store to an output sink
+/// dropped.
+///
+/// A peek keeps nothing but what it answers, and nothing below that store can
+/// change it: [`check_no_output_read_back`] refuses a model whose steady loop
+/// reads a sink back, and the only sink reads [`build_transition`] then adds are
+/// the `lastOut_*` refresh and the `cur_*` retain — which sit in the dropped
+/// tail themselves. What that removes is not only bookkeeping: for the functions
+/// where it pays it is ARITHMETIC, the recurrence the source runs to set up the
+/// NEXT bar, which a peek has none of.
+///
+/// The cut is over TOP-LEVEL statements only, so it never lands inside a loop
+/// body or one arm of a branch; a sink written inside a top-level `if` anchors
+/// it at that `if`, that branch's own tail included.
+fn peek_tail_trimmed(
+    model: &StreamModel,
+    names: &dyn NameMap,
+    transition: &[Statement],
+) -> Vec<Statement> {
+    let sinks: Vec<Expr> = model.outputs.iter().map(|o| names.output(o)).collect();
+    let Some(last) = transition.iter().rposition(|s| stores_a_sink(s, &sinks)) else {
+        return transition.to_vec();
+    };
+    // Two refusals. A `return` below the cut leaves the frame through a path
+    // the truncation would erase. A statement that writes through something
+    // other than its own target can store a sink where `stores_a_sink` cannot
+    // see it, which would draw the anchor above the real last store. No shipped
+    // function has either, so the unit tests are what hold both arms.
+    if transition[last + 1..].iter().any(|s| diverts(s) || writes_out_of_band(s)) {
+        return transition.to_vec();
     }
-    peek_transition(transition, &transition_buffers(model, names), slot_cast)
+    transition[..=last].to_vec()
+}
+
+/// Whether `s`, or anything nested in it, assigns to one of `sinks`.
+fn stores_a_sink(s: &Statement, sinks: &[Expr]) -> bool {
+    if let Statement::Assign { target, .. } = s {
+        if sinks.contains(target) {
+            return true;
+        }
+    }
+    nested_bodies(s).0.iter().any(|b| b.iter().any(|x| stores_a_sink(x, sinks)))
+}
+
+/// Whether `s`, or anything nested in it, leaves its enclosing list early.
+fn diverts(s: &Statement) -> bool {
+    if matches!(s, Statement::Break | Statement::Continue | Statement::Return { .. }) {
+        return true;
+    }
+    nested_bodies(s).0.iter().any(|b| b.iter().any(diverts))
+}
+
+/// Whether `s`, or anything nested in it, writes through something other than
+/// its own target.
+///
+/// Three shapes: a call made for its effect, a buffer op that names its storage
+/// rather than assigning to it, and — the one that matters here — an address
+/// handed to a call, which is how a cross-indicator call reaches its outputs
+/// (`retCode = TA_MA_Peek(.., &cur_outSlowD)` is an `Assign` whose target is
+/// the code, not the sink).
+fn writes_out_of_band(s: &Statement) -> bool {
+    if matches!(s, Statement::Expr(_) | Statement::CircBuf(_)) {
+        return true;
+    }
+    let mut escapes = false;
+    walk_stmt_exprs(s, &mut |top| {
+        walk_expr(top, &mut |e| {
+            if matches!(e, Expr::AddressOf(_)) {
+                escapes = true;
+            }
+        });
+    });
+    escapes || nested_bodies(s).0.iter().any(|b| b.iter().any(writes_out_of_band))
 }
 
 /// The statement lists nested inside `s`, and whether entering them crosses a
@@ -7398,6 +7660,427 @@ fn buffer_is_read(stmts: &[Statement], buf: &str) -> bool {
     total > count_buffer_stores(stmts, buf)
 }
 
+/// A `bufs` buffer named by this statement's OWN expressions outside a
+/// subscript — handed to a call, dereferenced whole, or written through
+/// `&buf[i]` / `buf[i]++`. The rewrite can answer a subscripted load; it can
+/// answer none of these.
+fn escaping_buffer(s: &Statement, bufs: &BTreeMap<String, bool>) -> Option<String> {
+    let mut escaped: Option<String> = None;
+    walk_stmt_own_exprs(s, &mut |top| {
+        walk_expr(top, &mut |x| {
+            let named = match x {
+                Expr::Var(v) | Expr::PointerDeref(v) => Some(v),
+                Expr::AddressOf(i)
+                | Expr::PostIncrement(i)
+                | Expr::PostDecrement(i)
+                | Expr::PreIncrement(i)
+                | Expr::PreDecrement(i) => match i.as_ref() {
+                    Expr::ArrayAccess(v, _) => Some(v),
+                    _ => None,
+                },
+                _ => None,
+            };
+            if let Some(v) = named {
+                if bufs.contains_key(v) {
+                    escaped = Some(v.clone());
+                }
+            }
+        });
+    });
+    escaped
+}
+
+/// Buffers whose stores `peek` can drop whole: no load of the buffer can
+/// execute once one of them has run. A dropped store takes its own operands
+/// with it, so a self-reading `X[i] = X[i] + e` is not a load that keeps `X`
+/// alive — which is the whole of what a candlestick accumulator needs, read by
+/// the pattern condition above it and rewritten below it for a bar `peek` never
+/// keeps.
+fn stores_no_load_reaches(stmts: &[Statement], buf: &str) -> bool {
+    let mut scan = DeadStoreScan { buf, stored: false, live: false };
+    scan.list(stmts);
+    scan.stored && !scan.live
+}
+
+/// The program-order walk behind [`stores_no_load_reaches`], conservative in
+/// the direction that keeps a buffer: a loop holding a store reaches its own
+/// statements through the back edge, so every load in it counts as after, and a
+/// side effect in a dropped store's index or value would be lost with it.
+struct DeadStoreScan<'a> {
+    buf: &'a str,
+    /// Whether a store into `buf` may already have run.
+    stored: bool,
+    /// Whether a load has been seen while it had.
+    live: bool,
+}
+
+impl DeadStoreScan<'_> {
+    fn list(&mut self, stmts: &[Statement]) {
+        for s in stmts {
+            self.stmt(s);
+        }
+    }
+
+    fn loads(&mut self, e: &Expr) {
+        if !self.stored || self.live {
+            return;
+        }
+        walk_expr(e, &mut |x| {
+            if matches!(x, Expr::ArrayAccess(n, _) if n == self.buf) {
+                self.live = true;
+            }
+        });
+    }
+
+    fn stmt(&mut self, s: &Statement) {
+        if let Statement::Assign { target: Expr::ArrayAccess(n, idx), value, .. } = s {
+            if n == self.buf {
+                self.live |= has_side_effect(idx) || has_side_effect(value);
+                self.stored = true;
+                return;
+            }
+        }
+        let (bodies, crosses_loop) = nested_bodies(s);
+        if crosses_loop && count_buffer_stores(std::slice::from_ref(s), self.buf) > 0 {
+            self.stored = true;
+        }
+        walk_stmt_own_exprs(s, &mut |e| self.loads(e));
+        for b in bodies {
+            self.list(b);
+        }
+    }
+}
+
+/// The counter of a `for` a deletion would leave holding nothing but its
+/// header. Dropping such a loop is a no-op for everything except that counter's
+/// terminal value, so the caller drops it only where nothing else reads the
+/// counter — and where something does, the empty loop it leaves takes the whole
+/// rewrite back.
+fn spent_loop_counter(
+    s: &Statement,
+    dead: &BTreeSet<&str>,
+    bufs: &BTreeMap<String, bool>,
+) -> Option<String> {
+    let Statement::ForC { init, condition, update, body } = s else {
+        return None;
+    };
+    if has_side_effect(condition)
+        || !body.iter().any(|b| is_dead_store(b, dead, bufs))
+        || !body.iter().all(|b| is_dead_store(b, dead, bufs) || matches!(b, Statement::Comment(_)))
+    {
+        return None;
+    }
+    match (init.as_ref(), update.as_ref()) {
+        (
+            Statement::Assign { target: Expr::Var(a), value: from, .. },
+            Statement::Assign { target: Expr::Var(b), value: step, .. },
+        ) if a == b && !has_side_effect(from) && !has_side_effect(step) => Some(a.clone()),
+        _ => None,
+    }
+}
+
+/// A store the deletion may remove: into a buffer no load reaches, and handing
+/// no buffer out — [`escaping_buffer`] is a refusal, and dropping the store
+/// would drop the refusal with it.
+fn is_dead_store(s: &Statement, dead: &BTreeSet<&str>, bufs: &BTreeMap<String, bool>) -> bool {
+    matches!(s, Statement::Assign { target: Expr::ArrayAccess(n, _), .. } if dead.contains(n.as_str()))
+        && escaping_buffer(s, bufs).is_none()
+}
+
+/// Every name `stmts` mentions, skipping the statements `skip` accepts.
+fn names_mentioned(
+    stmts: &[Statement],
+    skip: &dyn Fn(&Statement) -> bool,
+    out: &mut BTreeSet<String>,
+) {
+    for s in stmts {
+        if skip(s) {
+            continue;
+        }
+        match s {
+            Statement::VarDecl { name, .. } => out.insert(name.clone()),
+            Statement::For { var, .. } => out.insert(var.clone()),
+            _ => false,
+        };
+        walk_stmt_own_exprs(s, &mut |e| expr_var_names(e, out));
+        for body in nested_bodies(s).0 {
+            names_mentioned(body, skip, out);
+        }
+    }
+}
+
+/// The subset of `temps` a body still names.
+///
+/// A peek frame deletes whole statements — the accumulator loops
+/// [`drop_stores_no_load_reaches`] empties go that way — and the declaration
+/// nothing then reads is CS0219 in C#, which the shipped csproj builds with
+/// `TreatWarningsAsErrors`. Ask this of a PEEK frame only: the committing frame
+/// keeps those statements, so filtering there would only let the two frames'
+/// declarations drift.
+#[must_use]
+pub fn temps_used(temps: &[(String, VarType)], body: &[Statement]) -> Vec<(String, VarType)> {
+    let mut named: BTreeSet<String> = BTreeSet::new();
+    names_mentioned(body, &|_| false, &mut named);
+    temps.iter().filter(|(n, _)| named.contains(n)).cloned().collect()
+}
+
+/// The expressions a statement evaluates itself, without the ones its nested
+/// bodies do — [`nested_bodies`] reaches those, and a caller that must treat a
+/// nested statement differently needs the two apart.
+fn walk_stmt_own_exprs(s: &Statement, f: &mut dyn FnMut(&Expr)) {
+    match s {
+        Statement::VarDecl { init: Some(e), .. }
+        | Statement::Return { value: Some(e) }
+        | Statement::Expr(e) => f(e),
+        Statement::Assign { target, value, .. } => {
+            f(target);
+            f(value);
+        }
+        Statement::While { condition, .. }
+        | Statement::DoWhile { condition, .. }
+        | Statement::If { condition, .. }
+        | Statement::ForC { condition, .. } => f(condition),
+        Statement::For { count, .. } => f(count),
+        Statement::Switch { expr, .. } => f(expr),
+        Statement::CircBuf(CircBuf::Init { size, .. }) => f(size),
+        _ => {}
+    }
+}
+
+/// Whether a deletion has left `s` doing nothing, so it should go with it.
+///
+/// The case that shows up is a guard: `if( cap == 0 ) ring[0] = v;` becomes
+/// `if (...) {}` once nothing loads that slot back. Both arms must be empty
+/// (dropping a then-empty guard with a live `else` would need the condition
+/// negated, and no such shape exists) and re-deciding the condition must be
+/// free, which means it may not CALL: this module cannot know whether a call is
+/// pure. No compiler warns about the leftover, which is why the corpus gate
+/// that does is in `tests/`, not in a build flag.
+///
+/// An emptied LOOP is deliberately absent: one whose body was what ended it
+/// would spin, so [`drop_stores_no_load_reaches`] refuses the whole rewrite
+/// instead (`has_empty_loop`).
+fn emptied_by_deletion(s: &Statement) -> bool {
+    match s {
+        Statement::Block { body } => body.is_empty(),
+        Statement::If { condition, then_body, else_body, .. } => {
+            then_body.is_empty() && else_body.is_empty() && !expr_has_effect(condition)
+        }
+        _ => false,
+    }
+}
+
+/// `list` with the statements `drop` accepts removed, and with the comment run
+/// or unroll hint that introduced each removed too. A `Comment` is positioned
+/// against the ONE statement it preceded, so a run that outlives it describes
+/// code that is not there and a hint would land on whatever followed.
+fn strip_stmts(list: &[Statement], drop: &dyn Fn(&Statement) -> bool) -> Vec<Statement> {
+    let mut out: Vec<Statement> = Vec::new();
+    for s in list {
+        let kept = if drop(s) {
+            None
+        } else {
+            let inner = strip_inner(s, drop);
+            if emptied_by_deletion(&inner) { None } else { Some(inner) }
+        };
+        match kept {
+            Some(k) => out.push(k),
+            None => {
+                while matches!(
+                    out.last(),
+                    Some(Statement::Comment(_) | Statement::UnrollHint { .. })
+                ) {
+                    out.pop();
+                }
+            }
+        }
+    }
+    out
+}
+
+fn strip_inner(s: &Statement, drop: &dyn Fn(&Statement) -> bool) -> Statement {
+    match s {
+        Statement::While { condition, body } => Statement::While {
+            condition: condition.clone(),
+            body: strip_stmts(body, drop),
+        },
+        Statement::DoWhile { condition, body } => Statement::DoWhile {
+            condition: condition.clone(),
+            body: strip_stmts(body, drop),
+        },
+        Statement::For { var, count, body } => Statement::For {
+            var: var.clone(),
+            count: count.clone(),
+            body: strip_stmts(body, drop),
+        },
+        Statement::ForC { init, condition, update, body } => Statement::ForC {
+            init: init.clone(),
+            condition: condition.clone(),
+            update: update.clone(),
+            body: strip_stmts(body, drop),
+        },
+        Statement::If { condition, then_body, else_body, cond_comments } => Statement::If {
+            condition: condition.clone(),
+            then_body: strip_stmts(then_body, drop),
+            else_body: strip_stmts(else_body, drop),
+            cond_comments: cond_comments.clone(),
+        },
+        Statement::Switch { expr, cases, default } => Statement::Switch {
+            expr: expr.clone(),
+            cases: cases.iter().map(|(l, b)| (l.clone(), strip_stmts(b, drop))).collect(),
+            default: strip_stmts(default, drop),
+        },
+        Statement::Block { body } => Statement::Block { body: strip_stmts(body, drop) },
+        other => other.clone(),
+    }
+}
+
+/// Whether any loop in `stmts` has an empty body.
+fn has_empty_loop(stmts: &[Statement]) -> bool {
+    stmts.iter().any(|s| {
+        matches!(
+            s,
+            Statement::While { body, .. }
+                | Statement::DoWhile { body, .. }
+                | Statement::For { body, .. }
+                | Statement::ForC { body, .. } if body.is_empty()
+        ) || nested_bodies(s).0.iter().any(|b| has_empty_loop(b))
+    })
+}
+
+/// `transition` with the stores [`stores_no_load_reaches`] proves nothing can
+/// read removed, and the `for` loops that leaves holding only their header
+/// removed with them.
+///
+/// Peek-only, and ahead of [`validate_peekable`] on purpose: the refusals there
+/// exist so that one shadow per store stays sound, and a store that is not
+/// going to be emitted needs no shadow — which is what lets these sit in a loop
+/// and be written `+=`.
+fn drop_stores_no_load_reaches(
+    transition: &[Statement],
+    bufs: &BTreeMap<String, bool>,
+) -> Vec<Statement> {
+    let dead: BTreeSet<&str> =
+        bufs.keys().filter(|b| stores_no_load_reaches(transition, b)).map(String::as_str).collect();
+    if dead.is_empty() {
+        return transition.to_vec();
+    }
+    let mut kept: BTreeSet<String> = BTreeSet::new();
+    names_mentioned(transition, &|s| spent_loop_counter(s, &dead, bufs).is_some(), &mut kept);
+    let out = strip_stmts(transition, &|s| {
+        is_dead_store(s, &dead, bufs)
+            || spent_loop_counter(s, &dead, bufs).is_some_and(|v| !kept.contains(&v))
+    });
+    // A loop the deletion emptied but could not remove would spin forever where
+    // the body was what ended it. Refuse the whole rewrite instead; the caller
+    // then falls back to the buffer set it uses today.
+    if has_empty_loop(&out) {
+        return transition.to_vec();
+    }
+    out
+}
+
+/// Whether removing `e` would remove an effect: an increment, or a call `pure`
+/// does not vouch for — this layer cannot tell on its own.
+fn expr_effect(e: &Expr, pure: &dyn Fn(&str) -> bool) -> bool {
+    let mut found = false;
+    walk_expr(e, &mut |x| {
+        found |= match x {
+            Expr::PostIncrement(_)
+            | Expr::PreIncrement(_)
+            | Expr::PostDecrement(_)
+            | Expr::PreDecrement(_) => true,
+            Expr::FuncCall(n, _) => !pure(n),
+            _ => false,
+        };
+    });
+    found
+}
+
+/// [`expr_effect`] vouching for no call at all.
+///
+/// The fused multiply-add needs no vouching: it is a rendered [`Expr::BinOp`]
+/// and never an [`Expr::FuncCall`].
+pub(crate) fn expr_has_effect(e: &Expr) -> bool {
+    expr_effect(e, &|_| false)
+}
+
+/// Every name `stmts` READS, which for a store to a bare variable is neither
+/// its target nor the target's own occurrence at the head of a compound value.
+///
+/// Those two exclusions are the whole difference from [`names_mentioned`], and
+/// the second is what makes a `+=` chain retire: `compound` keeps the self-read
+/// in the value, so counting it would hold every accumulator alive by its own
+/// update. Only the head occurrence goes — `x += x * 2` still reads `x`.
+fn names_read(stmts: &[Statement], out: &mut BTreeSet<String>) {
+    for s in stmts {
+        match s {
+            Statement::Assign { target: Expr::Var(v), value: Expr::BinOp(l, _, r), compound: true }
+                if matches!(&**l, Expr::Var(n) if n == v) =>
+            {
+                expr_var_names(r, out);
+            }
+            Statement::Assign { target: Expr::Var(_), value, .. } => expr_var_names(value, out),
+            _ => walk_stmt_own_exprs(s, &mut |e| expr_var_names(e, out)),
+        }
+        match s {
+            Statement::VarDecl { name, .. } | Statement::For { var: name, .. } => {
+                out.insert(name.clone());
+            }
+            _ => {}
+        }
+        for body in nested_bodies(s).0 {
+            names_read(body, out);
+        }
+    }
+}
+
+/// `transition` with every store to a frame temp nothing reads removed, until
+/// nothing more goes.
+///
+/// Whole-variable, so it needs no liveness lattice: a temp read nowhere is one
+/// whose every store is dead, wherever the control flow puts them. The fixpoint
+/// is what pays — trimming a peek frame at its last output store orphans the
+/// temps the tail read, and each store deleted is what exposes the next.
+///
+/// `temps` is the frame's own scratch list, never a shape test: an output sink
+/// is a bare [`Expr::Var`] in two of the four backends, and state is one in all
+/// four. A call is refused unless [`pure_helper_names`] vouches for it, so an
+/// unlisted callee costs a store that stays, never one that should not have
+/// gone.
+#[must_use]
+pub fn purge_dead_temp_stores(
+    transition: &[Statement],
+    temps: &[(String, VarType)],
+) -> Vec<Statement> {
+    let named: BTreeSet<&str> = temps.iter().map(|(n, _)| n.as_str()).collect();
+    let pure = pure_helper_names();
+    let mut out = transition.to_vec();
+    loop {
+        let mut read: BTreeSet<String> = BTreeSet::new();
+        names_read(&out, &mut read);
+        let dead: BTreeSet<&str> =
+            named.iter().copied().filter(|n| !read.contains(*n)).collect();
+        if dead.is_empty() {
+            return out;
+        }
+        let hit = std::cell::Cell::new(false);
+        let next = strip_stmts(&out, &|s| {
+            let drop = matches!(s, Statement::Assign { target: Expr::Var(v), value, .. }
+                if dead.contains(v.as_str())
+                    && !expr_effect(value, &|n| pure.contains(n)));
+            hit.set(hit.get() | drop);
+            drop
+        });
+        // A loop the deletion emptied would spin where its body was what ended
+        // it, exactly as in [`drop_stores_no_load_reaches`]; give the round back.
+        if !hit.get() || has_empty_loop(&next) {
+            return out;
+        }
+        out = next;
+    }
+}
+
 /// Rewrite `transition` so it computes the same values without storing into
 /// any handle buffer — see [`PeekShadow`].
 ///
@@ -7410,7 +8093,9 @@ fn buffer_is_read(stmts: &[Statement], buf: &str) -> bool {
 /// A buffer named outside an index expression, a compound store into one, or a
 /// store inside a loop — each would make one shadow per store unsound, and each
 /// is absent from the corpus, so the point of the check is that a new one fails
-/// generation instead of peeking against a buffer it also wrote.
+/// generation instead of peeking against a buffer it also wrote. Only stores
+/// that survive [`drop_stores_no_load_reaches`] are checked: one that is not
+/// emitted needs no shadow to be sound.
 ///
 /// `slot_cast` types the slot the select compares: C indexes with plain ints and
 /// passes `None`, Rust indexes with `usize` and passes `VarType::Index`, so the
@@ -7419,10 +8104,17 @@ fn buffer_is_read(stmts: &[Statement], buf: &str) -> bool {
 pub fn peek_transition(
     transition: &[Statement],
     buffers: &[(String, bool)],
+    temps: &[(String, VarType)],
     slot_cast: Option<VarType>,
 ) -> Result<PeekTransition, String> {
     let bufs: BTreeMap<String, bool> = buffers.iter().map(|(n, i)| (n.clone(), *i)).collect();
+    let transition = &drop_stores_no_load_reaches(transition, &bufs)[..];
     validate_peekable(transition, &bufs, 0)?;
+    // After the refusals and before the shadow rewrite: the purge only removes
+    // statements, so running it ahead of `validate_peekable` could turn a
+    // refusal into an acceptance and flip the buffer election, and running it
+    // after the rewrite would orphan the shadows `prune_dead_shadows` counts.
+    let transition = &purge_dead_temp_stores(transition, temps)[..];
     let shadowed: BTreeSet<String> = buffers
         .iter()
         .map(|(n, _)| n.clone())
@@ -7546,7 +8238,7 @@ fn drop_assignments_to(stmts: &[Statement], names: &BTreeSet<String>) -> Vec<Sta
             },
             other => other.clone(),
         };
-        if matches!(&kept, Statement::Block { body } if body.is_empty()) {
+        if emptied_by_deletion(&kept) {
             continue;
         }
         out.push(kept);
@@ -7572,38 +8264,12 @@ fn validate_peekable(
                 // it back, dropped — and dropping it drops whatever it moved.
                 if has_side_effect(idx) || has_side_effect(value) {
                     return Err(format!(
-                        "peek: store into buffer `{n}` moves a counter, which a dropped                          store would lose"
+                        "peek: store into buffer `{n}` moves a counter, which a dropped store would lose"
                     ));
                 }
             }
         }
-        let mut escaped: Option<String> = None;
-        walk_stmt_exprs(s, &mut |top| {
-            walk_expr(top, &mut |x| {
-                let named = match x {
-                    // The buffer itself, not one of its elements.
-                    Expr::Var(v) | Expr::PointerDeref(v) => Some(v),
-                    // `&buf[i]` hands an element out; `buf[i]++` writes one.
-                    // Both name the buffer through an ArrayAccess, which the
-                    // rewrite treats as a load.
-                    Expr::AddressOf(i)
-                    | Expr::PostIncrement(i)
-                    | Expr::PostDecrement(i)
-                    | Expr::PreIncrement(i)
-                    | Expr::PreDecrement(i) => match i.as_ref() {
-                        Expr::ArrayAccess(v, _) => Some(v),
-                        _ => None,
-                    },
-                    _ => None,
-                };
-                if let Some(v) = named {
-                    if bufs.contains_key(v) {
-                        escaped = Some(v.clone());
-                    }
-                }
-            });
-        });
-        if let Some(n) = escaped {
+        if let Some(n) = escaping_buffer(s, bufs) {
             return Err(format!("peek: buffer `{n}` escapes or is written outside a plain store"));
         }
         let (inner, crosses_loop) = nested_bodies(s);
@@ -7891,7 +8557,7 @@ mod tests {
     }
 
     fn pk(stmts: &[Statement]) -> PeekTransition {
-        peek_transition(stmts, &[("buf".to_string(), false)], None).expect("peekable")
+        peek_transition(stmts, &[("buf".to_string(), false)], &[], None).expect("peekable")
     }
 
     /// The tail ring push: kept for the NEXT bar, and peek has none.
@@ -7993,17 +8659,191 @@ mod tests {
             ))),
             compound: false,
         };
-        for (stmt, want) in [
-            (in_loop, "inside a loop"),
-            (compound, "compound store"),
-            (bare, "escapes or is written"),
-            (moving_store, "moves a counter"),
-            (escaping, "escapes or is written"),
+        // The escape inside the store the deletion would otherwise take, which
+        // is the one place dropping first could hide it.
+        let handing_out = buf_store(
+            "buf",
+            Expr::Var("pos".into()),
+            Expr::FuncCall("sink".into(), vec![Expr::Var("buf".into())]),
+        );
+        // A store no load can reach is DROPPED rather than refused, so the
+        // two shapes that need one shadow per store are shown a load that only
+        // a shadow could answer.
+        let read_back = Statement::Assign {
+            target: Expr::Var("acc".into()),
+            value: Expr::ArrayAccess("buf".into(), Box::new(Expr::Var("pos".into()))),
+            compound: false,
+        };
+        for (stmts, want) in [
+            (vec![in_loop, read_back.clone()], "inside a loop"),
+            (vec![compound, read_back], "compound store"),
+            (vec![bare], "escapes or is written"),
+            (vec![moving_store], "moves a counter"),
+            (vec![escaping], "escapes or is written"),
+            (vec![handing_out], "escapes or is written"),
         ] {
-            let err = peek_transition(&[stmt], &[("buf".to_string(), false)], None)
+            let err = peek_transition(&stmts, &[("buf".to_string(), false)], &[], None)
                 .expect_err("must refuse");
             assert!(err.contains(want), "expected `{want}`, got `{err}`");
         }
+    }
+
+    /// The counterpart to the refusals above: they exist so that one shadow per
+    /// store stays sound, and a store no load can reach needs no shadow. This
+    /// is the candlestick accumulator — read above, rewritten below in a `+=`
+    /// inside a `for`, for a bar `peek` never keeps.
+    #[test]
+    fn a_store_no_load_reaches_is_dropped_whatever_shape_it_is_in() {
+        let k = || Expr::Var("k".into());
+        let slot = || Expr::ArrayAccess("buf".into(), Box::new(k()));
+        let out = pk(&[
+            Statement::Comment(vec!["the pattern".into()]),
+            Statement::Assign {
+                target: Expr::Var("acc".into()),
+                value: Expr::ArrayAccess("buf".into(), Box::new(Expr::IntLiteral(2))),
+                compound: false,
+            },
+            Statement::Comment(vec!["the trailing update".into()]),
+            Statement::ForC {
+                init: Box::new(Statement::Assign {
+                    target: k(),
+                    value: Expr::IntLiteral(2),
+                    compound: false,
+                }),
+                condition: Expr::BinOp(
+                    Box::new(k()),
+                    BinOp::GreaterEq,
+                    Box::new(Expr::IntLiteral(0)),
+                ),
+                update: Box::new(Statement::Assign {
+                    target: k(),
+                    value: Expr::BinOp(Box::new(k()), BinOp::Sub, Box::new(Expr::IntLiteral(1))),
+                    compound: false,
+                }),
+                body: vec![Statement::Assign {
+                    target: slot(),
+                    value: Expr::BinOp(
+                        Box::new(slot()),
+                        BinOp::Add,
+                        Box::new(Expr::Var("bar".into())),
+                    ),
+                    compound: true,
+                }],
+            },
+        ]);
+        assert!(out.shadows.is_empty(), "no shadow: {:?}", out.shadows);
+        // The loop goes, and the comment that introduced it goes with it —
+        // left behind it would describe code that is not there.
+        assert_eq!(out.body.len(), 2, "kept more than the heading and the load: {:?}", out.body);
+        assert!(matches!(out.body[0], Statement::Comment(_)), "{:?}", out.body[0]);
+        assert!(
+            matches!(&out.body[1], Statement::Assign { target: Expr::Var(v), .. } if v == "acc"),
+            "{:?}", out.body[1]
+        );
+    }
+
+    /// A shadow nothing selects is pruned: the tail push, in a function whose
+    /// buffer an earlier store still has to carry.
+    #[test]
+    fn a_shadow_no_load_selects_is_pruned() {
+        let out = pk(&[
+            buf_store("buf", Expr::Var("pos".into()), Expr::Var("bar".into())),
+            Statement::Assign {
+                target: Expr::Var("acc".into()),
+                value: Expr::ArrayAccess("buf".into(), Box::new(Expr::Var("pos".into()))),
+                compound: true,
+            },
+            buf_store("buf", Expr::Var("pos2".into()), Expr::Var("bar2".into())),
+        ]);
+        assert_eq!(out.shadows.len(), 1, "only the carried store keeps a shadow: {:?}", out.shadows);
+        assert_eq!(out.shadows[0].slot_var, "pkSlot0");
+    }
+
+    /// A `for` the deletion empties but cannot drop — something else reads the
+    /// counter, so its terminal value still matters — takes the whole rewrite
+    /// back, and the store renders as it always did.
+    #[test]
+    fn a_spent_loop_whose_counter_is_read_elsewhere_takes_the_rewrite_back() {
+        let k = || Expr::Var("k".into());
+        let slot = || Expr::ArrayAccess("buf".into(), Box::new(k()));
+        let err = peek_transition(
+            &[
+                Statement::ForC {
+                    init: Box::new(Statement::Assign {
+                        target: k(),
+                        value: Expr::IntLiteral(2),
+                        compound: false,
+                    }),
+                    condition: Expr::BinOp(
+                        Box::new(k()),
+                        BinOp::GreaterEq,
+                        Box::new(Expr::IntLiteral(0)),
+                    ),
+                    update: Box::new(Statement::Assign {
+                        target: k(),
+                        value: Expr::BinOp(Box::new(k()), BinOp::Sub, Box::new(Expr::IntLiteral(1))),
+                        compound: false,
+                    }),
+                    body: vec![Statement::Assign {
+                        target: slot(),
+                        value: Expr::BinOp(
+                            Box::new(slot()),
+                            BinOp::Add,
+                            Box::new(Expr::Var("bar".into())),
+                        ),
+                        compound: true,
+                    }],
+                },
+                Statement::Assign { target: Expr::Var("acc".into()), value: k(), compound: false },
+            ],
+            &[("buf".to_string(), false)],
+            &[],
+            None,
+        )
+        .expect_err("must refuse");
+        assert!(err.contains("compound store"), "{err}");
+    }
+
+    /// A loop reaches its own earlier statements, so a load ABOVE the store in
+    /// the same body is still a load after it.
+    #[test]
+    fn a_load_above_the_store_in_the_same_loop_keeps_the_buffer() {
+        let err = peek_transition(
+            &[Statement::While {
+                condition: Expr::Var("go".into()),
+                body: vec![
+                    Statement::Assign {
+                        target: Expr::Var("acc".into()),
+                        value: Expr::ArrayAccess("buf".into(), Box::new(Expr::Var("pos".into()))),
+                        compound: false,
+                    },
+                    buf_store("buf", Expr::Var("pos".into()), Expr::Var("bar".into())),
+                ],
+            }],
+            &[("buf".to_string(), false)],
+            &[],
+            None,
+        )
+        .expect_err("must refuse");
+        assert!(err.contains("inside a loop"), "{err}");
+    }
+
+    /// Emptying a loop whose BODY was what ended it would spin forever, so the
+    /// deletion is refused rather than emitted — and the caller falls back to
+    /// the buffer set it uses today.
+    #[test]
+    fn a_loop_the_deletion_would_leave_empty_is_refused() {
+        let err = peek_transition(
+            &[Statement::While {
+                condition: Expr::Var("go".into()),
+                body: vec![buf_store("buf", Expr::Var("pos".into()), Expr::Var("bar".into()))],
+            }],
+            &[("buf".to_string(), false)],
+            &[],
+            None,
+        )
+        .expect_err("must refuse");
+        assert!(err.contains("inside a loop"), "{err}");
     }
     use super::*;
     use crate::ir::{Input, Output};
@@ -8442,13 +9282,316 @@ mod tests {
         }
     }
 
+    /// The wide buffer set is an offer, not a requirement: a state array whose
+    /// store still has to be CARRIED takes the whole function back to the heap
+    /// buffers, where that store renders as it always did — and the backend
+    /// localizes the field for it, which is what a copy per peek buys.
+    #[test]
+    fn a_state_array_store_that_must_be_carried_falls_back_to_the_narrow_set() {
+        let step = |k: Expr| {
+            Statement::Assign {
+                target: acc("total", k.clone()),
+                value: add(acc("total", k), acc("inReal", var("i"))),
+                compound: true,
+            }
+        };
+        let f = func_with_body(vec![
+            decl("i", VarType::Integer),
+            decl("outIdx", VarType::Integer),
+            decl("k", VarType::Integer),
+            Statement::VarDecl {
+                var_type: VarType::RealArray("2".into()),
+                name: "total".into(),
+                init: None,
+            },
+            assign(var("outIdx"), Expr::IntLiteral(0)),
+            assign(acc("total", Expr::IntLiteral(0)), Expr::Literal(0.0)),
+            assign(acc("total", Expr::IntLiteral(1)), Expr::Literal(0.0)),
+            assign(var("i"), var("startIdx")),
+            Statement::While {
+                condition: le(var("i"), var("endIdx")),
+                body: vec![
+                    Statement::ForC {
+                        init: Box::new(assign(var("k"), Expr::IntLiteral(1))),
+                        condition: Expr::BinOp(
+                            Box::new(var("k")),
+                            BinOp::GreaterEq,
+                            Box::new(Expr::IntLiteral(0)),
+                        ),
+                        update: Box::new(assign(
+                            var("k"),
+                            Expr::BinOp(
+                                Box::new(var("k")),
+                                BinOp::Sub,
+                                Box::new(Expr::IntLiteral(1)),
+                            ),
+                        )),
+                        body: vec![step(var("k"))],
+                    },
+                    // The load the store has to answer: after it, so the store
+                    // cannot be dropped and one shadow per store cannot carry it.
+                    assign(acc("outReal", var("outIdx")), acc("total", Expr::IntLiteral(0))),
+                    assign(var("outIdx"), add(var("outIdx"), Expr::IntLiteral(1))),
+                    assign(var("i"), add(var("i"), Expr::IntLiteral(1))),
+                ],
+            },
+            Statement::Return { value: None },
+        ]);
+        let m = analyze(&f).expect("analyzes");
+        assert!(
+            m.state.iter().any(|(n, t)| n == "total" && matches!(t, VarType::RealArray(_))),
+            "the fixture must carry a fixed-size array: {:?}", m.state
+        );
+        let transition = build_transition(&m, &TestNames).expect("transition");
+        assert!(
+            peek_transition(
+                &transition,
+                &transition_buffers_with_state_arrays(&m, &TestNames),
+                &m.temps,
+                None
+            )
+            .is_err(),
+            "the wide set must refuse, or this fixture proves nothing"
+        );
+        let pt = peek_transition_widest(&m, &TestNames, &transition, None).expect("peekable");
+        assert!(
+            count_buffer_stores(&pt.body, "sp->total") == 1,
+            "the fallback must render the store untouched: {:?}", pt.body
+        );
+    }
+
+    // ---- peek_tail_trimmed ------------------------------------------------
+
+    /// The `cur_` retain sits below the store wherever it is emitted at all,
+    /// which is the C and Rust name maps — Java and C# spell the sink AS
+    /// `cur_<name>`, so `build_transition` skips it there.
+    #[test]
+    fn peek_tail_drops_the_retain_that_rides_every_transition() {
+        let f = func_with_body(t1_body());
+        let m = analyze(&f).unwrap();
+        let t = build_transition(&m, &TestNames).unwrap();
+        assert_eq!(t.len(), 2);
+        let cut = peek_tail_trimmed(&m, &TestNames, &t);
+        assert_eq!(cut.len(), 1, "the retain must go: {cut:?}");
+        assert!(matches!(&cut[0], Statement::Assign { target: Expr::PointerDeref(p), .. } if p == "out_outReal"));
+    }
+
+    /// Fixtures for the refusals and for the nesting rule. The model only has
+    /// to name the sink, which is why one shared `t1` model serves all of them.
+    fn sink_store() -> Statement {
+        Statement::Assign {
+            target: Expr::PointerDeref("out_outReal".into()),
+            value: Expr::Literal(1.0),
+            compound: false,
+        }
+    }
+
+    fn tail_store() -> Statement {
+        assign(var("sp->ringPos_x"), add(var("sp->ringPos_x"), Expr::IntLiteral(1)))
+    }
+
+    fn trim(stmts: &[Statement]) -> Vec<Statement> {
+        let f = func_with_body(t1_body());
+        let m = analyze(&f).unwrap();
+        peek_tail_trimmed(&m, &TestNames, stmts)
+    }
+
+    /// The cut is over TOP-LEVEL statements, so a sink written inside a branch
+    /// anchors it at the branch — that arm's own tail stays, and only what
+    /// follows the whole `if` goes.
+    #[test]
+    fn peek_tail_anchors_at_the_top_level_statement_holding_the_store() {
+        let arm = Statement::If {
+            condition: le(var("a"), var("b")),
+            then_body: vec![sink_store(), tail_store()],
+            else_body: vec![sink_store()],
+            cond_comments: Vec::new(),
+        };
+        let cut = trim(&[arm.clone(), tail_store(), tail_store()]);
+        assert_eq!(cut.len(), 1, "everything after the branch goes: {cut:?}");
+        assert!(matches!(&cut[0], Statement::If { then_body, .. } if then_body.len() == 2));
+    }
+
+    /// Both refusals. Neither is reachable from the shipped corpus — no peek
+    /// frame has a `return` or a bare call below its last store — so this is
+    /// the only thing holding either arm.
+    #[test]
+    fn peek_tail_keeps_a_suffix_it_cannot_prove_inert() {
+        for suffix in [
+            Statement::Return { value: None },
+            Statement::Expr(Expr::FuncCall("SAR_ROUNDING".into(), vec![var("x")])),
+            // A cross-indicator call: an `Assign` whose target is the code, and
+            // whose sink write is the address in the argument list.
+            assign(
+                var("retCode"),
+                Expr::FuncCall(
+                    "TA_MA_Peek".into(),
+                    vec![var("sub"), Expr::AddressOf(Box::new(var("cur_outReal")))],
+                ),
+            ),
+        ] {
+            let stmts = vec![sink_store(), tail_store(), suffix.clone()];
+            assert_eq!(
+                trim(&stmts).len(),
+                3,
+                "the whole trim must be refused, not just the suffix: {suffix:?}"
+            );
+        }
+        // Nested one level down, where a top-level scan would miss it.
+        let guarded = Statement::If {
+            condition: le(var("a"), var("b")),
+            then_body: vec![Statement::Return { value: None }],
+            else_body: Vec::new(),
+            cond_comments: Vec::new(),
+        };
+        assert_eq!(trim(&[sink_store(), guarded]).len(), 2);
+    }
+
+    /// The anchor is the LAST store, not the first. One sink is enough to tell
+    /// the two apart: a function that writes its output twice keeps everything
+    /// up to the second write.
+    #[test]
+    fn peek_tail_anchors_at_the_last_store_not_the_first() {
+        let cut = trim(&[sink_store(), tail_store(), sink_store(), tail_store()]);
+        assert_eq!(cut.len(), 3, "cut at the FIRST store loses the second: {cut:?}");
+        assert!(matches!(&cut[2], Statement::Assign { target: Expr::PointerDeref(p), .. } if p == "out_outReal"));
+    }
+
+    /// No store, no anchor: `rposition` answers `None` and the list is handed
+    /// back whole rather than emptied.
+    #[test]
+    fn peek_tail_is_unchanged_where_nothing_stores_a_sink() {
+        let stmts = vec![tail_store(), tail_store()];
+        assert_eq!(trim(&stmts).len(), 2);
+    }
+
+    // ---- purge_dead_temp_stores -------------------------------------------
+
+    fn temps(names: &[&str]) -> Vec<(String, VarType)> {
+        names.iter().map(|n| ((*n).to_string(), VarType::Real)).collect()
+    }
+
+    fn compound(t: &str, op: BinOp, rhs: Expr) -> Statement {
+        Statement::Assign {
+            target: var(t),
+            value: Expr::BinOp(Box::new(var(t)), op, Box::new(rhs)),
+            compound: true,
+        }
+    }
+
+    /// The fixpoint: `q` is the only reader of the `j` chain, so the chain is
+    /// reachable only once `q`'s own store has gone.
+    #[test]
+    fn purge_retires_a_compound_chain_once_its_only_reader_goes() {
+        let stmts = vec![
+            assign(var("j"), var("sp->seed")),
+            compound("j", BinOp::Add, var("live")),
+            compound("j", BinOp::Mul, var("live")),
+            assign(var("q"), add(var("live"), var("j"))),
+            assign(Expr::PointerDeref("out_outReal".into()), var("live")),
+        ];
+        let out = purge_dead_temp_stores(&stmts, &temps(&["j", "q", "live"]));
+        assert_eq!(out.len(), 1, "only the output write answers anything: {out:?}");
+    }
+
+    /// One read anywhere holds every store to that temp, wherever the control
+    /// flow puts them.
+    #[test]
+    fn purge_keeps_every_store_to_a_temp_something_reads() {
+        let stmts = vec![
+            assign(var("j"), var("sp->seed")),
+            compound("j", BinOp::Add, var("live")),
+            Statement::If {
+                condition: le(var("a"), var("b")),
+                then_body: vec![assign(Expr::PointerDeref("out_outReal".into()), var("j"))],
+                else_body: Vec::new(),
+                cond_comments: Vec::new(),
+            },
+        ];
+        assert_eq!(purge_dead_temp_stores(&stmts, &temps(&["j"])).len(), 3);
+    }
+
+    /// The head exclusion is the target's OWN occurrence and nothing else —
+    /// discounting a compound value's head unconditionally would purge the
+    /// store that feeds it.
+    #[test]
+    fn purge_discounts_only_the_target_at_the_head_of_a_compound_value() {
+        let stmts = vec![
+            Statement::Assign {
+                target: var("acc"),
+                value: Expr::BinOp(Box::new(var("feed")), BinOp::Add, Box::new(Expr::Literal(1.0))),
+                compound: true,
+            },
+            assign(var("feed"), var("bar")),
+            assign(Expr::PointerDeref("out_outReal".into()), var("acc")),
+        ];
+        assert_eq!(purge_dead_temp_stores(&stmts, &temps(&["acc", "feed"])).len(), 3);
+    }
+
+    /// A vouched helper is a value and nothing else, so a dead store carrying
+    /// one goes. SYNTH8 is the fixture that reaches this; no shipped function
+    /// does.
+    #[test]
+    fn purge_drops_a_dead_store_whose_value_calls_a_vouched_helper() {
+        let stmts = vec![assign(
+            var("dead"),
+            Expr::FuncCall("ta_candlerange".into(), vec![var("inHigh"), var("inLow")]),
+        )];
+        assert!(purge_dead_temp_stores(&stmts, &temps(&["dead"])).is_empty());
+    }
+
+    /// Both refusals on the value, neither reachable from the shipped corpus.
+    #[test]
+    fn purge_keeps_a_dead_store_whose_value_has_an_effect() {
+        for value in [
+            Expr::FuncCall("TA_MA_Peek".into(), vec![var("sub")]),
+            Expr::PostIncrement(Box::new(var("sp->i"))),
+        ] {
+            let stmts = vec![assign(var("dead"), value.clone())];
+            assert_eq!(purge_dead_temp_stores(&stmts, &temps(&["dead"])).len(), 1, "{value:?}");
+        }
+    }
+
+    /// The temp list is the whitelist, never the target's shape: Java and C#
+    /// spell an output sink as a bare `Expr::Var`, and all four spell state
+    /// that way.
+    #[test]
+    fn purge_keeps_a_dead_store_to_a_name_that_is_not_a_temp() {
+        let stmts =
+            vec![assign(var("sp->cur_outReal"), var("bar")), assign(var("dead"), var("bar"))];
+        let out = purge_dead_temp_stores(&stmts, &temps(&["dead"]));
+        assert_eq!(out.len(), 1);
+        assert!(
+            matches!(&out[0], Statement::Assign { target: Expr::Var(v), .. } if v == "sp->cur_outReal")
+        );
+    }
+
+    /// A loop the deletion emptied would spin where its body was what ended it,
+    /// so the round goes back whole rather than leaving the loop standing.
+    #[test]
+    fn purge_gives_back_a_round_that_would_empty_a_loop() {
+        let stmts = vec![Statement::While {
+            condition: le(var("i"), var("n")),
+            body: vec![compound("dead", BinOp::Add, var("i"))],
+        }];
+        let out = purge_dead_temp_stores(&stmts, &temps(&["dead"]));
+        assert!(matches!(&out[..], [Statement::While { body, .. }] if body.len() == 1), "{out:?}");
+    }
+
     #[test]
     fn transition_drops_bookkeeping_and_rewrites() {
         let f = func_with_body(t1_body());
         let m = analyze(&f).unwrap();
         let t = build_transition(&m, &TestNames).unwrap();
-        // Only the output write survives: *out_outReal = inReal * 2.0
-        assert_eq!(t.len(), 1);
+        // The output write, then the value retain that rides every transition.
+        assert_eq!(t.len(), 2);
+        match &t[1] {
+            Statement::Assign { target, value, .. } => {
+                assert!(matches!(target, Expr::Var(v) if v == "sp->cur_outReal"));
+                assert!(matches!(value, Expr::PointerDeref(p) if p == "out_outReal"));
+            }
+            other => panic!("unexpected retain stmt: {other:?}"),
+        }
         match &t[0] {
             Statement::Assign { target, value, .. } => {
                 assert!(matches!(target, Expr::PointerDeref(p) if p == "out_outReal"));
@@ -8483,16 +9626,16 @@ mod tests {
         ]);
         let m = analyze(&f).unwrap();
         let t = build_transition(&m, &TestNames).unwrap();
-        // output write + lag2=lag1 + lag1=bar
-        assert_eq!(t.len(), 3);
-        match &t[1] {
+        // output write + value retain + lag2=lag1 + lag1=bar
+        assert_eq!(t.len(), 4);
+        match &t[2] {
             Statement::Assign { target, value, .. } => {
                 assert!(matches!(target, Expr::Var(v) if v == "sp->lag2_inReal"));
                 assert!(matches!(value, Expr::Var(v) if v == "sp->lag1_inReal"));
             }
             other => panic!("unexpected stmt: {other:?}"),
         }
-        match &t[2] {
+        match &t[3] {
             Statement::Assign { target, value, .. } => {
                 assert!(matches!(target, Expr::Var(v) if v == "sp->lag1_inReal"));
                 assert!(matches!(value, Expr::Var(v) if v == "inReal"));
@@ -8532,7 +9675,7 @@ mod tests {
         assert_eq!(m.state, vec![("ad".into(), VarType::Real)]);
         // Transition must drop today/outIdx/nbBar bookkeeping.
         let t = build_transition(&m, &TestNames).unwrap();
-        assert_eq!(t.len(), 2); // ad update + output write
+        assert_eq!(t.len(), 3); // ad update + output write + value retain
     }
 
     // -- #229 rescan-window fold: the fail-closed conditions -----------------
@@ -9020,4 +10163,152 @@ mod tests {
         let m = analyze(&f).expect("analyzes");
         assert_eq!(names(&m.state), ["buf"]);
     }
+
+
+    // ---- peek_seed_is_dead -------------------------------------------------
+
+    fn out_local() -> &'static str {
+        "cur_outReal"
+    }
+
+    // Owned rather than a slice so the cases below stay `dead(vec![..])`; the
+    // lint is right that nothing consumes it, and wrong that it matters here.
+    #[allow(clippy::needless_pass_by_value)]
+    fn dead(body: Vec<Statement>) -> bool {
+        peek_seed_is_dead(&body, out_local())
+    }
+
+    fn ret_it() -> Statement {
+        Statement::Return { value: Some(var(out_local())) }
+    }
+
+    fn branch(condition: Expr, then_body: Vec<Statement>, else_body: Vec<Statement>) -> Statement {
+        Statement::If { condition, then_body, else_body, cond_comments: vec![] }
+    }
+
+    #[test]
+    fn an_unconditional_write_ahead_of_every_read_drops_the_seed() {
+        assert!(dead(vec![assign(var(out_local()), var("t")), ret_it()]));
+    }
+
+    /// The frame's own early exit is rewritten to `return cur_x`, so an exit
+    /// that computes nothing reads the seed and must keep it.
+    #[test]
+    fn an_early_exit_that_writes_nothing_keeps_the_seed() {
+        assert!(!dead(vec![
+            branch(var("degenerate"), vec![ret_it()], vec![]),
+            assign(var(out_local()), var("t")),
+        ]));
+    }
+
+    /// The period-1 identity arm (EMA, ZLEMA): it writes and leaves, so the
+    /// path that skips it still reaches the unconditional write below.
+    #[test]
+    fn an_arm_that_writes_and_returns_leaves_the_fallthrough_provable() {
+        assert!(dead(vec![
+            branch(
+                var("period1"),
+                vec![assign(var(out_local()), var("inReal")), ret_it()],
+                vec![],
+            ),
+            assign(var(out_local()), var("t")),
+        ]));
+    }
+
+    #[test]
+    fn an_else_arm_that_writes_and_returns_counts_the_same_as_a_then_arm() {
+        assert!(dead(vec![
+            branch(
+                var("ok"),
+                vec![],
+                vec![assign(var(out_local()), var("inReal")), ret_it()],
+            ),
+            assign(var(out_local()), var("t")),
+        ]));
+    }
+
+    #[test]
+    fn both_arms_writing_drops_the_seed() {
+        assert!(dead(vec![branch(
+            var("odd"),
+            vec![assign(var(out_local()), var("a"))],
+            vec![assign(var(out_local()), var("b"))],
+        )]));
+    }
+
+    /// One arm writes and rejoins, the other never mentions it: the rejoined
+    /// path leaves the seed live for whatever reads it below.
+    #[test]
+    fn an_arm_that_writes_without_leaving_keeps_the_seed() {
+        assert!(!dead(vec![
+            branch(var("odd"), vec![assign(var(out_local()), var("a"))], vec![]),
+            ret_it(),
+        ]));
+    }
+
+    #[test]
+    fn a_compound_assignment_keeps_the_seed() {
+        assert!(!dead(vec![Statement::Assign {
+            target: var(out_local()),
+            value: var("t"),
+            compound: true,
+        }]));
+    }
+
+    #[test]
+    fn a_write_whose_value_reads_it_keeps_the_seed() {
+        assert!(!dead(vec![assign(
+            var(out_local()),
+            add(var(out_local()), Expr::IntLiteral(1)),
+        )]));
+    }
+
+    #[test]
+    fn a_condition_that_reads_it_keeps_the_seed() {
+        assert!(!dead(vec![
+            branch(
+                le(var(out_local()), Expr::IntLiteral(0)),
+                vec![assign(var(out_local()), var("a"))],
+                vec![assign(var(out_local()), var("b"))],
+            ),
+            ret_it(),
+        ]));
+    }
+
+    /// IMI's shape, and the one seed the corpus still carries: the sole store
+    /// sits in the period loop, and a loop body is not provably entered.
+    #[test]
+    fn a_write_only_a_loop_body_makes_keeps_the_seed() {
+        assert!(!dead(vec![
+            Statement::ForC {
+                init: Box::new(assign(var("i"), Expr::IntLiteral(0))),
+                condition: le(var("i"), var("n")),
+                update: Box::new(assign(var("i"), add(var("i"), Expr::IntLiteral(1)))),
+                body: vec![assign(var(out_local()), var("t"))],
+            },
+            ret_it(),
+        ]));
+    }
+
+    /// A composed frame forwards the sub-stream's value from a switch arm,
+    /// which is data-picked: no arm is provably taken.
+    #[test]
+    fn a_write_only_a_switch_arm_makes_keeps_the_seed() {
+        assert!(!dead(vec![
+            Statement::Switch {
+                expr: var("maType"),
+                cases: vec![("0".to_string(), vec![assign(var(out_local()), var("sub"))])],
+                default: vec![],
+            },
+            ret_it(),
+        ]));
+    }
+
+    /// Not mentioning it at all is not the same as writing it: the emitter
+    /// keeps the seed rather than reasoning about a local nothing touches.
+    #[test]
+    fn a_body_that_never_mentions_it_keeps_the_seed() {
+        assert!(!dead(vec![assign(var("other"), var("t"))]));
+    }
+
 }

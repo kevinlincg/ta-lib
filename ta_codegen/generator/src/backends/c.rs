@@ -196,6 +196,38 @@ impl Drop for CircBufOrderGuard {
     }
 }
 
+/// Scoped override of [`CIRCBUF_IDX_UNUSED`]: for the span, every CIRCBUF that
+/// `stmts` declares counts as having a live cursor, whatever the statements do.
+///
+/// The stream handle sizes its copy of each buffer from `maxIdx_<id>`, so a
+/// cursor no statement reads is still read there — eliding the assignment leaves
+/// the capture copying from an uninitialized local, and the handle then starts
+/// life holding a truncated window. The batch body has no such reader and must
+/// keep the elision, which is why this is scoped to the streaming section rather
+/// than folded into the function-wide set.
+struct CircBufIdxUsedScope(std::collections::BTreeSet<String>);
+
+impl CircBufIdxUsedScope {
+    fn new(stmts: &[Statement]) -> Self {
+        let mut order = Vec::new();
+        collect_circbuf_order(stmts, &mut order);
+        let declared: std::collections::BTreeSet<String> =
+            order.into_iter().map(|(id, _)| id).collect();
+        CIRCBUF_IDX_UNUSED.with(|c| {
+            let mut set = c.borrow_mut();
+            let prev = set.clone();
+            set.retain(|id| !declared.contains(id));
+            CircBufIdxUsedScope(prev)
+        })
+    }
+}
+
+impl Drop for CircBufIdxUsedScope {
+    fn drop(&mut self) {
+        CIRCBUF_IDX_UNUSED.with(|c| *c.borrow_mut() = std::mem::take(&mut self.0));
+    }
+}
+
 /// Collect the CIRCBUFs a body declares, in order, deduplicated by id.
 fn collect_circbuf_order(stmts: &[Statement], out: &mut Vec<(String, Vec<String>)>) {
     for s in stmts {
@@ -344,6 +376,16 @@ struct CRenderCtx<'a> {
     /// so callers may pass NULL to discard it. Empty for every non-body render
     /// pass (helpers, lookback) and every function without a nullable output.
     nullable_outputs: &'a [String],
+    /// When true, a guarded nullable store also assigns `lastCur_<out>`
+    /// unconditionally, beside the guard rather than inside it. Only the
+    /// stream Open region sets this: the handle's `cur_<out>` has to hold
+    /// what the store *would* have written even when the caller declined the
+    /// output, because `TA_<N>_StepImpl` always recomputes it (mama.c) — a
+    /// captured value that instead reads the (possibly absent) array
+    /// diverges from `Open(P)+updates` the moment the store's RHS is not
+    /// already a bare local. False everywhere else, including the plain
+    /// batch function, which has no `cur_*` state to feed.
+    nullable_shadow: bool,
 }
 
 #[allow(clippy::implicit_hasher)]
@@ -409,9 +451,12 @@ pub fn generate(
 
     // Streaming API section (only for YAML-declared streamable functions).
     if func.streaming {
+        let _stream_idx = CircBufIdxUsedScope::new(func.stream_source());
         out.push_str(&super::c_stream::generate(func, enums, registry, helpers));
     }
-    out
+    // Last, over the finished file: the emitters above place their `(void)x;`
+    // before they know what the body will read (see `c_hygiene`).
+    super::c_hygiene::scrub_void_casts(&out)
 }
 
 /// Render a C variable declaration (`type name`, including pointer and array
@@ -701,6 +746,39 @@ fn gen_func(
     gen_func_inner(func, single_precision, None, enums, registry, helpers)
 }
 
+/// Drop `<Setting>_<prop>` declarations the rendered function never reads.
+///
+/// The IR names all three properties of a setting the body touches, but the
+/// emitted C reaches most of them through `TA_CANDLERANGE` / `TA_CANDLEAVERAGE`,
+/// which take the setting as a token and read `TA_Globals` themselves — so the
+/// local is declared and never read (`-Wunused-variable`, 62 candlestick files).
+/// Only the rendered text can see that, which is the same rule
+/// `c_stream.rs::emit_used_candle_unpacking` applies to the streaming tiers.
+fn drop_unread_candle_decls(out: &mut String) {
+    let is_decl = |line: &str| -> Option<String> {
+        let t = line.trim_start();
+        let rest = t.strip_prefix("int ").or_else(|| t.strip_prefix("double "))?;
+        let name = rest.split(' ').next()?;
+        if line.contains("= TA_Globals->candleSettings[TA_") && name.contains('_') {
+            Some(name.to_string())
+        } else {
+            None
+        }
+    };
+    if !out.contains("TA_Globals->candleSettings[TA_") {
+        return;
+    }
+    let mut kept = String::with_capacity(out.len());
+    for line in out.lines() {
+        let drop = is_decl(line).is_some_and(|n| out.matches(n.as_str()).count() <= 1);
+        if !drop {
+            kept.push_str(line);
+            kept.push('\n');
+        }
+    }
+    *out = kept;
+}
+
 // Integer/enum optIn defaults and ranges come from f64 metadata but are whole
 // numbers; the `as i32` casts in the validation emitter are intentional.
 #[allow(clippy::too_many_lines, clippy::cognitive_complexity, clippy::cast_possible_truncation)]
@@ -841,6 +919,7 @@ fn gen_func_inner(
         stream_scalar_candles: false,
         fma: Some(&fma_sets),
         nullable_outputs: &nullable_outputs,
+        nullable_shadow: false,
     };
 
     // For S_ variants with explicit _private: the extra params (e.g. EMA's k
@@ -913,11 +992,16 @@ fn gen_func_inner(
         // A nullable operand is guarded non-NULL first (a dropped output aliases
         // nothing; two NULLs would otherwise compare equal and spuriously reject).
         //
-        // Cross-typed pairs are skipped, as the C# emitter has always skipped
-        // them: comparing a `double *` with an `int *` is a constraint violation
-        // (`-Wcompare-distinct-pointer-types`), and the same pair is a compile
-        // error in Java and Rust and unreachable in safe code in both. The rule
-        // is set by the weakest member that can express it — Appendix E of
+        // A CROSS-TYPED pair is compared too, through `const void *`. `double * ==
+        // int *` is the constraint violation, not the question: the cast is well
+        // defined, and this backend's own streaming frames have always used it
+        // (`TA_<N>_OpenAndFill`). Java and Rust cannot express the comparison and
+        // C#'s `Overlaps` is not defined across element types, so C detects one
+        // case they cannot — the same asymmetry C# already carries for a partial
+        // input/output overlap, and preferred over letting a caller who points a
+        // `double *` and an `int *` at one buffer get silent corruption where
+        // every same-typed pair gets `TA_BAD_PARAM`. Reachable since SUPERTREND
+        // (#272) made the corpus mix the two. Appendix E of
         // docs/error-handling-spec.md, #262.
         if func.outputs.len() >= 2 {
             let mut pairs: Vec<String> = Vec::new();
@@ -925,9 +1009,8 @@ fn gen_func_inner(
                 for j in (i + 1)..func.outputs.len() {
                     let a = &func.outputs[i];
                     let b = &func.outputs[j];
-                    if (a.param_type == ParamType::Integer) != (b.param_type == ParamType::Integer) {
-                        continue;
-                    }
+                    let cross = (a.param_type == ParamType::Integer)
+                        != (b.param_type == ParamType::Integer);
                     let mut guard = String::new();
                     if a.is_nullable() {
                         guard.push_str(&format!("{} != NULL && ", a.name));
@@ -935,7 +1018,14 @@ fn gen_func_inner(
                     if b.is_nullable() {
                         guard.push_str(&format!("{} != NULL && ", b.name));
                     }
-                    pairs.push(format!("{guard}{} == {}", a.name, b.name));
+                    if cross {
+                        pairs.push(format!(
+                            "{guard}(const void *){} == (const void *){}",
+                            a.name, b.name
+                        ));
+                    } else {
+                        pairs.push(format!("{guard}{} == {}", a.name, b.name));
+                    }
                 }
             }
             // More than one pair, and a guarded term carries `&&`: parenthesise
@@ -1074,6 +1164,8 @@ fn gen_func_inner(
 
     out.push_str("}\n\n");
 
+    drop_unread_candle_decls(&mut out);
+
     // FMA runtime CPU dispatch (PR #96): mark any function emitting an explicit
     // fma() with TA_FMA_MULTIVERSION (see ta_utility.h). Detect by the `fma(` call
     // site — the trailing "(" excludes fmax/fmin/fmaf. `out` starts with the
@@ -1140,7 +1232,7 @@ fn render_hoisted_blocks(
     out
 }
 
-#[allow(clippy::implicit_hasher)]
+#[allow(clippy::implicit_hasher, clippy::too_many_arguments)]
 pub fn render_statement(
     stmt: &Statement,
     indent: usize,
@@ -1150,6 +1242,7 @@ pub fn render_statement(
     helpers: &HelperRegistry,
     inline_counter: &Cell<usize>,
     nullable: &[String],
+    nullable_shadow: bool,
 ) -> String {
     STREAM_FMA.with(|f| {
         let fma_sets = f.borrow();
@@ -1159,6 +1252,7 @@ pub fn render_statement(
             stream_scalar_candles: false,
             fma: fma_sets.as_ref(),
             nullable_outputs: nullable,
+            nullable_shadow,
         };
         render_stmt(stmt, indent, &ctx, enums, registry, helpers)
     })
@@ -1184,6 +1278,7 @@ pub fn render_statement_stream(
             stream_scalar_candles: true,
             fma: fma_sets.as_ref(),
             nullable_outputs: nullable,
+            nullable_shadow: false,
         };
         render_stmt(stmt, indent, &ctx, enums, registry, helpers)
     })
@@ -1438,6 +1533,9 @@ impl StatementEmitter for CStmt<'_> {
             // Writing into a nullable output — guard it so a NULL (discarded)
             // output is skipped. The `outIdx` advance rides the non-nullable
             // partner's write (see mama.c), so guarding this store is complete.
+            if self.ctx.nullable_shadow {
+                out.push_str(&format!("{pad}lastCur_{base} = {value_str};\n"));
+            }
             out.push_str(&format!(
                 "{pad}if( {base} != NULL )\n{pad}   {target_str}= {value_str};\n"
             ));
@@ -1551,41 +1649,53 @@ impl StatementEmitter for CStmt<'_> {
             }
         }
 
-        // Inline per-operand comments: render the `&&`-chain multi-line, one
-        // operand per line with its comment. Same tokens as the flat form (just
-        // reformatted) plus the comments — so behaviour is unchanged.
-        if !cond_comments.is_empty()
-            && super::stmt_walk::flatten_and(condition).len() == cond_comments.len()
-        {
+        // Inline per-leaf comments: render the condition's boolean spine
+        // multi-line, one leaf per line with its comment. `render_cond_tree`
+        // emits nothing whose token stream differs from the flat form below.
+        if !cond_comments.is_empty() {
             let mut hoisted = Vec::new();
-            let mut cnt = self.ctx.inline_counter.get();
+            let counter0 = self.ctx.inline_counter.get();
+            let mut cnt = counter0;
             let new_cond = hoist_block_helpers(condition, self.helpers, &mut hoisted, &mut cnt, C_CANDLE_MACRO_FNS);
             self.ctx.inline_counter.set(cnt);
-            // These operands are re-joined with `&&`, so any operand that binds
-            // looser than `&&` (an `||` chain or a ternary) must be wrapped to
-            // preserve grouping — the binop hook can't see across this split.
-            let and_prec = binop_prec(&BinOp::And);
-            let op_strs: Vec<String> = super::stmt_walk::flatten_and(&new_cond)
-                .iter()
-                .map(|o| {
-                    let s = render_expr(o, self.ctx, self.registry, self.helpers);
-                    if expr_prec(o) < and_prec {
-                        format!("({s})")
-                    } else {
-                        s
-                    }
-                })
-                .collect();
-            let mut out = render_hoisted_blocks(
-                &hoisted, indent, self.ctx, self.enums, self.registry, self.helpers,
-            );
-            out.push_str(&format!("{pad}if( "));
-            out.push_str(&super::stmt_walk::render_and_operands(
-                &op_strs, cond_comments, &" ".repeat(indent + 4), " )", true,
-            ));
-            out.push_str(&format!("{pad}{{\n"));
-            out.push_str(&self.render_if_tail(then_body, else_body, indent));
-            return out;
+            // Both hooks restate `binop`'s operand rules for one child; the
+            // -Wparentheses parens around an `&&` group inside `||` land in
+            // `wraps`, since only a descended child can be such a group.
+            let operand = |o: &Expr, op: &BinOp, is_right: bool| {
+                wrap_child(
+                    render_expr(o, self.ctx, self.registry, self.helpers),
+                    o,
+                    binop_prec(op),
+                    is_right,
+                )
+            };
+            let wraps = |o: &Expr, op: &BinOp, is_right: bool| {
+                let (cp, pp) = (expr_prec(o), binop_prec(op));
+                cp < pp
+                    || (cp == pp && is_right)
+                    || (matches!(op, BinOp::Or) && matches!(o, Expr::BinOp(_, BinOp::And, _)))
+            };
+            let flat = render_expr(&new_cond, self.ctx, self.registry, self.helpers);
+            if let Some(cond_text) = super::stmt_walk::render_cond_tree(
+                &new_cond,
+                cond_comments,
+                &super::stmt_walk::CondHooks { operand: &operand, wraps: &wraps },
+                &flat,
+                &" ".repeat(indent + 4),
+                " )",
+                true,
+            ) {
+                let mut out = render_hoisted_blocks(
+                    &hoisted, indent, self.ctx, self.enums, self.registry, self.helpers,
+                );
+                out.push_str(&format!("{pad}if( "));
+                out.push_str(&cond_text);
+                out.push_str(&format!("{pad}{{\n"));
+                out.push_str(&self.render_if_tail(then_body, else_body, indent));
+                return out;
+            }
+            // Falling through re-hoists from scratch; rewind so the names match.
+            self.ctx.inline_counter.set(counter0);
         }
 
         let mut hoisted = Vec::new();
@@ -1982,8 +2092,19 @@ impl ExprEmitter for CExpr<'_> {
         // this one (or ties on the right, since every binary operator here is
         // left-associative) — the minimal parens that preserve the IR grouping.
         let pp = binop_prec(op);
-        let l = wrap_child(self.walk(left), left, pp, false);
-        let r = wrap_child(self.walk(right), right, pp, true);
+        let mut l = wrap_child(self.walk(left), left, pp, false);
+        let mut r = wrap_child(self.walk(right), right, pp, true);
+        // `&&` binds tighter than `||`, so precedence alone needs no parens
+        // here -- but GCC's -Wparentheses asks for them, and stating the
+        // grouping is what makes a long candlestick predicate readable.
+        if matches!(op, BinOp::Or) {
+            if matches!(left, Expr::BinOp(_, BinOp::And, _)) {
+                l = format!("({l})");
+            }
+            if matches!(right, Expr::BinOp(_, BinOp::And, _)) {
+                r = format!("({r})");
+            }
+        }
         format!("{l} {op_str} {r}")
     }
 
@@ -2127,6 +2248,7 @@ pub(crate) fn render_expression_stream_candles(
             stream_scalar_candles: true,
             fma: fma_sets.as_ref(),
             nullable_outputs: &[],
+            nullable_shadow: false,
         };
         render_expr(expr, &ctx, registry, helpers)
     })
@@ -2148,6 +2270,7 @@ pub(crate) fn render_expression(
             stream_scalar_candles: false,
             fma: fma_sets.as_ref(),
             nullable_outputs: &[],
+            nullable_shadow: false,
         };
         render_expr(expr, &ctx, registry, helpers)
     })
@@ -2469,7 +2592,7 @@ fn render_lookback_code(
     let inline_counter = Cell::new(0);
     // Lookback bodies are pure integer index arithmetic (the first-valid-output
     // count) — no float multiply-add, so fusion never applies here.
-    let ctx = &CRenderCtx { single_precision: false, inline_counter: &inline_counter, stream_scalar_candles: false, fma: None, nullable_outputs: &[] };
+    let ctx = &CRenderCtx { single_precision: false, inline_counter: &inline_counter, stream_scalar_candles: false, fma: None, nullable_outputs: &[], nullable_shadow: false };
 
     // Declare local variables (deduplicated)
     let mut declared_vars: Vec<String> = Vec::new();
@@ -2527,6 +2650,8 @@ fn render_lookback_code(
             stmt, 3, ctx, enums, registry, helpers,
         ));
     }
+
+    drop_unread_candle_decls(&mut out);
 
     out
 }

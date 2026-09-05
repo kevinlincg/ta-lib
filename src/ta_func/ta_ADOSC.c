@@ -374,10 +374,12 @@ TA_RetCode TA_S_ADOSC( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_ADOSC_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_ADOSC_Value). */
+   double cur_outReal;
    int optInFastPeriod;
    int optInSlowPeriod;
    double slowEMA;
@@ -408,14 +410,13 @@ static void TA_ADOSC_StepImpl( struct TA_ADOSC_Stream *sp, double inHigh, double
    sp->fastEMA = fma(sp->one_minus_fastk, sp->fastEMA, sp->fastk * sp->ad);
    sp->slowEMA = fma(sp->one_minus_slowk, sp->slowEMA, sp->slowk * sp->ad);
    *outReal= sp->fastEMA - sp->slowEMA;
+   sp->cur_outReal = *outReal;
 }
 
 static TA_RetCode TA_ADOSC_OpenImpl( struct TA_ADOSC_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], const double inVolume[], int startIdx, int historyLen, int optInFastPeriod, int optInSlowPeriod, int *outBegIdx, int *outNBElement, double outReal[], int outStride )
 {
    struct TA_ADOSC_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -438,9 +439,6 @@ static TA_RetCode TA_ADOSC_OpenImpl( struct TA_ADOSC_Stream **stream, const doub
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int today;
@@ -582,6 +580,7 @@ static TA_RetCode TA_ADOSC_OpenImpl( struct TA_ADOSC_Stream **stream, const doub
       sp->ad = ad;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -632,57 +631,71 @@ TA_RetCode TA_ADOSC_OpenAndFillInternal( struct TA_ADOSC_Stream **stream, const 
 TA_LIB_API TA_RetCode TA_ADOSC_Update( TA_ADOSC_Stream *stream, double inHigh, double inLow, double inClose, double inVolume, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) || !TA_IS_FINITE( inVolume ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) || !TA_IS_FINITE( inVolume ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_ADOSC_StepImpl( stream, inHigh, inLow, inClose, inVolume, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_ADOSC_Peek( const TA_ADOSC_Stream *stream, double inHigh, double inLow, double inClose, double inVolume, double *outReal )
 {
-   struct TA_ADOSC_Stream scratch;
-   struct TA_ADOSC_Stream *sp = &scratch;
+   const struct TA_ADOSC_Stream *sp = stream;
    double high;
    double low;
    double close;
    double tmp;
+   double ad;
+   double fastEMA;
+   double slowEMA;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) || !TA_IS_FINITE( inVolume ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   ad = sp->ad;
+   fastEMA = sp->fastEMA;
+   slowEMA = sp->slowEMA;
    high = inHigh;
    low = inLow;
    tmp = high - low;
    close = inClose;
    if( tmp > 0.0 )
    {
-      sp->ad += (close - low - (high - close)) / tmp * (double)inVolume;
+      ad += (close - low - (high - close)) / tmp * (double)inVolume;
    }
-   sp->fastEMA = fma(sp->one_minus_fastk, sp->fastEMA, sp->fastk * sp->ad);
-   sp->slowEMA = fma(sp->one_minus_slowk, sp->slowEMA, sp->slowk * sp->ad);
-   *outReal= sp->fastEMA - sp->slowEMA;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_ADOSC_UpdateAndFill( TA_ADOSC_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], const double inVolume[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !inClose || !inVolume || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow || (const void *)outReal == (const void *)inClose || (const void *)outReal == (const void *)inVolume ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) || !TA_IS_FINITE( inVolume[i] ) ) return TA_BAD_PARAM;
-      TA_ADOSC_StepImpl( stream, inHigh[i], inLow[i], inClose[i], inVolume[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
+   fastEMA = fma(sp->one_minus_fastk, fastEMA, sp->fastk * ad);
+   slowEMA = fma(sp->one_minus_slowk, slowEMA, sp->slowk * ad);
+   *outReal= fastEMA - slowEMA;
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_ADOSC_Close( TA_ADOSC_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ADOSC_Value( const TA_ADOSC_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ADOSC_Clone( const TA_ADOSC_Stream *stream, TA_ADOSC_Stream **clone )
+{
+   struct TA_ADOSC_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_ADOSC_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   *clone = sp;
    return TA_SUCCESS;
 }
 

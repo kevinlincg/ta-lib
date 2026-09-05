@@ -392,10 +392,12 @@ TA_RetCode TA_S_WMA( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_WMA_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_WMA_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    int lookbackWin;
    int barsSinceReseed;
@@ -434,6 +436,7 @@ static void TA_WMA_StepImpl( struct TA_WMA_Stream *sp, double inReal, double *ou
    if( sp->optInTimePeriod == 1 )
    {
       *outReal= inReal;
+      sp->cur_outReal = *outReal;
       sp->periodSum = periodSum;
       sp->periodSub = periodSub;
       return;
@@ -518,6 +521,7 @@ static void TA_WMA_StepImpl( struct TA_WMA_Stream *sp, double inReal, double *ou
    *outReal= periodSum / sp->divider;
    /* Prepare the periodSum for the next iteration. */
    periodSum -= periodSub;
+   sp->cur_outReal = *outReal;
    sp->ring_trailingIdx_inReal[sp->ringPos_trailingIdx] = inReal;
    sp->ringPos_trailingIdx = sp->ringPos_trailingIdx + 1;
    if( sp->ringPos_trailingIdx >= sp->ringCap_trailingIdx )
@@ -537,8 +541,6 @@ static TA_RetCode TA_WMA_OpenImpl( struct TA_WMA_Stream **stream, const double i
 {
    struct TA_WMA_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -557,9 +559,6 @@ static TA_RetCode TA_WMA_OpenImpl( struct TA_WMA_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    if( optInTimePeriod == 1 )
    {
@@ -601,6 +600,7 @@ static TA_RetCode TA_WMA_OpenImpl( struct TA_WMA_Stream **stream, const double i
       }
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -796,6 +796,7 @@ static TA_RetCode TA_WMA_OpenImpl( struct TA_WMA_Stream **stream, const double i
       sp->winPos_j = 0;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -846,7 +847,11 @@ TA_RetCode TA_WMA_OpenAndFillInternal( struct TA_WMA_Stream **stream, const doub
 TA_LIB_API TA_RetCode TA_WMA_Update( TA_WMA_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_WMA_StepImpl( stream, inReal, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -854,34 +859,25 @@ TA_LIB_API TA_RetCode TA_WMA_Update( TA_WMA_Stream *stream, double inReal, doubl
 
 TA_LIB_API TA_RetCode TA_WMA_Peek( const TA_WMA_Stream *stream, double inReal, double *outReal )
 {
-   struct TA_WMA_Stream scratch;
-   struct TA_WMA_Stream *sp = &scratch;
+   const struct TA_WMA_Stream *sp = stream;
    int j;
    int rw;
    double tempReal;
+   int barsSinceReseed;
    double periodSum;
-   double periodSub;
-   int pkSlot0 = -1;
-   double pkVal0 = 0.0;
+   double *win_j_inReal;
    int pkSlot1 = -1;
    double pkVal1 = 0.0;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   barsSinceReseed = sp->barsSinceReseed;
    periodSum = sp->periodSum;
-   periodSub = sp->periodSub;
+   win_j_inReal = sp->win_j_inReal;
    if( sp->optInTimePeriod == 1 )
    {
       *outReal= inReal;
-      sp->periodSum = periodSum;
-      sp->periodSub = periodSub;
       return TA_SUCCESS;
-   }
-   if( sp->ringCap_trailingIdx == 0 )
-   {
-      pkSlot0 = 0;
-      pkVal0 = inReal;
    }
    pkSlot1 = sp->winPos_j;
    pkVal1 = inReal;
@@ -889,8 +885,6 @@ TA_LIB_API TA_RetCode TA_WMA_Peek( const TA_WMA_Stream *stream, double inReal, d
     * who are carried through the iterations.
     */
    tempReal = inReal;
-   periodSub += tempReal;
-   periodSub -= sp->trailingValue;
    periodSum += tempReal * sp->optInTimePeriod;
    /* Re-anchor: rebuild both totals from the window itself.
     *
@@ -935,65 +929,60 @@ TA_LIB_API TA_RetCode TA_WMA_Peek( const TA_WMA_Stream *stream, double inReal, d
     * written so far occupy [0, outIdx-1], and the window starts at
     * startIdx-lookbackTotal+outIdx, which is >= outIdx.
     */
-   sp->barsSinceReseed -= 1;
-   if( sp->barsSinceReseed <= 0 )
+   barsSinceReseed -= 1;
+   if( barsSinceReseed <= 0 )
    {
-      sp->barsSinceReseed = 8 * sp->optInTimePeriod;
-      periodSub = (double)0.0;
+      barsSinceReseed = 8 * sp->optInTimePeriod;
       periodSum = (double)0.0;
       rw = 1;
       for( j = sp->lookbackWin; j >= 0; j -= 1 )
       {
-         tempReal = (((sp->winPos_j + sp->winCap_j - j >= sp->winCap_j) ? sp->winPos_j + sp->winCap_j - j - sp->winCap_j : sp->winPos_j + sp->winCap_j - j) != pkSlot1) ? sp->win_j_inReal[(sp->winPos_j + sp->winCap_j - j >= sp->winCap_j) ? sp->winPos_j + sp->winCap_j - j - sp->winCap_j : sp->winPos_j + sp->winCap_j - j] : pkVal1;
-         periodSub += tempReal;
+         tempReal = (((sp->winPos_j + sp->winCap_j - j >= sp->winCap_j) ? sp->winPos_j + sp->winCap_j - j - sp->winCap_j : sp->winPos_j + sp->winCap_j - j) != pkSlot1) ? win_j_inReal[(sp->winPos_j + sp->winCap_j - j >= sp->winCap_j) ? sp->winPos_j + sp->winCap_j - j - sp->winCap_j : sp->winPos_j + sp->winCap_j - j] : pkVal1;
          periodSum += tempReal * rw;
          rw += 1;
       }
    }
-   /* Save the trailing value for being substract at
-    * the next iteration.
-    * (must be saved here just in case outReal and
-    *  inReal are the same buffer).
-    */
-   sp->trailingValue = (sp->ringPos_trailingIdx != pkSlot0) ? sp->ring_trailingIdx_inReal[sp->ringPos_trailingIdx] : pkVal0;
    /* Calculate the WMA for this price bar. */
    *outReal= periodSum / sp->divider;
-   /* Prepare the periodSum for the next iteration. */
-   periodSum -= periodSub;
-   sp->ringPos_trailingIdx = sp->ringPos_trailingIdx + 1;
-   if( sp->ringPos_trailingIdx >= sp->ringCap_trailingIdx )
-   {
-      sp->ringPos_trailingIdx = 0;
-   }
-   sp->winPos_j = sp->winPos_j + 1;
-   if( sp->winPos_j >= sp->winCap_j )
-   {
-      sp->winPos_j = 0;
-   }
-   sp->periodSum = periodSum;
-   sp->periodSub = periodSub;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_WMA_UpdateAndFill( TA_WMA_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      TA_WMA_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_WMA_Close( TA_WMA_Stream *stream )
 {
    TA_WMA_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_WMA_Value( const TA_WMA_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_WMA_Clone( const TA_WMA_Stream *stream, TA_WMA_Stream **clone )
+{
+   struct TA_WMA_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_WMA_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->ring_trailingIdx_inReal = NULL;
+   sp->win_j_inReal = NULL;
+   if( stream->ring_trailingIdx_inReal )
+   { size_t copyN = (size_t)(sp->ringCap_trailingIdx > 0 ? sp->ringCap_trailingIdx : 1);
+     sp->ring_trailingIdx_inReal = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->ring_trailingIdx_inReal ) { TA_WMA_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->ring_trailingIdx_inReal, stream->ring_trailingIdx_inReal, sizeof(double) * copyN ); }
+   if( stream->win_j_inReal )
+   { size_t copyN = (size_t)(sp->winCap_j);
+     sp->win_j_inReal = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->win_j_inReal ) { TA_WMA_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->win_j_inReal, stream->win_j_inReal, sizeof(double) * copyN ); }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

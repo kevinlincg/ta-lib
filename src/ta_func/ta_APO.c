@@ -272,10 +272,12 @@ TA_RetCode TA_S_APO( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_APO_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_APO_Value). */
+   double cur_outReal;
    int optInFastPeriod;
    int optInSlowPeriod;
    TA_MAType optInMAType;
@@ -312,7 +314,6 @@ static TA_RetCode TA_APO_OpenImpl( struct TA_APO_Stream **stream, const double i
    int dummyBegIdx;
    int dummyNBElement;
    TA_RetCode subRc;
-   double subOpenDummy;
    double *sc_outReal;
    TA_MA_Stream *sub0;
    TA_MA_Stream *sub1;
@@ -345,10 +346,8 @@ static TA_RetCode TA_APO_OpenImpl( struct TA_APO_Stream **stream, const double i
    dummyBegIdx = 0;
    dummyNBElement = 0;
    subRc = TA_SUCCESS;
-   subOpenDummy = 0.0;
    sub0 = NULL;
    sub1 = NULL;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement; (void)subRc; (void)subOpenDummy;
    if( outStride ) sc_outReal = outReal;
    else
    {
@@ -466,6 +465,7 @@ static TA_RetCode TA_APO_OpenImpl( struct TA_APO_Stream **stream, const double i
       if( !outStride ) TA_Free( sc_outReal );
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -518,23 +518,26 @@ TA_LIB_API TA_RetCode TA_APO_Update( TA_APO_Stream *stream, double inReal, doubl
    TA_RetCode retCode;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    retCode = TA_APO_StepImpl( stream, inReal, outReal );
    if( retCode != TA_SUCCESS ) return retCode;
+   stream->cur_outReal = *outReal;
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_APO_Peek( const TA_APO_Stream *stream, double inReal, double *outReal )
 {
-   struct TA_APO_Stream scratch;
-   struct TA_APO_Stream *sp = &scratch;
+   const struct TA_APO_Stream *sp = stream;
    double cur_tempBuffer = 0.0;
    double cur_outReal = 0.0;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   scratch = *stream;
 
    /* Pipeline the new bar through the sub-streams (batch tail order). */
    {
@@ -551,30 +554,41 @@ TA_LIB_API TA_RetCode TA_APO_Peek( const TA_APO_Stream *stream, double inReal, d
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_APO_UpdateAndFill( TA_APO_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-   TA_RetCode retCode;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      retCode = TA_APO_StepImpl( stream, inReal[i], &outReal[i] );
-      if( retCode != TA_SUCCESS ) return retCode;
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_APO_Close( TA_APO_Stream *stream )
 {
    if( !stream ) return TA_SUCCESS;
    TA_MA_Close( stream->sub0 );
    TA_MA_Close( stream->sub1 );
    TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_APO_Value( const TA_APO_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_APO_Clone( const TA_APO_Stream *stream, TA_APO_Stream **clone )
+{
+   struct TA_APO_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_APO_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->sub0 = NULL;
+   sp->sub1 = NULL;
+   if( stream->sub0 )
+   { TA_RetCode subRc = TA_MA_Clone( stream->sub0, &sp->sub0 );
+     if( subRc != TA_SUCCESS ) { TA_APO_Close( sp ); return subRc; } }
+   if( stream->sub1 )
+   { TA_RetCode subRc = TA_MA_Clone( stream->sub1, &sp->sub1 );
+     if( subRc != TA_SUCCESS ) { TA_APO_Close( sp ); return subRc; } }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

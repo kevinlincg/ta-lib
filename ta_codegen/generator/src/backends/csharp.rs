@@ -1,92 +1,64 @@
-//! Generates the shipped C# indicator implementations — a port of `java.rs` over
-//! the shared `ExprEmitter` / `StatementEmitter` walkers. One complete,
-//! standalone `Core_<NAME>.cs` per indicator (`public partial class Core`), so
-//! unlike Java there is no fragment splicing and `generate --func=X` is correct.
+//! Generates the shipped C# indicator implementations over the shared
+//! `ExprEmitter` / `StatementEmitter` walkers. One complete, standalone
+//! `Core_<NAME>.cs` per indicator (`public partial class Core`), so unlike Java
+//! there is no fragment splicing and `generate --func=X` is correct.
 //!
 //! # Pinned decisions
 //!
-//! - **Public series surface is spans, not arrays** — `ReadOnlySpan<T>` in,
-//!   `Span<T>` out, for both the `double` and `float` precisions. A caller can
-//!   pass a window of a larger buffer without copying it, which is what the
-//!   array surface could never offer. Array call sites keep compiling, since
-//!   `double[]` converts implicitly, so this is source-compatible for the
-//!   ordinary case despite changing every signature.
-//!
-//!   Both tiers route through [`cs_series_in`] / [`cs_series_out`], so the
-//!   surface type is stated once. Adding array overloads back is additive and
-//!   non-breaking — an exact array match outranks the implicit conversion —
-//!   which is why this direction was taken first: it is the reversible one.
-//!
+//! - **The public series surface is spans** — `ReadOnlySpan<T>` in, `Span<T>`
+//!   out, both precisions, so a caller can pass a window of a larger buffer
+//!   without copying it. Stated once, in [`cs_series_in`] / [`cs_series_out`].
 //!   Three consequences, none of them optional:
 //!
-//!   1. **Reflective invocation of this API is impossible.** A span is a
-//!      `ref struct` and cannot be boxed into the `object[]` that
-//!      `MethodInfo.Invoke` takes. `GetMethod` still resolves a span signature,
-//!      so shape *lookup* works — only the call does not. The metadata suite
-//!      compares values through the binder's generated thunks for exactly this
-//!      reason. A consumer doing reflective dispatch has no workaround short of
-//!      array overloads.
-//!   2. **The aliasing reject is `Overlaps`, not reference identity.** Arrays
-//!      are identical or disjoint; spans made partial overlap expressible.
-//!      This matters beyond the reject: BBANDS elects its scratch with
-//!      `if (inReal == outRealUpperBand)`, an ALGORITHMIC branch that reads
-//!      false on a partially-overlapping pair whose buffers do collide. See
-//!      `csharp_stream::alias_reject`.
-//!   3. **Null becomes empty.** `(double[])null` converts to a length-0 span,
-//!      so `ArgumentNullException.ThrowIfNull` does not even compile. The
-//!      public wrappers test `IsEmpty` on INPUTS instead, which carries the
-//!      same information here — any valid range needs `endIdx >= 0`, hence at
-//!      least one element. Outputs are deliberately not checked: an empty
-//!      output is legitimate when the range is shorter than the lookback.
+//!   1. **This API cannot be invoked reflectively.** A span is a `ref struct`
+//!      and will not box into `MethodInfo.Invoke`'s `object[]`; `GetMethod`
+//!      still resolves the signature, so shape *lookup* works and only the call
+//!      does not. That is why the metadata suite compares values through the
+//!      binder's generated thunks.
+//!   2. **Aliasing is rejected by `Overlaps`, not reference identity** — arrays
+//!      are identical or disjoint, spans made PARTIAL overlap expressible. It
+//!      reaches algorithmic branches too: a scratch election written as
+//!      `if (inReal == outRealUpperBand)` reads false on a partially
+//!      overlapping pair whose buffers do collide.
+//!   3. **Null converts to a length-0 span**, so `ThrowIfNull` does not even
+//!      compile. The public wrappers test `IsEmpty` on INPUTS instead — any
+//!      valid range needs at least one element. Outputs stay unchecked: an
+//!      empty output is legitimate below the lookback.
 //!
-//!   A pointer local in the C source becomes `Span<T>`, not an array: those
-//!   alias either an output parameter or an allocated buffer, and only a span
-//!   holds both. A fixed-size array local stays an array — it owns storage.
-//!   Handle fields stay arrays too; a ref struct can never be a field.
+//!   A pointer local becomes `Span<T>`: it aliases either an output parameter
+//!   or an allocated buffer, and only a span holds both. A fixed-size array
+//!   local owns storage and stays an array; handle fields stay arrays too,
+//!   since a ref struct can never be a field.
 //!
 //! - **Cores return `RetCode`; only the public wrapper throws.** Cross-indicator
-//!   callees return RetCode that callers *inspect* (MA, BBANDS, MAVP, STOCHRSI,
-//!   SAR). Throwing cores would make those inspection sites dead code the
-//!   renderer has to delete. Keeping RetCode internally means zero body changes.
-//!   C#'s `internal` accessibility plus overloading (the cores carry the two
-//!   `out int` params the public wrappers do not) lets the cores share the
-//!   public names, so no separate core naming scheme is needed.
+//!   callees have callers that INSPECT the code, and throwing cores would make
+//!   those sites dead code. `internal` plus overloading (the cores carry the two
+//!   `out int` params the wrappers do not) lets the cores share the public names.
 //!
-//! - **Scratch buffers are `new double[n]`, not `ArrayPool`, in v1.** ArrayPool
-//!   has no lifetime story in the current IR lowering: Java renders
-//!   `CircBuf::Destroy` and `free()` as the empty string because it is GC'd, and
-//!   11 malloc'ing functions plus 8 runtime-sized CIRCBUF functions each have
-//!   ~10 early-return paths that would every one need a matching `Return`.
-//!   Revisit as a perf task only after the bitwise gate is green.
+//! - **Scratch buffers are `new double[n]`, not `ArrayPool`** — a pooled buffer
+//!   needs a matching return on every early-return path, and the IR renders
+//!   `free()` as the empty string because the ports are GC'd.
 //!
-//! - **`out int outBegIdx, out int outNBElement`, with a generator-emitted
-//!   `outBegIdx = 0; outNBElement = 0;` seeding prologue.** Every guarded core
-//!   returns `RetCode.OutOfRangeStartIndex` before either is assigned, which is
-//!   CS0177 on ~670 generated methods. The seeding must not perturb any emitted
-//!   value (the C server's locals and Java's `MInteger`s are zero-initialized
-//!   the same way). C's `&localBegIdx` call arguments render as `out localBegIdx`
-//!   over a plain `int` local — none of Java's `MInteger` boxing; a `double`
-//!   taken by address still needs the `double[1]` wrapping, because the callee
-//!   parameter it binds to is an output *array*.
+//! - **`out int outBegIdx, out int outNBElement`, with an emitted `= 0` seeding
+//!   prologue.** A guarded core returns before either is assigned, which is
+//!   CS0177; the seeding must not perturb any emitted value. C's `&localBegIdx`
+//!   argument renders as `out localBegIdx` over a plain `int` — none of Java's
+//!   boxing — but a `double` taken by address still needs the `double[1]`
+//!   wrapping, because the parameter it binds to is an output *array*.
 //!
-//! - **Qualified switch labels (`case MAType.SMA:`)** — the exact inverse of
-//!   `render_java_switch_label`, which strips the qualifier because qualified
-//!   labels are Java 21+. Locals are declared with initializers (as in Java), so
-//!   C# definite assignment does not additionally force `default:` arms.
+//! - **Switch labels are qualified (`case MAType.SMA:`)** — the exact inverse of
+//!   `render_java_switch_label`, which strips the qualifier for Java 21.
 //!
-//! - **The float-overload comparison fold is a statement-level fold here.** Java
+//! - **The float-overload comparison fold is statement-level here.** Java
 //!   renders a `float[] == double[]` identity test as a literal `false`; C#
-//!   additionally promotes the then-arm of `if (false)` to a CS0162
-//!   unreachable-code error under `-warnaserror`, so the shared
-//!   [`compat_fold`](super::compat_fold) engine folds the whole `if` away
-//!   (dead-code removal only — never a value change).
+//!   additionally makes the then-arm CS0162 unreachable code under
+//!   `-warnaserror`, so [`compat_fold`](super::compat_fold) folds the whole
+//!   `if` away (dead code only — never a value change).
 //!
-//! - **Method names are the YAML `name:` verbatim** (`SMA`, `WILLR`, `MA`), with
-//!   suffixed variants separated by an underscore (`SMA_Lookback`). This must
-//!   agree with `Lang::CSharp` in `registry.rs` or every cross-indicator call
-//!   targets a method that does not exist — pinned by the
-//!   `csharp_method_names_agree_with_registry` test below.
-
+//! - **Method names are the YAML `name:` verbatim** (`SMA`, `WILLR`), suffixed
+//!   variants separated by an underscore (`SMA_Lookback`). Must agree with
+//!   `Lang::CSharp` in `registry.rs` or every cross-indicator call targets a
+//!   method that does not exist.
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
@@ -1515,40 +1487,57 @@ impl StatementEmitter for CsStmt<'_> {
                 return self.walk_stmt(&outer_if, indent);
             }
         }
-        // Inline per-operand comments: render the `&&`-chain multi-line.
-        if !cond_comments.is_empty()
-            && super::stmt_walk::flatten_and(condition).len() == cond_comments.len()
-        {
+        // Inline per-leaf comments: render the condition's boolean spine
+        // multi-line, one leaf per line with its comment. `render_cond_tree`
+        // emits nothing whose token stream differs from the flat form below.
+        if !cond_comments.is_empty() {
             let mut hoisted = Vec::new();
-            let mut cnt = self.ctx.inline_counter.get();
-            let new_condition =
-                hoist_block_helpers(condition, self.helpers, &mut hoisted, &mut cnt, CANDLE_FNS);
+            let counter0 = self.ctx.inline_counter.get();
+            let mut cnt = counter0;
+            let new_condition = hoist_block_helpers(condition, self.helpers, &mut hoisted, &mut cnt, CANDLE_FNS);
             self.ctx.inline_counter.set(cnt);
-            let op_strs: Vec<String> = super::stmt_walk::flatten_and(&new_condition)
-                .iter()
-                .map(|o| {
-                    let s = render_expr(o, self.ctx, self.registry, self.helpers);
-                    if is_boolean_expr(o, self.helpers) {
-                        if expr_prec(o) < binop_prec(&BinOp::And) {
-                            format!("({s})")
-                        } else {
-                            s
-                        }
-                    } else {
-                        format!("({s}) != 0")
-                    }
-                })
-                .collect();
-            let mut out = render_hoisted_blocks(
-                &hoisted, indent, self.ctx, self.enums, self.registry, self.helpers,
-            );
-            out.push_str(&format!("{pad}if( "));
-            out.push_str(&super::stmt_walk::render_and_operands(
-                &op_strs, cond_comments, &" ".repeat(indent + 4), " )", true,
-            ));
-            out.push_str(&format!("{pad}{{\n"));
-            out.push_str(&self.render_if_tail(then_body, else_body, indent));
-            return out;
+            // Both hooks restate `binop`'s operand rules for one child.
+            let operand = |o: &Expr, op: &BinOp, is_right: bool| {
+                let s = render_expr(o, self.ctx, self.registry, self.helpers);
+                if matches!(op, BinOp::And | BinOp::Or) && is_int_bitwise(o) {
+                    format!("({s}) != 0")
+                } else {
+                    wrap_child(s, o, binop_prec(op), is_right)
+                }
+            };
+            let wraps = |o: &Expr, op: &BinOp, is_right: bool| {
+                let (cp, pp) = (expr_prec(o), binop_prec(op));
+                cp < pp || (cp == pp && is_right)
+            };
+            // The flat path coerces a non-boolean condition here, outside the
+            // operand rules — so this, not the bare render, is what the
+            // token-identity check has to be measured against.
+            let rendered = render_expr(&new_condition, self.ctx, self.registry, self.helpers);
+            let flat = if is_boolean_expr(&new_condition, self.helpers) {
+                rendered
+            } else {
+                format!("({rendered}) != 0")
+            };
+            if let Some(cond_text) = super::stmt_walk::render_cond_tree(
+                &new_condition,
+                cond_comments,
+                &super::stmt_walk::CondHooks { operand: &operand, wraps: &wraps },
+                &flat,
+                &" ".repeat(indent + 4),
+                " )",
+                true,
+            ) {
+                let mut out = render_hoisted_blocks(
+                    &hoisted, indent, self.ctx, self.enums, self.registry, self.helpers,
+                );
+                out.push_str(&format!("{pad}if( "));
+                out.push_str(&cond_text);
+                out.push_str(&format!("{pad}{{\n"));
+                out.push_str(&self.render_if_tail(then_body, else_body, indent));
+                return out;
+            }
+            // Falling through re-hoists from scratch; rewind so the names match.
+            self.ctx.inline_counter.set(counter0);
         }
         // Hoist multi-statement helpers from the condition expression
         let mut hoisted = Vec::new();

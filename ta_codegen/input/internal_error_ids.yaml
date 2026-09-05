@@ -18,13 +18,14 @@
 # Written by `ta_codegen generate`. Do not renumber by hand -- the number is
 # the only thing a bug report carries, and it has to mean the same guard in the
 # next release as it did in the last.
-next: 403
+next: 429
 sites:
   AC.cbsize.oscBuffer: 184
   AC.circbuf.oscBuffer: 181
   AC.ringcap.trailingFastIdx: 182
   AC.ringcap.trailingSlowIdx: 183
   ACCBANDS.ringcap.trailingIdx: 185
+  ADR.ringcap.trailingIdx: 407
   AO.ringcap.trailingFastIdx: 186
   AO.ringcap.trailingSlowIdx: 187
   AROON.extrema: 188
@@ -156,8 +157,21 @@ sites:
   CMF.cbsize.mfv: 315
   CMF.circbuf.mfv: 314
   CMOU.ringcap.trailingIdx: 316
+  COPPOCK.cbsize.sRing: 423
+  COPPOCK.circbuf.sRing: 420
+  COPPOCK.ringcap.roc1Idx: 421
+  COPPOCK.ringcap.roc2Idx: 422
   CORREL.extrema: 317
+  CVI.cbsize.emaRing: 417
+  CVI.circbuf.emaRing: 416
+  DONCHIAN.extrema: 403
+  DPO.ringcap.dispIdx: 409
+  DPO.ringcap.trailingIdx: 410
   EFI.dualmode: 318
+  ER.ringcap.trailingIdx: 426
+  ERI.dualmode: 425
+  FOSC.extrema: 406
+  FRACTAL.wincap.i: 427
   HMA.cbsize.dRing: 324
   HMA.circbuf.dRing: 319
   HMA.dualmode: 325
@@ -184,8 +198,9 @@ sites:
   LINEARREG_SLOPE.extrema: 342
   MA.dispatch.Peek: 344
   MA.dispatch.Update: 343
-  MA.dispatch.UpdateAndFill: 345
   MAMA.ringcap.trailingWMAIdx: 346
+  MASSI.cbsize.ratioRing: 419
+  MASSI.circbuf.ratioRing: 418
   MAX.circbuf.preHighest: 348
   MAX.circbuf.sufHighest: 347
   MAX.extrema: 349
@@ -215,6 +230,11 @@ sites:
   MINUS_DI.dualmode: 373
   MINUS_DM.dualmode: 374
   MOM.ringcap.trailingIdx: 375
+  PERCENTILE.cbsize.ring: 413
+  PERCENTILE.cbsize.sorted: 414
+  PERCENTILE.circbuf.ring: 411
+  PERCENTILE.circbuf.sorted: 412
+  PERCENTRANK.wincap.i: 415
   PLUS_DI.dualmode: 376
   PLUS_DM.dualmode: 377
   QSTICK.ringcap.trailingIdx: 378
@@ -222,6 +242,8 @@ sites:
   ROCP.ringcap.trailingIdx: 380
   ROCR.ringcap.trailingIdx: 381
   ROCR100.ringcap.trailingIdx: 382
+  RVI.extrema: 428
+  RVOL.ringcap.trailingIdx: 408
   SMA.ringcap.trailingIdx: 383
   SMI.extrema: 384
   STOCH.extrema: 385
@@ -234,6 +256,8 @@ sites:
   ULTOSC.cbsize.term: 393
   ULTOSC.circbuf.term: 392
   VAR.extrema: 394
+  VHF.wincap.i: 405
+  VORTEX.ringlag.trailingIdx: 424
   VWMA.ringcap.trailingIdx: 395
   WILLR.circbuf.preHighest: 397
   WILLR.circbuf.preLowest: 399
@@ -242,3 +266,4 @@ sites:
   WILLR.extrema: 400
   WMA.ringcap.trailingIdx: 402
   WMA.wincap.j: 401
+  ZLEMA.ringcap.trailingIdx: 404

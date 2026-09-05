@@ -390,10 +390,12 @@ TA_RetCode TA_S_LINEARREG_INTERCEPT( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_LINEARREG_INTERCEPT_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_LINEARREG_INTERCEPT_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    int lookbackTotal;
    int trailingIdx;
@@ -523,14 +525,13 @@ static void TA_LINEARREG_INTERCEPT_StepImpl( struct TA_LINEARREG_INTERCEPT_Strea
    sp->trailingIdx += 1;
    *outReal= (sp->SumY - m * sp->SumX) / (double)sp->optInTimePeriod;
    sp->today += 1;
+   sp->cur_outReal = *outReal;
 }
 
 static TA_RetCode TA_LINEARREG_INTERCEPT_OpenImpl( struct TA_LINEARREG_INTERCEPT_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[], int outStride )
 {
    struct TA_LINEARREG_INTERCEPT_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -549,9 +550,6 @@ static TA_RetCode TA_LINEARREG_INTERCEPT_OpenImpl( struct TA_LINEARREG_INTERCEPT
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -762,6 +760,7 @@ static TA_RetCode TA_LINEARREG_INTERCEPT_OpenImpl( struct TA_LINEARREG_INTERCEPT
       }
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -812,7 +811,11 @@ TA_RetCode TA_LINEARREG_INTERCEPT_OpenAndFillInternal( struct TA_LINEARREG_INTER
 TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Update( TA_LINEARREG_INTERCEPT_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_LINEARREG_INTERCEPT_StepImpl( stream, inReal, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -820,32 +823,48 @@ TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Update( TA_LINEARREG_INTERCEPT_Stre
 
 TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Peek( const TA_LINEARREG_INTERCEPT_Stream *stream, double inReal, double *outReal )
 {
-   struct TA_LINEARREG_INTERCEPT_Stream scratch;
-   struct TA_LINEARREG_INTERCEPT_Stream *sp = &scratch;
+   const struct TA_LINEARREG_INTERCEPT_Stream *sp = stream;
    double m;
    int windowStart;
    double tempValue1;
    double tempValue2;
    double weightedTrailing;
+   double SumXY;
+   double SumY;
+   int barsSinceReseed;
+   int j;
+   double sumAbs;
+   int today;
+   int trailingIdx;
+   double trailingValue;
+   double *x_inReal;
    int pkSlot0 = -1;
    double pkVal0 = 0.0;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   scratch = *stream;
-   if( sp->today >= 1073741824 )
+   SumXY = sp->SumXY;
+   SumY = sp->SumY;
+   barsSinceReseed = sp->barsSinceReseed;
+   j = sp->j;
+   sumAbs = sp->sumAbs;
+   today = sp->today;
+   trailingIdx = sp->trailingIdx;
+   trailingValue = sp->trailingValue;
+   x_inReal = sp->x_inReal;
+   if( today >= 1073741824 )
    {
-      int rebaseShift = sp->trailingIdx & ~sp->xMask;
-      sp->today -= rebaseShift;
-      sp->trailingIdx -= rebaseShift;
-      sp->j -= rebaseShift;
+      int rebaseShift = trailingIdx & ~sp->xMask;
+      today -= rebaseShift;
+      trailingIdx -= rebaseShift;
+      j -= rebaseShift;
    }
-   pkSlot0 = sp->today & sp->xMask;
+   pkSlot0 = today & sp->xMask;
    pkVal0 = inReal;
-   weightedTrailing = (double)sp->optInTimePeriod * sp->trailingValue;
-   sp->SumXY = sp->SumXY + sp->SumY - weightedTrailing;
-   sp->SumY = sp->SumY - sp->trailingValue + (((sp->today & sp->xMask) != pkSlot0) ? sp->x_inReal[sp->today & sp->xMask] : pkVal0);
-   sp->sumAbs = sp->sumAbs - fabs(sp->trailingValue) + fabs(((sp->today & sp->xMask) != pkSlot0) ? sp->x_inReal[sp->today & sp->xMask] : pkVal0);
+   weightedTrailing = (double)sp->optInTimePeriod * trailingValue;
+   SumXY = SumXY + SumY - weightedTrailing;
+   SumY = SumY - trailingValue + (((today & sp->xMask) != pkSlot0) ? x_inReal[today & sp->xMask] : pkVal0);
+   sumAbs = sumAbs - fabs(trailingValue) + fabs(((today & sp->xMask) != pkSlot0) ? x_inReal[today & sp->xMask] : pkVal0);
    /* Re-anchor: rebuild both sums from the window itself. #103 left them as
     * running totals that are never rebuilt, so each bar's rounding joins a
     * residue no later bar can subtract -- unbounded in the length of the
@@ -905,51 +924,61 @@ TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Peek( const TA_LINEARREG_INTERCEPT_
     * today-lookbackTotal, which is >= outIdx because startIdx was clamped
     * to at least lookbackTotal.
     */
-   sp->barsSinceReseed -= 1;
-   if( sp->barsSinceReseed <= 0 || fabs(weightedTrailing) > 100.0 * sp->sumAbs )
+   barsSinceReseed -= 1;
+   if( barsSinceReseed <= 0 || fabs(weightedTrailing) > 100.0 * sumAbs )
    {
-      sp->barsSinceReseed = 32 * sp->optInTimePeriod;
-      windowStart = sp->today - sp->lookbackTotal;
-      sp->SumY = 0;
-      sp->SumXY = 0;
-      sp->sumAbs = 0;
+      barsSinceReseed = 32 * sp->optInTimePeriod;
+      windowStart = today - sp->lookbackTotal;
+      SumY = 0;
+      SumXY = 0;
+      sumAbs = 0;
       tempValue2 = (double)sp->lookbackTotal;
-      for( sp->j = windowStart; sp->j <= sp->today; sp->j += 1 )
+      for( j = windowStart; j <= today; j += 1 )
       {
-         tempValue1 = ((sp->j & sp->xMask) != pkSlot0) ? sp->x_inReal[sp->j & sp->xMask] : pkVal0;
-         sp->SumY += tempValue1;
-         sp->SumXY += tempValue2 * tempValue1;
-         sp->sumAbs += fabs(tempValue1);
+         tempValue1 = ((j & sp->xMask) != pkSlot0) ? x_inReal[j & sp->xMask] : pkVal0;
+         SumY += tempValue1;
+         SumXY += tempValue2 * tempValue1;
+         sumAbs += fabs(tempValue1);
          tempValue2 -= 1.0;
       }
    }
-   m = (sp->optInTimePeriod * sp->SumXY - sp->SumX * sp->SumY) / sp->Divisor;
-   sp->trailingValue = ((sp->trailingIdx & sp->xMask) != pkSlot0) ? sp->x_inReal[sp->trailingIdx & sp->xMask] : pkVal0;
-   sp->trailingIdx += 1;
-   *outReal= (sp->SumY - m * sp->SumX) / (double)sp->optInTimePeriod;
-   sp->today += 1;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_UpdateAndFill( TA_LINEARREG_INTERCEPT_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      TA_LINEARREG_INTERCEPT_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
+   m = (sp->optInTimePeriod * SumXY - sp->SumX * SumY) / sp->Divisor;
+   trailingValue = ((trailingIdx & sp->xMask) != pkSlot0) ? x_inReal[trailingIdx & sp->xMask] : pkVal0;
+   trailingIdx += 1;
+   *outReal= (SumY - m * sp->SumX) / (double)sp->optInTimePeriod;
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Close( TA_LINEARREG_INTERCEPT_Stream *stream )
 {
    TA_LINEARREG_INTERCEPT_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Value( const TA_LINEARREG_INTERCEPT_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Clone( const TA_LINEARREG_INTERCEPT_Stream *stream, TA_LINEARREG_INTERCEPT_Stream **clone )
+{
+   struct TA_LINEARREG_INTERCEPT_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_LINEARREG_INTERCEPT_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->x_inReal = NULL;
+   if( stream->x_inReal )
+   { size_t copyN = (size_t)(sp->xPhys);
+     sp->x_inReal = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->x_inReal ) { TA_LINEARREG_INTERCEPT_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->x_inReal, stream->x_inReal, sizeof(double) * copyN ); }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

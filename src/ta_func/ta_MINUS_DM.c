@@ -457,10 +457,12 @@ TA_RetCode TA_S_MINUS_DM( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_MINUS_DM_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_MINUS_DM_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    double prevHigh;
    double prevLow;
@@ -492,6 +494,7 @@ static void TA_MINUS_DM_StepImpl( struct TA_MINUS_DM_Stream *sp, double inHigh, 
       {
          *outReal= 0;
       }
+      sp->cur_outReal = *outReal;
    }
    else
    {
@@ -517,6 +520,7 @@ static void TA_MINUS_DM_StepImpl( struct TA_MINUS_DM_Stream *sp, double inHigh, 
          sp->prevMinusDM = sp->prevMinusDM - sp->prevMinusDM / sp->optInTimePeriod;
       }
       *outReal= sp->prevMinusDM;
+      sp->cur_outReal = *outReal;
    }
 }
 
@@ -524,8 +528,6 @@ static TA_RetCode TA_MINUS_DM_OpenImpl( struct TA_MINUS_DM_Stream **stream, cons
 {
    struct TA_MINUS_DM_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -544,9 +546,6 @@ static TA_RetCode TA_MINUS_DM_OpenImpl( struct TA_MINUS_DM_Stream **stream, cons
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    if( optInTimePeriod <= 1 )
    {
@@ -687,6 +686,7 @@ static TA_RetCode TA_MINUS_DM_OpenImpl( struct TA_MINUS_DM_Stream **stream, cons
       sp->prevLow = prevLow;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -881,6 +881,7 @@ static TA_RetCode TA_MINUS_DM_OpenImpl( struct TA_MINUS_DM_Stream **stream, cons
       sp->prevMinusDM = prevMinusDM;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -934,7 +935,11 @@ TA_RetCode TA_MINUS_DM_OpenAndFillInternal( struct TA_MINUS_DM_Stream **stream, 
 TA_LIB_API TA_RetCode TA_MINUS_DM_Update( TA_MINUS_DM_Stream *stream, double inHigh, double inLow, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_MINUS_DM_StepImpl( stream, inHigh, inLow, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -942,26 +947,28 @@ TA_LIB_API TA_RetCode TA_MINUS_DM_Update( TA_MINUS_DM_Stream *stream, double inH
 
 TA_LIB_API TA_RetCode TA_MINUS_DM_Peek( const TA_MINUS_DM_Stream *stream, double inHigh, double inLow, double *outReal )
 {
-   struct TA_MINUS_DM_Stream scratch;
-   struct TA_MINUS_DM_Stream *sp = &scratch;
+   const struct TA_MINUS_DM_Stream *sp = stream;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
-   scratch = *stream;
    if( sp->optInTimePeriod <= 1 )
    {
       double tempReal;
       double diffP;
       double diffM;
+      double prevHigh;
+      double prevLow;
 
+      prevHigh = sp->prevHigh;
+      prevLow = sp->prevLow;
       tempReal = inHigh;
-      diffP = tempReal - sp->prevHigh;
+      diffP = tempReal - prevHigh;
       /* Plus Delta */
-      sp->prevHigh = tempReal;
+      prevHigh = tempReal;
       tempReal = inLow;
-      diffM = sp->prevLow - tempReal;
+      diffM = prevLow - tempReal;
       /* Minus Delta */
-      sp->prevLow = tempReal;
+      prevLow = tempReal;
       if( diffM > 0 && diffP < diffM )
       {
          /* Case 2 and 4: +DM=0,-DM=diffM */
@@ -976,41 +983,31 @@ TA_LIB_API TA_RetCode TA_MINUS_DM_Peek( const TA_MINUS_DM_Stream *stream, double
       double tempReal;
       double diffP;
       double diffM;
+      double prevHigh;
+      double prevLow;
+      double prevMinusDM;
 
+      prevHigh = sp->prevHigh;
+      prevLow = sp->prevLow;
+      prevMinusDM = sp->prevMinusDM;
       tempReal = inHigh;
-      diffP = tempReal - sp->prevHigh;
+      diffP = tempReal - prevHigh;
       /* Plus Delta */
-      sp->prevHigh = tempReal;
+      prevHigh = tempReal;
       tempReal = inLow;
-      diffM = sp->prevLow - tempReal;
+      diffM = prevLow - tempReal;
       /* Minus Delta */
-      sp->prevLow = tempReal;
+      prevLow = tempReal;
       if( diffM > 0 && diffP < diffM )
       {
          /* Case 2 and 4: +DM=0,-DM=diffM */
-         sp->prevMinusDM = sp->prevMinusDM - sp->prevMinusDM / sp->optInTimePeriod + diffM;
+         prevMinusDM = prevMinusDM - prevMinusDM / sp->optInTimePeriod + diffM;
       } else 
       {
          /* Case 1,3,5 and 7 */
-         sp->prevMinusDM = sp->prevMinusDM - sp->prevMinusDM / sp->optInTimePeriod;
+         prevMinusDM = prevMinusDM - prevMinusDM / sp->optInTimePeriod;
       }
-      *outReal= sp->prevMinusDM;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_MINUS_DM_UpdateAndFill( TA_MINUS_DM_Stream *stream, const double inHigh[], const double inLow[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) ) return TA_BAD_PARAM;
-      TA_MINUS_DM_StepImpl( stream, inHigh[i], inLow[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      *outReal= prevMinusDM;
    }
    return TA_SUCCESS;
 }
@@ -1018,6 +1015,27 @@ TA_LIB_API TA_RetCode TA_MINUS_DM_UpdateAndFill( TA_MINUS_DM_Stream *stream, con
 TA_LIB_API TA_RetCode TA_MINUS_DM_Close( TA_MINUS_DM_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_MINUS_DM_Value( const TA_MINUS_DM_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_MINUS_DM_Clone( const TA_MINUS_DM_Stream *stream, TA_MINUS_DM_Stream **clone )
+{
+   struct TA_MINUS_DM_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_MINUS_DM_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   *clone = sp;
    return TA_SUCCESS;
 }
 

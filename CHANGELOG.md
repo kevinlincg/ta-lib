@@ -17,24 +17,51 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
 - (#75) More docs for DEMA, TEMA, T3, MFI, ULTOSC, KAMA and TRIX. Thanks @nehemiah888 !
 - New TA Functions:
   - AC: Accelerator/Decelerator Oscillator (#228)
+  - ADR: Average Day Range, the mean of the last n bar ranges (#367)
   - AO: Awesome Oscillator (#227)
   - CMF: Chaikin Money Flow (#134)
   - CMOU: Chande Momentum Oscillator, Unsmoothed (#124)
+  - CVI: Chaikin's Volatility, the percent change of a smoothed high-low spread (#358)
+  - COPPOCK: Coppock Curve (#362)
+  - CUMSUM: Cumulative Sum (#372)
+  - DONCHIAN: Donchian Channels (#342)
+  - DPO: Detrended Price Oscillator (#363)
+  - ER: Kaufman Efficiency Ratio (#350)
+  - ERI: Elder Ray Index, Bull Power / Bear Power (#361)
   - EFI: Elder's Force Index (#206)
+  - FOSC: Forecast Oscillator (#345)
+  - FRACTAL: Williams Fractal (#371)
+  - HA: Heikin-Ashi Candles, an OHLC-to-OHLC smoothing transform (#373)
   - HMA: Hull Moving Average (#139)
+  - KC: Keltner Channels (#273)
+  - KDJ: KDJ Stochastic (#365)
   - MARKETFI: Market Facilitation Index (#230)
+  - MASSI: Mass Index, a range-expansion reversal-bulge detector (#359)
   - NVI: Negative Volume Index (#126)
+  - PERCENTILE: Percentile, statistic of the trailing window (#368)
+  - PERCENTRANK: Percent Rank, share of the previous window a value ranks above (#369)
   - PVI: Positive Volume Index (#126)
   - PVO: Percentage Volume Oscillator (#119)
+  - PVT: Price Volume Trend (#364)
   - QSTICK: Qstick (#226)
+  - RMA: Wilder's Smoothed Moving Average (#348)
+  - RVI: Relative Volatility Index (#366)
+  - RVOL: Relative Volume (#370)
   - SMI: Stochastic Momentum Index (#238)
+  - SUPERTREND: SuperTrend, an ATR-scaled trailing band with a trend flag (#272)
+  - TSI: True Strength Index (#360)
+  - VHF: Vertical Horizontal Filter (#346)
+  - VORTEX: Vortex Indicator (#349)
   - VWAP: Volume Weighted Average Price (#237)
   - VWMA: Volume Weighted Moving Average (#131)
   - WAD: Williams' Accumulation/Distribution (#200)
+  - ZLEMA: Zero-Lag Exponential Moving Average (#347)
 - New MAType (for MA, BBANDS, STOCH etc...):
   - TA_MAType_HMA (#139)
-  - TA_MAType_DISABLED — no smoothing at any period; the output is a copy of the input (#93)
+  - TA_MAType_DISABLED — no smoothing at any period; output copy the input (#93)
   - TA_MAType_DEFAULT — selects that parameter's documented MA type (#182)
+  - TA_MAType_ZLEMA (#347)
+  - TA_MAType_RMA (#348)
 
 ### Faster
 - ~8x: MACD, MACDFIX and MACDEXT (when MA type is EMA).
@@ -45,13 +72,16 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
 - ~30%: MAVP (#143). Thanks @dexhunter !
 - ~27% Apple, ~8% GCC: MIN, MAX, MINMAX, MININDEX, MAXINDEX, MINMAXINDEX, MIDPOINT, MIDPRICE, AROON, AROONOSC and WILLR (#128). Thanks @dexhunter !
 - ~20%: VAR, STDDEV, BBANDS
-- ~10%: ATR and NATR
+- ~3x to 4.7x: ATR and NATR (#338), and ~1.4x SUPERTREND / ~1.3x KC with them. The upper end needs the gcc/glibc/x86_64 hardware-FMA clone; elsewhere it is ~2x.
 
 ### Changed
-- (#262) API (Rust, Java, C#): an output the library marks *nullable* can now be declined, as C has always allowed. `MAMA`'s `outFAMA` is the only one — pass `None` in Rust (its parameter is now `Option<&mut [f64]>`), `null` in Java, an empty span in C#. Declining skips the write, not the calculation: the other outputs are unchanged. It also removes the throwaway buffer those three languages allocated on every `MA` (and `BBANDS`, `STOCH`, …) call with an MA type of MAMA. (#270) The streaming API honours the same declination, at `OpenAndFill` and at `UpdateAndFill`, and the choice is made per call — it need not match what the handle was opened with. In Rust a nullable output is `Option<&mut [f64]>` at both, as it is in the batch API.
 - (#133) BBANDS default `optInTimePeriod` changed from 5 to 20, as intended by John Bollinger.
 - (#120) PPO and APO now default `optInMAType` to EMA (was SMA), matching Gerald Appel's original PPO/MACD definition. Pass `TA_MAType_SMA` explicitly to keep the previous behavior.
 - (#96) Fused multiply-add and other floating-point re-ordering produce minor output differences; an intentional modernization.
+- (#338) ATR, NATR and SUPERTREND smooth the true range with a fused two-coefficient step
+  instead of multiply, add, divide, which takes the divide out of the loop-carried chain.
+  Values move by at most 1.3e-15 relative from the reference series, and KC inherits the
+  same shift through its ATR. Period 1 and 2 are unchanged.
 - (#183) EMA now uses a fused multiply-add in its recursion, as the EMA cascades inside
   DEMA, TEMA, TRIX, MACD and MACDFIX already did. Values move by at most 2.8e-16 relative
   from the reference series, and the same shift reaches MA, BBANDS, APO, PPO, PVO, MAVP,
@@ -68,6 +98,7 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
 - `TA_SetCompatibility()` and `TA_GetCompatibility()`. The notion of variant (e.g. MetaStock compatibility) is not actively maintained and will be removed in a future release. Default behavior is unaffected. Moving forward TA-Lib will create separate TA functions for distinct behaviors.
 
 ### Fixed
+- (#385) KAMA could divide by zero and return `-Inf`, after which every remaining bar of the call was NaN. It needs a window whose one-bar changes sum to exactly zero through floating-point absorption while the net change over that window is negative.
 - (#130) In-place calls (same buffer as input and output) returned wrong values for STOCH, STOCHF and MAVP. Regular (separate-buffer) calls were always correct.
 - (#118,#242) VAR, CORREL, STDDEV and BBANDS more precise and faster.
 - (#33) Float overflow in the single-precision (`TA_S_*`) functions. Thanks @iglesias !
@@ -86,8 +117,6 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
 - (#243) STDDEV and BBANDS returned exactly 0 for a standard deviation that was small but non-zero. In rare cases, was making the bands "collapse" on the middle line.
 - (#244) MFI returned 0 instead of the index whenever the window summed to less than 1.0. Also, no longer returns values slightly outside 0-100 (clamps the epsilon errors).
 - (#253) Fix many TA_IS_ZERO vs TA_IS_ZERO_SCALED choices. Numerically better for edge cases, like very small inputs (<10e-8) or mostly flat input prices.
-- (#262) Rust and C# rejected a call whose output buffers were separately allocated but empty, treating them as one buffer. A range shorter than the indicator's lookback produces no values and needs no output space, so that call is a success in C and Java; all four now agree. In the streaming API the same relaxation makes Rust's `OpenAndFill` fault on a zero-length output instead of returning `TA_BAD_PARAM`, which is what Java and C# have always done — the fill always has at least one value to write, so there is no legitimate empty output there.
-- Batch API: a NULL `outBegIdx` or `outNBElement` crashed instead of being rejected; every function now returns `TA_BAD_PARAM`.
 
 ## [0.7.1] 2026-07-03
 ### Added

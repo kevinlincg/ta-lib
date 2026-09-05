@@ -174,8 +174,17 @@
        * fastest adaptation, for every window of an instrument quoted below it
        * (issue #253). A genuinely flat window is now recognized by the exact bar
        * count above instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+       * beside it compares against the SIGNED numerator, so it is false whenever
+       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+       * add/subtract of fabs terms, so an addend absorbed on the way in and
+       * subtracted later at full precision drives it to exactly 0.0 on a window
+       * that is not flat; without this clause that bar divides by zero and the
+       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+       * carried until #350).
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
@@ -223,7 +232,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -271,7 +280,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -371,7 +380,7 @@
       tempReal2 = (double)inReal[trailingIdx++];
       periodROC = tempReal - tempReal2;
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
@@ -395,7 +404,7 @@
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -423,7 +432,7 @@
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -581,11 +590,11 @@
     * Open with {@link Core#kamaOpen}; there is no close — the handle is
     * ordinary heap state, unreferenced handles are simply garbage-collected.
     * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
-    * {@code value} and {@code copy} must not race with an {@code update} on
+    * {@code value} and {@code clone} must not race with an {@code update} on
     * the same handle. With no concurrent {@code update}, {@code peek}/
-    * {@code value}/{@code copy} never write the handle and may be called
-    * concurrently after safe publication. Independent handles (including
-    * {@code copy()} results) are fully independent.
+    * {@code value}/{@code clone} never write the stream and may be called
+    * concurrently after safe publication. Independent streams (a
+    * {@code clone()} result included) are fully independent.
     * <p>Not serializable by design: to checkpoint, retain the history and
     * re-open — the result is bit-identical by contract.
     */
@@ -609,12 +618,13 @@
       KamaStream( Core core ) { this.core = core; }
 
       /**
-       * The bars this stream has produced a value for, in the input series'
+       * The bars this stream has an output for, in the input series'
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#KAMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * accepted {@code update} adds one to the count, {@code peek} leaves
-       * it alone, and {@code copy()} carries it verbatim. A plain
+       * {@code update} adds one to the count — a bar rejected for being
+       * non-finite included, because it still happened — {@code peek} leaves
+       * it alone, and {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
@@ -643,46 +653,25 @@
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the handle is left exactly as it was —
-       * the stream stays usable, so skip the bar or re-open on a clean
-       * history. This is the one place the streaming tier is stricter than
+       * written, so the state is left exactly as it was: the rejected bar's
+       * output is the previous value, held, and {@link #value()} answers it.
+       * The stream stays usable, so skip the bar or re-open on a clean
+       * history. {@link #outRange()} does advance: the bar happened and
+       * occupies a position in the series, so the handle counts it, which is
+       * what keeps two handles on one feed aligned when only one rejects.
+       * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) )
+         if( !Double.isFinite(inReal) ) {
+            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("KAMA update: BadParam", RetCode.BadParam);
+         }
          core.kamaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what was committed, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * bars {@code 0..k} committed and written, bar {@code k} and everything
-       * after it not, and the count advanced by {@code k}.
-       */
-      public void updateAndFill( double inReal[], double outReal[] ) {
-         requireArgument("KAMA updateAndFill", "inReal", inReal);
-         requireArgument("KAMA updateAndFill", "outReal", outReal);
-         final int barCount = inReal.length;
-         if( outReal.length < barCount || (Object)outReal == (Object)inReal )
-            throw new TaLibArgumentException("KAMA updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) )
-               throw new TaLibArgumentException("KAMA updateAndFill: BadParam", RetCode.BadParam);
-            core.kamaStepImpl(this, inReal[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**
@@ -701,11 +690,9 @@
          double tempReal = 0.0;
          double tempReal2 = 0.0;
          double periodROC = 0.0;
-         double cur_outReal = sp.cur_outReal;
-         double lag1_inReal = sp.lag1_inReal;
+         double cur_outReal = 0.0;
          int nullRun = sp.nullRun;
          double prevKAMA = sp.prevKAMA;
-         int ringPos_trailingIdx = sp.ringPos_trailingIdx;
          double sumROC1 = sp.sumROC1;
          double trailingValue = sp.trailingValue;
          int pkSlot0 = -1;
@@ -719,21 +706,21 @@
             pkVal0 = inReal;
          }
          tempReal = inReal;
-         tempReal2 = (ringPos_trailingIdx != pkSlot0) ? sp.ring_trailingIdx_inReal[ringPos_trailingIdx] : pkVal0;
+         tempReal2 = (sp.ringPos_trailingIdx != pkSlot0) ? sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] : pkVal0;
          periodROC = tempReal - tempReal2;
          /* Adjust sumROC1:
           *  - Remove trailing ROC1
           *  - Add new ROC1
           */
          sumROC1 -= Math.abs(trailingValue - tempReal2);
-         sumROC1 += Math.abs(tempReal - lag1_inReal);
+         sumROC1 += Math.abs(tempReal - sp.lag1_inReal);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
           * residue can be dropped. That is what lets the efficiency ratio be
           * decided by `sumROC1 <= periodROC` alone: a window that flat has
           * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
           */
-         if( tempReal - lag1_inReal == 0.0 ) {
+         if( tempReal - sp.lag1_inReal == 0.0 ) {
             nullRun += 1;
          } else {
             nullRun = 0;
@@ -747,7 +734,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -760,17 +747,13 @@
           */
          prevKAMA = Math.fma(inReal - prevKAMA, tempReal, prevKAMA);
          cur_outReal = prevKAMA;
-         lag1_inReal = inReal;
-         ringPos_trailingIdx = ringPos_trailingIdx + 1;
-         if( ringPos_trailingIdx >= sp.ringCap_trailingIdx ) {
-            ringPos_trailingIdx = 0;
-         }
          return cur_outReal;
       }
 
       /**
-       * The value at the most recently committed bar — the last history bar
-       * right after open, then whatever the latest {@code update} returned.
+       * The value at the last bar this stream counted — the bar
+       * {@link #outRange()} ends on. The last history bar right after open,
+       * then whatever the latest accepted {@code update} returned.
        * A pure field read; {@code peek} does not change it.
        */
       public double value() {
@@ -778,10 +761,18 @@
       }
 
       /**
-       * An independent deep copy of this stream: both evolve separately from
-       * here on (the Java rendering of the Rust handle's {@code Clone}).
+       * An independent fork of this stream: both evolve separately from here
+       * on. Buffers are copied and sub-streams cloned recursively; the
+       * {@link Core} reference is shared, since a {@code Core} is immutable
+       * for a stream's lifetime.
+       *
+       * <p>Not the {@code Cloneable} protocol: this calls a copy constructor,
+       * never {@code super.clone()}, so it throws nothing.
+       *
+       * @return an independent stream at the same bar
        */
-      public KamaStream copy() {
+      @Override
+      public KamaStream clone() {
          return new KamaStream(this);
       }
    }
@@ -826,7 +817,7 @@
        */
       sp.trailingValue = tempReal2;
       /* Calculate the efficiency ratio */
-      if( sp.sumROC1 <= periodROC ) {
+      if( sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sp.sumROC1);
@@ -977,8 +968,17 @@
        * fastest adaptation, for every window of an instrument quoted below it
        * (issue #253). A genuinely flat window is now recognized by the exact bar
        * count above instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+       * beside it compares against the SIGNED numerator, so it is false whenever
+       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+       * add/subtract of fabs terms, so an addend absorbed on the way in and
+       * subtracted later at full precision drives it to exactly 0.0 on a window
+       * that is not flat; without this clause that bar divides by zero and the
+       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+       * carried until #350).
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
@@ -1026,7 +1026,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -1074,7 +1074,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);

@@ -70,10 +70,6 @@
 /* None */
 
 /**** External variables declarations. ****/
-extern int nbProfiledCall;
-extern double timeInProfiledCall;
-extern double worstProfiledCall;
-extern int insufficientClockPrecision;
 
 /**** Global variables definitions.    ****/
 
@@ -130,7 +126,8 @@ static int dataWithinReasonableRange( TA_Real val1, TA_Real val2,
 
 static ErrorNumber doRangeTestForOneOutput( RangeTestFunction testFunction,
                                             TA_RangeStability stability,
-                                            TA_FuncUnstId unstId,
+                                            const TA_FuncUnstId *unstIds,
+                                            int nbUnstIds,
                                             void *opaqueData,
                                             unsigned int outputNb,
                                             unsigned int integerTolerance );
@@ -138,17 +135,6 @@ static ErrorNumber doRangeTestForOneOutput( RangeTestFunction testFunction,
 static TA_RangeStability classify_range_stability( TA_FuncUnstId unstId,
                                                    unsigned int integerTolerance );
 
-static TA_RetCode CallTestFunction( RangeTestFunction testFunction,
-                                    TA_Integer    startIdx,
-                                    TA_Integer    endIdx,
-                                    TA_Real      *outputBuffer,
-                                    TA_Integer   *outputBufferInt,
-                                    TA_Integer   *outBegIdx,
-                                    TA_Integer   *outNbElement,
-                                    TA_Integer   *lookback,
-                                    void         *opaqueData,
-                                    unsigned int  outputNb,
-                                    unsigned int *isOutputInteger );
 
 /**** Local variables definitions.     ****/
 
@@ -579,6 +565,13 @@ static TA_RangeStability classify_range_stability( TA_FuncUnstId unstId,
    return TA_STABLE_EPSILON;
 }
 
+void sweep_set_unstable( const TA_FuncUnstId *ids, int nbIds, unsigned int value )
+{
+   int i;
+   for( i = 0; i < nbIds; i++ )
+      TA_SetUnstablePeriod( ids[i], value );
+}
+
 ErrorNumber doRangeTest( RangeTestFunction testFunction,
                          TA_FuncUnstId unstId,
                          void *opaqueData,
@@ -600,8 +593,23 @@ ErrorNumber doRangeTestEx( RangeTestFunction testFunction,
                            unsigned int nbOutput,
                            unsigned int integerTolerance )
 {
+   /* One id is the common case; the set form below is the general one. */
+   return doRangeTestMulti( testFunction, stability,
+                            &unstId, unstId == TA_TEST_UNST_NONE ? 0 : 1,
+                            opaqueData, nbOutput, integerTolerance );
+}
+
+ErrorNumber doRangeTestMulti( RangeTestFunction testFunction,
+                              TA_RangeStability stability,
+                              const TA_FuncUnstId *unstIds,
+                              int nbUnstIds,
+                              void *opaqueData,
+                              unsigned int nbOutput,
+                              unsigned int integerTolerance )
+{
    unsigned int outputNb;
    ErrorNumber errNb;
+   TA_FuncUnstId unstId = nbUnstIds > 0 ? unstIds[0] : TA_TEST_UNST_NONE;
 
    /* Guard: keep the stability class and the unstable-period id consistent.
     *  - CONVERGING needs an unstable period to warm up the recursion (so the
@@ -634,7 +642,8 @@ ErrorNumber doRangeTestEx( RangeTestFunction testFunction,
    {
       errNb = doRangeTestForOneOutput( testFunction,
                                        stability,
-                                       unstId,
+                                       unstIds,
+                                       nbUnstIds,
                                        opaqueData,
                                        outputNb,
                                        integerTolerance );
@@ -663,11 +672,15 @@ void printRetCode( TA_RetCode retCode )
 /**** Local functions definitions.     ****/
 static ErrorNumber doRangeTestForOneOutput( RangeTestFunction testFunction,
                                             TA_RangeStability stability,
-                                            TA_FuncUnstId unstId,
+                                            const TA_FuncUnstId *unstIds,
+                                            int nbUnstIds,
                                             void *opaqueData,
                                             unsigned int outputNb,
                                             unsigned int integerTolerance )
 {
+   /* The envelope needs one id to read the swept value back and to pick
+    * periodToIgnore; every member carries the same value, so the first will do. */
+   TA_FuncUnstId unstId = nbUnstIds > 0 ? unstIds[0] : TA_TEST_UNST_NONE;
    TA_RetCode retCode;
    TA_Integer refOutBeg, refOutNbElement, refLookback;
    TA_Integer fixSize;
@@ -702,11 +715,11 @@ static ErrorNumber doRangeTestForOneOutput( RangeTestFunction testFunction,
        * on the whole range by keeping that unstable period
        * to zero.
        */
-      TA_SetUnstablePeriod( unstId, 0 );
+      sweep_set_unstable( unstIds, nbUnstIds, 0 );
    }
 
    outputIsInteger = 0;
-   retCode = CallTestFunction( testFunction, 0, MAX_RANGE_END, refBuffer, refBufferInt,
+   retCode = testFunction( 0, MAX_RANGE_END, refBuffer, refBufferInt,
                            &refOutBeg, &refOutNbElement, &refLookback,
                            opaqueData, outputNb, &outputIsInteger );
 
@@ -765,7 +778,7 @@ static ErrorNumber doRangeTestForOneOutput( RangeTestFunction testFunction,
       {
          for( unstablePeriod=0; unstablePeriod <= MAX_RANGE_SIZE; unstablePeriod++ )
          {
-            TA_SetUnstablePeriod( unstId, unstablePeriod );
+            sweep_set_unstable( unstIds, nbUnstIds, (unsigned int)unstablePeriod );
 
             errNb = doRangeTestFixSize( testFunction, opaqueData,
                                         refOutBeg, refOutNbElement, refLookback,
@@ -872,7 +885,7 @@ static ErrorNumber doRangeTestFixSize( RangeTestFunction testFunction,
    {
       /* Call the TA function. */
       endIdx = startIdx+fixSize-1;
-      retCode = CallTestFunction( testFunction, startIdx, endIdx,
+      retCode = testFunction( startIdx, endIdx,
                               &outputBuffer[1], &outputBufferInt[1],
                               &outputBegIdx, &outputNbElement, &lookback,
                               opaqueData, outputNb, &outputIsInteger );
@@ -1382,75 +1395,6 @@ static int dataWithinReasonableRange( TA_Real val1, TA_Real val2,
    }
 
    return 1; /* Value equal within tolerance. */
-}
-
-static TA_RetCode CallTestFunction( RangeTestFunction testFunction,
-                                    TA_Integer    startIdx,
-                                    TA_Integer    endIdx,
-                                    TA_Real      *outputBuffer,
-                                    TA_Integer   *outputBufferInt,
-                                    TA_Integer   *outBegIdx,
-                                    TA_Integer   *outNbElement,
-                                    TA_Integer   *lookback,
-                                    void         *opaqueData,
-                                    unsigned int  outputNb,
-                                    unsigned int *isOutputInteger )
-{
-   /* Call the function and do profiling. */
-   TA_RetCode retCode;
-   double clockDelta;
-
-#ifdef WIN32
-   LARGE_INTEGER startClock;
-   LARGE_INTEGER endClock;
-#else
-   clock_t startClock;
-   clock_t endClock;
-#endif
-
-#ifdef WIN32
-   QueryPerformanceCounter(&startClock);
-#else
-   startClock = clock();
-#endif
-	retCode = testFunction( startIdx,
-                  endIdx,
-                  outputBuffer,
-                  outputBufferInt,
-                  outBegIdx,
-                  outNbElement,
-                  lookback,
-                  opaqueData,
-                  outputNb,
-                  isOutputInteger );
-
-	/* Profile only functions producing at least 20 values. */
-	if( *outNbElement < 20 )
-	{
-		return retCode;
-	}
-
-#ifdef WIN32
-   QueryPerformanceCounter(&endClock);
-   clockDelta = (double)((__int64)endClock.QuadPart - (__int64) startClock.QuadPart);
-#else
-   endClock = clock();
-   clockDelta = (double)(endClock - startClock);
-#endif
-
-   if( clockDelta <= 0 )
-   {
-	   insufficientClockPrecision = 1;
-   }
-   else
-   {
-      if( clockDelta > worstProfiledCall )
-         worstProfiledCall = clockDelta;
-      timeInProfiledCall += clockDelta;
-      nbProfiledCall++;
-   }
-
-   return retCode;
 }
 
 /* See ta_test_priv.h for the rationale (why relative-only is wrong for any

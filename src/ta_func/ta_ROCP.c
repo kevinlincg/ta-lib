@@ -224,10 +224,12 @@ TA_RetCode TA_S_ROCP( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_ROCP_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_ROCP_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    int ringPos_trailingIdx;
    int ringCap_trailingIdx;
@@ -259,6 +261,7 @@ static void TA_ROCP_StepImpl( struct TA_ROCP_Stream *sp, double inReal, double *
    {
       *outReal= 0.0;
    }
+   sp->cur_outReal = *outReal;
    sp->ring_trailingIdx_inReal[sp->ringPos_trailingIdx] = inReal;
    sp->ringPos_trailingIdx = sp->ringPos_trailingIdx + 1;
    if( sp->ringPos_trailingIdx >= sp->ringCap_trailingIdx )
@@ -271,8 +274,6 @@ static TA_RetCode TA_ROCP_OpenImpl( struct TA_ROCP_Stream **stream, const double
 {
    struct TA_ROCP_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -291,9 +292,6 @@ static TA_RetCode TA_ROCP_OpenImpl( struct TA_ROCP_Stream **stream, const double
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int inIdx;
@@ -380,6 +378,7 @@ static TA_RetCode TA_ROCP_OpenImpl( struct TA_ROCP_Stream **stream, const double
       sp->ringPos_trailingIdx = 0;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -430,7 +429,11 @@ TA_RetCode TA_ROCP_OpenAndFillInternal( struct TA_ROCP_Stream **stream, const do
 TA_LIB_API TA_RetCode TA_ROCP_Update( TA_ROCP_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_ROCP_StepImpl( stream, inReal, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -438,21 +441,21 @@ TA_LIB_API TA_RetCode TA_ROCP_Update( TA_ROCP_Stream *stream, double inReal, dou
 
 TA_LIB_API TA_RetCode TA_ROCP_Peek( const TA_ROCP_Stream *stream, double inReal, double *outReal )
 {
-   struct TA_ROCP_Stream scratch;
-   struct TA_ROCP_Stream *sp = &scratch;
+   const struct TA_ROCP_Stream *sp = stream;
    double tempReal;
+   double *ring_trailingIdx_inReal;
    int pkSlot0 = -1;
    double pkVal0 = 0.0;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   ring_trailingIdx_inReal = sp->ring_trailingIdx_inReal;
    if( sp->ringCap_trailingIdx == 0 )
    {
       pkSlot0 = 0;
       pkVal0 = inReal;
    }
-   tempReal = (sp->ringPos_trailingIdx != pkSlot0) ? sp->ring_trailingIdx_inReal[sp->ringPos_trailingIdx] : pkVal0;
+   tempReal = (sp->ringPos_trailingIdx != pkSlot0) ? ring_trailingIdx_inReal[sp->ringPos_trailingIdx] : pkVal0;
    if( tempReal != 0.0 )
    {
       *outReal= (inReal - tempReal) / tempReal;
@@ -460,33 +463,39 @@ TA_LIB_API TA_RetCode TA_ROCP_Peek( const TA_ROCP_Stream *stream, double inReal,
    {
       *outReal= 0.0;
    }
-   sp->ringPos_trailingIdx = sp->ringPos_trailingIdx + 1;
-   if( sp->ringPos_trailingIdx >= sp->ringCap_trailingIdx )
-   {
-      sp->ringPos_trailingIdx = 0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_ROCP_UpdateAndFill( TA_ROCP_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      TA_ROCP_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_ROCP_Close( TA_ROCP_Stream *stream )
 {
    TA_ROCP_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ROCP_Value( const TA_ROCP_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ROCP_Clone( const TA_ROCP_Stream *stream, TA_ROCP_Stream **clone )
+{
+   struct TA_ROCP_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_ROCP_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->ring_trailingIdx_inReal = NULL;
+   if( stream->ring_trailingIdx_inReal )
+   { size_t copyN = (size_t)(sp->ringCap_trailingIdx > 0 ? sp->ringCap_trailingIdx : 1);
+     sp->ring_trailingIdx_inReal = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->ring_trailingIdx_inReal ) { TA_ROCP_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->ring_trailingIdx_inReal, stream->ring_trailingIdx_inReal, sizeof(double) * copyN ); }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

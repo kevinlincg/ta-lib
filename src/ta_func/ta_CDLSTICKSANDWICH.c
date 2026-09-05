@@ -58,9 +58,7 @@
 
 TA_LIB_API int TA_CDLSTICKSANDWICH_Lookback( void )
 {
-   int Equal_rangeType = TA_Globals->candleSettings[TA_Equal].rangeType;
    int Equal_avgPeriod = TA_Globals->candleSettings[TA_Equal].avgPeriod;
-   double Equal_factor = TA_Globals->candleSettings[TA_Equal].factor;
    return Equal_avgPeriod + 2;
 }
 
@@ -79,9 +77,7 @@ TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH( int    startIdx,
    int outIdx;
    int EqualTrailingIdx;
    int lookbackTotal;
-   int Equal_rangeType = TA_Globals->candleSettings[TA_Equal].rangeType;
    int Equal_avgPeriod = TA_Globals->candleSettings[TA_Equal].avgPeriod;
-   double Equal_factor = TA_Globals->candleSettings[TA_Equal].factor;
 
    if( (startIdx < 0) || (startIdx > TA_MAX_INDEX) )
       return TA_OUT_OF_RANGE_START_INDEX;
@@ -183,9 +179,7 @@ TA_RetCode TA_S_CDLSTICKSANDWICH( int    startIdx,
    int outIdx;
    int EqualTrailingIdx;
    int lookbackTotal;
-   int Equal_rangeType = TA_Globals->candleSettings[TA_Equal].rangeType;
    int Equal_avgPeriod = TA_Globals->candleSettings[TA_Equal].avgPeriod;
-   double Equal_factor = TA_Globals->candleSettings[TA_Equal].factor;
 
    if( (startIdx < 0) || (startIdx > TA_MAX_INDEX) )
       return TA_OUT_OF_RANGE_START_INDEX;
@@ -247,10 +241,12 @@ TA_RetCode TA_S_CDLSTICKSANDWICH( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_CDLSTICKSANDWICH_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_CDLSTICKSANDWICH_Value). */
+   int cur_outInteger;
    double EqualPeriodTotal;
    double lag1_inOpen;
    double lag2_inOpen;
@@ -294,6 +290,7 @@ static void TA_CDLSTICKSANDWICH_StepImpl( struct TA_CDLSTICKSANDWICH_Stream *sp,
     * when avgPeriod is not 0, that means "compare with the previous candles" (it excludes the current candle)
     */
    sp->EqualPeriodTotal += TA_STREAM_CANDLERANGE(Equal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) - sp->ring_EqualTrailingIdx_derived[(sp->ringPos_EqualTrailingIdx + sp->ringCap_EqualTrailingIdx - sp->ringLag_EqualTrailingIdx - 2) % sp->ringCap_EqualTrailingIdx];
+   sp->cur_outInteger = *outInteger;
    sp->lag2_inOpen = sp->lag1_inOpen;
    sp->lag1_inOpen = inOpen;
    sp->lag2_inHigh = sp->lag1_inHigh;
@@ -313,8 +310,6 @@ static TA_RetCode TA_CDLSTICKSANDWICH_OpenImpl( struct TA_CDLSTICKSANDWICH_Strea
 {
    struct TA_CDLSTICKSANDWICH_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -329,9 +324,6 @@ static TA_RetCode TA_CDLSTICKSANDWICH_OpenImpl( struct TA_CDLSTICKSANDWICH_Strea
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int Equal_avgPeriod = TA_Globals->candleSettings[TA_Equal].avgPeriod;
@@ -432,6 +424,7 @@ static TA_RetCode TA_CDLSTICKSANDWICH_OpenImpl( struct TA_CDLSTICKSANDWICH_Strea
       sp->lag2_inClose = inClose[historyLen - 2];
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outInteger = outInteger[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -482,7 +475,11 @@ TA_RetCode TA_CDLSTICKSANDWICH_OpenAndFillInternal( struct TA_CDLSTICKSANDWICH_S
 TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Update( TA_CDLSTICKSANDWICH_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
    if( !stream || !outInteger ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_CDLSTICKSANDWICH_StepImpl( stream, inOpen, inHigh, inLow, inClose, outInteger );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -490,16 +487,10 @@ TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Update( TA_CDLSTICKSANDWICH_Stream *st
 
 TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Peek( const TA_CDLSTICKSANDWICH_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
-   struct TA_CDLSTICKSANDWICH_Stream scratch;
-   struct TA_CDLSTICKSANDWICH_Stream *sp = &scratch;
-   int pkSlot0 = -1;
-   double pkVal0 = 0.0;
+   const struct TA_CDLSTICKSANDWICH_Stream *sp = stream;
 
    if( !stream || !outInteger ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
-   pkSlot0 = sp->ringPos_EqualTrailingIdx;
-   pkVal0 = TA_STREAM_CANDLERANGE(Equal,inOpen,inHigh,inLow,inClose);
    if( ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && /* first black */
        ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 1 &&     /* second white */
        ((inClose >= inOpen) ? 1 : 0 - 1) == 0 - 1 &&                   /* third black */
@@ -512,45 +503,39 @@ TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Peek( const TA_CDLSTICKSANDWICH_Stream
    {
       *outInteger= 0;
    }
-   /* add the current range and subtract the first range: this is done after the pattern recognition
-    * when avgPeriod is not 0, that means "compare with the previous candles" (it excludes the current candle)
-    */
-   sp->EqualPeriodTotal += TA_STREAM_CANDLERANGE(Equal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) - (((sp->ringPos_EqualTrailingIdx + sp->ringCap_EqualTrailingIdx - sp->ringLag_EqualTrailingIdx - 2) % sp->ringCap_EqualTrailingIdx != pkSlot0) ? sp->ring_EqualTrailingIdx_derived[(sp->ringPos_EqualTrailingIdx + sp->ringCap_EqualTrailingIdx - sp->ringLag_EqualTrailingIdx - 2) % sp->ringCap_EqualTrailingIdx] : pkVal0);
-   sp->lag2_inOpen = sp->lag1_inOpen;
-   sp->lag1_inOpen = inOpen;
-   sp->lag2_inHigh = sp->lag1_inHigh;
-   sp->lag1_inHigh = inHigh;
-   sp->lag2_inLow = sp->lag1_inLow;
-   sp->lag1_inLow = inLow;
-   sp->lag2_inClose = sp->lag1_inClose;
-   sp->lag1_inClose = inClose;
-   sp->ringPos_EqualTrailingIdx = sp->ringPos_EqualTrailingIdx + 1;
-   if( sp->ringPos_EqualTrailingIdx >= sp->ringCap_EqualTrailingIdx )
-   {
-      sp->ringPos_EqualTrailingIdx = 0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_UpdateAndFill( TA_CDLSTICKSANDWICH_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inHigh || !inLow || !inClose || !outInteger ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inOpen || (const void *)outInteger == (const void *)inHigh || (const void *)outInteger == (const void *)inLow || (const void *)outInteger == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) ) return TA_BAD_PARAM;
-      TA_CDLSTICKSANDWICH_StepImpl( stream, inOpen[i], inHigh[i], inLow[i], inClose[i], &outInteger[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Close( TA_CDLSTICKSANDWICH_Stream *stream )
 {
    TA_CDLSTICKSANDWICH_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Value( const TA_CDLSTICKSANDWICH_Stream *stream, int *outInteger )
+{
+   if( !stream || !outInteger ) return TA_BAD_PARAM;
+   *outInteger = stream->cur_outInteger;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Clone( const TA_CDLSTICKSANDWICH_Stream *stream, TA_CDLSTICKSANDWICH_Stream **clone )
+{
+   struct TA_CDLSTICKSANDWICH_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_CDLSTICKSANDWICH_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->ring_EqualTrailingIdx_derived = NULL;
+   if( stream->ring_EqualTrailingIdx_derived )
+   { size_t copyN = (size_t)(sp->ringCap_EqualTrailingIdx > 0 ? sp->ringCap_EqualTrailingIdx : 1);
+     sp->ring_EqualTrailingIdx_derived = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->ring_EqualTrailingIdx_derived ) { TA_CDLSTICKSANDWICH_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->ring_EqualTrailingIdx_derived, stream->ring_EqualTrailingIdx_derived, sizeof(double) * copyN ); }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

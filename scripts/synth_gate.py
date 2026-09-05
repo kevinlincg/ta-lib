@@ -22,6 +22,11 @@ the SYNTH family:
        fixture that computes the wrong thing in all four backends passes both;
        this is the only leg that knows what the numbers should be.
 
+Leg 0 is the generator's own `cargo test` on the injected tree — the static
+sweeps that read emitted text for structural properties, the class no value leg
+below can see. Added in #327; before it, every sweep claiming to hold "over the
+whole corpus" had only ever seen the 177 shipped functions.
+
 Anti-vacuity: the script asserts from the gate output that EXACTLY the
 expected number of SYNTH functions were exercised by each leg in each
 language. A refactor that silently stops enumerating them fails the gate
@@ -190,6 +195,40 @@ def main():
         if rc != 0:
             sys.exit(f"synth_gate: FAIL — worktree build exited {rc}")
 
+        # Leg 0: the generator's OWN test suite, against the injected tree.
+        #
+        # Placed here rather than at the end because it needs nothing the
+        # build above has not already produced -- just the generate -- so a
+        # break skips the post-generate C rebuild and all three value legs
+        # below. It cannot come earlier: the build IS what generates.
+        #
+        # These are the STATIC sweeps: they read emitted text for structural
+        # properties, which is the class of defect no value gate below can see
+        # (a peek that copies the handle and then writes the copy still answers
+        # correctly). They ran only against the shipped corpus until #327, so
+        # every sweep claiming to hold "over the whole corpus" had never seen a
+        # fixture.
+        rc, out0 = run(["cargo", "test", "--no-fail-fast",
+                        "--manifest-path",
+                        os.path.join(wt, "ta_codegen", "generator", "Cargo.toml")],
+                       cwd=wt, capture=True)
+        if rc != 0:
+            sys.exit(f"synth_gate: FAIL — the generator's test suite exited {rc} "
+                     f"on the injected tree")
+
+        # Anti-vacuity for this leg, in the same spirit as the per-leg sweep
+        # counts below: a suite that compiled and ran nothing would exit 0. The
+        # floor is on tests EXECUTED, not on fixtures, because the sweeps that
+        # care about fixtures carry their own conditional assertions (the
+        # bounded-accumulator copy is asserted non-empty only when fixtures are
+        # present, so it is those sweeps that prove the corpus was seen).
+        ran = sum(int(m) for m in re.findall(r"^test result: ok\. (\d+) passed",
+                                             out0, re.M))
+        if ran < 500:
+            sys.exit(f"synth_gate: VACUOUS — the generator suite ran {ran} test(s), "
+                     f"expected at least 500; it did not sweep the injected tree")
+        print(f"synth_gate: generator suite OK ({ran} tests on the injected tree)")
+
         # regtest.py builds the C library BEFORE generating (the generated C is
         # normally committed, so that order is fine for real functions). The
         # injected SYNTH sources only exist in src/ta_func AFTER the generate
@@ -230,22 +269,37 @@ def main():
             sys.exit(f"synth_gate: FAIL — synth_values exited {rc}")
 
         # Anti-vacuity: prove the SYNTH functions were actually exercised.
-        # Stream leg: one "Stream verify: N functions, M legs ..." line per
-        # language server; every one must have swept exactly the fixtures.
-        stream = re.findall(r"Stream verify: (\d+) functions, (\d+) legs", out1)
-        notsup = len(re.findall(r"Stream verify: not supported", out1))
-        # Every server must either sweep the fixtures or say so explicitly.
-        # All four now stream, so the floor is 4: at 3 a C# server that
-        # silently lost stream support still satisfied `3 + 1 == LANGS`, which
-        # is exactly the hole this floor exists to close.
-        if len(stream) + notsup != LANGS or len(stream) < 4:
-            sys.exit(f"synth_gate: VACUOUS — {len(stream)} stream-verify "
-                     f"summaries + {notsup} not-supported, expected "
-                     f"{LANGS} total with at least 4 summaries")
-        for n, legs in stream:
-            if int(n) != nfix or int(legs) == 0:
-                sys.exit(f"synth_gate: VACUOUS — stream leg swept {n} function(s) "
-                         f"({legs} legs), expected {nfix} with legs > 0")
+        #
+        # Read off the per-language tally, one line per server:
+        #   `  Java: 0 passed, 0 failed, 14 skipped`
+        # Their sum is what the --function filter admitted, so a filter that
+        # matched nothing reads 0 and fails here. That matters more than it
+        # sounds: a `--function=` naming nothing exits 0 (the filter matches a
+        # GROUP TAG as well as a name), so the exit code alone is no evidence.
+        #
+        # `skipped` is expected, not a problem: the SYNTH functions are absent
+        # from the frozen pre-cutover oracle, so their VALUE comparison has no
+        # reference and is skipped by design (the subset gate). The stream and
+        # OpenAndFill legs are current-vs-current and run regardless.
+        #
+        # This replaces a parse of "Stream verify: N functions, M legs", which
+        # `d8af8b5d9` removed when ta_regtest stopped printing its coverage and
+        # started asserting it internally. The old parse could no longer match,
+        # so this leg would have failed VACUOUS on every run from that commit
+        # on -- the first nightly after it had not run yet when this was found.
+        # The internal assertion is why a per-language tally is enough now:
+        # ta_regtest fails itself if a leg goes uncovered.
+        tally = re.findall(
+            r"^  (C|Rust|Java|C#): (\d+) passed, (\d+) failed, (\d+) skipped",
+            out1, re.M)
+        if len(tally) != LANGS:
+            sys.exit(f"synth_gate: VACUOUS — {len(tally)} per-language tally "
+                     f"line(s) in the --codegen output, expected {LANGS}")
+        for lang, passed, failed, skipped in tally:
+            seen = int(passed) + int(failed) + int(skipped)
+            if seen != nfix:
+                sys.exit(f"synth_gate: VACUOUS — {lang} saw {seen} SYNTH "
+                         f"function(s), expected {nfix}")
 
         # Hash leg: the PASS line prints the number of functions actually
         # swept past the --function filter (funcsSwept in test_codegen.c).

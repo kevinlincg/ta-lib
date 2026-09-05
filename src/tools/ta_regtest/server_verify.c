@@ -57,6 +57,7 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"CMO",          TA_FUNC_UNST_CMO},
     {"DX",           TA_FUNC_UNST_DX},
     {"EMA",          TA_FUNC_UNST_EMA},
+    {"HA",           TA_FUNC_UNST_HA},
     {"HT_DCPERIOD",  TA_FUNC_UNST_HT_DCPERIOD},
     {"HT_DCPHASE",   TA_FUNC_UNST_HT_DCPHASE},
     {"HT_PHASOR",    TA_FUNC_UNST_HT_PHASOR},
@@ -76,7 +77,9 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"NATR",         TA_FUNC_UNST_NATR},
     {"PLUS_DI",      TA_FUNC_UNST_PLUS_DI},
     {"PLUS_DM",      TA_FUNC_UNST_PLUS_DM},
+    {"RMA",          TA_FUNC_UNST_RMA},
     {"RSI",          TA_FUNC_UNST_RSI},
+    {"RVI",          TA_FUNC_UNST_RVI},
     {"T3",           TA_FUNC_UNST_T3},
 };
 #define NUM_UNSTABLE_MAP (sizeof(UNSTABLE_MAP) / sizeof(UNSTABLE_MAP[0]))
@@ -502,21 +505,25 @@ static int build_request(const char *funcName,
 
 /* Reconstruct the C outputs in ta_abstract (logical) order, mapping the test's
  * separate outReal[]/outInteger[] per-type buffer lists into the flat
- * outBufs[3]/isInt[3] the shared codegen_* core consumes. Returns nbOutput (0 if
- * the function is unknown). The lists must be complete (one buffer per output) —
- * both codegen_output_hash and codegen_compare_tol index every output. */
+ * outBufs[]/isInt[] the shared codegen_* core consumes. Returns the number of
+ * slots actually filled (0 if the function is unknown) — never more than
+ * CODEGEN_MAX_OUTPUTS, so the count always describes the arrays it came with
+ * (issue #352). The lists must be complete (one buffer per output) — both
+ * codegen_output_hash and codegen_compare_tol index every output. */
 static unsigned int sv_output_bufs(const char *funcName,
                                    const TA_Real *outReal[],
                                    const TA_Integer *outInteger[],
-                                   const void *bufs[3], int isInt[3])
+                                   const void *bufs[CODEGEN_MAX_OUTPUTS],
+                                   int isInt[CODEGEN_MAX_OUTPUTS])
 {
     const TA_FuncHandle *handle;
     const TA_FuncInfo   *fi;
     if( TA_GetFuncHandle(funcName, &handle) != TA_SUCCESS ) return 0;
     if( TA_GetFuncInfo(handle, &fi) != TA_SUCCESS ) return 0;
 
+    unsigned int filled = 0;
     int realIdx = 0, intIdx = 0;
-    for( unsigned int o = 0; o < fi->nbOutput && o < 3; o++ )
+    for( unsigned int o = 0; o < fi->nbOutput && o < CODEGEN_MAX_OUTPUTS; o++ )
     {
         const TA_OutputParameterInfo *oinfo;
         TA_GetOutputParameterInfo(handle, o, &oinfo);
@@ -530,8 +537,9 @@ static unsigned int sv_output_bufs(const char *funcName,
             isInt[o] = 0;
             bufs[o]  = outReal ? (const void *)outReal[realIdx++] : NULL;
         }
+        filled++;
     }
-    return fi->nbOutput;
+    return filled;
 }
 
 /* Hash the C reference outputs the test already computed, in the same logical
@@ -542,8 +550,8 @@ static unsigned long long sv_golden_hash(const char *funcName,
                                          const TA_Real *outReal[],
                                          const TA_Integer *outInteger[])
 {
-    const void *bufs[3];
-    int isInt[3];
+    const void *bufs[CODEGEN_MAX_OUTPUTS];
+    int isInt[CODEGEN_MAX_OUTPUTS];
     unsigned int nbOutput = sv_output_bufs(funcName, outReal, outInteger, bufs, isInt);
     if( nbOutput == 0 ) return 0;
     return codegen_output_hash(nbOutput, isInt, bufs, (int)nbElement);
@@ -565,8 +573,8 @@ static ErrorNumber compare_output_tol(const char *funcName,
                                       const TA_Integer *outInteger[],
                                       double tol)
 {
-    const void *bufs[3];
-    int isInt[3];
+    const void *bufs[CODEGEN_MAX_OUTPUTS];
+    int isInt[CODEGEN_MAX_OUTPUTS];
     unsigned int nbOutput = sv_output_bufs(funcName, outReal, outInteger, bufs, isInt);
     if( nbOutput == 0 )
         return TA_TEST_PASS;   /* not in ta_abstract — graceful skip */
@@ -670,18 +678,11 @@ ErrorNumber server_verify(
         if( TA_GetCompatibility() != TA_COMPATIBILITY_DEFAULT &&
             !codegen_lang_has_compatibility_api(lang) )
         {
-            /* A Metastock leg of a hand-written test, and this language has no
-             * compatibility API (its mode is pinned to Default) — there is
-             * nothing to verify. Reported once per language so the gap shows up
-             * in the log instead of passing vacuously. */
-            static int noted[SV_MAX_PIPES];
-            if( !noted[p] )
-            {
-                noted[p] = 1;
-                printf("  SV NOTE [%s]: non-default compatibility legs skipped "
-                       "- no compatibility API in this language\n",
-                       lang ? lang : "?");
-            }
+            /* A Metastock leg, against a backend that deliberately has no
+             * compatibility API. Not a coverage gap deferred: TA_SetCompatibility
+             * is deprecated in C and unreachable from Rust/Java/C# by design, so
+             * there is no second implementation to compare against — permanently,
+             * for all three. Silent because it is an invariant, not news. */
             continue;
         }
         err = sync_compatibility(p);

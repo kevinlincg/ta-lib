@@ -57,6 +57,8 @@ public partial class Core
     *  052603 MF     Adapt code to compile with .NET Managed C++
     *  070626 MF,CC  Speed optimization: True Range computed inline in a
     *                single pass (bit-exact, no temporary buffer).
+    *  090326 MF,CC  #338 Two-coefficient Wilder step; no divide in the
+    *                loop-carried chain.
     */
    /// <summary>
    /// Number of leading input bars <c>ATR</c> consumes before it can produce its
@@ -110,6 +112,8 @@ public partial class Core
       int nbATR = 0;
       double prevATR = 0;
       double periodTotal = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -151,22 +155,29 @@ public partial class Core
       if( startIdx > endIdx ) {
          return RetCode.Success ;
       }
-      /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-       * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR),
-       * so the single general path handles every period >= 1.
+      /* wAlpha is derived FROM wBeta, never the reverse: only that order makes
+       * wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
+       * measures closer to the exact recursion than the 1/period-first spelling
+       * at nearly every period. The order is a gated contract, not a preference:
+       * swapping it reddens the frozen v0.6.4 comparison, and breaks the
+       * bit-for-bit identity TA_RMA(TA_TRANGE(h,l,c),n) == TA_ATR(n).
+       * The pair is exactly (1, 0) at period 1 -- hence no period-1 arm.
        */
+      wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
+      wAlpha = 1.0 - wBeta;
       /* The True Range of each bar is computed inline in a single
        * pass. No temporary buffer is needed.
        *
        * The arithmetic order below is the bit-exactness contract
-       * (do not reorder or fuse operations):
+       * (do not reorder):
        *  - True Range: start from high-low, then compare/replace
        *    with the two previous-close distances, in that order.
        *  - Seed: the first 'period' True Range values are summed,
        *    accumulated from 0.0 in input order, then divided by
        *    the period.
-       *  - Wilder smoothing: multiply by period-1, add the True
-       *    Range, divide by period, as three separate statements.
+       *  - Wilder smoothing: ONE statement. Splitting it back
+       *    unfuses the multiply-add and puts a second latency on
+       *    the recurrence's dependency chain.
        *
        * In-place (outReal being one of the input arrays) is
        * supported: each output is written only after every input
@@ -201,12 +212,6 @@ public partial class Core
          today += 1;
       }
       prevATR = periodTotal / optInTimePeriod;
-      /* Subsequent value are smoothed using the
-       * previous ATR value (Wilder's approach).
-       *  1) Multiply the previous ATR by 'period-1'.
-       *  2) Add today TR value.
-       *  3) Divide by 'period'.
-       */
       /* Skip the unstable period. */
       i = this.unstablePeriod[(int)FuncUnstId.ATR];
       while( i != 0 ) {
@@ -224,9 +229,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -252,9 +255,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          outReal[outIdx++] = prevATR;
          today += 1;
       }
@@ -281,6 +282,8 @@ public partial class Core
       int nbATR = 0;
       double prevATR = 0;
       double periodTotal = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -307,6 +310,8 @@ public partial class Core
       if( startIdx > endIdx ) {
          return RetCode.Success ;
       }
+      wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
+      wAlpha = 1.0 - wBeta;
       today = startIdx - lookbackTotal + 1;
       periodTotal = 0.0;
       i = optInTimePeriod;
@@ -341,9 +346,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -363,9 +366,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          outReal[outIdx++] = prevATR;
          today += 1;
       }
@@ -538,6 +539,8 @@ public partial class Core
       internal Core core;
       internal int optInTimePeriod;
       internal double prevATR;
+      internal double wAlpha;
+      internal double wBeta;
       internal double lag1_inClose;
       internal double cur_outReal;
       internal int outRangeBegIdx;
@@ -545,14 +548,15 @@ public partial class Core
 
       internal AtrStream( Core core ) { this.core = core; }
 
-      /// <summary>The bars this stream has produced a value for, in the input series'
-      /// coordinates: <c>[BegIdx, BegIdx + Count)</c>.</summary>
+      /// <summary>The bars this stream has an output for, in the input series' coordinates:
+      /// <c>[BegIdx, BegIdx + Count)</c>.</summary>
       /// <remarks>
       /// <para>It is what <c>Core.Atr</c> reports over the same bars: the opener sets it
-      /// to <c>(lookback, historyLen - lookback)</c>, every accepted <c>Update</c>
-      /// adds one to the count, <c>Peek</c> leaves it alone, and <c>Clone</c>
-      /// carries it verbatim. A plain <c>Open</c> hands back only the last value, a
-      /// subset of this range, because the caller chose not to take the fill.</para>
+      /// to <c>(lookback, historyLen - lookback)</c>, every <c>Update</c> adds one
+      /// to the count — a non-finite bar is rejected but still counted, because the
+      /// bar happened — <c>Peek</c> leaves it alone, and <c>Clone</c> carries it
+      /// verbatim. A plain <c>Open</c> hands back only the last value, a subset of
+      /// this range, because the caller chose not to take the fill.</para>
       /// </remarks>
       public OutRange OutRange => new OutRange(outRangeBegIdx, outRangeCount);
 
@@ -561,6 +565,8 @@ public partial class Core
          this.core = other.core;
          this.optInTimePeriod = other.optInTimePeriod;
          this.prevATR = other.prevATR;
+         this.wAlpha = other.wAlpha;
+         this.wBeta = other.wBeta;
          this.lag1_inClose = other.lag1_inClose;
          this.cur_outReal = other.cur_outReal;
          this.outRangeBegIdx = other.outRangeBegIdx;
@@ -572,11 +578,14 @@ public partial class Core
       /// <para>Allocates nothing — neither handle state nor a return value.</para>
       /// <para>Throws <see cref="System.ArgumentException"/> if any bar value is not
       /// finite (NaN or an infinity). That check runs before anything is written,
-      /// so the handle is left exactly as it was and the stream stays usable: skip
-      /// the bar, or re-open on a clean history. This is the one place the
-      /// streaming tier is stricter than the batch API, which computes on whatever
-      /// it is given: a handle retains its state, so a single non-finite bar would
-      /// poison every later value it produces.</para>
+      /// so no state moves, <see cref="Value"/> still answers the previous value,
+      /// and the stream stays usable — just carry on with the next bar.
+      /// <see cref="OutRange"/> does advance: the bar happened, so it is counted,
+      /// which keeps two handles fed the same series positionally aligned when only
+      /// one of them rejects a bar. This is the one place the streaming tier is
+      /// stricter than the batch API, which computes on whatever it is given: a
+      /// handle retains its state, so a single non-finite bar would poison every
+      /// later value it produces.</para>
       /// </remarks>
       /// <param name="inHigh">This bar's high price.</param>
       /// <param name="inLow">This bar's low price.</param>
@@ -584,7 +593,11 @@ public partial class Core
       /// <returns>The value at the bar just committed.</returns>
       public double Update( double inHigh, double inLow, double inClose )
       {
-         if( !double.IsFinite(inHigh) || !double.IsFinite(inLow) || !double.IsFinite(inClose) ) throw Core.StreamFailure("ATR", "update", RetCode.BadParam);
+         if( !double.IsFinite(inHigh) || !double.IsFinite(inLow) || !double.IsFinite(inClose) )
+         {
+            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
+            throw Core.StreamFailure("ATR", "update", RetCode.BadParam);
+         }
          core.AtrStepImpl(this, inHigh, inLow, inClose);
          if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
          return cur_outReal;
@@ -614,13 +627,12 @@ public partial class Core
          double tempCY = 0.0;
          double tempLT = 0.0;
          double tempHT = 0.0;
-         double cur_outReal = sp.cur_outReal;
-         double lag1_inClose = sp.lag1_inClose;
+         double cur_outReal = 0.0;
          double prevATR = sp.prevATR;
          /* Find the greatest of the 3 values. */
          tempLT = inLow;
          tempHT = inHigh;
-         tempCY = lag1_inClose;
+         tempCY = sp.lag1_inClose;
          greatest = tempHT - tempLT;
          /* val1 */
          val2 = Math.Abs(tempCY - tempHT);
@@ -631,44 +643,14 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= sp.optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= sp.optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(sp.wBeta, prevATR, sp.wAlpha * greatest);
          cur_outReal = prevATR;
-         lag1_inClose = inClose;
          return cur_outReal;
       }
 
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what was committed, which is what makes a
-      /// rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with bars <c>0..k</c> committed and written, bar <c>k</c> and
-      /// everything after it not, and the count advanced by <c>k</c>.</para>
-      /// </remarks>
-      /// <param name="inHigh">Closed bars for <c>inHigh</c>, oldest first.</param>
-      /// <param name="inLow">Closed bars for <c>inLow</c>, oldest first.</param>
-      /// <param name="inClose">Closed bars for <c>inClose</c>, oldest first.</param>
-      /// <param name="outReal">Receives one <c>outReal</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, ReadOnlySpan<double> inClose, Span<double> outReal )
-      {
-         int barCount = inHigh.Length;
-         if( inLow.Length != barCount || inClose.Length != barCount || outReal.Length < barCount || outReal.Overlaps(inHigh) || outReal.Overlaps(inLow) || outReal.Overlaps(inClose) ) throw Core.StreamFailure("ATR", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inHigh[i]) || !double.IsFinite(inLow[i]) || !double.IsFinite(inClose[i]) ) throw Core.StreamFailure("ATR", "updateAndFill", RetCode.BadParam);
-            core.AtrStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outReal[i] = cur_outReal;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
-      }
-
-      /// <summary>The value at the most recently committed bar — the last history bar right
-      /// after open, then whatever the latest <see cref="Update"/> returned.</summary>
+      /// <summary>The value at the last bar this stream counted — the bar
+      /// <see cref="OutRange"/> ends on. The last history bar right after open,
+      /// then whatever the latest accepted <see cref="Update"/> returned.</summary>
       /// <remarks>
       /// <para><see cref="Peek"/> does not change it.</para>
       /// </remarks>
@@ -705,9 +687,7 @@ public partial class Core
       if( val3 > greatest ) {
          greatest = val3;
       }
-      sp.prevATR *= sp.optInTimePeriod - 1;
-      sp.prevATR += greatest;
-      sp.prevATR /= sp.optInTimePeriod;
+      sp.prevATR = Math.FusedMultiplyAdd(sp.wBeta, sp.prevATR, sp.wAlpha * greatest);
       sp.cur_outReal = sp.prevATR;
       sp.lag1_inClose = inClose;
    }
@@ -723,6 +703,8 @@ public partial class Core
       int nbATR = 0;
       double prevATR = 0;
       double periodTotal = 0;
+      double wAlpha = 0;
+      double wBeta = 0;
       double val2 = 0;
       double val3 = 0;
       double greatest = 0;
@@ -771,22 +753,29 @@ public partial class Core
       if( startIdx > endIdx ) {
          return RetCode.InsufficientHistory ;
       }
-      /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-       * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR),
-       * so the single general path handles every period >= 1.
+      /* wAlpha is derived FROM wBeta, never the reverse: only that order makes
+       * wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
+       * measures closer to the exact recursion than the 1/period-first spelling
+       * at nearly every period. The order is a gated contract, not a preference:
+       * swapping it reddens the frozen v0.6.4 comparison, and breaks the
+       * bit-for-bit identity TA_RMA(TA_TRANGE(h,l,c),n) == TA_ATR(n).
+       * The pair is exactly (1, 0) at period 1 -- hence no period-1 arm.
        */
+      wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
+      wAlpha = 1.0 - wBeta;
       /* The True Range of each bar is computed inline in a single
        * pass. No temporary buffer is needed.
        *
        * The arithmetic order below is the bit-exactness contract
-       * (do not reorder or fuse operations):
+       * (do not reorder):
        *  - True Range: start from high-low, then compare/replace
        *    with the two previous-close distances, in that order.
        *  - Seed: the first 'period' True Range values are summed,
        *    accumulated from 0.0 in input order, then divided by
        *    the period.
-       *  - Wilder smoothing: multiply by period-1, add the True
-       *    Range, divide by period, as three separate statements.
+       *  - Wilder smoothing: ONE statement. Splitting it back
+       *    unfuses the multiply-add and puts a second latency on
+       *    the recurrence's dependency chain.
        *
        * In-place (outReal being one of the input arrays) is
        * supported: each output is written only after every input
@@ -821,12 +810,6 @@ public partial class Core
          today += 1;
       }
       prevATR = periodTotal / optInTimePeriod;
-      /* Subsequent value are smoothed using the
-       * previous ATR value (Wilder's approach).
-       *  1) Multiply the previous ATR by 'period-1'.
-       *  2) Add today TR value.
-       *  3) Divide by 'period'.
-       */
       /* Skip the unstable period. */
       i = this.unstablePeriod[(int)FuncUnstId.ATR];
       while( i != 0 ) {
@@ -844,9 +827,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -872,9 +853,7 @@ public partial class Core
          if( val3 > greatest ) {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = Math.FusedMultiplyAdd(wBeta, prevATR, wAlpha * greatest);
          outReal[outIdx++ * outStride] = prevATR;
          today += 1;
       }
@@ -883,6 +862,8 @@ public partial class Core
       /* Capture the live batch state into the handle. */
       sp.optInTimePeriod = optInTimePeriod;
       sp.prevATR = prevATR;
+      sp.wAlpha = wAlpha;
+      sp.wBeta = wBeta;
       sp.lag1_inClose = inClose[historyLen - 1];
       sp.cur_outReal = outReal[(outNBElement - 1) * outStride];
       return RetCode.Success;

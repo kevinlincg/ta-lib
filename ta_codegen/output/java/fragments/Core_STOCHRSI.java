@@ -32,8 +32,8 @@
     *        1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInFastD_MAType MA type used to smooth %D (default 0 = SMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @return The lookback, or {@code -1} if a parameter is out of range.
     */
    public int STOCHRSI_Lookback( int optInTimePeriod, int optInFastK_Period, int optInFastD_Period, MAType optInFastD_MAType )
@@ -285,8 +285,8 @@
     *        1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInFastD_MAType MA type used to smooth %D (default 0 = SMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outFastK Unsmoothed stochastic of the RSI (raw %K) Must hold at
     *        least {@code endIdx - startIdx + 1} values.
     * @param outFastD %K smoothed over FastD_Period (signal line) Must hold at
@@ -373,8 +373,8 @@
     *        1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInFastD_MAType MA type used to smooth %D (default 0 = SMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outFastK Unsmoothed stochastic of the RSI (raw %K) Must hold at
     *        least {@code endIdx - startIdx + 1} values.
     * @param outFastD %K smoothed over FastD_Period (signal line) Must hold at
@@ -432,11 +432,11 @@
     * Open with {@link Core#stochrsiOpen}; there is no close — the handle is
     * ordinary heap state, unreferenced handles are simply garbage-collected.
     * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
-    * {@code value} and {@code copy} must not race with an {@code update} on
+    * {@code value} and {@code clone} must not race with an {@code update} on
     * the same handle. With no concurrent {@code update}, {@code peek}/
-    * {@code value}/{@code copy} never write the handle and may be called
-    * concurrently after safe publication. Independent handles (including
-    * {@code copy()} results) are fully independent.
+    * {@code value}/{@code clone} never write the stream and may be called
+    * concurrently after safe publication. Independent streams (a
+    * {@code clone()} result included) are fully independent.
     * <p>Not serializable by design: to checkpoint, retain the history and
     * re-open — the result is bit-identical by contract.
     */
@@ -448,7 +448,6 @@
       MAType optInFastD_MAType;
       double cur_outFastK;
       double cur_outFastD;
-      Value cachedValue;
       RsiStream sub0;
       StochfStream sub1;
       int outRangeBegIdx;
@@ -457,12 +456,13 @@
       StochrsiStream( Core core ) { this.core = core; }
 
       /**
-       * The bars this stream has produced a value for, in the input series'
+       * The bars this stream has an output for, in the input series'
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#STOCHRSI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * accepted {@code update} adds one to the count, {@code peek} leaves
-       * it alone, and {@code copy()} carries it verbatim. A plain
+       * {@code update} adds one to the count — a bar rejected for being
+       * non-finite included, because it still happened — {@code peek} leaves
+       * it alone, and {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
@@ -476,7 +476,6 @@
          this.optInFastD_MAType = other.optInFastD_MAType;
          this.cur_outFastK = other.cur_outFastK;
          this.cur_outFastD = other.cur_outFastD;
-         this.cachedValue = other.cachedValue;
          this.sub0 = new RsiStream(other.sub0);
          this.sub1 = new StochfStream(other.sub1);
          this.outRangeBegIdx = other.outRangeBegIdx;
@@ -484,77 +483,36 @@
       }
 
       /**
-       * One output set, in batch output order. Immutable.
-       *
-       * <p>{@code equals} compares every component bitwise, so {@code NaN}
-       * equals {@code NaN} and {@code 0.0} does not equal {@code -0.0}.
-       * {@code hashCode} is consistent with it but its exact value is
-       * unspecified — do not persist it or compare it across JVM versions.
-       *
-       * @param fastK Unsmoothed stochastic of the RSI (raw %K)
-       * @param fastD %K smoothed over FastD_Period (signal line)
-       */
-      public record Value(double fastK, double fastD) { }
-
-      /**
-       * Commit one closed bar, returning the new current value.
+       * Commit one closed bar, writing the new current values into the {@code out} the CALLER owns.
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the handle is left exactly as it was —
-       * the stream stays usable, so skip the bar or re-open on a clean
-       * history. This is the one place the streaming tier is stricter than
+       * written, so the state is left exactly as it was: the rejected bar's
+       * output is the previous value, held, and {@link #value(StochrsiOut)} answers it.
+       * The stream stays usable, so skip the bar or re-open on a clean
+       * history. {@link #outRange()} does advance: the bar happened and
+       * occupies a position in the series, so the handle counts it, which is
+       * what keeps two handles on one feed aligned when only one rejects.
+       * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
-      public Value update( double inReal ) {
-         if( !Double.isFinite(inReal) )
+      public void update( double inReal, StochrsiOut out ) {
+         requireArgument("STOCHRSI update", "out", out);
+         if( !Double.isFinite(inReal) ) {
+            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("STOCHRSI update: BadParam", RetCode.BadParam);
+         }
          core.stochrsiStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         this.cachedValue = new Value(this.cur_outFastK, this.cur_outFastD);
-         return this.cachedValue;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what was committed, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * bars {@code 0..k} committed and written, bar {@code k} and everything
-       * after it not, and the count advanced by {@code k}.
-       */
-      public void updateAndFill( double inReal[], double outFastK[], double outFastD[] ) {
-         requireArgument("STOCHRSI updateAndFill", "inReal", inReal);
-         requireArgument("STOCHRSI updateAndFill", "outFastK", outFastK);
-         requireArgument("STOCHRSI updateAndFill", "outFastD", outFastD);
-         final int barCount = inReal.length;
-         if( outFastK.length < barCount || outFastD.length < barCount || (Object)outFastK == (Object)inReal || (Object)outFastD == (Object)inReal || (Object)outFastK == (Object)outFastD )
-            throw new TaLibArgumentException("STOCHRSI updateAndFill: BadParam", RetCode.BadParam);
-         int done = 0;
-         try {
-            for( int i = 0; i < barCount; i++ ) {
-               if( !Double.isFinite(inReal[i]) )
-                  throw new TaLibArgumentException("STOCHRSI updateAndFill: BadParam", RetCode.BadParam);
-               core.stochrsiStepImpl(this, inReal[i]);
-               outFastK[i] = this.cur_outFastK;
-               outFastD[i] = this.cur_outFastD;
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               done = i + 1;
-            }
-         } finally {
-            if( done > 0 ) this.cachedValue = new Value(this.cur_outFastK, this.cur_outFastD);
-         }
+         out.fastK = this.cur_outFastK;
+         out.fastD = this.cur_outFastD;
       }
 
       /**
        * Evaluate a forming bar without committing — bit-identical to what the
-       * next {@code update} with the same bar would return — the same
+       * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.
        * Never writes this handle, so peeks may
        * run concurrently with each other. It copies no buffer: the frame runs against this handle, reading its
@@ -562,7 +520,8 @@
        * does not grow with the period. It does allocate a small bounded amount
        * per call — a size fixed by the indicator, never by the period.
        */
-      public Value peek( double inReal ) {
+      public void peek( double inReal, StochrsiOut out ) {
+         requireArgument("STOCHRSI peek", "out", out);
          if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("STOCHRSI peek: BadParam", RetCode.BadParam);
          StochrsiStream sp = this;
@@ -572,29 +531,64 @@
          /* Pipeline the new bar through the sub-streams (batch tail order). */
          cur_tempRSIBuffer = sp.sub0.peek(inReal);
          {
-            StochfStream.Value subOut1 = sp.sub1.peek(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer);
-            cur_outFastK = subOut1.fastK();
-            cur_outFastD = subOut1.fastD();
+            StochfOut subOut1 = new StochfOut();
+            sp.sub1.peek(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer, subOut1);
+            cur_outFastK = subOut1.fastK;
+            cur_outFastD = subOut1.fastD;
          }
-         return new Value(cur_outFastK, cur_outFastD);
+         out.fastK = cur_outFastK;
+         out.fastD = cur_outFastD;
       }
 
       /**
-       * The value at the most recently committed bar — the last history bar
-       * right after open, then whatever the latest {@code update} returned.
-       * A pure field read; {@code peek} does not change it.
+       * The value at the last bar this stream counted — the bar
+       * {@link #outRange()} ends on. The last history bar right after open,
+       * then whatever the latest accepted {@code update} wrote.
+       * A pure field read; {@code peek} does not change it. Overwrites {@code out}, allocating nothing.
        */
-      public Value value() {
-         return this.cachedValue;
+      public void value( StochrsiOut out ) {
+         requireArgument("STOCHRSI value", "out", out);
+         out.fastK = this.cur_outFastK;
+         out.fastD = this.cur_outFastD;
       }
 
       /**
-       * An independent deep copy of this stream: both evolve separately from
-       * here on (the Java rendering of the Rust handle's {@code Clone}).
+       * An independent fork of this stream: both evolve separately from here
+       * on. Buffers are copied and sub-streams cloned recursively; the
+       * {@link Core} reference is shared, since a {@code Core} is immutable
+       * for a stream's lifetime.
+       *
+       * <p>Not the {@code Cloneable} protocol: this calls a copy constructor,
+       * never {@code super.clone()}, so it throws nothing.
+       *
+       * @return an independent stream at the same bar
        */
-      public StochrsiStream copy() {
+      @Override
+      public StochrsiStream clone() {
          return new StochrsiStream(this);
       }
+   }
+
+   /**
+    * The outputs of one STOCHRSI bar, written by the stream into an object the
+    * CALLER owns. Allocate one and reuse it: {@code update}, {@code peek}
+    * and {@code value} overwrite its fields, so the sink itself costs
+    * nothing per bar.
+    *
+    * <p><b>Its contents are only valid until the next call that writes it.</b>
+    * It is a mutable buffer, not a reading: a reference kept past that call,
+    * or one put in a collection, sees the value change underneath it. Copy the
+    * fields out if the reading has to outlive the call.
+    *
+    * <p>Deliberately no {@code equals} or {@code hashCode}: a mutable type
+    * with value equality breaks the {@code HashMap}/{@code HashSet}
+    * invariant the moment a reused instance becomes a key. Compare the fields.
+    */
+   public static final class StochrsiOut {
+      /** Unsmoothed stochastic of the RSI (raw %K) */
+      public double fastK;
+      /** %K smoothed over FastD_Period (signal line) */
+      public double fastD;
    }
    void stochrsiStepImpl( StochrsiStream sp, double inReal )
    {
@@ -604,9 +598,10 @@
       /* Pipeline the new bar through the sub-streams (batch tail order). */
       cur_tempRSIBuffer = sp.sub0.update(inReal);
       {
-         StochfStream.Value subOut1 = sp.sub1.update(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer);
-         cur_outFastK = subOut1.fastK();
-         cur_outFastD = subOut1.fastD();
+         StochfOut subOut1 = new StochfOut();
+         sp.sub1.update(cur_tempRSIBuffer, cur_tempRSIBuffer, cur_tempRSIBuffer, subOut1);
+         cur_outFastK = subOut1.fastK;
+         cur_outFastD = subOut1.fastD;
       }
       sp.cur_outFastK = cur_outFastK;
       sp.cur_outFastD = cur_outFastD;
@@ -728,7 +723,6 @@
       sp.sub1 = sub1;
       sp.cur_outFastK = sc_outFastK[outNBElement.value - 1];
       sp.cur_outFastD = sc_outFastD[outNBElement.value - 1];
-      sp.cachedValue = new StochrsiStream.Value(sp.cur_outFastK, sp.cur_outFastD);
       return RetCode.Success;
    }
    /* stochrsiOpenAndFill anchored at startIdx — the composed-open fusion seam. */

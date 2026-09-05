@@ -1,6 +1,6 @@
 //! # TA-Lib: Technical Analysis Library
 //!
-//! 176 technical-analysis indicators — moving averages, momentum oscillators,
+//! 200+ technical-analysis indicators — moving averages, momentum oscillators,
 //! volatility bands, volume studies, Hilbert Transform cycle analysis, statistics,
 //! price transforms, and 61 candlestick-pattern recognizers — as a pure-Rust crate.
 //!
@@ -52,6 +52,8 @@
 //! let core = Core::builder()
 //!     .unstable_period(FuncUnstId::EMA, 10)
 //!     .build()?;
+//!
+//! assert_eq!(core.get_unstable_period(FuncUnstId::EMA)?, 10);
 //! # Ok::<(), ta_lib::RetCode>(())
 //! ```
 //!
@@ -66,10 +68,57 @@
 //! points of indicators built on fused multiply-adds are compiled twice and the
 //! hardware-FMA clone is selected at runtime (the same dispatch the C library
 //! performs via `target_clones`); both paths are correctly rounded, so results
-//! are bit-identical either way. The streaming tier stays single-path.
+//! are bit-identical either way. Calling that clone is the one `unsafe` in the
+//! crate's shipped dependency graph: it lives in `ta-lib-dispatch`, inside the
+//! `is_x86_feature_detected!("fma")` test that has just proved it sound, and
+//! `forbid` here does not see it because it expands from another crate's macro.
+//! The streaming tier stays single-path.
+//!
+//! # Live data
+//!
+//! The calls above take a whole series at once. For a feed that arrives one bar
+//! at a time, each indicator also has a *streaming* form: an `*_open` method
+//! ([`Core::sma_open`], [`Core::rsi_open`], …) warms a handle up on the history
+//! you already have, and from then on one bar in gives that bar's value out,
+//! with no re-scan of the series and no allocation per bar.
+//!
+//! ```
+//! use ta_lib::Core;
+//!
+//! let history = [11.0, 12.0, 13.0, 14.0, 15.0];
+//! let core = Core::new();
+//! let (mut sma, last) = core.sma_open(&history, 3)?;
+//!
+//! assert_eq!(last, 14.0); // (13 + 14 + 15) / 3, the last history bar
+//! assert_eq!(sma.out_range().count, 3);
+//!
+//! // A bar that has not closed yet: ask without committing it.
+//! assert_eq!(sma.peek(16.0)?, 15.0);
+//! assert_eq!(sma.out_range().count, 3);
+//!
+//! // Once it closes, commit it — same value, and the range advances.
+//! assert_eq!(sma.update(16.0)?, 15.0);
+//! assert_eq!(sma.out_range().count, 4);
+//!
+//! // A non-finite bar is rejected, and still counted: the handle's output for
+//! // it is the previous one, held, and its state is untouched.
+//! assert!(sma.update(f64::NAN).is_err());
+//! assert_eq!(sma.out_range().count, 5);
+//! # Ok::<(), ta_lib::RetCode>(())
+//! ```
+//!
+//! The handle's value at every bar is bit-identical to what the batch call
+//! reports for that bar. [`SmaStream::out_range`] carries the same
+//! [`OutRange`] the batch tier returns — the bars the handle has an output for
+//! — and every bar handed to [`SmaStream::update`] advances it by one, a bar
+//! rejected as non-finite included: its output is the previous one, held.
+//! [`SmaStream::peek`] leaves it alone; cloning a handle forks an independent
+//! stream, and dropping it closes the stream.
 //!
 //! The full function reference, grouped by category, is at
-//! [ta-lib.org/functions](https://ta-lib.org/functions/).
+//! [ta-lib.org/functions](https://ta-lib.org/functions/); the guides are at
+//! [ta-lib.org/api/rust](https://ta-lib.org/api/rust/) and, for the streaming
+//! tier, [ta-lib.org/api/rust/stream](https://ta-lib.org/api/rust/stream/).
 //!
 //! # Indicators by category
 //!
@@ -88,9 +137,10 @@
 //! * [`HT_SINE`](Core::HT_SINE) — Hilbert Transform - SineWave
 //! * [`HT_TRENDMODE`](Core::HT_TRENDMODE) — Hilbert Transform - Trend vs Cycle Mode
 //!
-//! ## Math Operators (11)
+//! ## Math Operators (12)
 //!
 //! * [`ADD`](Core::ADD) — Vector Arithmetic Add
+//! * [`CUMSUM`](Core::CUMSUM) — Cumulative Sum
 //! * [`DIV`](Core::DIV) — Vector Arithmetic Div
 //! * [`MAX`](Core::MAX) — Highest value over a specified period
 //! * [`MAXINDEX`](Core::MAXINDEX) — Index of highest value over a specified period
@@ -120,7 +170,7 @@
 //! * [`TAN`](Core::TAN) — Vector Trigonometric Tan
 //! * [`TANH`](Core::TANH) — Vector Trigonometric Tanh
 //!
-//! ## Momentum Indicators (37)
+//! ## Momentum Indicators (47)
 //!
 //! * [`AC`](Core::AC) — Accelerator/Decelerator Oscillator
 //! * [`ADX`](Core::ADX) — Average Directional Movement Index
@@ -133,8 +183,15 @@
 //! * [`CCI`](Core::CCI) — Commodity Channel Index
 //! * [`CMO`](Core::CMO) — Chande Momentum Oscillator
 //! * [`CMOU`](Core::CMOU) — Chande Momentum Oscillator (Unsmoothed)
+//! * [`COPPOCK`](Core::COPPOCK) — Coppock Curve
+//! * [`DPO`](Core::DPO) — Detrended Price Oscillator
 //! * [`DX`](Core::DX) — Directional Movement Index
+//! * [`ER`](Core::ER) — Kaufman Efficiency Ratio
+//! * [`ERI`](Core::ERI) — Elder Ray Index (Bull Power / Bear Power)
+//! * [`FOSC`](Core::FOSC) — Forecast Oscillator
+//! * [`FRACTAL`](Core::FRACTAL) — Williams Fractal
 //! * [`IMI`](Core::IMI) — Intraday Momentum Index
+//! * [`KDJ`](Core::KDJ) — KDJ Stochastic
 //! * [`MACD`](Core::MACD) — Moving Average Convergence/Divergence
 //! * [`MACDEXT`](Core::MACDEXT) — MACD with controllable MA type
 //! * [`MACDFIX`](Core::MACDFIX) — Moving Average Convergence/Divergence Fix 12/26
@@ -156,32 +213,40 @@
 //! * [`STOCHF`](Core::STOCHF) — Stochastic Fast
 //! * [`STOCHRSI`](Core::STOCHRSI) — Stochastic Relative Strength Index
 //! * [`TRIX`](Core::TRIX) — 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
+//! * [`TSI`](Core::TSI) — True Strength Index
 //! * [`ULTOSC`](Core::ULTOSC) — Ultimate Oscillator
+//! * [`VHF`](Core::VHF) — Vertical Horizontal Filter
+//! * [`VORTEX`](Core::VORTEX) — Vortex Indicator
 //! * [`WAD`](Core::WAD) — Williams' Accumulation/Distribution
 //! * [`WILLR`](Core::WILLR) — Williams' %R
 //!
-//! ## Overlap Studies (20)
+//! ## Overlap Studies (25)
 //!
 //! * [`ACCBANDS`](Core::ACCBANDS) — Acceleration Bands
 //! * [`BBANDS`](Core::BBANDS) — Bollinger Bands
 //! * [`DEMA`](Core::DEMA) — Double Exponential Moving Average
+//! * [`DONCHIAN`](Core::DONCHIAN) — Donchian Channels
 //! * [`EMA`](Core::EMA) — Exponential Moving Average
 //! * [`HMA`](Core::HMA) — Hull Moving Average
 //! * [`HT_TRENDLINE`](Core::HT_TRENDLINE) — Hilbert Transform - Instantaneous Trendline
 //! * [`KAMA`](Core::KAMA) — Kaufman Adaptive Moving Average
+//! * [`KC`](Core::KC) — Keltner Channels
 //! * [`MA`](Core::MA) — Moving average
 //! * [`MAMA`](Core::MAMA) — MESA Adaptive Moving Average
 //! * [`MAVP`](Core::MAVP) — Moving average with variable period
 //! * [`MIDPOINT`](Core::MIDPOINT) — MidPoint over period
 //! * [`MIDPRICE`](Core::MIDPRICE) — Midpoint Price over period
+//! * [`RMA`](Core::RMA) — Wilder's Smoothed Moving Average
 //! * [`SAR`](Core::SAR) — Parabolic SAR
 //! * [`SAREXT`](Core::SAREXT) — Parabolic SAR - Extended
 //! * [`SMA`](Core::SMA) — Simple Moving Average
+//! * [`SUPERTREND`](Core::SUPERTREND) — SuperTrend
 //! * [`T3`](Core::T3) — Triple Exponential Moving Average (T3)
 //! * [`TEMA`](Core::TEMA) — Triple Exponential Moving Average
 //! * [`TRIMA`](Core::TRIMA) — Triangular Moving Average
 //! * [`VWMA`](Core::VWMA) — Volume Weighted Moving Average
 //! * [`WMA`](Core::WMA) — Weighted Moving Average
+//! * [`ZLEMA`](Core::ZLEMA) — Zero-Lag Exponential Moving Average
 //!
 //! ## Pattern Recognition (61)
 //!
@@ -247,15 +312,16 @@
 //! * [`CDLUPSIDEGAP2CROWS`](Core::CDLUPSIDEGAP2CROWS) — Upside Gap Two Crows
 //! * [`CDLXSIDEGAP3METHODS`](Core::CDLXSIDEGAP3METHODS) — Upside/Downside Gap Three Methods
 //!
-//! ## Price Transform (5)
+//! ## Price Transform (6)
 //!
 //! * [`AVGDEV`](Core::AVGDEV) — Average Deviation
 //! * [`AVGPRICE`](Core::AVGPRICE) — Average Price
+//! * [`HA`](Core::HA) — Heikin-Ashi Candles
 //! * [`MEDPRICE`](Core::MEDPRICE) — Median Price
 //! * [`TYPPRICE`](Core::TYPPRICE) — Typical Price
 //! * [`WCLPRICE`](Core::WCLPRICE) — Weighted Close Price
 //!
-//! ## Statistic Functions (9)
+//! ## Statistic Functions (11)
 //!
 //! * [`BETA`](Core::BETA) — Beta
 //! * [`CORREL`](Core::CORREL) — Pearson's Correlation Coefficient (r)
@@ -263,17 +329,23 @@
 //! * [`LINEARREG_ANGLE`](Core::LINEARREG_ANGLE) — Linear Regression Angle
 //! * [`LINEARREG_INTERCEPT`](Core::LINEARREG_INTERCEPT) — Linear Regression Intercept
 //! * [`LINEARREG_SLOPE`](Core::LINEARREG_SLOPE) — Linear Regression Slope
+//! * [`PERCENTILE`](Core::PERCENTILE) — Percentile (nearest rank)
+//! * [`PERCENTRANK`](Core::PERCENTRANK) — Percent Rank
 //! * [`STDDEV`](Core::STDDEV) — Standard Deviation
 //! * [`TSF`](Core::TSF) — Time Series Forecast
 //! * [`VAR`](Core::VAR) — Variance
 //!
-//! ## Volatility Indicators (3)
+//! ## Volatility Indicators (7)
 //!
+//! * [`ADR`](Core::ADR) — Average Day Range
 //! * [`ATR`](Core::ATR) — Average True Range
+//! * [`CVI`](Core::CVI) — Chaikin's Volatility
+//! * [`MASSI`](Core::MASSI) — Mass Index
 //! * [`NATR`](Core::NATR) — Normalized Average True Range
+//! * [`RVI`](Core::RVI) — Relative Volatility Index
 //! * [`TRANGE`](Core::TRANGE) — True Range
 //!
-//! ## Volume Indicators (10)
+//! ## Volume Indicators (12)
 //!
 //! * [`AD`](Core::AD) — Chaikin A/D Line
 //! * [`ADOSC`](Core::ADOSC) — Chaikin A/D Oscillator
@@ -284,6 +356,8 @@
 //! * [`OBV`](Core::OBV) — On Balance Volume
 //! * [`PVI`](Core::PVI) — Positive Volume Index
 //! * [`PVO`](Core::PVO) — Percentage Volume Oscillator
+//! * [`PVT`](Core::PVT) — Price Volume Trend
+//! * [`RVOL`](Core::RVOL) — Relative Volume
 //! * [`VWAP`](Core::VWAP) — Volume Weighted Average Price
 
 #![forbid(unsafe_code)]

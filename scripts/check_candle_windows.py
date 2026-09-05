@@ -127,6 +127,8 @@ RING_PUSH = re.compile(
     r"sp->ring_(\w+)_derived\[sp->ringPos_\1\]\s*=\s*TA_STREAM_CANDLERANGE\(\s*(\w+)\s*,")
 
 # `sp->TOT[k] += TA_STREAM_CANDLERANGE(Set,[sp->lagL_]inOpen,...) - sp->ring_TR_derived[slot];`
+# Update frames only: a peek stops at its last output store and this write is
+# below it, so no peek frame carries one.
 STREAM_WRITE = re.compile(
     r"sp->(\w*PeriodTotal\d?)(?:\[(\w+)\])?\s*(?:\+=|=\s*sp->\1(?:\[(\w+)\])?\s*\+)\s*\(?\s*"
     r"TA_STREAM_CANDLERANGE\(\s*(\w+)\s*,\s*(?:sp->lag(\d+)_)?inOpen[^)]*\)"
@@ -494,7 +496,7 @@ def main():
             or nbW["fold"] < 15):
         print("\ncheck_candle_windows: only %d batch (%d filling) / %d streaming "
               "/ %d folded write(s) parsed, far below the corpus this was written "
-              "against (831 / 372 / 100 / 23). The write patterns have stopped "
+              "against (831 / 459 / 100 / 23). The write patterns have stopped "
               "matching -- fix them rather than the floor." %
               (nbW["batch"], nbW["fill"], nbW["stream"], nbW["fold"]))
         return 1

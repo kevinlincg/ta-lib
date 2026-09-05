@@ -302,10 +302,13 @@ TA_RetCode TA_S_STOCHRSI( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_STOCHRSI_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_STOCHRSI_Value). */
+   double cur_outFastK;
+   double cur_outFastD;
    int optInTimePeriod;
    int optInFastK_Period;
    int optInFastD_Period;
@@ -343,7 +346,6 @@ static TA_RetCode TA_STOCHRSI_OpenImpl( struct TA_STOCHRSI_Stream **stream, cons
    int dummyBegIdx;
    int dummyNBElement;
    TA_RetCode subRc;
-   double subOpenDummy;
    double *sc_outFastK;
    double *sc_outFastD;
    TA_RSI_Stream *sub0;
@@ -381,10 +383,8 @@ static TA_RetCode TA_STOCHRSI_OpenImpl( struct TA_STOCHRSI_Stream **stream, cons
    dummyBegIdx = 0;
    dummyNBElement = 0;
    subRc = TA_SUCCESS;
-   subOpenDummy = 0.0;
    sub0 = NULL;
    sub1 = NULL;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement; (void)subRc; (void)subOpenDummy;
    if( outStride ) sc_outFastK = outFastK;
    else
    {
@@ -516,6 +516,8 @@ static TA_RetCode TA_STOCHRSI_OpenImpl( struct TA_STOCHRSI_Stream **stream, cons
       if( !outStride ) TA_Free( sc_outFastD );
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outFastK = outFastK[(*outNBElement - 1) * outStride];
+      sp->cur_outFastD = outFastD[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -570,24 +572,28 @@ TA_LIB_API TA_RetCode TA_STOCHRSI_Update( TA_STOCHRSI_Stream *stream, double inR
    TA_RetCode retCode;
 
    if( !stream || !outFastK || !outFastD ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    retCode = TA_STOCHRSI_StepImpl( stream, inReal, outFastK, outFastD );
    if( retCode != TA_SUCCESS ) return retCode;
+   stream->cur_outFastK = *outFastK;
+   stream->cur_outFastD = *outFastD;
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_STOCHRSI_Peek( const TA_STOCHRSI_Stream *stream, double inReal, double *outFastK, double *outFastD )
 {
-   struct TA_STOCHRSI_Stream scratch;
-   struct TA_STOCHRSI_Stream *sp = &scratch;
+   const struct TA_STOCHRSI_Stream *sp = stream;
    double cur_tempRSIBuffer = 0.0;
    double cur_outFastK = 0.0;
    double cur_outFastD = 0.0;
 
    if( !stream || !outFastK || !outFastD ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   scratch = *stream;
 
    /* Pipeline the new bar through the sub-streams (batch tail order). */
    {
@@ -603,30 +609,42 @@ TA_LIB_API TA_RetCode TA_STOCHRSI_Peek( const TA_STOCHRSI_Stream *stream, double
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_STOCHRSI_UpdateAndFill( TA_STOCHRSI_Stream *stream, const double inReal[], int barCount, double outFastK[], double outFastD[] )
-{
-   int i;
-   TA_RetCode retCode;
-
-   if( !stream || !inReal || !outFastK || !outFastD ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outFastK == (const void *)inReal || (const void *)outFastD == (const void *)inReal || (const void *)outFastK == (const void *)outFastD ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      retCode = TA_STOCHRSI_StepImpl( stream, inReal[i], &outFastK[i], &outFastD[i] );
-      if( retCode != TA_SUCCESS ) return retCode;
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_STOCHRSI_Close( TA_STOCHRSI_Stream *stream )
 {
    if( !stream ) return TA_SUCCESS;
    TA_RSI_Close( stream->sub0 );
    TA_STOCHF_Close( stream->sub1 );
    TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_STOCHRSI_Value( const TA_STOCHRSI_Stream *stream, double *outFastK, double *outFastD )
+{
+   if( !stream || !outFastK || !outFastD ) return TA_BAD_PARAM;
+   *outFastK = stream->cur_outFastK;
+   *outFastD = stream->cur_outFastD;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_STOCHRSI_Clone( const TA_STOCHRSI_Stream *stream, TA_STOCHRSI_Stream **clone )
+{
+   struct TA_STOCHRSI_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_STOCHRSI_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->sub0 = NULL;
+   sp->sub1 = NULL;
+   if( stream->sub0 )
+   { TA_RetCode subRc = TA_RSI_Clone( stream->sub0, &sp->sub0 );
+     if( subRc != TA_SUCCESS ) { TA_STOCHRSI_Close( sp ); return subRc; } }
+   if( stream->sub1 )
+   { TA_RetCode subRc = TA_STOCHF_Clone( stream->sub1, &sp->sub1 );
+     if( subRc != TA_SUCCESS ) { TA_STOCHRSI_Close( sp ); return subRc; } }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

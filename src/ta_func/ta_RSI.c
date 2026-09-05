@@ -535,10 +535,12 @@ TA_RetCode TA_S_RSI( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_RSI_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_RSI_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    double prevGain;
    double prevLoss;
@@ -554,6 +556,7 @@ static void TA_RSI_StepImpl( struct TA_RSI_Stream *sp, double inReal, double *ou
    if( sp->optInTimePeriod == 1 )
    {
       *outReal= inReal;
+      sp->cur_outReal = *outReal;
       return;
    }
    tempValue1 = (double)inReal;
@@ -578,14 +581,13 @@ static void TA_RSI_StepImpl( struct TA_RSI_Stream *sp, double inReal, double *ou
    {
       *outReal= 0.0;
    }
+   sp->cur_outReal = *outReal;
 }
 
 static TA_RetCode TA_RSI_OpenImpl( struct TA_RSI_Stream **stream, const double inReal[], int startIdx, int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[], int outStride )
 {
    struct TA_RSI_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -604,9 +606,6 @@ static TA_RetCode TA_RSI_OpenImpl( struct TA_RSI_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    if( optInTimePeriod == 1 )
    {
@@ -635,6 +634,7 @@ static TA_RetCode TA_RSI_OpenImpl( struct TA_RSI_Stream **stream, const double i
       }
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -871,6 +871,7 @@ static TA_RetCode TA_RSI_OpenImpl( struct TA_RSI_Stream **stream, const double i
       sp->prevValue = prevValue;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -921,7 +922,11 @@ TA_RetCode TA_RSI_OpenAndFillInternal( struct TA_RSI_Stream **stream, const doub
 TA_LIB_API TA_RetCode TA_RSI_Update( TA_RSI_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_RSI_StepImpl( stream, inReal, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -929,37 +934,41 @@ TA_LIB_API TA_RetCode TA_RSI_Update( TA_RSI_Stream *stream, double inReal, doubl
 
 TA_LIB_API TA_RetCode TA_RSI_Peek( const TA_RSI_Stream *stream, double inReal, double *outReal )
 {
-   struct TA_RSI_Stream scratch;
-   struct TA_RSI_Stream *sp = &scratch;
+   const struct TA_RSI_Stream *sp = stream;
    double tempValue1;
    double tempValue2;
+   double prevGain;
+   double prevLoss;
+   double prevValue;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   prevGain = sp->prevGain;
+   prevLoss = sp->prevLoss;
+   prevValue = sp->prevValue;
    if( sp->optInTimePeriod == 1 )
    {
       *outReal= inReal;
       return TA_SUCCESS;
    }
    tempValue1 = (double)inReal;
-   tempValue2 = tempValue1 - sp->prevValue;
-   sp->prevValue = tempValue1;
-   sp->prevLoss *= (double)(sp->optInTimePeriod - 1);
-   sp->prevGain *= (double)(sp->optInTimePeriod - 1);
+   tempValue2 = tempValue1 - prevValue;
+   prevValue = tempValue1;
+   prevLoss *= (double)(sp->optInTimePeriod - 1);
+   prevGain *= (double)(sp->optInTimePeriod - 1);
    if( tempValue2 < 0.0 )
    {
-      sp->prevLoss -= tempValue2;
+      prevLoss -= tempValue2;
    } else 
    {
-      sp->prevGain += tempValue2;
+      prevGain += tempValue2;
    }
-   sp->prevLoss /= (double)sp->optInTimePeriod;
-   sp->prevGain /= (double)sp->optInTimePeriod;
-   tempValue1 = sp->prevGain + sp->prevLoss;
+   prevLoss /= (double)sp->optInTimePeriod;
+   prevGain /= (double)sp->optInTimePeriod;
+   tempValue1 = prevGain + prevLoss;
    if( tempValue1 > 0.0 )
    {
-      *outReal= 100.0 * (sp->prevGain / tempValue1);
+      *outReal= 100.0 * (prevGain / tempValue1);
    } else 
    {
       *outReal= 0.0;
@@ -967,25 +976,30 @@ TA_LIB_API TA_RetCode TA_RSI_Peek( const TA_RSI_Stream *stream, double inReal, d
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_RSI_UpdateAndFill( TA_RSI_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      TA_RSI_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_RSI_Close( TA_RSI_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_RSI_Value( const TA_RSI_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_RSI_Clone( const TA_RSI_Stream *stream, TA_RSI_Stream **clone )
+{
+   struct TA_RSI_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_RSI_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   *clone = sp;
    return TA_SUCCESS;
 }
 

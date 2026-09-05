@@ -61,6 +61,8 @@
  *  060907 MF   Use TA_SMA/TA_EMA instead of internal implementation.
  *  072226 MF,CC Add HMA (issue #139).
  *  072426 MF,CC TA_MAType_DISABLED: period-independent identity copy (issue #93).
+ *  090426 MF,CC Add ZLEMA (issue #347).
+ *  090426 MF,CC Add RMA (issue #348).
  */
 
 TA_LIB_API int TA_MA_Lookback( int optInTimePeriod, TA_MAType optInMAType )
@@ -109,6 +111,12 @@ TA_LIB_API int TA_MA_Lookback( int optInTimePeriod, TA_MAType optInMAType )
       break;
    case TA_MAType_HMA:
       retValue = TA_HMA_Lookback(optInTimePeriod);
+      break;
+   case TA_MAType_ZLEMA:
+      retValue = TA_ZLEMA_Lookback(optInTimePeriod);
+      break;
+   case TA_MAType_RMA:
+      retValue = TA_RMA_Lookback(optInTimePeriod);
       break;
    default:
       retValue = 0;
@@ -232,6 +240,12 @@ TA_LIB_API TA_RetCode TA_MA( int    startIdx,
    case TA_MAType_HMA:
       retCode = TA_HMA(startIdx,endIdx,inReal,optInTimePeriod,outBegIdx,outNBElement,outReal);
       break;
+   case TA_MAType_ZLEMA:
+      retCode = TA_ZLEMA(startIdx,endIdx,inReal,optInTimePeriod,outBegIdx,outNBElement,outReal);
+      break;
+   case TA_MAType_RMA:
+      retCode = TA_RMA(startIdx,endIdx,inReal,optInTimePeriod,outBegIdx,outNBElement,outReal);
+      break;
    default:
       retCode = TA_BAD_PARAM;
       break;
@@ -322,6 +336,12 @@ TA_RetCode TA_S_MA( int    startIdx,
    case TA_MAType_HMA:
       retCode = TA_S_HMA(startIdx,endIdx,inReal,optInTimePeriod,outBegIdx,outNBElement,outReal);
       break;
+   case TA_MAType_ZLEMA:
+      retCode = TA_S_ZLEMA(startIdx,endIdx,inReal,optInTimePeriod,outBegIdx,outNBElement,outReal);
+      break;
+   case TA_MAType_RMA:
+      retCode = TA_S_RMA(startIdx,endIdx,inReal,optInTimePeriod,outBegIdx,outNBElement,outReal);
+      break;
    default:
       retCode = TA_BAD_PARAM;
       break;
@@ -332,10 +352,12 @@ TA_RetCode TA_S_MA( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_MA_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_MA_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    TA_MAType optInMAType;
    /* Sub-stream handle, tagged by optInMAType; NULL on the identity path. */
@@ -353,7 +375,6 @@ TA_RetCode TA_MA_OpenInternal( struct TA_MA_Stream **stream, const double inReal
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outReal ) return TA_BAD_PARAM;
-   (void)startIdx;
    if( (int)optInTimePeriod == TA_INTEGER_DEFAULT )
       optInTimePeriod = 30;
    else if( (int)optInTimePeriod < 1 || (int)optInTimePeriod > 100000 )
@@ -377,6 +398,7 @@ TA_RetCode TA_MA_OpenInternal( struct TA_MA_Stream **stream, const double inReal
       *outReal = inReal[historyLen - 1];
       sp->outRangeBegIdx = fillLb;
       sp->outRangeCount = historyLen - fillLb;
+      sp->cur_outReal = inReal[historyLen - 1];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -454,6 +476,20 @@ TA_RetCode TA_MA_OpenInternal( struct TA_MA_Stream **stream, const double inReal
          sp->sub = sub;
       }
       break;
+   case TA_MAType_ZLEMA:
+      {
+         TA_ZLEMA_Stream *sub = NULL;
+         retCode = TA_ZLEMA_OpenInternal( &sub, inReal, startIdx, historyLen, optInTimePeriod, outReal );
+         sp->sub = sub;
+      }
+      break;
+   case TA_MAType_RMA:
+      {
+         TA_RMA_Stream *sub = NULL;
+         retCode = TA_RMA_OpenInternal( &sub, inReal, startIdx, historyLen, optInTimePeriod, outReal );
+         sp->sub = sub;
+      }
+      break;
    default:
       retCode = TA_BAD_PARAM;
       break;
@@ -465,6 +501,7 @@ TA_RetCode TA_MA_OpenInternal( struct TA_MA_Stream **stream, const double inReal
       return retCode;
    }
    TA_StreamOutRange( sp->sub, &sp->outRangeBegIdx, &sp->outRangeCount );
+   sp->cur_outReal = *outReal;
    *stream = sp;
    return TA_SUCCESS;
 }
@@ -520,6 +557,7 @@ TA_LIB_API TA_RetCode TA_MA_OpenAndFill( TA_MA_Stream **stream, const double inR
       }
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = inReal[historyLen - 1];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -597,6 +635,20 @@ TA_LIB_API TA_RetCode TA_MA_OpenAndFill( TA_MA_Stream **stream, const double inR
          sp->sub = sub;
       }
       break;
+   case TA_MAType_ZLEMA:
+      {
+         TA_ZLEMA_Stream *sub = NULL;
+         retCode = TA_ZLEMA_OpenAndFill( &sub, inReal, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
+         sp->sub = sub;
+      }
+      break;
+   case TA_MAType_RMA:
+      {
+         TA_RMA_Stream *sub = NULL;
+         retCode = TA_RMA_OpenAndFill( &sub, inReal, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
+         sp->sub = sub;
+      }
+      break;
    default:
       retCode = TA_BAD_PARAM;
       break;
@@ -609,6 +661,7 @@ TA_LIB_API TA_RetCode TA_MA_OpenAndFill( TA_MA_Stream **stream, const double inR
    }
    sp->outRangeBegIdx = *outBegIdx;
    sp->outRangeCount = *outNBElement;
+   sp->cur_outReal = outReal[*outNBElement - 1];
    *stream = sp;
    return TA_SUCCESS;
 }
@@ -655,6 +708,7 @@ TA_RetCode TA_MA_OpenAndFillInternal( struct TA_MA_Stream **stream, const double
       }
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = inReal[historyLen - 1];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -732,6 +786,20 @@ TA_RetCode TA_MA_OpenAndFillInternal( struct TA_MA_Stream **stream, const double
          sp->sub = sub;
       }
       break;
+   case TA_MAType_ZLEMA:
+      {
+         TA_ZLEMA_Stream *sub = NULL;
+         retCode = TA_ZLEMA_OpenAndFillInternal( &sub, inReal, startIdx, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
+         sp->sub = sub;
+      }
+      break;
+   case TA_MAType_RMA:
+      {
+         TA_RMA_Stream *sub = NULL;
+         retCode = TA_RMA_OpenAndFillInternal( &sub, inReal, startIdx, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
+         sp->sub = sub;
+      }
+      break;
    default:
       retCode = TA_BAD_PARAM;
       break;
@@ -744,6 +812,7 @@ TA_RetCode TA_MA_OpenAndFillInternal( struct TA_MA_Stream **stream, const double
    }
    sp->outRangeBegIdx = *outBegIdx;
    sp->outRangeCount = *outNBElement;
+   sp->cur_outReal = outReal[*outNBElement - 1];
    *stream = sp;
    return TA_SUCCESS;
 }
@@ -753,10 +822,15 @@ TA_LIB_API TA_RetCode TA_MA_Update( TA_MA_Stream *stream, double inReal, double 
    TA_RetCode retCode;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inReal ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    if( stream->optInTimePeriod == 1 || stream->optInMAType == TA_MAType_DISABLED )
    {
       *outReal = inReal;
+      stream->cur_outReal = *outReal;
       if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
       return TA_SUCCESS;
    }
@@ -792,11 +866,18 @@ TA_LIB_API TA_RetCode TA_MA_Update( TA_MA_Stream *stream, double inReal, double 
    case TA_MAType_HMA:
       retCode = TA_HMA_Update( (TA_HMA_Stream *)stream->sub, inReal, outReal );
       break;
+   case TA_MAType_ZLEMA:
+      retCode = TA_ZLEMA_Update( (TA_ZLEMA_Stream *)stream->sub, inReal, outReal );
+      break;
+   case TA_MAType_RMA:
+      retCode = TA_RMA_Update( (TA_RMA_Stream *)stream->sub, inReal, outReal );
+      break;
    default:
       /* Unreachable: Open rejects arms without a sub-stream. */
       return TA_INTERNAL_ERROR(343);
    }
    if( retCode != TA_SUCCESS ) return retCode;
+   stream->cur_outReal = *outReal;
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
@@ -832,73 +913,14 @@ TA_LIB_API TA_RetCode TA_MA_Peek( const TA_MA_Stream *stream, double inReal, dou
       return TA_T3_Peek( (const TA_T3_Stream *)stream->sub, inReal, outReal );
    case TA_MAType_HMA:
       return TA_HMA_Peek( (const TA_HMA_Stream *)stream->sub, inReal, outReal );
+   case TA_MAType_ZLEMA:
+      return TA_ZLEMA_Peek( (const TA_ZLEMA_Stream *)stream->sub, inReal, outReal );
+   case TA_MAType_RMA:
+      return TA_RMA_Peek( (const TA_RMA_Stream *)stream->sub, inReal, outReal );
    default:
       /* Unreachable: Open rejects arms without a sub-stream. */
       return TA_INTERNAL_ERROR(344);
    }
-}
-
-TA_LIB_API TA_RetCode TA_MA_UpdateAndFill( TA_MA_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   TA_RetCode retCode;
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   if( stream->optInTimePeriod == 1 || stream->optInMAType == TA_MAType_DISABLED )
-   {
-      for( i = 0; i < barCount; i++ )
-      {
-         if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-         outReal[i] = inReal[i];
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      }
-      return TA_SUCCESS;
-   }
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) ) return TA_BAD_PARAM;
-      switch( stream->optInMAType )
-      {
-      case TA_MAType_SMA:
-         retCode = TA_SMA_Update( (TA_SMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_EMA:
-         retCode = TA_EMA_Update( (TA_EMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_WMA:
-         retCode = TA_WMA_Update( (TA_WMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_DEMA:
-         retCode = TA_DEMA_Update( (TA_DEMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_TEMA:
-         retCode = TA_TEMA_Update( (TA_TEMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_TRIMA:
-         retCode = TA_TRIMA_Update( (TA_TRIMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_KAMA:
-         retCode = TA_KAMA_Update( (TA_KAMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_MAMA:
-         retCode = TA_MAMA_Update( (TA_MAMA_Stream *)stream->sub, inReal[i], &outReal[i], NULL );
-         break;
-      case TA_MAType_T3:
-         retCode = TA_T3_Update( (TA_T3_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      case TA_MAType_HMA:
-         retCode = TA_HMA_Update( (TA_HMA_Stream *)stream->sub, inReal[i], &outReal[i] );
-         break;
-      default:
-         /* Unreachable: Open rejects arms without a sub-stream. */
-         return TA_INTERNAL_ERROR(345);
-      }
-      if( retCode != TA_SUCCESS ) return retCode;
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_MA_Close( TA_MA_Stream *stream )
@@ -936,10 +958,133 @@ TA_LIB_API TA_RetCode TA_MA_Close( TA_MA_Stream *stream )
    case TA_MAType_HMA:
       TA_HMA_Close( (TA_HMA_Stream *)stream->sub );
       break;
+   case TA_MAType_ZLEMA:
+      TA_ZLEMA_Close( (TA_ZLEMA_Stream *)stream->sub );
+      break;
+   case TA_MAType_RMA:
+      TA_RMA_Close( (TA_RMA_Stream *)stream->sub );
+      break;
    default:
       break; /* identity-only or rejected arm: no sub-stream */
    }
    TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_MA_Value( const TA_MA_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_MA_Clone( const TA_MA_Stream *stream, TA_MA_Stream **clone )
+{
+   struct TA_MA_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_MA_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->sub = NULL;
+   if( stream->sub )
+   {
+      TA_RetCode subRc;
+      switch( stream->optInMAType )
+      {
+      case TA_MAType_SMA:
+         {
+            TA_SMA_Stream *subClone = NULL;
+            subRc = TA_SMA_Clone( (const TA_SMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_EMA:
+         {
+            TA_EMA_Stream *subClone = NULL;
+            subRc = TA_EMA_Clone( (const TA_EMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_WMA:
+         {
+            TA_WMA_Stream *subClone = NULL;
+            subRc = TA_WMA_Clone( (const TA_WMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_DEMA:
+         {
+            TA_DEMA_Stream *subClone = NULL;
+            subRc = TA_DEMA_Clone( (const TA_DEMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_TEMA:
+         {
+            TA_TEMA_Stream *subClone = NULL;
+            subRc = TA_TEMA_Clone( (const TA_TEMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_TRIMA:
+         {
+            TA_TRIMA_Stream *subClone = NULL;
+            subRc = TA_TRIMA_Clone( (const TA_TRIMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_KAMA:
+         {
+            TA_KAMA_Stream *subClone = NULL;
+            subRc = TA_KAMA_Clone( (const TA_KAMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_MAMA:
+         {
+            TA_MAMA_Stream *subClone = NULL;
+            subRc = TA_MAMA_Clone( (const TA_MAMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_T3:
+         {
+            TA_T3_Stream *subClone = NULL;
+            subRc = TA_T3_Clone( (const TA_T3_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_HMA:
+         {
+            TA_HMA_Stream *subClone = NULL;
+            subRc = TA_HMA_Clone( (const TA_HMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_ZLEMA:
+         {
+            TA_ZLEMA_Stream *subClone = NULL;
+            subRc = TA_ZLEMA_Clone( (const TA_ZLEMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      case TA_MAType_RMA:
+         {
+            TA_RMA_Stream *subClone = NULL;
+            subRc = TA_RMA_Clone( (const TA_RMA_Stream *)stream->sub, &subClone );
+            sp->sub = subClone;
+         }
+         break;
+      default:
+         subRc = TA_SUCCESS; /* identity arm: no sub-stream */
+         break;
+      }
+      if( subRc != TA_SUCCESS ) { TA_MA_Close( sp ); return subRc; }
+   }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

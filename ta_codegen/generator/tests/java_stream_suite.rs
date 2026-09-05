@@ -8,7 +8,7 @@
 //! check: the transition build panics on a cursor/startIdx leak, so a clean
 //! render proves the analyzer normalizations fired.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::PathBuf;
 use ta_codegen_lib::helper_registry::HelperRegistry;
 use ta_codegen_lib::registry::Registry;
@@ -91,8 +91,13 @@ fn test_java_sma_ring_stream_section() {
     assert!(s.contains("public double update( double inReal ) {"));
     assert!(s.contains("public double peek( double inReal ) {"));
     assert!(s.contains("public double value() {"));
-    assert!(s.contains("public SmaStream copy() {"));
-    assert!(!s.contains("public SmaStream fork()"), "copy(), never fork()");
+    assert!(s.contains("public SmaStream clone() {"));
+    assert!(!s.contains("public SmaStream fork()"), "clone(), never fork()");
+    // The override is what makes the name legal without the Cloneable protocol;
+    // dropping it would compile but stop being an override the day the return
+    // type or visibility drifts.
+    assert!(s.contains("@Override\n      public SmaStream clone()"), "clone() is an @Override");
+    assert!(!s.contains("implements Cloneable"), "no Cloneable: the body is a copy constructor");
     // Step is a package-private Core method writing the cur_ field.
     assert!(s.contains("void smaStepImpl( SmaStream sp, double inReal )"));
     assert!(s.contains("sp.cur_outReal ="));
@@ -166,22 +171,51 @@ fn test_java_ema_derived_state_and_compat() {
 #[test]
 fn test_java_mama_value_class_protocol() {
     let s = java_stream_section("mama");
-    // Multi-output => nested immutable Value record, components named after the
-    // outputs and in batch output order.
-    assert!(s.contains("public record Value(double mama, double fama) { }"));
+    // Multi-output => a caller-owned OUT class at Core level, fields named after
+    // the outputs and in batch output order, mutable and with no value equality
+    // (#310). Deliberately not a record: a reused instance as a map key would
+    // break the hash invariant the moment its fields moved.
+    assert!(s.contains("public static final class MamaOut {"));
+    assert!(s.contains("public double mama;"));
+    assert!(s.contains("public double fama;"));
+    assert!(!s.contains("public record Value("), "the record is gone, not renamed");
+    let out_body = {
+        let b = s.find("public static final class MamaOut {").expect("MamaOut");
+        let rest = &s[b..];
+        &rest[..rest.find("\n   }").expect("MamaOut close")]
+    };
+    assert!(
+        !out_body.contains("equals(") && !out_body.contains("hashCode("),
+        "an Out carries no value equality"
+    );
     // The object protocol is the record's, so what used to be three generated
     // methods is now the absence of them — assert they are gone rather than
     // leaving the check vacuous.
     assert!(!s.contains("@Override public String toString() {"));
     assert!(!s.contains("Double.doubleToLongBits(this.mama)"));
     assert!(!s.contains("@Override public int hashCode() {"));
-    // Components carry the batch method's own prose (java_doc::output_desc), so
-    // one output reads the same in both tiers.
-    assert!(s.contains("@param mama "));
-    assert!(s.contains("@param fama "));
-    // update caches the instance so value() is a pure field read.
-    assert!(s.contains("this.cachedValue ="));
-    assert!(s.contains("return this.cachedValue;"));
+    // Fields carry the batch method's own prose (java_doc::output_desc), so one
+    // output reads the same in both tiers. A record documented its components
+    // with @param; a class documents each field where the field is.
+    for field in ["mama", "fama"] {
+        let decl = s
+            .find(&format!("public double {field};"))
+            .unwrap_or_else(|| panic!("{field} is not a field of the Out class"));
+        // The line immediately above carries the batch method's own prose, so a
+        // silently undocumented field fails rather than passing on a doc comment
+        // that happens to exist elsewhere in the section.
+        let above = s[..decl].rfind('\n').and_then(|e| s[..e].rfind('\n').map(|b| &s[b + 1..e]));
+        let above = above.unwrap_or("").trim();
+        assert!(
+            above.starts_with("/** ") && above.len() > 12,
+            "{field} has no prose on the line above it, found: {above:?}"
+        );
+    }
+    // No cache: update/peek/value write the caller's sink and store nothing.
+    assert!(!s.contains("cachedValue"), "the cached instance is gone (#310)");
+    assert!(s.contains("public void value( MamaOut out ) {"));
+    assert!(s.contains("public void update( double inReal, MamaOut out ) {"));
+    assert!(s.contains("public void peek( double inReal, MamaOut out ) {"));
 }
 
 #[test]
@@ -248,17 +282,29 @@ fn test_java_ma_dispatch() {
     // Tagged handle: Object sub, null on the identity path.
     assert!(s.contains("Object sub;"));
     // The copy constructor and the step switch derive from the SAME arm table
-    // (design-review obligation): all 9 MATypes appear in both.
-    for label in ["SMA", "EMA", "WMA", "DEMA", "TEMA", "TRIMA", "KAMA", "MAMA", "T3"] {
+    // (design-review obligation): every MAType naming a function appears in both.
+    for label in [
+        "SMA", "EMA", "WMA", "DEMA", "TEMA", "TRIMA", "KAMA", "MAMA", "T3", "HMA", "ZLEMA",
+        "RMA",
+    ] {
         assert!(
             s.matches(&format!("case {label}:")).count() >= 2,
             "arm {label} must appear in both the copy constructor and dispatch switches"
         );
     }
-    // MAMA arm routes OutSlot Forward(0) through the Value field and discards
-    // FAMA; the fill tail materializes a throwaway buffer for the Discard.
-    assert!(s.contains("MamaStream.Value subValue = ((MamaStream) sp.sub).update(inReal);"));
-    assert!(s.contains("sp.cur_outReal = subValue.mama();"));
+    // MAMA arm routes OutSlot Forward(0) and discards FAMA, through the same
+    // caller-owned sink the composed peek uses: Java has no out-params, so a
+    // multi-output sub-handle's N values leave the call in an object whichever
+    // verb asks for them (#310, residue tracked by #325). Reading the
+    // sub-handle's own committed `cur_*` would be free on this path, but that
+    // needs a sink-less `update` the API does not have.
+    assert!(s.contains("MamaOut subOut = new MamaOut();"));
+    assert!(s.contains("((MamaStream) sp.sub).update(inReal, subOut);"));
+    assert!(s.contains("sp.cur_outReal = subOut.mama;"));
+    assert!(
+        !s.contains("MamaStream.Value"),
+        "the record is gone, not renamed"
+    );
     // …and the Discard slot DECLINES the callee's nullable output rather than
     // materializing a throwaway buffer for it (rule B6a at the opener).
     assert!(s.contains("mamaOpenAndFill(inReal, 0.5, 0.05, outReal, null)"));
@@ -308,8 +354,10 @@ fn test_java_stoch_composed() {
         !s.contains("System.arraycopy(sc_outSlowK, 0, outSlowK, 0, outNBElement.value);"),
         "the stride-1 copy-back is elided: the scratch already IS outSlowK"
     );
-    // Multi-output Value with the stripped component names.
-    assert!(s.contains("public record Value(double slowK, double slowD) { }"));
+    // Multi-output OUT class with the stripped field names (#310).
+    assert!(s.contains("public static final class StochOut {"));
+    assert!(s.contains("public double slowK;"));
+    assert!(s.contains("public double slowD;"));
 }
 
 /// The sub-open range materialization (issue #203). Java has no slice type, so
@@ -622,26 +670,6 @@ fn java_composed_copy_out_is_stride_guarded() {
     );
 }
 
-/// A store `validate_peekable` refuses: a compound one, which renders as a
-/// store reading its own target. A refusal drops the whole function back to the
-/// narrow set, so one such store justifies every copy in it. The other two
-/// refusals (a store in a loop, a counter-moving index) have no instance here;
-/// one would surface as an offender below rather than be waved through.
-fn refused_accumulator_store(body: &str, fields: &BTreeSet<String>) -> bool {
-    body.lines().any(|l| {
-        l.split_once('=').is_some_and(|(lhs, rhs)| {
-            // `!rhs.starts_with('=')`: `X[i] == X[j]` splits the same way a store
-            // does, and comparing two slots is not a store into either.
-            lhs.trim_end().ends_with(']')
-                && !rhs.starts_with('=')
-                && fields.iter().any(|f| {
-                    let sub = format!("{f}[");
-                    lhs.contains(&sub) && rhs.contains(&sub)
-                })
-        })
-    })
-}
-
 /// The handle's fixed-size accumulator fields: an array the BATCH body declares
 /// with a literal size. Off the emitted code, never a name list.
 fn accumulator_fields(section: &str, batch: &str) -> BTreeSet<String> {
@@ -686,31 +714,133 @@ fn no_java_peek_copies_the_handle() {
             .collect()
     }
 
-    /// The name `line` assigns to, with any subscript stripped — `None` when it
-    /// is not a plain assignment.
-    fn assign_target(line: &str) -> Option<&str> {
-        let (lhs, _) = line.split_once('=')?;
-        let lhs = lhs.trim();
-        if lhs.ends_with(['=', '!', '<', '>', '+', '-', '*', '/']) {
-            return None; // ==, !=, <=, +=, ...
+    /// Every name `line` writes, with any subscript stripped, each paired with
+    /// whether that write also DECLARES the name. Empty when it writes nothing.
+    ///
+    /// Every operator that stores, not just `=`. `x += e`, `x++` and `++x`
+    /// reach the same slot `x = e` does, and none of them can declare a name,
+    /// so each is a write to a name the frame must already have declared —
+    /// which is the rule this sweep exists to enforce. The emitted frames carry
+    /// all three shapes: `periodTotal += inReal;` is SMA's, `pkIdx0 = i++ &
+    /// sp.xMask;` and `while( ++i <= today )` are the extrema and Hilbert
+    /// tiers'. Reading `=` alone enforced the rule on one operator out of
+    /// several and passed the rest through as if they wrote nothing.
+    fn write_targets(line: &str) -> Vec<(&str, bool)> {
+        /// The trailing name of `lhs`: `x` / `sp.x` / `x[i]` -> the name.
+        fn name_of(lhs: &str) -> Option<&str> {
+            // The declared name is the LAST token; strip its subscript there,
+            // not over the whole left side — `double[] x = ...` carries a `[`
+            // in the TYPE, and cutting at it would name the type instead.
+            let last = lhs.trim().rsplit(' ').next()?;
+            let last = last.split_once('[').map_or(last, |(h, _)| h);
+            (!last.is_empty() && last.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.'))
+                .then_some(last)
         }
-        // The declared name is the LAST token; strip its subscript there, not
-        // over the whole left side — `double[] x = ...` carries a `[` in the
-        // TYPE, and cutting at it would name the type instead of the variable.
-        let last = lhs.rsplit(' ').next()?;
-        let last = last.split_once('[').map_or(last, |(h, _)| h);
-        (!last.is_empty() && last.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.'))
-            .then_some(last)
+
+        fn is_name_byte(c: u8) -> bool {
+            c.is_ascii_alphanumeric() || c == b'_' || c == b'.'
+        }
+
+        /// The identifier ending at `end`, skipping back over a subscript so
+        /// `buf[k]++` names `buf`. Empty when there is none.
+        fn ident_before(s: &str, end: usize) -> &str {
+            let b = s.as_bytes();
+            let mut end = end;
+            if end > 0 && b[end - 1] == b']' {
+                let mut depth = 0usize;
+                let mut k = end;
+                while k > 0 {
+                    k -= 1;
+                    match b[k] {
+                        b']' => depth += 1,
+                        b'[' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                if depth != 0 {
+                    return "";
+                }
+                end = k;
+            }
+            let mut start = end;
+            while start > 0 && is_name_byte(b[start - 1]) {
+                start -= 1;
+            }
+            &s[start..end]
+        }
+
+        /// The identifier starting at `start`. Empty when there is none.
+        fn ident_after(s: &str, start: usize) -> &str {
+            let b = s.as_bytes();
+            let mut end = start;
+            while end < b.len() && is_name_byte(b[end]) {
+                end += 1;
+            }
+            &s[start..end]
+        }
+
+        let l = line.trim().trim_end_matches(';').trim_end();
+        let b = l.as_bytes();
+        let mut out = Vec::new();
+
+        // The assignment first, so a `for( int i = 0; ...; i++ )` header has
+        // declared `i` before its own increment is read below.
+        //
+        // The first `=` that stores: `==`/`!=`/`<=`/`>=` compare, while
+        // `<<=`/`>>=` store — which is why the `<`/`>` case looks one
+        // character further back.
+        let eq = (0..b.len()).find(|&i| {
+            if b[i] != b'=' {
+                return false;
+            }
+            let prev = i.checked_sub(1).map(|k| b[k]);
+            let compare = b.get(i + 1) == Some(&b'=')
+                || matches!(prev, Some(b'=' | b'!'))
+                || (matches!(prev, Some(b'<' | b'>')) && i.checked_sub(2).map(|k| b[k]) != prev);
+            !compare
+        });
+        if let Some(eq) = eq {
+            const OPS: [char; 10] = ['+', '-', '*', '/', '%', '&', '|', '^', '<', '>'];
+            let lhs = &l[..eq];
+            let compound = lhs.ends_with(OPS);
+            let lhs = lhs.trim_end_matches(OPS);
+            // A declaration is `<type> <name> =`; a compound store never one.
+            let declares = !compound && lhs.trim().split(' ').count() > 1;
+            out.extend(name_of(lhs).map(|n| (n, declares)));
+        }
+
+        // `x++` / `++x`, anywhere on the line — an increment inside a `while`
+        // or `if` header writes exactly as one on its own does.
+        let mut i = 0usize;
+        while i + 1 < b.len() {
+            if !((b[i] == b'+' && b[i + 1] == b'+') || (b[i] == b'-' && b[i + 1] == b'-')) {
+                i += 1;
+                continue;
+            }
+            let before = ident_before(l, i);
+            let name = if before.is_empty() { ident_after(l, i + 2) } else { before };
+            if !name.is_empty() {
+                out.push((name, false));
+            }
+            i += 2;
+        }
+        out
     }
 
     let mut swept = 0usize;
     let mut frames = 0usize;
     let mut writes = 0usize;
-    let mut clones = 0usize;
+    let mut sink_sites: BTreeSet<String> = BTreeSet::new();
+    let mut bounded: BTreeSet<String> = BTreeSet::new();
+    let mut fixtures = 0usize;
     let mut fully_shadowed: BTreeSet<String> = BTreeSet::new();
     let mut offenders: Vec<String> = Vec::new();
     for name in streaming_indicators() {
-        let mut cloning: BTreeSet<String> = BTreeSet::new();
         let (func, enums) = load_indicator(&name);
         let registry = Registry::from_dir(&input_dir());
         let helpers = HelperRegistry::from_dir(&input_dir().join("helpers"));
@@ -725,18 +855,31 @@ fn no_java_peek_copies_the_handle() {
             frames += 1;
         }
         let fields = handle_fields(&s);
+        // Hoisted: the copy check below consults it per line, and the
+        // non-vacuity counter after the loop still uses the same set.
+        let accs = accumulator_fields(&s, &batch);
+        // A `synth<n>` fixture is a construct probe copied into input/ by
+        // scripts/synth_gate.py, never a shipped function — the same family
+        // `--function=SYNTH` selects. It is the discriminator because the
+        // fixtures live in input/ exactly as shipped functions do once
+        // injected, and nothing else tells them apart.
+        let fixture = name.starts_with("synth");
+        if fixture {
+            fixtures += 1;
+        }
         let mut locals: BTreeSet<&str> = BTreeSet::new();
         for line in peek.lines() {
             let l = line.trim();
             // A frame writes locals. A bare `cur_x = ...` whose name the frame
             // never DECLARED resolves to the handle field of that name and
             // commits it — which is what a composed output reached only through
-            // an alias used to do, and no value gate here can see it: `value()`
-            // returns the CACHED record, which such a write does not move.
-            if let Some(t) = assign_target(l) {
-                let declared = l
-                    .split_once('=')
-                    .is_some_and(|(lhs, _)| lhs.trim().split(' ').count() > 1);
+            // an alias used to do. A value gate sees it only if the corrupted
+            // field is one an output reads back; this sweep names it directly.
+            // A comment carries these operators too, so the write sweep reads
+            // code lines only — as the allocation checks below already do.
+            let code = l.starts_with("//") || l.starts_with("/*") || l.starts_with("*");
+            let targets = if code { Vec::new() } else { write_targets(l) };
+            for (t, declared) in targets {
                 if declared {
                     locals.insert(t);
                 } else if t.starts_with("sp.") || (fields.contains(t) && !locals.contains(t)) {
@@ -746,68 +889,144 @@ fn no_java_peek_copies_the_handle() {
                 }
             }
             // Comments carry the word too, and `throw new
-            // TaLibArgumentException` is the bar rejection while `new Value(`
-            // packs the answer — none of the three copies a handle.
-            let code = l.starts_with("//") || l.starts_with("/*") || l.starts_with("*");
+            // TaLibArgumentException` is the bar rejection — neither copies a
+            // handle. `new <N>Out()` is the sink a COMPOSED frame allocates for
+            // a multi-output sub-handle (#310); it is counted separately and
+            // pinned to an exact set below rather than blanket-exempted, so a
+            // third site fails and so does losing one of the two.
+            let composed_sink = !code
+                && l.contains(" = new ")
+                && l.contains("Out();");
+            if composed_sink {
+                sink_sites.insert(name.clone());
+            }
             let allocates_handle = !code
                 && l.contains("new ")
                 && !l.starts_with("throw new")
-                && !l.contains("new Value(");
+                && !composed_sink;
             // `.clone()` is the OTHER way to allocate here, and matching only
             // `new ` missed it: a frame clones a written array field because a
-            // Java array is a reference. It is allowed, but only for an
-            // accumulator the batch body sizes with a LITERAL — a period-sized
-            // buffer cloned per peek is the exact cost the frame exists to
-            // remove. Read off the emitted code, not from a list of names.
+            // Java array is a reference.
+            //
+            // ONE copy is contract-legal, and only one: a FIXED-SIZE
+            // accumulator, an array the batch body declares with a literal
+            // dimension. The frame's job is that its cost not grow with the
+            // period, and such a copy cannot -- which is what `peek`'s own
+            // javadoc already promises the caller ("a small bounded amount per
+            // call, a size fixed by the indicator, never by the period"), and
+            // what the C# twin's doc comment has always claimed. Read off the
+            // emitted declaration, never a name list, so a period-sized buffer
+            // can never qualify.
+            //
+            // It stays an offender for a SHIPPED function even so. The emitter
+            // reaches the copy only where it cannot shadow the write in place
+            // (SMA's peek shadows a ring write with a pending `(slot, value)`
+            // pair; that needs ONE known write slot, and an arbitrary computed
+            // index has none). No shipped function is in that position today,
+            // so a shipped one that started copying is a regression from the
+            // shadow into the fallback, and this is the only thing that would
+            // say so.
             let cloned = (!code)
                 .then(|| l.split_once(" = sp."))
                 .flatten()
-                .and_then(|(lhs, rhs)| rhs.strip_suffix(".clone();").map(|f| (lhs, f)));
-            if let Some((lhs, f)) = cloned {
-                let ty = lhs.trim().split(' ').next().unwrap_or("");
-                let decl = format!("{ty} {f} = new {}[", ty.trim_end_matches("[]"));
-                let literal = batch.match_indices(&decl).any(|(i, _)| {
-                    batch[i + decl.len()..]
-                        .split_once(']')
-                        .is_some_and(|(n, _)| n.parse::<u32>().is_ok())
-                });
-                if literal {
-                    clones += 1;
-                    cloning.insert(f.to_string());
+                .and_then(|(_, rhs)| rhs.strip_suffix(".clone();"));
+            if let Some(f) = cloned {
+                if fixture && accs.contains(f) {
+                    bounded.insert(format!("{name}.{f}"));
+                } else if accs.contains(f) {
+                    offenders.push(format!(
+                        "{name}: a SHIPPED peek copies the accumulator {f} rather than shadowing the write: {l}"
+                    ));
                 } else {
-                    offenders.push(format!("{name}: clones a non-fixed-size array: {l}"));
+                    offenders.push(format!("{name}: clones the handle's {f}: {l}"));
                 }
             } else if allocates_handle || l.contains("copyFrom") || l.contains("PEEK_SCRATCH") {
                 offenders.push(format!("{name}: {l}"));
             }
         }
-        // A frame that clones with nothing refused was never offered the wide
-        // set, and allocates per peek for nothing.
-        let accs = accumulator_fields(&s, &batch);
-        if !cloning.is_empty() && !refused_accumulator_store(peek, &accs) {
-            offenders.push(format!(
-                "{name}: clones {cloning:?} but no accumulator store is refusable"
-            ));
-        }
-        // The other half of the split. The frame must TOUCH an accumulator: a
-        // field it never names is evidence either way.
-        if cloning.is_empty() && accs.iter().any(|f| peek.contains(&format!("{f}["))) {
+        // The frame must READ an accumulator: a field it never names is
+        // no evidence about the copy either way.
+        if accs.iter().any(|f| peek.contains(&format!("{f}["))) {
             fully_shadowed.insert(name.clone());
         }
     }
-    assert!(swept > 170, "only {swept} peek(s) swept");
+    assert!(swept >= 200, "only {swept} peek(s) swept");
     assert_eq!(frames, swept, "{frames} of {swept} peek(s) run a frame");
     assert!(writes >= 500, "only {writes} local writes seen — the store sweep found nothing");
-    // Both sides of the split are floored, because the corpus has both and a
-    // sweep that stopped finding either would read green while measuring one.
-    assert!(clones >= 1, "no accumulator clone seen — the exemption is untested");
     assert!(
-        fully_shadowed.len() >= 7,
-        "only {} handle(s) hold an accumulator the frame clones nothing of — the widened \
-         buffer set is no longer reaching them and peek allocates again",
+        fully_shadowed.len() >= 21,
+        "only {} handle(s) have a peek frame that reads an accumulator — the sweep \
+         is looking for something that is not there",
         fully_shadowed.len()
     );
     assert!(offenders.is_empty(), "a peek copies:\n{}", offenders.join("\n"));
+
+    // Non-vacuity for the exemption, asserted only where it can be: on the
+    // shipped corpus the set is EMPTY and must be, so there is nothing to
+    // prove. The fixtures are the only thing that reaches the fallback, so
+    // when they are in the tree at least one copy must appear — otherwise the
+    // branch above is dead and would pass whatever the emitter did with it.
+    if fixtures > 0 {
+        assert!(
+            !bounded.is_empty(),
+            "{fixtures} fixture(s) swept and none reached the bounded-accumulator \
+             copy — the exemption is dead code and proves nothing"
+        );
+    }
+
+    // EXACTLY these three, not "at most". Each is a composed peek whose callee
+    // is far over C2's inline budget, so the sink is allocated whatever shape it
+    // takes — it allocated as a returned `Value` before #310 too. #325 records
+    // the analysis and the only fix (inlining the sub-frame). A fourth site
+    // means a new composed multi-output peek nobody costed; losing one means
+    // #325 landed and this bound should tighten with it.
+    let expected: BTreeSet<String> =
+        ["kdj", "ma", "stochrsi"].iter().map(|s| (*s).to_string()).collect();
+    assert_eq!(
+        sink_sites, expected,
+        "the set of composed peeks allocating a sub-handle sink moved"
+    );
+}
+
+/// The SAME residue on the committing verbs, which the peek sweep above cannot
+/// see: a composed `update` reaches its multi-output sub-handle through the same
+/// caller-owned sink, because Java has no out-params and the API has no
+/// sink-less `update`. Pinned as an exact per-function COUNT, not a set — the
+/// three functions each carry one site per verb, and losing or gaining one on
+/// either verb is the thing #325 changes.
+///
+/// Non-vacuity: the map is asserted non-empty and every counted line is required
+/// to be a real `new <N>Out()` allocation, so an emitter that stopped writing
+/// them fails here rather than passing with an empty sweep.
+#[test]
+fn the_composed_sub_handle_sinks_are_exactly_the_costed_six() {
+    let mut sites: BTreeMap<String, usize> = BTreeMap::new();
+    for name in streaming_indicators() {
+        let s = java_stream_section(&name);
+        let n = s
+            .lines()
+            .filter(|l| {
+                let l = l.trim();
+                !l.starts_with("//") && !l.starts_with("*") && l.contains(" = new ") && l.ends_with("Out();")
+            })
+            .count();
+        if n > 0 {
+            sites.insert(name, n);
+        }
+    }
+    let expected: BTreeMap<String, usize> = [
+        ("kdj".to_string(), 2usize),
+        ("ma".to_string(), 2usize),
+        ("stochrsi".to_string(), 2usize),
+    ]
+    .into_iter()
+    .collect();
+    assert!(!sites.is_empty(), "the sweep found no sink allocation at all");
+    assert_eq!(
+        sites, expected,
+        "the composed sub-handle sink sites moved (one per verb on each of the three \
+         composed multi-output callees, #325)"
+    );
 }
 
 #[test]

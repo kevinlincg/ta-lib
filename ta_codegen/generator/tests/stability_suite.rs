@@ -38,29 +38,42 @@ fn load() -> Vec<FuncDef> {
         parser::c_source::wire_parsed_source(&mut f, &parsed);
         funcs.push(f);
     }
-    assert!(funcs.len() > 160, "expected the whole input tree, got {}", funcs.len());
+    assert!(funcs.len() >= 200, "expected the whole input tree, got {}", funcs.len());
     funcs
 }
 
 /// Functions that inherit an unstable period through a hard-coded inner call, and the
 /// function each one inherits from. Measured: every one of these moves at default params.
+/// KC is the only one with TWO sources (EMA for its centre line, ATR for its band), and it
+/// shares the ATR one with SUPERTREND -- which inherits it through `atr_lookback()` alone,
+/// with no call to `atr()` in the body at all.
 const INHERITED: &[(&str, &str)] = &[
     ("ADOSC", "EMA"),
     ("ADXR", "ADX"),
+    ("CVI", "EMA"),
     ("DEMA", "EMA"),
+    ("ERI", "EMA"),
+    ("KC", "ATR"),
     ("MACD", "EMA"),
     ("MACDFIX", "EMA"),
+    ("MASSI", "EMA"),
     ("SMI", "EMA"),
     ("STOCHRSI", "RSI"),
+    ("SUPERTREND", "ATR"),
     ("TEMA", "EMA"),
     ("TRIX", "EMA"),
+    ("TSI", "EMA"),
+    ("ZLEMA", "EMA"),
 ];
 
 /// Functions whose stability is the caller's MA-type choice. Measured: BBANDS, MA,
 /// MACDEXT, MAVP, STOCH and STOCHF are stable at their (SMA) defaults and unstable with
-/// EMA; APO, PPO and PVO default to EMA and so move even at defaults.
-const MATYPE_DEPENDENT: &[&str] =
-    &["APO", "BBANDS", "MA", "MACDEXT", "MAVP", "PPO", "PVO", "STOCH", "STOCHF", "STOCHRSI"];
+/// EMA; APO, PPO, PVO and KDJ default to a recursive average and so move even at
+/// defaults.
+const MATYPE_DEPENDENT: &[&str] = &[
+    "APO", "BBANDS", "KDJ", "MA", "MACDEXT", "MAVP", "PPO", "PVO", "STOCH", "STOCHF",
+    "STOCHRSI",
+];
 
 #[test]
 fn classification_matches_the_measured_library() {
@@ -73,7 +86,7 @@ fn classification_matches_the_measured_library() {
         .filter(|f| f.flags.iter().any(|x| x == "unstable_period"))
         .map(|f| f.name.as_str())
         .collect();
-    assert_eq!(declared.len(), 20, "the measured set of self-declaring functions is 20");
+    assert_eq!(declared.len(), 23, "the measured set of self-declaring functions is 23");
     for f in &funcs {
         assert_eq!(
             st[&f.name].intrinsic,
@@ -107,6 +120,18 @@ fn classification_matches_the_measured_library() {
     got.sort_unstable();
     assert_eq!(got, MATYPE_DEPENDENT, "set of MA-type-dependent functions changed");
 
+    // KC inherits from TWO different ids, and both matter: ta_regtest's UNSTABLE_MAP
+    // sweeps the set it is given and leaves the rest at zero, so a leg whose id is
+    // missing there never warms while the convergence envelope tightens around it.
+    // The INHERITED row above can name only one source, so assert the pair here.
+    {
+        let kc = &st["KC"].inherited_from;
+        assert!(
+            kc.iter().any(|g| g == "EMA") && kc.iter().any(|g| g == "ATR"),
+            "KC must inherit from both EMA and ATR, got {kc:?}"
+        );
+    }
+
     // SAR is the regression this analysis was narrowed for: it calls MINUS_DM (which owns
     // an unstable period) with a literal period of 1, so it inherits nothing.
     assert!(st["SAR"].inherited_from.is_empty(), "SAR must not inherit MINUS_DM's period");
@@ -118,7 +143,7 @@ fn classification_matches_the_measured_library() {
 #[test]
 fn ma_types_split_into_recursive_and_windowed() {
     let st = stability::classify(&load());
-    for name in ["EMA", "KAMA", "MAMA", "T3", "DEMA", "TEMA"] {
+    for name in ["EMA", "KAMA", "MAMA", "T3", "DEMA", "TEMA", "RMA"] {
         assert!(st[name].unconditional(), "{name} carries an unstable period");
     }
     for name in ["SMA", "WMA", "TRIMA", "HMA"] {

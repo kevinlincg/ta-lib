@@ -2291,6 +2291,122 @@ const RUST_GENERATED_TEST_MODULES: &[&str] = &["no_phantom_io"];
 /// ta-lib's dependency does not resolve.
 const DISPATCH_VERSION: &str = "0.1.2";
 
+/// A Rust sample that both crate front pages carry -- the `lib.rs` crate docs
+/// and `README.md`.
+struct FrontPageExample {
+    /// The crate items the body names. The README rendering appends `RetCode`
+    /// for its `fn main` signature, so leave it out unless the body itself
+    /// spells it.
+    uses: &'static [&'static str],
+    /// Statements, unindented and unwrapped: no `fn main`, no trailing `Ok`.
+    /// The `?` operator is expected -- both wrappers absorb it.
+    body: &'static str,
+}
+
+impl FrontPageExample {
+    /// The `use` line, in the one shape rustfmt would leave alone: braces only
+    /// where there is more than one item.
+    fn use_line(items: &[&str]) -> String {
+        match items {
+            [only] => format!("use ta_lib::{only};"),
+            many => format!("use ta_lib::{{{}}};", many.join(", ")),
+        }
+    }
+
+    /// The `//!`-prefixed doctest for `lib.rs`.
+    fn as_doc(&self) -> String {
+        let mut out = String::from("//! ```\n");
+        for line in [Self::use_line(self.uses), String::new()]
+            .into_iter()
+            .chain(self.body.lines().map(str::to_string))
+        {
+            if line.is_empty() {
+                out.push_str("//!\n");
+            } else {
+                out.push_str("//! ");
+                out.push_str(&line);
+                out.push('\n');
+            }
+        }
+        out.push_str("//! # Ok::<(), ta_lib::RetCode>(())\n//! ```");
+        out
+    }
+
+    /// The fenced block for `README.md`: a `fn main` a reader can paste into an
+    /// empty binary, which is what a front page outside rustdoc has to be.
+    fn as_readme(&self) -> String {
+        let mut items: Vec<&str> = self.uses.to_vec();
+        if !items.contains(&"RetCode") {
+            items.push("RetCode");
+        }
+        let mut out = format!(
+            "```rust\n{}\n\nfn main() -> Result<(), RetCode> {{\n",
+            Self::use_line(&items)
+        );
+        for line in self.body.lines() {
+            if line.is_empty() {
+                out.push('\n');
+            } else {
+                out.push_str("    ");
+                out.push_str(line);
+                out.push('\n');
+            }
+        }
+        out.push_str("    Ok(())\n}\n```");
+        out
+    }
+}
+
+const EXAMPLE_QUICK_START: FrontPageExample = FrontPageExample {
+    uses: &["Core", "RetCode"],
+    body: r#"let close = [11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0];
+let core = Core::new();
+let mut sma = vec![0.0; close.len()];
+
+let out = core.SMA(0, close.len() - 1, &close, 3, &mut sma)?;
+
+// The first 3-period average lands at input index 2 (the lookback):
+assert_eq!((out.beg_idx, out.count), (2, 8));
+assert_eq!(sma[0], 12.0); // (11 + 12 + 13) / 3"#,
+};
+
+/// The builder. The read-back is what makes it an assertion rather than a
+/// syntax demonstration: `build()` is the tier that can reject, so a sample
+/// that stops at `build()?` proves only that the call compiles.
+const EXAMPLE_CONFIGURATION: FrontPageExample = FrontPageExample {
+    uses: &["Core", "FuncUnstId"],
+    body: r#"let core = Core::builder()
+    .unstable_period(FuncUnstId::EMA, 10)
+    .build()?;
+
+assert_eq!(core.get_unstable_period(FuncUnstId::EMA)?, 10);"#,
+};
+
+/// The streaming tier, and the one sample that has to show all four of the
+/// contract's moving parts: warm-up, peek, commit, and a rejected bar.
+const EXAMPLE_LIVE_DATA: FrontPageExample = FrontPageExample {
+    uses: &["Core"],
+    body: r#"let history = [11.0, 12.0, 13.0, 14.0, 15.0];
+let core = Core::new();
+let (mut sma, last) = core.sma_open(&history, 3)?;
+
+assert_eq!(last, 14.0); // (13 + 14 + 15) / 3, the last history bar
+assert_eq!(sma.out_range().count, 3);
+
+// A bar that has not closed yet: ask without committing it.
+assert_eq!(sma.peek(16.0)?, 15.0);
+assert_eq!(sma.out_range().count, 3);
+
+// Once it closes, commit it — same value, and the range advances.
+assert_eq!(sma.update(16.0)?, 15.0);
+assert_eq!(sma.out_range().count, 4);
+
+// A non-finite bar is rejected, and still counted: the handle's output for
+// it is the previous one, held, and its state is untouched.
+assert!(sma.update(f64::NAN).is_err());
+assert_eq!(sma.out_range().count, 5);"#,
+};
+
 fn generate_rust_crate_scaffolding(
     out_base: &Path,
     funcs: &[ir::FuncDef],
@@ -2311,13 +2427,11 @@ fn generate_rust_crate_scaffolding(
         .trim()
         .to_string();
     // The crate's shop window — the Cargo.toml description (the crates.io
-    // search-result tagline), the lib.rs crate docs and README.md — quotes an
-    // indicator count and an install requirement. Derive both, never re-type
-    // them: three independent copies of "161" survived seven added indicators
-    // (#179 A2), and the install line said `ta-lib = "0.6"`, which resolves to
-    // nothing at all (#179 A1). `funcs` is every definition even under
-    // `--func=`, so the counts are whole-corpus by construction.
-    let n_funcs = funcs.len();
+    // search-result tagline), the lib.rs crate docs and README.md — quotes a
+    // candlestick count and an install requirement. Derive both, never re-type
+    // them: the install line said `ta-lib = "0.6"`, which resolves to nothing at
+    // all (#179 A1). `funcs` is every definition even under `--func=`, so the
+    // count is whole-corpus by construction.
     let n_candles = funcs.iter().filter(|f| f.group == "Pattern Recognition").count();
     // The caret requirement a user should pin: the released major.minor.
     let install_req = crate_version
@@ -2333,10 +2447,15 @@ fn generate_rust_crate_scaffolding(
     // samples and so cannot be `format!` strings (every brace would need
     // doubling, in text that is read far more often than it is edited).
     let fill = |text: &str| {
-        text.replace("$N_FUNCS", &n_funcs.to_string())
-            .replace("$N_CANDLES", &n_candles.to_string())
+        text.replace("$N_CANDLES", &n_candles.to_string())
             .replace("$INSTALL_REQ", &install_req)
             .replace("$FUNC_INDEX", &func_index)
+            .replace("$EX_QUICK_START_DOC", &EXAMPLE_QUICK_START.as_doc())
+            .replace("$EX_QUICK_START_MD", &EXAMPLE_QUICK_START.as_readme())
+            .replace("$EX_CONFIGURATION_DOC", &EXAMPLE_CONFIGURATION.as_doc())
+            .replace("$EX_CONFIGURATION_MD", &EXAMPLE_CONFIGURATION.as_readme())
+            .replace("$EX_LIVE_DATA_DOC", &EXAMPLE_LIVE_DATA.as_doc())
+            .replace("$EX_LIVE_DATA_MD", &EXAMPLE_LIVE_DATA.as_readme())
     };
     // Two-crate Cargo workspace: `library/` is the published `ta-lib` crate;
     // `tools/` holds the JSON-RPC server/bench — a layer on top of the library.
@@ -2464,7 +2583,7 @@ macro_rules! dispatch_fma {
     // clear MSRV message instead of an opaque E0658.
     let lib_toml_head = format!(
         "[package]\nname = \"ta-lib\"\nversion = \"{crate_version}\"\nedition = \"2021\"\nrust-version = \"1.86\"\n\
-         description = \"Technical analysis library: {n_funcs} indicators (SMA, EMA, RSI, MACD, \
+         description = \"Technical analysis library: 200+ indicators (SMA, EMA, RSI, MACD, \
          Bollinger Bands, ATR, Stochastic, candlestick patterns) — the official Rust port of \
          TA-Lib, verified against the C reference.\""
     );
@@ -2544,7 +2663,7 @@ path = "src/lib.rs"
     // --- src/lib.rs ---
     let lib_rs = r#"//! # TA-Lib: Technical Analysis Library
 //!
-//! $N_FUNCS technical-analysis indicators — moving averages, momentum oscillators,
+//! 200+ technical-analysis indicators — moving averages, momentum oscillators,
 //! volatility bands, volume studies, Hilbert Transform cycle analysis, statistics,
 //! price transforms, and $N_CANDLES candlestick-pattern recognizers — as a pure-Rust crate.
 //!
@@ -2554,20 +2673,7 @@ path = "src/lib.rs"
 //!
 //! # Quick start
 //!
-//! ```
-//! use ta_lib::{Core, RetCode};
-//!
-//! let close = [11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0];
-//! let core = Core::new();
-//! let mut sma = vec![0.0; close.len()];
-//!
-//! let out = core.SMA(0, close.len() - 1, &close, 3, &mut sma)?;
-//!
-//! // The first 3-period average lands at input index 2 (the lookback):
-//! assert_eq!((out.beg_idx, out.count), (2, 8));
-//! assert_eq!(sma[0], 12.0); // (11 + 12 + 13) / 3
-//! # Ok::<(), ta_lib::RetCode>(())
-//! ```
+$EX_QUICK_START_DOC
 //!
 //! # API shape
 //!
@@ -2590,14 +2696,7 @@ path = "src/lib.rs"
 //! [`Core::builder()`] and then frozen, so a `Core` is `Send + Sync` and
 //! can be shared read-only across threads (e.g. via `Arc`) with no locking:
 //!
-//! ```
-//! use ta_lib::{Core, FuncUnstId};
-//!
-//! let core = Core::builder()
-//!     .unstable_period(FuncUnstId::EMA, 10)
-//!     .build()?;
-//! # Ok::<(), ta_lib::RetCode>(())
-//! ```
+$EX_CONFIGURATION_DOC
 //!
 //! The setters are infallible so that they chain; a rejected argument is
 //! reported once, by `build()`, as [`RetCode::BadParam`].
@@ -2610,10 +2709,34 @@ path = "src/lib.rs"
 //! points of indicators built on fused multiply-adds are compiled twice and the
 //! hardware-FMA clone is selected at runtime (the same dispatch the C library
 //! performs via `target_clones`); both paths are correctly rounded, so results
-//! are bit-identical either way. The streaming tier stays single-path.
+//! are bit-identical either way. Calling that clone is the one `unsafe` in the
+//! crate's shipped dependency graph: it lives in `ta-lib-dispatch`, inside the
+//! `is_x86_feature_detected!("fma")` test that has just proved it sound, and
+//! `forbid` here does not see it because it expands from another crate's macro.
+//! The streaming tier stays single-path.
+//!
+//! # Live data
+//!
+//! The calls above take a whole series at once. For a feed that arrives one bar
+//! at a time, each indicator also has a *streaming* form: an `*_open` method
+//! ([`Core::sma_open`], [`Core::rsi_open`], …) warms a handle up on the history
+//! you already have, and from then on one bar in gives that bar's value out,
+//! with no re-scan of the series and no allocation per bar.
+//!
+$EX_LIVE_DATA_DOC
+//!
+//! The handle's value at every bar is bit-identical to what the batch call
+//! reports for that bar. [`SmaStream::out_range`] carries the same
+//! [`OutRange`] the batch tier returns — the bars the handle has an output for
+//! — and every bar handed to [`SmaStream::update`] advances it by one, a bar
+//! rejected as non-finite included: its output is the previous one, held.
+//! [`SmaStream::peek`] leaves it alone; cloning a handle forks an independent
+//! stream, and dropping it closes the stream.
 //!
 //! The full function reference, grouped by category, is at
-//! [ta-lib.org/functions](https://ta-lib.org/functions/).
+//! [ta-lib.org/functions](https://ta-lib.org/functions/); the guides are at
+//! [ta-lib.org/api/rust](https://ta-lib.org/api/rust/) and, for the streaming
+//! tier, [ta-lib.org/api/rust/stream](https://ta-lib.org/api/rust/stream/).
 //!
 //! # Indicators by category
 //!
@@ -2677,7 +2800,7 @@ struct ReadmeExamples;
 [![crates.io](https://img.shields.io/crates/v/ta-lib.svg)](https://crates.io/crates/ta-lib) [![docs.rs](https://docs.rs/ta-lib/badge.svg)](https://docs.rs/ta-lib)
 
 [TA-Lib](https://ta-lib.org) — the widely used technical-analysis library — as a
-pure-Rust crate: $N_FUNCS indicators covering moving averages, momentum oscillators
+pure-Rust crate: 200+ indicators covering moving averages, momentum oscillators
 (RSI, MACD, Stochastic), volatility (Bollinger Bands, ATR), volume, Hilbert
 Transform cycle analysis, statistics, price transforms, and $N_CANDLES candlestick
 patterns.
@@ -2694,22 +2817,7 @@ ta-lib = "$INSTALL_REQ"
 
 ## Quick start
 
-```rust
-use ta_lib::{Core, RetCode};
-
-fn main() -> Result<(), RetCode> {
-    let close = [11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0];
-    let core = Core::new();
-    let mut sma = vec![0.0; close.len()];
-
-    let out = core.SMA(0, close.len() - 1, &close, 3, &mut sma)?;
-
-    // The first 3-period average lands at input index 2 (the lookback):
-    assert_eq!((out.beg_idx, out.count), (2, 8));
-    assert_eq!(sma[0], 12.0); // (11 + 12 + 13) / 3
-    Ok(())
-}
-```
+$EX_QUICK_START_MD
 
 Every indicator is a method on `Core` with the same calling pattern: `&[f64]`
 input slices, a `startIdx..=endIdx` range, caller-provided output slices, and a
@@ -2727,18 +2835,7 @@ not an error — the same contract as C, Java and C#.
 period and candlestick thresholds — are chosen up front with a builder and then
 frozen:
 
-```rust
-use ta_lib::{Core, FuncUnstId, RetCode};
-
-fn main() -> Result<(), RetCode> {
-    let core = Core::builder()
-        .unstable_period(FuncUnstId::EMA, 10)
-        .build()?;
-
-    assert_eq!(core.get_unstable_period(FuncUnstId::EMA)?, 10);
-    Ok(())
-}
-```
+$EX_CONFIGURATION_MD
 
 The setters are infallible so that they chain; a rejected argument is reported
 once, by `build()`, as `RetCode::BadParam`.
@@ -2747,9 +2844,26 @@ Because a configured `Core` only ever reads its settings, it is `Send + Sync` an
 can be shared read-only across threads (e.g. an `Arc<Core>` with concurrent
 indicator calls) without locking. To change a setting, build a new `Core`.
 
+## Live data
+
+The calls above take a whole series at once. For a feed that arrives one bar at
+a time, each indicator also has a **streaming** form: an `*_open` method warms a
+handle up on the history you already have, and from then on one bar in gives
+that bar's value out — no re-scan of the series, no allocation per bar, and
+bit-identical to what the batch call reports for the same bar.
+
+$EX_LIVE_DATA_MD
+
+`out_range()` carries the same `OutRange` the batch tier returns — the bars the
+handle has an output for — and every bar handed to `update` advances it by one,
+a bar rejected as non-finite included: its output is the previous one, held.
+`peek` leaves it alone. Cloning a handle forks an independent stream, and
+dropping it closes the stream.
+
 ## Documentation
 
 - API reference: <https://docs.rs/ta-lib>
+- Rust guide: <https://ta-lib.org/api/rust/> — and the streaming tier: <https://ta-lib.org/api/rust/stream/>
 - Per-function reference (formulas, notes, sources): <https://ta-lib.org/functions/>
 - Project home: <https://ta-lib.org>
 

@@ -80,6 +80,7 @@ impl Core {
     ///
     /// [`RetCode::BadParam`] when a parameter is out of range. Integer parameters accept
     /// [`Core::INTEGER_DEFAULT`] to select their default value.
+    #[doc(alias = "TA_HMA_Lookback")]
     #[inline]
     pub fn HMA_Lookback(&self, mut optInTimePeriod: i32) -> Result<usize, RetCode> {
         if ((optInTimePeriod) as i32) == (i32::MIN) {
@@ -529,6 +530,7 @@ impl Core {
     /// * Alan Hull, *How to reduce lag in a moving average* — the original definition, including
     ///   the `Integer()` truncation of both derived periods:
     ///   [alanhull.com/hull-moving-average](https://alanhull.com/hull-moving-average)
+    #[doc(alias = "TA_HMA")]
     #[doc(alias = "HullMovingAverage")]
     pub fn HMA(
         &self,
@@ -577,13 +579,13 @@ impl Core {
 /// over the same series. Open with [`Core::hma_open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
 ///
-/// [`Self::out_range`] reports the bars it has produced a value for.
+/// [`Self::out_range`] reports the bars this handle has an output for.
 #[must_use = "a stream does nothing unless updated; dropping it closes the stream"]
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_HMA_Stream")]
 pub struct HmaStream {
     state: HmaStreamState,
-    /// The bars this handle has produced a value for — see [`Self::out_range`].
+    /// The bars this handle has an output for — see [`Self::out_range`].
     out: OutRange,
 }
 
@@ -627,6 +629,7 @@ struct HmaStreamState {
     win_jHalf_inReal: Vec<f64>,
     cbSize_dRing: usize,
     cb_dRing: Vec<f64>,
+    cur_outReal: f64,
 }
 
 #[allow(unused_variables)]
@@ -638,6 +641,7 @@ impl Core {
     fn hma_step_impl(sp: &mut HmaStreamState, inReal: f64, outReal: &mut f64) {
         if sp.optInTimePeriod == 1 {
             (*outReal) = inReal;
+            sp.cur_outReal = (*outReal);
             return;
         }
         if sp.optInTimePeriod == 2 || sp.optInTimePeriod == 3 {
@@ -675,6 +679,7 @@ impl Core {
             fullOut = sp.periodSumFull / sp.dividerFull;
             sp.periodSumFull -= sp.periodSubFull;
             (*outReal) = 2.0 * tempReal - fullOut;
+            sp.cur_outReal = (*outReal);
             sp.ring_trailingIdxFull_inReal[sp.ringPos_trailingIdxFull] = inReal;
             sp.ringPos_trailingIdxFull = sp.ringPos_trailingIdxFull + 1;
             if sp.ringPos_trailingIdxFull >= sp.ringCap_trailingIdxFull {
@@ -790,6 +795,7 @@ impl Core {
             }
             (*outReal) = sp.periodSumSqrt / sp.dividerSqrt;
             sp.periodSumSqrt -= sp.periodSubSqrt;
+            sp.cur_outReal = (*outReal);
             sp.ring_trailingIdxFull_inReal[sp.ringPos_trailingIdxFull] = inReal;
             sp.ringPos_trailingIdxFull = sp.ringPos_trailingIdxFull + 1;
             if sp.ringPos_trailingIdxFull >= sp.ringCap_trailingIdxFull {
@@ -844,6 +850,7 @@ impl Core {
                 return Err(RetCode::InsufficientHistory);
             }
             let state = HmaStreamState {
+                cur_outReal: inReal[historyLen - 1],
                 optInTimePeriod: optInTimePeriod,
                 dividerFull: 0.0_f64,
                 periodSubFull: 0.0_f64,
@@ -1070,6 +1077,7 @@ impl Core {
                 barsSinceReseedSqrt,
                 dRing_Idx,
                 maxIdx_dRing,
+                cur_outReal: outReal[(*outNBElement - 1) * outStride],
                 ringPos_trailingIdxFull: 0_usize,
                 ringCap_trailingIdxFull: cap_trailingIdxFull as usize,
                 ring_trailingIdxFull_inReal,
@@ -1424,6 +1432,7 @@ impl Core {
                 barsSinceReseedSqrt,
                 dRing_Idx,
                 maxIdx_dRing,
+                cur_outReal: outReal[(*outNBElement - 1) * outStride],
                 ringPos_trailingIdxFull: 0_usize,
                 ringCap_trailingIdxFull: cap_trailingIdxFull as usize,
                 ring_trailingIdxFull_inReal,
@@ -1556,15 +1565,22 @@ impl HmaStream {
     /// # Errors
     ///
     /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).
-    /// That check runs before anything is written, so the handle is left
-    /// exactly as it was and the stream stays usable:
-    /// skip the bar, or close and re-open on a clean history. This is the
-    /// one place the streaming tier is stricter than the batch API, which
-    /// computes on whatever it is given — a handle retains its state, so a
-    /// single non-finite bar would poison every later value it produces.
+    /// That check runs before anything is written, so the handle's state is
+    /// left exactly as it was and the stream stays usable: skip the bar, or
+    /// close and re-open on a clean history. This is the one place the
+    /// streaming tier is stricter than the batch API, which computes on
+    /// whatever it is given — a handle retains its state, so a single
+    /// non-finite bar would poison every later value it produces.
+    ///
+    /// [`Self::out_range`] counts the rejected bar all the same: it happened,
+    /// so two handles fed the same series stay positionally aligned even when
+    /// one rejects a bar the other accepts.
     #[doc(alias = "TA_HMA_Update")]
     pub fn update(&mut self, inReal: f64) -> Result<f64, RetCode> {
         if !inReal.is_finite() {
+            if self.out.count < Core::MAX_INDEX {
+                self.out.count += 1;
+            }
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
@@ -1573,40 +1589,6 @@ impl HmaStream {
             self.out.count += 1;
         }
         Ok(outReal)
-    }
-
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inReal.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what was committed, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k`.
-    #[doc(alias = "TA_HMA_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inReal: &[f64], outReal: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inReal.len();
-        if outReal.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inReal[i].is_finite() {
-                return Err(RetCode::BadParam);
-            }
-            Core::hma_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
     }
 
     /// Evaluate a forming bar without committing — bit-identical to what the
@@ -1618,8 +1600,9 @@ impl HmaStream {
     ///
     /// # Errors
     ///
-    /// [`RetCode::BadParam`] if any bar value is not finite, exactly as
-    /// `update` rejects it.
+    /// [`RetCode::BadParam`] if any bar value is not finite, on the same test
+    /// `update` applies — but a rejected peek changes nothing at all, where a
+    /// rejected `update` still counts the bar in [`Self::out_range`].
     #[doc(alias = "TA_HMA_Peek")]
     pub fn peek(&self, inReal: f64) -> Result<f64, RetCode> {
         if !inReal.is_finite() {
@@ -1642,9 +1625,7 @@ impl HmaStream {
                 let mut barsSinceReseedFull = sp.barsSinceReseedFull;
                 let mut periodSubFull = sp.periodSubFull;
                 let mut periodSumFull = sp.periodSumFull;
-                let mut ringPos_trailingIdxFull = sp.ringPos_trailingIdxFull;
                 let mut trailingFull = sp.trailingFull;
-                let mut winPos_jFull = sp.winPos_jFull;
                 let mut pkSlot0: usize = usize::MAX;
                 let mut pkVal0: f64 = 0.0_f64;
                 let mut pkSlot1: usize = usize::MAX;
@@ -1653,7 +1634,7 @@ impl HmaStream {
                     pkSlot0 = 0;
                     pkVal0 = inReal;
                 }
-                pkSlot1 = winPos_jFull as usize;
+                pkSlot1 = sp.winPos_jFull as usize;
                 pkVal1 = inReal;
                 tempReal = inReal;
                 periodSubFull += tempReal;
@@ -1668,7 +1649,7 @@ impl HmaStream {
                     // for( jFull = sp.lookbackFull; jFull >= 0; jFull -= 1 )
                     jFull = sp.lookbackFull;
                     loop {
-                        tempReal2 = (if ((if winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { winPos_jFull + sp.winCap_jFull - jFull }) as usize) != pkSlot1 { sp.win_jFull_inReal[((if winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { winPos_jFull + sp.winCap_jFull - jFull })) as usize] } else { pkVal1 });
+                        tempReal2 = (if ((if sp.winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { sp.winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { sp.winPos_jFull + sp.winCap_jFull - jFull }) as usize) != pkSlot1 { sp.win_jFull_inReal[((if sp.winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { sp.winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { sp.winPos_jFull + sp.winCap_jFull - jFull })) as usize] } else { pkVal1 });
                         periodSubFull += tempReal2;
                         periodSumFull += tempReal2 * ((rw) as f64);
                         rw += 1;
@@ -1676,18 +1657,10 @@ impl HmaStream {
                         jFull -= 1;
                     }
                 }
-                trailingFull = (if (ringPos_trailingIdxFull as usize) != pkSlot0 { sp.ring_trailingIdxFull_inReal[ringPos_trailingIdxFull] } else { pkVal0 });
+                trailingFull = (if (sp.ringPos_trailingIdxFull as usize) != pkSlot0 { sp.ring_trailingIdxFull_inReal[sp.ringPos_trailingIdxFull] } else { pkVal0 });
                 fullOut = periodSumFull / sp.dividerFull;
                 periodSumFull -= periodSubFull;
                 (*outReal) = 2.0 * tempReal - fullOut;
-                ringPos_trailingIdxFull = ringPos_trailingIdxFull + 1;
-                if ringPos_trailingIdxFull >= sp.ringCap_trailingIdxFull {
-                    ringPos_trailingIdxFull = 0;
-                }
-                winPos_jFull = winPos_jFull + 1;
-                if winPos_jFull >= sp.winCap_jFull {
-                    winPos_jFull = 0;
-                }
             } else {
                 let mut tempReal: f64 = 0.0_f64;
                 let mut fullOut: f64 = 0.0_f64;
@@ -1709,13 +1682,9 @@ impl HmaStream {
                 let mut periodSumFull = sp.periodSumFull;
                 let mut periodSumHalf = sp.periodSumHalf;
                 let mut periodSumSqrt = sp.periodSumSqrt;
-                let mut ringPos_trailingIdxFull = sp.ringPos_trailingIdxFull;
-                let mut ringPos_trailingIdxHalf = sp.ringPos_trailingIdxHalf;
                 let mut trailingFull = sp.trailingFull;
                 let mut trailingHalf = sp.trailingHalf;
                 let mut trailingSqrt = sp.trailingSqrt;
-                let mut winPos_jFull = sp.winPos_jFull;
-                let mut winPos_jHalf = sp.winPos_jHalf;
                 let mut pkSlot0: usize = usize::MAX;
                 let mut pkVal0: f64 = 0.0_f64;
                 let mut pkSlot1: usize = usize::MAX;
@@ -1732,9 +1701,9 @@ impl HmaStream {
                     pkSlot1 = 0;
                     pkVal1 = inReal;
                 }
-                pkSlot2 = winPos_jFull as usize;
+                pkSlot2 = sp.winPos_jFull as usize;
                 pkVal2 = inReal;
-                pkSlot3 = winPos_jHalf as usize;
+                pkSlot3 = sp.winPos_jHalf as usize;
                 pkVal3 = inReal;
                 tempReal = inReal;
                 periodSubFull += tempReal;
@@ -1749,7 +1718,7 @@ impl HmaStream {
                     // for( jFull = sp.lookbackFull; jFull >= 0; jFull -= 1 )
                     jFull = sp.lookbackFull;
                     loop {
-                        tempReal2 = (if ((if winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { winPos_jFull + sp.winCap_jFull - jFull }) as usize) != pkSlot2 { sp.win_jFull_inReal[((if winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { winPos_jFull + sp.winCap_jFull - jFull })) as usize] } else { pkVal2 });
+                        tempReal2 = (if ((if sp.winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { sp.winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { sp.winPos_jFull + sp.winCap_jFull - jFull }) as usize) != pkSlot2 { sp.win_jFull_inReal[((if sp.winPos_jFull + sp.winCap_jFull - jFull >= sp.winCap_jFull { sp.winPos_jFull + sp.winCap_jFull - jFull - sp.winCap_jFull } else { sp.winPos_jFull + sp.winCap_jFull - jFull })) as usize] } else { pkVal2 });
                         periodSubFull += tempReal2;
                         periodSumFull += tempReal2 * ((rw) as f64);
                         rw += 1;
@@ -1757,7 +1726,7 @@ impl HmaStream {
                         jFull -= 1;
                     }
                 }
-                trailingFull = (if (ringPos_trailingIdxFull as usize) != pkSlot0 { sp.ring_trailingIdxFull_inReal[ringPos_trailingIdxFull] } else { pkVal0 });
+                trailingFull = (if (sp.ringPos_trailingIdxFull as usize) != pkSlot0 { sp.ring_trailingIdxFull_inReal[sp.ringPos_trailingIdxFull] } else { pkVal0 });
                 fullOut = periodSumFull / sp.dividerFull;
                 periodSumFull -= periodSubFull;
                 periodSubHalf += tempReal;
@@ -1772,7 +1741,7 @@ impl HmaStream {
                     // for( jHalf = sp.lookbackHalf; jHalf >= 0; jHalf -= 1 )
                     jHalf = sp.lookbackHalf;
                     loop {
-                        tempReal2 = (if ((if winPos_jHalf + sp.winCap_jHalf - jHalf >= sp.winCap_jHalf { winPos_jHalf + sp.winCap_jHalf - jHalf - sp.winCap_jHalf } else { winPos_jHalf + sp.winCap_jHalf - jHalf }) as usize) != pkSlot3 { sp.win_jHalf_inReal[((if winPos_jHalf + sp.winCap_jHalf - jHalf >= sp.winCap_jHalf { winPos_jHalf + sp.winCap_jHalf - jHalf - sp.winCap_jHalf } else { winPos_jHalf + sp.winCap_jHalf - jHalf })) as usize] } else { pkVal3 });
+                        tempReal2 = (if ((if sp.winPos_jHalf + sp.winCap_jHalf - jHalf >= sp.winCap_jHalf { sp.winPos_jHalf + sp.winCap_jHalf - jHalf - sp.winCap_jHalf } else { sp.winPos_jHalf + sp.winCap_jHalf - jHalf }) as usize) != pkSlot3 { sp.win_jHalf_inReal[((if sp.winPos_jHalf + sp.winCap_jHalf - jHalf >= sp.winCap_jHalf { sp.winPos_jHalf + sp.winCap_jHalf - jHalf - sp.winCap_jHalf } else { sp.winPos_jHalf + sp.winCap_jHalf - jHalf })) as usize] } else { pkVal3 });
                         periodSubHalf += tempReal2;
                         periodSumHalf += tempReal2 * ((rw) as f64);
                         rw += 1;
@@ -1780,7 +1749,7 @@ impl HmaStream {
                         jHalf -= 1;
                     }
                 }
-                trailingHalf = (if (ringPos_trailingIdxHalf as usize) != pkSlot1 { sp.ring_trailingIdxHalf_inReal[ringPos_trailingIdxHalf] } else { pkVal1 });
+                trailingHalf = (if (sp.ringPos_trailingIdxHalf as usize) != pkSlot1 { sp.ring_trailingIdxHalf_inReal[sp.ringPos_trailingIdxHalf] } else { pkVal1 });
                 halfOut = periodSumHalf / sp.dividerHalf;
                 periodSumHalf -= periodSubHalf;
                 diffReal = 2.0 * halfOut - fullOut;
@@ -1821,34 +1790,31 @@ impl HmaStream {
                     dRing_Idx = 0;
                 }
                 (*outReal) = periodSumSqrt / sp.dividerSqrt;
-                periodSumSqrt -= periodSubSqrt;
-                ringPos_trailingIdxFull = ringPos_trailingIdxFull + 1;
-                if ringPos_trailingIdxFull >= sp.ringCap_trailingIdxFull {
-                    ringPos_trailingIdxFull = 0;
-                }
-                ringPos_trailingIdxHalf = ringPos_trailingIdxHalf + 1;
-                if ringPos_trailingIdxHalf >= sp.ringCap_trailingIdxHalf {
-                    ringPos_trailingIdxHalf = 0;
-                }
-                winPos_jFull = winPos_jFull + 1;
-                if winPos_jFull >= sp.winCap_jFull {
-                    winPos_jFull = 0;
-                }
-                winPos_jHalf = winPos_jHalf + 1;
-                if winPos_jHalf >= sp.winCap_jHalf {
-                    winPos_jHalf = 0;
-                }
             }
         }
         Ok(outReal)
     }
 
-    /// The bars this stream has produced a value for, in the input series'
+    /// The value(s) at the last bar the stream counted — the bar
+    /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
+    /// refreshed by every accepted `update`, and left
+    /// alone by `peek`.
+    ///
+    /// A clone carries them verbatim, so a forked handle can be asked its
+    /// current value without committing a bar to find out.
+    #[must_use]
+    #[doc(alias = "TA_HMA_Value")]
+    pub fn value(&self) -> f64 {
+        self.state.cur_outReal
+    }
+
+    /// The bars this stream has an output for, in the input series'
     /// coordinates: `[beg_idx, beg_idx + count)`.
     ///
     /// It is what [`Core::HMA`] reports over the same bars: the opener sets it
-    /// to `(lookback, historyLen - lookback)`, every accepted `update` adds one
-    /// to the count, `peek` leaves it alone, and a clone carries it verbatim.
+    /// to `(lookback, historyLen - lookback)`, every `update` adds one to the
+    /// count — a bar rejected for being non-finite included, because it still
+    /// happened — `peek` leaves it alone, and a clone carries it verbatim.
     /// A plain `Open` hands back only the last value, a subset of this range,
     /// because the caller chose not to take the fill.
     #[doc(alias = "TA_StreamOutRange")]

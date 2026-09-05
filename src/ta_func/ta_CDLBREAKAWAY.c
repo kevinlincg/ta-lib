@@ -58,9 +58,7 @@
 
 TA_LIB_API int TA_CDLBREAKAWAY_Lookback( void )
 {
-   int BodyLong_rangeType = TA_Globals->candleSettings[TA_BodyLong].rangeType;
    int BodyLong_avgPeriod = TA_Globals->candleSettings[TA_BodyLong].avgPeriod;
-   double BodyLong_factor = TA_Globals->candleSettings[TA_BodyLong].factor;
    return BodyLong_avgPeriod + 4;
 }
 
@@ -79,9 +77,7 @@ TA_LIB_API TA_RetCode TA_CDLBREAKAWAY( int    startIdx,
    int outIdx;
    int BodyLongTrailingIdx;
    int lookbackTotal;
-   int BodyLong_rangeType = TA_Globals->candleSettings[TA_BodyLong].rangeType;
    int BodyLong_avgPeriod = TA_Globals->candleSettings[TA_BodyLong].avgPeriod;
-   double BodyLong_factor = TA_Globals->candleSettings[TA_BodyLong].factor;
 
    if( (startIdx < 0) || (startIdx > TA_MAX_INDEX) )
       return TA_OUT_OF_RANGE_START_INDEX;
@@ -149,7 +145,22 @@ TA_LIB_API TA_RetCode TA_CDLBREAKAWAY( int    startIdx,
           ((inClose[i - 3] >= inOpen[i - 3]) ? 1 : 0 - 1) == ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) &&
           ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) &&
           fabs(inClose[i - 4] - inOpen[i - 4]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 4) && /* 1st long */
-          (((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen[i - 3],inClose[i - 3]) < min(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && inHigh[i - 2] < inHigh[i - 3] && inLow[i - 2] < inLow[i - 3] && inHigh[i - 1] < inHigh[i - 2] && inLow[i - 1] < inLow[i - 2] && inClose[i] > inOpen[i - 3] && inClose[i] < inClose[i - 4] || ((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 1 && ((min(inOpen[i - 3],inClose[i - 3]) > max(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && inHigh[i - 2] > inHigh[i - 3] && inLow[i - 2] > inLow[i - 3] && inHigh[i - 1] > inHigh[i - 2] && inLow[i - 1] > inLow[i - 2] && inClose[i] < inOpen[i - 3] && inClose[i] > inClose[i - 4]) ) /* when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap */
+          ((((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black: */
+            ((max(inOpen[i - 3],inClose[i - 3]) < min(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && /* 2nd gaps down */
+            inHigh[i - 2] < inHigh[i - 3] &&
+            inLow[i - 2] < inLow[i - 3] &&                              /* 3rd has lower high and low than 2nd */
+            inHigh[i - 1] < inHigh[i - 2] &&
+            inLow[i - 1] < inLow[i - 2] &&                              /* 4th has lower high and low than 3rd */
+            inClose[i] > inOpen[i - 3] &&
+            inClose[i] < inClose[i - 4]) ||                             /* 5th closes inside the gap */
+           (((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 1 &&     /* when 1st is white: */
+            ((min(inOpen[i - 3],inClose[i - 3]) > max(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && /* 2nd gaps up */
+            inHigh[i - 2] > inHigh[i - 3] &&
+            inLow[i - 2] > inLow[i - 3] &&                              /* 3rd has higher high and low than 2nd */
+            inHigh[i - 1] > inHigh[i - 2] &&
+            inLow[i - 1] > inLow[i - 2] &&                              /* 4th has higher high and low than 3rd */
+            inClose[i] < inOpen[i - 3] &&
+            inClose[i] > inClose[i - 4])) )                             /* 5th closes inside the gap */
       {
          outInteger[outIdx++] = ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) * 100;
       } else 
@@ -184,9 +195,7 @@ TA_RetCode TA_S_CDLBREAKAWAY( int    startIdx,
    int outIdx;
    int BodyLongTrailingIdx;
    int lookbackTotal;
-   int BodyLong_rangeType = TA_Globals->candleSettings[TA_BodyLong].rangeType;
    int BodyLong_avgPeriod = TA_Globals->candleSettings[TA_BodyLong].avgPeriod;
-   double BodyLong_factor = TA_Globals->candleSettings[TA_BodyLong].factor;
 
    if( (startIdx < 0) || (startIdx > TA_MAX_INDEX) )
       return TA_OUT_OF_RANGE_START_INDEX;
@@ -229,7 +238,7 @@ TA_RetCode TA_S_CDLBREAKAWAY( int    startIdx,
    outIdx = 0;
    do
    {
-      if( (((double)inClose[i - 4] >= (double)inOpen[i - 4]) ? 1 : 0 - 1) == (((double)inClose[i - 3] >= (double)inOpen[i - 3]) ? 1 : 0 - 1) && (((double)inClose[i - 3] >= (double)inOpen[i - 3]) ? 1 : 0 - 1) == (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) && (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) == 0 - (((double)inClose[i] >= (double)inOpen[i]) ? 1 : 0 - 1) && fabs((double)inClose[i - 4] - (double)inOpen[i - 4]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 4) && ((((double)inClose[i - 4] >= (double)inOpen[i - 4]) ? 1 : 0 - 1) == 0 - 1 && ((max((double)inOpen[i - 3],(double)inClose[i - 3]) < min((double)inOpen[i - 4],(double)inClose[i - 4])) ? 1 : 0) && (double)inHigh[i - 2] < (double)inHigh[i - 3] && (double)inLow[i - 2] < (double)inLow[i - 3] && (double)inHigh[i - 1] < (double)inHigh[i - 2] && (double)inLow[i - 1] < (double)inLow[i - 2] && (double)inClose[i] > (double)inOpen[i - 3] && (double)inClose[i] < (double)inClose[i - 4] || (((double)inClose[i - 4] >= (double)inOpen[i - 4]) ? 1 : 0 - 1) == 1 && ((min((double)inOpen[i - 3],(double)inClose[i - 3]) > max((double)inOpen[i - 4],(double)inClose[i - 4])) ? 1 : 0) && (double)inHigh[i - 2] > (double)inHigh[i - 3] && (double)inLow[i - 2] > (double)inLow[i - 3] && (double)inHigh[i - 1] > (double)inHigh[i - 2] && (double)inLow[i - 1] > (double)inLow[i - 2] && (double)inClose[i] < (double)inOpen[i - 3] && (double)inClose[i] > (double)inClose[i - 4]) )
+      if( (((double)inClose[i - 4] >= (double)inOpen[i - 4]) ? 1 : 0 - 1) == (((double)inClose[i - 3] >= (double)inOpen[i - 3]) ? 1 : 0 - 1) && (((double)inClose[i - 3] >= (double)inOpen[i - 3]) ? 1 : 0 - 1) == (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) && (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) == 0 - (((double)inClose[i] >= (double)inOpen[i]) ? 1 : 0 - 1) && fabs((double)inClose[i - 4] - (double)inOpen[i - 4]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 4) && (((((double)inClose[i - 4] >= (double)inOpen[i - 4]) ? 1 : 0 - 1) == 0 - 1 && ((max((double)inOpen[i - 3],(double)inClose[i - 3]) < min((double)inOpen[i - 4],(double)inClose[i - 4])) ? 1 : 0) && (double)inHigh[i - 2] < (double)inHigh[i - 3] && (double)inLow[i - 2] < (double)inLow[i - 3] && (double)inHigh[i - 1] < (double)inHigh[i - 2] && (double)inLow[i - 1] < (double)inLow[i - 2] && (double)inClose[i] > (double)inOpen[i - 3] && (double)inClose[i] < (double)inClose[i - 4]) || ((((double)inClose[i - 4] >= (double)inOpen[i - 4]) ? 1 : 0 - 1) == 1 && ((min((double)inOpen[i - 3],(double)inClose[i - 3]) > max((double)inOpen[i - 4],(double)inClose[i - 4])) ? 1 : 0) && (double)inHigh[i - 2] > (double)inHigh[i - 3] && (double)inLow[i - 2] > (double)inLow[i - 3] && (double)inHigh[i - 1] > (double)inHigh[i - 2] && (double)inLow[i - 1] > (double)inLow[i - 2] && (double)inClose[i] < (double)inOpen[i - 3] && (double)inClose[i] > (double)inClose[i - 4])) )
       {
          outInteger[outIdx++] = (((double)inClose[i] >= (double)inOpen[i]) ? 1 : 0 - 1) * 100;
       } else 
@@ -248,10 +257,12 @@ TA_RetCode TA_S_CDLBREAKAWAY( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_CDLBREAKAWAY_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_CDLBREAKAWAY_Value). */
+   int cur_outInteger;
    double BodyLongPeriodTotal;
    double lag1_inOpen;
    double lag2_inOpen;
@@ -291,7 +302,22 @@ static void TA_CDLBREAKAWAY_StepImpl( struct TA_CDLBREAKAWAY_Stream *sp, double 
        ((sp->lag3_inClose >= sp->lag3_inOpen) ? 1 : 0 - 1) == ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) &&
        ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - ((inClose >= inOpen) ? 1 : 0 - 1) &&
        fabs(sp->lag4_inClose - sp->lag4_inOpen) > TA_STREAM_CANDLEAVERAGE(BodyLong,sp->BodyLongPeriodTotal,sp->lag4_inOpen,sp->lag4_inHigh,sp->lag4_inLow,sp->lag4_inClose) && /* 1st long */
-       (((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((max(sp->lag3_inOpen,sp->lag3_inClose) < min(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && sp->lag2_inHigh < sp->lag3_inHigh && sp->lag2_inLow < sp->lag3_inLow && sp->lag1_inHigh < sp->lag2_inHigh && sp->lag1_inLow < sp->lag2_inLow && inClose > sp->lag3_inOpen && inClose < sp->lag4_inClose || ((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 1 && ((min(sp->lag3_inOpen,sp->lag3_inClose) > max(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && sp->lag2_inHigh > sp->lag3_inHigh && sp->lag2_inLow > sp->lag3_inLow && sp->lag1_inHigh > sp->lag2_inHigh && sp->lag1_inLow > sp->lag2_inLow && inClose < sp->lag3_inOpen && inClose > sp->lag4_inClose) ) /* when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap */
+       ((((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black: */
+         ((max(sp->lag3_inOpen,sp->lag3_inClose) < min(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && /* 2nd gaps down */
+         sp->lag2_inHigh < sp->lag3_inHigh &&
+         sp->lag2_inLow < sp->lag3_inLow &&                              /* 3rd has lower high and low than 2nd */
+         sp->lag1_inHigh < sp->lag2_inHigh &&
+         sp->lag1_inLow < sp->lag2_inLow &&                              /* 4th has lower high and low than 3rd */
+         inClose > sp->lag3_inOpen &&
+         inClose < sp->lag4_inClose) ||                                  /* 5th closes inside the gap */
+        (((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 1 &&     /* when 1st is white: */
+         ((min(sp->lag3_inOpen,sp->lag3_inClose) > max(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && /* 2nd gaps up */
+         sp->lag2_inHigh > sp->lag3_inHigh &&
+         sp->lag2_inLow > sp->lag3_inLow &&                              /* 3rd has higher high and low than 2nd */
+         sp->lag1_inHigh > sp->lag2_inHigh &&
+         sp->lag1_inLow > sp->lag2_inLow &&                              /* 4th has higher high and low than 3rd */
+         inClose < sp->lag3_inOpen &&
+         inClose > sp->lag4_inClose)) )                                  /* 5th closes inside the gap */
    {
       *outInteger= ((inClose >= inOpen) ? 1 : 0 - 1) * 100;
    } else 
@@ -302,6 +328,7 @@ static void TA_CDLBREAKAWAY_StepImpl( struct TA_CDLBREAKAWAY_Stream *sp, double 
     * when avgPeriod is not 0, that means "compare with the previous candles" (it excludes the current candle)
     */
    sp->BodyLongPeriodTotal += TA_STREAM_CANDLERANGE(BodyLong,sp->lag4_inOpen,sp->lag4_inHigh,sp->lag4_inLow,sp->lag4_inClose) - sp->ring_BodyLongTrailingIdx_derived[(sp->ringPos_BodyLongTrailingIdx + sp->ringCap_BodyLongTrailingIdx - sp->ringLag_BodyLongTrailingIdx - 4) % sp->ringCap_BodyLongTrailingIdx];
+   sp->cur_outInteger = *outInteger;
    sp->lag4_inOpen = sp->lag3_inOpen;
    sp->lag3_inOpen = sp->lag2_inOpen;
    sp->lag2_inOpen = sp->lag1_inOpen;
@@ -329,8 +356,6 @@ static TA_RetCode TA_CDLBREAKAWAY_OpenImpl( struct TA_CDLBREAKAWAY_Stream **stre
 {
    struct TA_CDLBREAKAWAY_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -345,9 +370,6 @@ static TA_RetCode TA_CDLBREAKAWAY_OpenImpl( struct TA_CDLBREAKAWAY_Stream **stre
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int BodyLong_avgPeriod = TA_Globals->candleSettings[TA_BodyLong].avgPeriod;
@@ -404,7 +426,22 @@ static TA_RetCode TA_CDLBREAKAWAY_OpenImpl( struct TA_CDLBREAKAWAY_Stream **stre
              ((inClose[i - 3] >= inOpen[i - 3]) ? 1 : 0 - 1) == ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) &&
              ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) &&
              fabs(inClose[i - 4] - inOpen[i - 4]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 4) && /* 1st long */
-             (((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen[i - 3],inClose[i - 3]) < min(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && inHigh[i - 2] < inHigh[i - 3] && inLow[i - 2] < inLow[i - 3] && inHigh[i - 1] < inHigh[i - 2] && inLow[i - 1] < inLow[i - 2] && inClose[i] > inOpen[i - 3] && inClose[i] < inClose[i - 4] || ((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 1 && ((min(inOpen[i - 3],inClose[i - 3]) > max(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && inHigh[i - 2] > inHigh[i - 3] && inLow[i - 2] > inLow[i - 3] && inHigh[i - 1] > inHigh[i - 2] && inLow[i - 1] > inLow[i - 2] && inClose[i] < inOpen[i - 3] && inClose[i] > inClose[i - 4]) ) /* when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap */
+             ((((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black: */
+               ((max(inOpen[i - 3],inClose[i - 3]) < min(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && /* 2nd gaps down */
+               inHigh[i - 2] < inHigh[i - 3] &&
+               inLow[i - 2] < inLow[i - 3] &&                              /* 3rd has lower high and low than 2nd */
+               inHigh[i - 1] < inHigh[i - 2] &&
+               inLow[i - 1] < inLow[i - 2] &&                              /* 4th has lower high and low than 3rd */
+               inClose[i] > inOpen[i - 3] &&
+               inClose[i] < inClose[i - 4]) ||                             /* 5th closes inside the gap */
+              (((inClose[i - 4] >= inOpen[i - 4]) ? 1 : 0 - 1) == 1 &&     /* when 1st is white: */
+               ((min(inOpen[i - 3],inClose[i - 3]) > max(inOpen[i - 4],inClose[i - 4])) ? 1 : 0) && /* 2nd gaps up */
+               inHigh[i - 2] > inHigh[i - 3] &&
+               inLow[i - 2] > inLow[i - 3] &&                              /* 3rd has higher high and low than 2nd */
+               inHigh[i - 1] > inHigh[i - 2] &&
+               inLow[i - 1] > inLow[i - 2] &&                              /* 4th has higher high and low than 3rd */
+               inClose[i] < inOpen[i - 3] &&
+               inClose[i] > inClose[i - 4])) )                             /* 5th closes inside the gap */
          {
             outInteger[outIdx++ * outStride] = ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) * 100;
          } else 
@@ -457,6 +494,7 @@ static TA_RetCode TA_CDLBREAKAWAY_OpenImpl( struct TA_CDLBREAKAWAY_Stream **stre
       sp->lag4_inClose = inClose[historyLen - 4];
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outInteger = outInteger[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -507,7 +545,11 @@ TA_RetCode TA_CDLBREAKAWAY_OpenAndFillInternal( struct TA_CDLBREAKAWAY_Stream **
 TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Update( TA_CDLBREAKAWAY_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
    if( !stream || !outInteger ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_CDLBREAKAWAY_StepImpl( stream, inOpen, inHigh, inLow, inClose, outInteger );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -515,67 +557,35 @@ TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Update( TA_CDLBREAKAWAY_Stream *stream, do
 
 TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Peek( const TA_CDLBREAKAWAY_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
-   struct TA_CDLBREAKAWAY_Stream scratch;
-   struct TA_CDLBREAKAWAY_Stream *sp = &scratch;
-   int pkSlot0 = -1;
-   double pkVal0 = 0.0;
+   const struct TA_CDLBREAKAWAY_Stream *sp = stream;
 
    if( !stream || !outInteger ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
-   pkSlot0 = sp->ringPos_BodyLongTrailingIdx;
-   pkVal0 = TA_STREAM_CANDLERANGE(BodyLong,inOpen,inHigh,inLow,inClose);
    if( ((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == ((sp->lag3_inClose >= sp->lag3_inOpen) ? 1 : 0 - 1) && /* 1st, 2nd, 4th same color, 5th opposite */
        ((sp->lag3_inClose >= sp->lag3_inOpen) ? 1 : 0 - 1) == ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) &&
        ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - ((inClose >= inOpen) ? 1 : 0 - 1) &&
        fabs(sp->lag4_inClose - sp->lag4_inOpen) > TA_STREAM_CANDLEAVERAGE(BodyLong,sp->BodyLongPeriodTotal,sp->lag4_inOpen,sp->lag4_inHigh,sp->lag4_inLow,sp->lag4_inClose) && /* 1st long */
-       (((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((max(sp->lag3_inOpen,sp->lag3_inClose) < min(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && sp->lag2_inHigh < sp->lag3_inHigh && sp->lag2_inLow < sp->lag3_inLow && sp->lag1_inHigh < sp->lag2_inHigh && sp->lag1_inLow < sp->lag2_inLow && inClose > sp->lag3_inOpen && inClose < sp->lag4_inClose || ((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 1 && ((min(sp->lag3_inOpen,sp->lag3_inClose) > max(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && sp->lag2_inHigh > sp->lag3_inHigh && sp->lag2_inLow > sp->lag3_inLow && sp->lag1_inHigh > sp->lag2_inHigh && sp->lag1_inLow > sp->lag2_inLow && inClose < sp->lag3_inOpen && inClose > sp->lag4_inClose) ) /* when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap */
+       ((((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black: */
+         ((max(sp->lag3_inOpen,sp->lag3_inClose) < min(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && /* 2nd gaps down */
+         sp->lag2_inHigh < sp->lag3_inHigh &&
+         sp->lag2_inLow < sp->lag3_inLow &&                              /* 3rd has lower high and low than 2nd */
+         sp->lag1_inHigh < sp->lag2_inHigh &&
+         sp->lag1_inLow < sp->lag2_inLow &&                              /* 4th has lower high and low than 3rd */
+         inClose > sp->lag3_inOpen &&
+         inClose < sp->lag4_inClose) ||                                  /* 5th closes inside the gap */
+        (((sp->lag4_inClose >= sp->lag4_inOpen) ? 1 : 0 - 1) == 1 &&     /* when 1st is white: */
+         ((min(sp->lag3_inOpen,sp->lag3_inClose) > max(sp->lag4_inOpen,sp->lag4_inClose)) ? 1 : 0) && /* 2nd gaps up */
+         sp->lag2_inHigh > sp->lag3_inHigh &&
+         sp->lag2_inLow > sp->lag3_inLow &&                              /* 3rd has higher high and low than 2nd */
+         sp->lag1_inHigh > sp->lag2_inHigh &&
+         sp->lag1_inLow > sp->lag2_inLow &&                              /* 4th has higher high and low than 3rd */
+         inClose < sp->lag3_inOpen &&
+         inClose > sp->lag4_inClose)) )                                  /* 5th closes inside the gap */
    {
       *outInteger= ((inClose >= inOpen) ? 1 : 0 - 1) * 100;
    } else 
    {
       *outInteger= 0;
-   }
-   /* add the current range and subtract the first range: this is done after the pattern recognition
-    * when avgPeriod is not 0, that means "compare with the previous candles" (it excludes the current candle)
-    */
-   sp->BodyLongPeriodTotal += TA_STREAM_CANDLERANGE(BodyLong,sp->lag4_inOpen,sp->lag4_inHigh,sp->lag4_inLow,sp->lag4_inClose) - (((sp->ringPos_BodyLongTrailingIdx + sp->ringCap_BodyLongTrailingIdx - sp->ringLag_BodyLongTrailingIdx - 4) % sp->ringCap_BodyLongTrailingIdx != pkSlot0) ? sp->ring_BodyLongTrailingIdx_derived[(sp->ringPos_BodyLongTrailingIdx + sp->ringCap_BodyLongTrailingIdx - sp->ringLag_BodyLongTrailingIdx - 4) % sp->ringCap_BodyLongTrailingIdx] : pkVal0);
-   sp->lag4_inOpen = sp->lag3_inOpen;
-   sp->lag3_inOpen = sp->lag2_inOpen;
-   sp->lag2_inOpen = sp->lag1_inOpen;
-   sp->lag1_inOpen = inOpen;
-   sp->lag4_inHigh = sp->lag3_inHigh;
-   sp->lag3_inHigh = sp->lag2_inHigh;
-   sp->lag2_inHigh = sp->lag1_inHigh;
-   sp->lag1_inHigh = inHigh;
-   sp->lag4_inLow = sp->lag3_inLow;
-   sp->lag3_inLow = sp->lag2_inLow;
-   sp->lag2_inLow = sp->lag1_inLow;
-   sp->lag1_inLow = inLow;
-   sp->lag4_inClose = sp->lag3_inClose;
-   sp->lag3_inClose = sp->lag2_inClose;
-   sp->lag2_inClose = sp->lag1_inClose;
-   sp->lag1_inClose = inClose;
-   sp->ringPos_BodyLongTrailingIdx = sp->ringPos_BodyLongTrailingIdx + 1;
-   if( sp->ringPos_BodyLongTrailingIdx >= sp->ringCap_BodyLongTrailingIdx )
-   {
-      sp->ringPos_BodyLongTrailingIdx = 0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_UpdateAndFill( TA_CDLBREAKAWAY_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inHigh || !inLow || !inClose || !outInteger ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inOpen || (const void *)outInteger == (const void *)inHigh || (const void *)outInteger == (const void *)inLow || (const void *)outInteger == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) ) return TA_BAD_PARAM;
-      TA_CDLBREAKAWAY_StepImpl( stream, inOpen[i], inHigh[i], inLow[i], inClose[i], &outInteger[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }
@@ -583,6 +593,33 @@ TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_UpdateAndFill( TA_CDLBREAKAWAY_Stream *str
 TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Close( TA_CDLBREAKAWAY_Stream *stream )
 {
    TA_CDLBREAKAWAY_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Value( const TA_CDLBREAKAWAY_Stream *stream, int *outInteger )
+{
+   if( !stream || !outInteger ) return TA_BAD_PARAM;
+   *outInteger = stream->cur_outInteger;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Clone( const TA_CDLBREAKAWAY_Stream *stream, TA_CDLBREAKAWAY_Stream **clone )
+{
+   struct TA_CDLBREAKAWAY_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_CDLBREAKAWAY_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->ring_BodyLongTrailingIdx_derived = NULL;
+   if( stream->ring_BodyLongTrailingIdx_derived )
+   { size_t copyN = (size_t)(sp->ringCap_BodyLongTrailingIdx > 0 ? sp->ringCap_BodyLongTrailingIdx : 1);
+     sp->ring_BodyLongTrailingIdx_derived = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->ring_BodyLongTrailingIdx_derived ) { TA_CDLBREAKAWAY_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->ring_BodyLongTrailingIdx_derived, stream->ring_BodyLongTrailingIdx_derived, sizeof(double) * copyN ); }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

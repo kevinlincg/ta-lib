@@ -86,17 +86,18 @@ impl Core {
     ///   1..=100000)
     /// * `optInSlowK_MAType` — MA type used to smooth into SlowK (default 0 = SMA, values: 0=SMA,
     ///   1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-    ///   11=DEFAULT, `MAType::DEFAULT` selects the default)
+    ///   11=DEFAULT, 12=ZLEMA, 13=RMA, `MAType::DEFAULT` selects the default)
     /// * `optInSlowD_Period` — Smoothing period for the SlowD signal line (default 3, range
     ///   1..=100000)
     /// * `optInSlowD_MAType` — MA type used for the SlowD line (default 0 = SMA, values: 0=SMA,
     ///   1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-    ///   11=DEFAULT, `MAType::DEFAULT` selects the default)
+    ///   11=DEFAULT, 12=ZLEMA, 13=RMA, `MAType::DEFAULT` selects the default)
     ///
     /// # Errors
     ///
     /// [`RetCode::BadParam`] when a parameter is out of range. Integer parameters accept
     /// [`Core::INTEGER_DEFAULT`] to select their default value.
+    #[doc(alias = "TA_STOCH_Lookback")]
     #[inline]
     pub fn STOCH_Lookback(&self, mut optInFastK_Period: i32, mut optInSlowK_Period: i32, mut optInSlowK_MAType: MAType, mut optInSlowD_Period: i32, mut optInSlowD_MAType: MAType) -> Result<usize, RetCode> {
         if ((optInFastK_Period) as i32) == (i32::MIN) {
@@ -204,6 +205,7 @@ impl Core {
         let mut today: usize = 0_usize;
         let mut i: usize = 0_usize;
         let mut bufferIsAllocated: usize = 0_usize;
+        i = 0;
         // With stochastic, there is a total of 4 different lines that
         // are defined: FASTK, FASTD, SLOWK and SLOWD.
         //
@@ -400,12 +402,12 @@ impl Core {
     ///   1..=100000)
     /// * `optInSlowK_MAType` — MA type used to smooth into SlowK (default 0 = SMA, values: 0=SMA,
     ///   1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-    ///   11=DEFAULT, `MAType::DEFAULT` selects the default)
+    ///   11=DEFAULT, 12=ZLEMA, 13=RMA, `MAType::DEFAULT` selects the default)
     /// * `optInSlowD_Period` — Smoothing period for the SlowD signal line (default 3, range
     ///   1..=100000)
     /// * `optInSlowD_MAType` — MA type used for the SlowD line (default 0 = SMA, values: 0=SMA,
     ///   1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-    ///   11=DEFAULT, `MAType::DEFAULT` selects the default)
+    ///   11=DEFAULT, 12=ZLEMA, 13=RMA, `MAType::DEFAULT` selects the default)
     /// * `outSlowK` — Raw FastK smoothed by SlowK_Period MA.
     /// * `outSlowD` — Signal line: SlowK smoothed by SlowD_Period MA.
     ///
@@ -456,6 +458,7 @@ impl Core {
     /// # See also
     ///
     /// [`Core::STOCHF`] · [`Core::STOCHRSI`] · [`Core::MA`]
+    #[doc(alias = "TA_STOCH")]
     #[doc(alias = "Stochastic")]
     #[doc(alias = "StochasticOscillator")]
     #[doc(alias = "SlowStochastic")]
@@ -529,13 +532,13 @@ impl Core {
 /// over the same series. Open with [`Core::stoch_open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
 ///
-/// [`Self::out_range`] reports the bars it has produced a value for.
+/// [`Self::out_range`] reports the bars this handle has an output for.
 #[must_use = "a stream does nothing unless updated; dropping it closes the stream"]
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_STOCH_Stream")]
 pub struct StochStream {
     state: StochStreamState,
-    /// The bars this handle has produced a value for — see [`Self::out_range`].
+    /// The bars this handle has an output for — see [`Self::out_range`].
     out: OutRange,
 }
 
@@ -561,6 +564,8 @@ struct StochStreamState {
     x_inClose: Vec<f64>,
     sub0: MaStream,
     sub1: MaStream,
+    cur_outSlowK: f64,
+    cur_outSlowD: f64,
 }
 
 #[allow(unused_variables)]
@@ -715,6 +720,7 @@ impl Core {
         let mut today: usize = 0_usize;
         let mut i: usize = 0_usize;
         let mut bufferIsAllocated: usize = 0_usize;
+        i = 0;
         // With stochastic, there is a total of 4 different lines that
         // are defined: FASTK, FASTD, SLOWK and SLOWD.
         //
@@ -932,6 +938,8 @@ impl Core {
             trailingIdx: (trailingIdx) as i32,
             i: (i) as i32,
             today: (today) as i32,
+            cur_outSlowK: sc_outSlowK[*outNBElement - 1],
+            cur_outSlowD: sc_outSlowD[*outNBElement - 1],
             xMask: (physX - 1) as i32,
             x_inHigh,
             x_inLow,
@@ -1086,58 +1094,33 @@ impl StochStream {
     /// # Errors
     ///
     /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).
-    /// That check runs before anything is written, so the handle is left
-    /// exactly as it was and the stream stays usable:
-    /// skip the bar, or close and re-open on a clean history. This is the
-    /// one place the streaming tier is stricter than the batch API, which
-    /// computes on whatever it is given — a handle retains its state, so a
-    /// single non-finite bar would poison every later value it produces.
+    /// That check runs before anything is written, so the handle's state is
+    /// left exactly as it was and the stream stays usable: skip the bar, or
+    /// close and re-open on a clean history. This is the one place the
+    /// streaming tier is stricter than the batch API, which computes on
+    /// whatever it is given — a handle retains its state, so a single
+    /// non-finite bar would poison every later value it produces.
+    ///
+    /// [`Self::out_range`] counts the rejected bar all the same: it happened,
+    /// so two handles fed the same series stay positionally aligned even when
+    /// one rejects a bar the other accepts.
     #[doc(alias = "TA_STOCH_Update")]
     pub fn update(&mut self, inHigh: f64, inLow: f64, inClose: f64) -> Result<(f64, f64), RetCode> {
         if !inHigh.is_finite() || !inLow.is_finite() || !inClose.is_finite() {
+            if self.out.count < Core::MAX_INDEX {
+                self.out.count += 1;
+            }
             return Err(RetCode::BadParam);
         }
         let mut outSlowK: f64 = 0.0_f64;
         let mut outSlowD: f64 = 0.0_f64;
         Core::stoch_step_impl(&mut self.state, inHigh, inLow, inClose, &mut outSlowK, &mut outSlowD)?;
+        self.state.cur_outSlowK = outSlowK;
+        self.state.cur_outSlowD = outSlowD;
         if self.out.count < Core::MAX_INDEX {
             self.out.count += 1;
         }
         Ok((outSlowK, outSlowD))
-    }
-
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inHigh.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what was committed, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k`.
-    #[doc(alias = "TA_STOCH_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inHigh: &[f64], inLow: &[f64], inClose: &[f64], outSlowK: &mut [f64], outSlowD: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inHigh.len();
-        if inLow.len() != inHigh.len() || inClose.len() != inHigh.len() || outSlowK.len() < barCount || outSlowD.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
-                return Err(RetCode::BadParam);
-            }
-            Core::stoch_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outSlowK[i], &mut outSlowD[i])?;
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
     }
 
     /// Evaluate a forming bar without committing — bit-identical to what the
@@ -1149,8 +1132,9 @@ impl StochStream {
     ///
     /// # Errors
     ///
-    /// [`RetCode::BadParam`] if any bar value is not finite, exactly as
-    /// `update` rejects it.
+    /// [`RetCode::BadParam`] if any bar value is not finite, on the same test
+    /// `update` applies — but a rejected peek changes nothing at all, where a
+    /// rejected `update` still counts the bar in [`Self::out_range`].
     #[doc(alias = "TA_STOCH_Peek")]
     pub fn peek(&self, inHigh: f64, inLow: f64, inClose: f64) -> Result<(f64, f64), RetCode> {
         if !inHigh.is_finite() || !inLow.is_finite() || !inClose.is_finite() {
@@ -1243,8 +1227,6 @@ impl StochStream {
             } else {
                 cur_tempBuffer = 0.0;
             }
-            trailingIdx += 1;
-            today += 1;
 
             // Pipeline the new bar through the sub-streams (batch tail order).
             cur_tempBuffer = sp.sub0.peek(cur_tempBuffer)?;
@@ -1255,12 +1237,26 @@ impl StochStream {
         Ok((outSlowK, outSlowD))
     }
 
-    /// The bars this stream has produced a value for, in the input series'
+    /// The value(s) at the last bar the stream counted — the bar
+    /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
+    /// refreshed by every accepted `update`, and left
+    /// alone by `peek`.
+    ///
+    /// A clone carries them verbatim, so a forked handle can be asked its
+    /// current value without committing a bar to find out.
+    #[must_use]
+    #[doc(alias = "TA_STOCH_Value")]
+    pub fn value(&self) -> (f64, f64) {
+        (self.state.cur_outSlowK, self.state.cur_outSlowD)
+    }
+
+    /// The bars this stream has an output for, in the input series'
     /// coordinates: `[beg_idx, beg_idx + count)`.
     ///
     /// It is what [`Core::STOCH`] reports over the same bars: the opener sets it
-    /// to `(lookback, historyLen - lookback)`, every accepted `update` adds one
-    /// to the count, `peek` leaves it alone, and a clone carries it verbatim.
+    /// to `(lookback, historyLen - lookback)`, every `update` adds one to the
+    /// count — a bar rejected for being non-finite included, because it still
+    /// happened — `peek` leaves it alone, and a clone carries it verbatim.
     /// A plain `Open` hands back only the last value, a subset of this range,
     /// because the caller chose not to take the fill.
     #[doc(alias = "TA_StreamOutRange")]

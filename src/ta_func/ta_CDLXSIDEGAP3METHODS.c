@@ -129,11 +129,14 @@ TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS( int    startIdx,
    {
       if( ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) && /* 1st and 2nd of same color */
           ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) && /* 3rd opposite color */
-          inOpen[i] < max(inClose[i - 1],inOpen[i - 1]) &&  /* 3rd opens within 2nd rb */
+          inOpen[i] < max(inClose[i - 1],inOpen[i - 1]) &&              /* 3rd opens within 2nd rb */
           inOpen[i] > min(inClose[i - 1],inOpen[i - 1]) &&
-          inClose[i] < max(inClose[i - 2],inOpen[i - 2]) && /* 3rd closes within 1st rb */
+          inClose[i] < max(inClose[i - 2],inOpen[i - 2]) &&             /* 3rd closes within 1st rb */
           inClose[i] > min(inClose[i - 2],inOpen[i - 2]) &&
-          (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 && ((min(inOpen[i - 1],inClose[i - 1]) > max(inOpen[i - 2],inClose[i - 2])) ? 1 : 0) || ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen[i - 1],inClose[i - 1]) < min(inOpen[i - 2],inClose[i - 2])) ? 1 : 0)) ) /* when 1st is white upside gap when 1st is black downside gap */
+          ((((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 &&     /* when 1st is white */
+            ((min(inOpen[i - 1],inClose[i - 1]) > max(inOpen[i - 2],inClose[i - 2])) ? 1 : 0)) || /* upside gap */
+           (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black */
+            ((max(inOpen[i - 1],inClose[i - 1]) < min(inOpen[i - 2],inClose[i - 2])) ? 1 : 0))) ) /* downside gap */
       {
          outInteger[outIdx++] = ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) * 100;
       } else 
@@ -198,7 +201,7 @@ TA_RetCode TA_S_CDLXSIDEGAP3METHODS( int    startIdx,
    outIdx = 0;
    do
    {
-      if( (((double)inClose[i - 2] >= (double)inOpen[i - 2]) ? 1 : 0 - 1) == (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) && (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) == 0 - (((double)inClose[i] >= (double)inOpen[i]) ? 1 : 0 - 1) && (double)inOpen[i] < max((double)inClose[i - 1],(double)inOpen[i - 1]) && (double)inOpen[i] > min((double)inClose[i - 1],(double)inOpen[i - 1]) && (double)inClose[i] < max((double)inClose[i - 2],(double)inOpen[i - 2]) && (double)inClose[i] > min((double)inClose[i - 2],(double)inOpen[i - 2]) && ((((double)inClose[i - 2] >= (double)inOpen[i - 2]) ? 1 : 0 - 1) == 1 && ((min((double)inOpen[i - 1],(double)inClose[i - 1]) > max((double)inOpen[i - 2],(double)inClose[i - 2])) ? 1 : 0) || (((double)inClose[i - 2] >= (double)inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && ((max((double)inOpen[i - 1],(double)inClose[i - 1]) < min((double)inOpen[i - 2],(double)inClose[i - 2])) ? 1 : 0)) )
+      if( (((double)inClose[i - 2] >= (double)inOpen[i - 2]) ? 1 : 0 - 1) == (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) && (((double)inClose[i - 1] >= (double)inOpen[i - 1]) ? 1 : 0 - 1) == 0 - (((double)inClose[i] >= (double)inOpen[i]) ? 1 : 0 - 1) && (double)inOpen[i] < max((double)inClose[i - 1],(double)inOpen[i - 1]) && (double)inOpen[i] > min((double)inClose[i - 1],(double)inOpen[i - 1]) && (double)inClose[i] < max((double)inClose[i - 2],(double)inOpen[i - 2]) && (double)inClose[i] > min((double)inClose[i - 2],(double)inOpen[i - 2]) && (((((double)inClose[i - 2] >= (double)inOpen[i - 2]) ? 1 : 0 - 1) == 1 && ((min((double)inOpen[i - 1],(double)inClose[i - 1]) > max((double)inOpen[i - 2],(double)inClose[i - 2])) ? 1 : 0)) || ((((double)inClose[i - 2] >= (double)inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && ((max((double)inOpen[i - 1],(double)inClose[i - 1]) < min((double)inOpen[i - 2],(double)inClose[i - 2])) ? 1 : 0))) )
       {
          outInteger[outIdx++] = (((double)inClose[i - 2] >= (double)inOpen[i - 2]) ? 1 : 0 - 1) * 100;
       } else 
@@ -215,10 +218,12 @@ TA_RetCode TA_S_CDLXSIDEGAP3METHODS( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_CDLXSIDEGAP3METHODS_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_CDLXSIDEGAP3METHODS_Value). */
+   int cur_outInteger;
    double lag1_inOpen;
    double lag2_inOpen;
    double lag1_inClose;
@@ -230,11 +235,14 @@ static void TA_CDLXSIDEGAP3METHODS_StepImpl( struct TA_CDLXSIDEGAP3METHODS_Strea
 {
    if( ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) && /* 1st and 2nd of same color */
        ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - ((inClose >= inOpen) ? 1 : 0 - 1) && /* 3rd opposite color */
-       inOpen < max(sp->lag1_inClose,sp->lag1_inOpen) &&  /* 3rd opens within 2nd rb */
+       inOpen < max(sp->lag1_inClose,sp->lag1_inOpen) &&                 /* 3rd opens within 2nd rb */
        inOpen > min(sp->lag1_inClose,sp->lag1_inOpen) &&
-       inClose < max(sp->lag2_inClose,sp->lag2_inOpen) && /* 3rd closes within 1st rb */
+       inClose < max(sp->lag2_inClose,sp->lag2_inOpen) &&                /* 3rd closes within 1st rb */
        inClose > min(sp->lag2_inClose,sp->lag2_inOpen) &&
-       (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 && ((min(sp->lag1_inOpen,sp->lag1_inClose) > max(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0) || ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((max(sp->lag1_inOpen,sp->lag1_inClose) < min(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0)) ) /* when 1st is white upside gap when 1st is black downside gap */
+       ((((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 &&     /* when 1st is white */
+         ((min(sp->lag1_inOpen,sp->lag1_inClose) > max(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0)) || /* upside gap */
+        (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black */
+         ((max(sp->lag1_inOpen,sp->lag1_inClose) < min(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0))) ) /* downside gap */
    {
       *outInteger= ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) * 100;
    } else 
@@ -244,6 +252,7 @@ static void TA_CDLXSIDEGAP3METHODS_StepImpl( struct TA_CDLXSIDEGAP3METHODS_Strea
    /* add the current range and subtract the first range: this is done after the pattern recognition
     * when avgPeriod is not 0, that means "compare with the previous candles" (it excludes the current candle)
     */
+   sp->cur_outInteger = *outInteger;
    sp->lag2_inOpen = sp->lag1_inOpen;
    sp->lag1_inOpen = inOpen;
    sp->lag2_inClose = sp->lag1_inClose;
@@ -254,8 +263,6 @@ static TA_RetCode TA_CDLXSIDEGAP3METHODS_OpenImpl( struct TA_CDLXSIDEGAP3METHODS
 {
    struct TA_CDLXSIDEGAP3METHODS_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -270,9 +277,6 @@ static TA_RetCode TA_CDLXSIDEGAP3METHODS_OpenImpl( struct TA_CDLXSIDEGAP3METHODS
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int i;
@@ -314,11 +318,14 @@ static TA_RetCode TA_CDLXSIDEGAP3METHODS_OpenImpl( struct TA_CDLXSIDEGAP3METHODS
       {
          if( ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) && /* 1st and 2nd of same color */
              ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) && /* 3rd opposite color */
-             inOpen[i] < max(inClose[i - 1],inOpen[i - 1]) &&  /* 3rd opens within 2nd rb */
+             inOpen[i] < max(inClose[i - 1],inOpen[i - 1]) &&              /* 3rd opens within 2nd rb */
              inOpen[i] > min(inClose[i - 1],inOpen[i - 1]) &&
-             inClose[i] < max(inClose[i - 2],inOpen[i - 2]) && /* 3rd closes within 1st rb */
+             inClose[i] < max(inClose[i - 2],inOpen[i - 2]) &&             /* 3rd closes within 1st rb */
              inClose[i] > min(inClose[i - 2],inOpen[i - 2]) &&
-             (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 && ((min(inOpen[i - 1],inClose[i - 1]) > max(inOpen[i - 2],inClose[i - 2])) ? 1 : 0) || ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen[i - 1],inClose[i - 1]) < min(inOpen[i - 2],inClose[i - 2])) ? 1 : 0)) ) /* when 1st is white upside gap when 1st is black downside gap */
+             ((((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 &&     /* when 1st is white */
+               ((min(inOpen[i - 1],inClose[i - 1]) > max(inOpen[i - 2],inClose[i - 2])) ? 1 : 0)) || /* upside gap */
+              (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black */
+               ((max(inOpen[i - 1],inClose[i - 1]) < min(inOpen[i - 2],inClose[i - 2])) ? 1 : 0))) ) /* downside gap */
          {
             outInteger[outIdx++ * outStride] = ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) * 100;
          } else 
@@ -344,6 +351,7 @@ static TA_RetCode TA_CDLXSIDEGAP3METHODS_OpenImpl( struct TA_CDLXSIDEGAP3METHODS
       sp->lag2_inClose = inClose[historyLen - 2];
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outInteger = outInteger[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -394,7 +402,11 @@ TA_RetCode TA_CDLXSIDEGAP3METHODS_OpenAndFillInternal( struct TA_CDLXSIDEGAP3MET
 TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Update( TA_CDLXSIDEGAP3METHODS_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
    if( !stream || !outInteger ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_CDLXSIDEGAP3METHODS_StepImpl( stream, inOpen, inHigh, inLow, inClose, outInteger );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -402,47 +414,25 @@ TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Update( TA_CDLXSIDEGAP3METHODS_Stre
 
 TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Peek( const TA_CDLXSIDEGAP3METHODS_Stream *stream, double inOpen, double inHigh, double inLow, double inClose, int *outInteger )
 {
-   struct TA_CDLXSIDEGAP3METHODS_Stream scratch;
-   struct TA_CDLXSIDEGAP3METHODS_Stream *sp = &scratch;
+   const struct TA_CDLXSIDEGAP3METHODS_Stream *sp = stream;
 
    if( !stream || !outInteger ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
    if( ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) && /* 1st and 2nd of same color */
        ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - ((inClose >= inOpen) ? 1 : 0 - 1) && /* 3rd opposite color */
-       inOpen < max(sp->lag1_inClose,sp->lag1_inOpen) &&  /* 3rd opens within 2nd rb */
+       inOpen < max(sp->lag1_inClose,sp->lag1_inOpen) &&                 /* 3rd opens within 2nd rb */
        inOpen > min(sp->lag1_inClose,sp->lag1_inOpen) &&
-       inClose < max(sp->lag2_inClose,sp->lag2_inOpen) && /* 3rd closes within 1st rb */
+       inClose < max(sp->lag2_inClose,sp->lag2_inOpen) &&                /* 3rd closes within 1st rb */
        inClose > min(sp->lag2_inClose,sp->lag2_inOpen) &&
-       (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 && ((min(sp->lag1_inOpen,sp->lag1_inClose) > max(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0) || ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((max(sp->lag1_inOpen,sp->lag1_inClose) < min(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0)) ) /* when 1st is white upside gap when 1st is black downside gap */
+       ((((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 &&     /* when 1st is white */
+         ((min(sp->lag1_inOpen,sp->lag1_inClose) > max(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0)) || /* upside gap */
+        (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && /* when 1st is black */
+         ((max(sp->lag1_inOpen,sp->lag1_inClose) < min(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0))) ) /* downside gap */
    {
       *outInteger= ((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) * 100;
    } else 
    {
       *outInteger= 0;
-   }
-   /* add the current range and subtract the first range: this is done after the pattern recognition
-    * when avgPeriod is not 0, that means "compare with the previous candles" (it excludes the current candle)
-    */
-   sp->lag2_inOpen = sp->lag1_inOpen;
-   sp->lag1_inOpen = inOpen;
-   sp->lag2_inClose = sp->lag1_inClose;
-   sp->lag1_inClose = inClose;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_UpdateAndFill( TA_CDLXSIDEGAP3METHODS_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inHigh || !inLow || !inClose || !outInteger ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inOpen || (const void *)outInteger == (const void *)inHigh || (const void *)outInteger == (const void *)inLow || (const void *)outInteger == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) ) return TA_BAD_PARAM;
-      TA_CDLXSIDEGAP3METHODS_StepImpl( stream, inOpen[i], inHigh[i], inLow[i], inClose[i], &outInteger[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }
@@ -450,6 +440,27 @@ TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_UpdateAndFill( TA_CDLXSIDEGAP3METHO
 TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Close( TA_CDLXSIDEGAP3METHODS_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Value( const TA_CDLXSIDEGAP3METHODS_Stream *stream, int *outInteger )
+{
+   if( !stream || !outInteger ) return TA_BAD_PARAM;
+   *outInteger = stream->cur_outInteger;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Clone( const TA_CDLXSIDEGAP3METHODS_Stream *stream, TA_CDLXSIDEGAP3METHODS_Stream **clone )
+{
+   struct TA_CDLXSIDEGAP3METHODS_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_CDLXSIDEGAP3METHODS_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   *clone = sp;
    return TA_SUCCESS;
 }
 

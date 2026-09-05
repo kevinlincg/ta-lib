@@ -246,7 +246,11 @@ pub fn lookback_docs(func: &FuncDef, snake: &str, enums: &HashMap<String, EnumDe
         d.paragraph(&sentence);
     }
 
-    d.finish()
+    let mut out = d.finish();
+    // `TA_SMA_Lookback` is a C symbol of its own, so it gets its own alias rather
+    // than riding the batch function's.
+    out.push_str(&format!("    #[doc(alias = \"TA_{}_Lookback\")]\n", func.name));
+    out
 }
 
 /// How a caller asks for a parameter's default value, phrased for whichever kinds
@@ -399,12 +403,21 @@ fn param_doc(opt: &OptInput, doc: &DocDef, enums: &HashMap<String, EnumDef>) -> 
     }
 }
 
-/// `#[doc(alias)]` values from the canonical `## Aliases`: whitespace/punctuation
-/// removed (rustdoc forbids whitespace in aliases), deduplicated, and dropped when
-/// the alias collapses to the function name itself.
+/// `#[doc(alias)]` values for the batch entry point: the C symbol first, then the
+/// canonical `## Aliases` with whitespace/punctuation removed (rustdoc forbids
+/// whitespace in aliases), deduplicated case-insensitively, and dropped when an
+/// alias collapses to the function name itself.
+///
+/// The C symbol leads because it is the name a migrating caller already has:
+/// without `TA_SMA` here, the C spelling reaches `SmaStream` (whose alias the
+/// stream emitter does write) and never the batch function it names. Seeding
+/// `out` rather than appending routes it through the existing dedup, so a
+/// canonical alias spelling the same symbol collapses into this one instead of
+/// being emitted twice — rustdoc accepts a repeated alias silently (checked on
+/// 1.97), which is exactly why nothing but this would catch it.
 fn doc_aliases(func: &FuncDef, doc: &DocDef) -> Vec<String> {
     let name_l = func.name.to_lowercase().replace('_', "");
-    let mut out: Vec<String> = Vec::new();
+    let mut out: Vec<String> = vec![format!("TA_{}", func.name)];
     for alias in &doc.aliases {
         let cleaned: String = alias
             .chars()
@@ -585,9 +598,9 @@ fn example_doctest(
     lines.push(String::new());
     lines.push("let core = Core::new();".to_string());
 
+    let out_vars = output_var_names(func);
     let mut out_args: Vec<String> = Vec::new();
-    for output in &func.outputs {
-        let var = output_var_name(output);
+    for (output, var) in func.outputs.iter().zip(&out_vars) {
         let zero = match output.param_type {
             ParamType::Integer => "0i32",
             _ => "0.0",
@@ -621,12 +634,12 @@ fn example_doctest(
     lines.push("assert!(out_range.count > 0);".to_string());
     // Assert on the values, not just the return code: a successful call never
     // emits NaN or infinity.
-    if let Some(output) = func
+    if let Some((_, var)) = func
         .outputs
         .iter()
-        .find(|o| o.param_type != ParamType::Integer)
+        .zip(&out_vars)
+        .find(|(o, _)| o.param_type != ParamType::Integer)
     {
-        let var = output_var_name(output);
         lines.push(format!(
             "assert!({var}[..out_range.count].iter().all(|v| v.is_finite()));"
         ));
@@ -655,13 +668,12 @@ fn example_doctest(
             .iter()
             .position(|o| o.name == "optInTimePeriod")
             .map(|i| opt_args[i].clone());
-        for output in &func.outputs {
+        for (output, var) in func.outputs.iter().zip(&out_vars) {
             if output.param_type == ParamType::Integer {
-                let var = output_var_name(output);
                 lines.extend(integer_domain_claim(
                     func,
                     output,
-                    &var,
+                    var,
                     &first,
                     period.as_deref(),
                 ));
@@ -677,7 +689,7 @@ fn example_doctest(
 /// The claim a generated example makes about the values of one integer output.
 ///
 /// The domain is a property of the individual function, and the metadata does not
-/// carry it: all 66 integer outputs in the corpus declare the same `line` output
+/// carry it: all 69 integer outputs in the corpus declare the same `line` output
 /// flag, which says how to plot the values and nothing about what they are. So the
 /// four shapes are spelled out here — the same way [`unit_domain`] names the three
 /// functions whose example input has to live in `[-1, 1]`.
@@ -701,6 +713,39 @@ fn integer_domain_claim(
         ("MININDEX", _) | ("MINMAXINDEX", "outMinIdx") => {
             window_extremum_claim(var, series, period, false)
         }
+        // The trend flag and the line are two views of one state, so the claim is
+        // the relation between them rather than a bound on either: the flag says
+        // which side of the line price is on. It holds on every bar but the
+        // first, where the trend is seeded rather than derived.
+        // SUPERTREND's trend is the two-state latch, and the DOMAIN is all a
+        // doctest can honestly claim about it. The tempting relation -- that the
+        // flag says which side of the line price is on -- is FALSE: the carried
+        // bands can cross (`finalLower > finalUpper`, reachable at a low
+        // multiplier), and on a flip through crossed bands the emitted band lands
+        // on the far side of the close. Asserting it here would put a claim the
+        // function does not honour into the public documentation, and a doctest
+        // that fails on legal input into the crate's test run.
+        // SUPERTREND's trend is the two-state latch, and the DOMAIN is all a
+        // doctest can honestly claim about it. The tempting relation -- that the
+        // flag says which side of the line price is on -- is FALSE: the carried
+        // bands can cross (`finalLower > finalUpper`, reachable at a low
+        // multiplier), and on a flip through crossed bands the emitted band lands
+        // on the far side of the close. Asserting it here would put a claim the
+        // function does not honour into the public documentation, and a doctest
+        // that fails on legal input into the crate's test run.
+        ("SUPERTREND", _) => vec![
+            "// the trend is a two-state latch: +1 riding the lower band, -1 the upper".to_string(),
+            format!("assert!({var}[..out_range.count].iter().all(|&v| v == 1 || v == -1));"),
+        ],
+        // Two independent flags, not one signed value: an outside bar is a swing
+        // high and a swing low at once, so both can carry 100 on the same bar.
+        ("FRACTAL", _) => vec![
+            format!(
+                "// the {} flag is 0 or 100; an outside bar carries 100 on both",
+                if output.name.ends_with("High") { "swing-high" } else { "swing-low" }
+            ),
+            format!("assert!({var}[..out_range.count].iter().all(|&v| v == 0 || v == 100));"),
+        ],
         // ta_HT_TRENDMODE.c writes its `trend` local, which is only ever 0 or 1.
         ("HT_TRENDMODE", _) => vec![
             "// the mode is a flag: 1 in a trend, 0 in a cycle".to_string(),
@@ -775,6 +820,30 @@ pub(super) fn output_var_name(output: &Output) -> String {
         "" | "real" | "integer" => "out".to_string(),
         other => other.to_string(),
     }
+}
+
+/// Example variable names for a whole function's outputs, one per output and all
+/// distinct.
+///
+/// [`output_var_name`] answers per output and cannot see a collision: `outReal`
+/// and `outInteger` both shorten to `out`, so a function carrying one of each
+/// emitted two `let mut out` bindings and then passed the second buffer for both
+/// arguments — a doctest that does not compile. Where the short names collide,
+/// each colliding output falls back to its own full name.
+pub fn output_var_names(func: &FuncDef) -> Vec<String> {
+    let short: Vec<String> = func.outputs.iter().map(output_var_name).collect();
+    short
+        .iter()
+        .enumerate()
+        .map(|(i, s)| {
+            if short.iter().enumerate().any(|(j, other)| j != i && other == s) {
+                let name = &func.outputs[i].name;
+                camel_to_snake(name.strip_prefix("out").unwrap_or(name))
+            } else {
+                s.clone()
+            }
+        })
+        .collect()
 }
 
 /// Acronym-aware CamelCase → snake_case (`MACDSignal` → `macd_signal`).

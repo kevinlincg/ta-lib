@@ -298,6 +298,7 @@ typedef enum
   TA_TSTCDL_PARAMHOLDERFREE_FAIL = 909,
   TA_TSTCDL_PREDICATE_MISMATCH   = 910,
   TA_TSTCDL_PREDICATE_VACUOUS    = 911,
+  TA_TSTCDL_COVERAGE_SHRANK      = 912,
    
   /* Error code related to test_merge */
   TA_TSTMERGE_AC_ADDFAILED_1          = 1000,
@@ -345,6 +346,9 @@ typedef enum
   TA_CODEGEN_SUBSET_GATE_UNAVAILABLE = 1113,
   TA_CODEGEN_SWEEP_VACUOUS           = 1114,
   TA_CODEGEN_RANGE_VACUOUS           = 1115,
+  TA_CODEGEN_GENCODE_DIGEST_SKEW     = 1116,
+  TA_CODEGEN_GENCODE_DIGEST_VACUOUS  = 1117,
+  TA_CODEGEN_OUTPUT_ARITY_EXCEEDS_CAP = 1118,
 
   /* Abstract codegen test errors */
   TA_ABSTRACT_LOOKBACK_MISMATCH      = 1200,
@@ -441,14 +445,6 @@ typedef enum
   TA_STREAM_EMPTY_HISTORY_WRONG_CODE = 1607,
   TA_STREAM_EMPTY_HISTORY_VACUOUS    = 1608,
 
-  /* Streaming UpdateAndFill: n bars in one call, and its partial commit. */
-  TA_STREAM_UFILL_ACCEPTED_BAD_BAR   = 1601,
-  TA_STREAM_UFILL_WRONG_COMMIT       = 1602,
-  TA_STREAM_UFILL_VALUE_MISMATCH     = 1603,
-  TA_STREAM_UFILL_WROTE_PAST_COMMIT  = 1604,
-  TA_STREAM_UFILL_SETUP_FAILED       = 1605,
-  TA_STREAM_UFILL_VACUOUS            = 1606,
-
   /* DIV's documented zero-divisor result (issue #249). */
   TA_DIVZERO_BAD_RETCODE             = 1610,
   TA_DIVZERO_BAD_SHAPE               = 1611,
@@ -470,6 +466,46 @@ typedef enum
   TA_BATCH_ARG_VACUOUS               = 1632,
   /* Rule B6a: declining a nullable output changed what the call produced. */
   TA_BATCH_ARG_NULLABLE_DIVERGED     = 1633,
+
+  /* Rule U3, stated absolutely: what ONE rejected Update costs. Driving two
+   * handles off one feed and comparing them is symmetric, so it is blind to any
+   * change that moves both; these ids belong to the leg that demands the
+   * numbers outright. */
+  TA_STREAM_ADVANCE_NOT_REJECTED     = 1640,
+  TA_STREAM_ADVANCE_WRONG_COUNT      = 1641,
+  TA_STREAM_ADVANCE_VALUE_MOVED      = 1642,
+  TA_STREAM_ADVANCE_NO_VALUE         = 1643,
+  TA_STREAM_ADVANCE_PEEK_MOVED       = 1644,
+  TA_STREAM_ADVANCE_NOT_RESUMED      = 1645,
+  TA_STREAM_ADVANCE_SETUP_FAILED     = 1646,
+  TA_STREAM_ADVANCE_VACUOUS          = 1647,
+  TA_STREAM_ADVANCE_VALUE_NOT_HELD   = 1648,
+
+  /* Coverage counters no other check pins. These groups report nothing on
+   * success, so a count that reached zero is the only remaining way they can
+   * run without comparing anything. */
+  TA_MFI_VACUOUS                     = 1650,
+  TA_CMOU_VACUOUS                    = 1651,
+  TA_MAVP_VACUOUS                    = 1652,
+  TA_UNSTABLE_MAP_INCOMPLETE         = 1653,
+  TA_DONCHIAN_ORACLE_VACUOUS         = 1654,
+  TA_RMA_ORACLE_VACUOUS              = 1655,
+  TA_ZLEMA_VACUOUS                   = 1656,
+  TA_VHF_VACUOUS                     = 1657,
+  TA_FOSC_VACUOUS                    = 1658,
+  TA_DPO_VACUOUS                     = 1664,
+  TA_PERCENTRANK_VACUOUS             = 1665,
+  TA_PERCENTILE_VACUOUS              = 1666,
+  TA_CVI_VACUOUS                     = 1662,
+  TA_MASSI_VACUOUS                   = 1663,
+  TA_ADR_VACUOUS                     = 1659,
+  TA_PVT_VACUOUS                     = 1660,
+  TA_RVOL_VACUOUS                    = 1661,
+  TA_TSI_VACUOUS                     = 1670,
+  TA_KDJ_VACUOUS                     = 1671,
+  TA_FRACTAL_VACUOUS                 = 1675,
+  TA_HA_VACUOUS                      = 1678,
+  TA_RVI_VACUOUS                     = 1676,
 
   /* --function= named something no test group covers, on a run that had
    * nothing else to do. Reported rather than passed silently. */

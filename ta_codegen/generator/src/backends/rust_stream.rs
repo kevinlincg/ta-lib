@@ -283,6 +283,7 @@ fn build_typing_from(func: &FuncDef, body: &[Statement], models: &[&StreamModel]
             enum_vars: super::rust_lang::enum_local_types(func),
             circbuf_hybrid_static: HashMap::new(),
             nullable_outputs: HashSet::new(),
+            nullable_shadow: false,
         },
         extrema_i32,
     }
@@ -881,20 +882,80 @@ fn emit_handle_struct(o: &mut String, func: &FuncDef) {
          /// over the same series. Open with [`Core::{sn}_open`]; dropping the handle\n\
          /// closes the stream. Cloning it forks an independent stream.\n\
          ///\n\
-         /// [`Self::out_range`] reports the bars it has produced a value for.\n\
+         /// [`Self::out_range`] reports the bars this handle has an output for.\n\
          #[must_use = \"a stream does nothing unless updated; dropping it closes the stream\"]\n\
          #[derive(Debug, Clone)]\n\
          #[doc(alias = \"TA_{n}_Stream\")]\n\
          pub struct {handle} {{\n{cs_fields}    state: {state},\n\
-         \x20   /// The bars this handle has produced a value for — see [`Self::out_range`].\n\
+         \x20   /// The bars this handle has an output for — see [`Self::out_range`].\n\
          \x20   out: OutRange,\n}}\n"
     );
 }
 
 
+
+/// `cur_<output>` initializer pairs at their zero default, for a state literal
+/// built somewhere the produced value is not in scope. Every such site is
+/// followed by a seed from the opener's own last value; the default only has to
+/// make the literal total.
+fn cur_ctor_defaults(func: &FuncDef, sep: &str) -> String {
+    let mut t = String::new();
+    // A multi-line literal is rendered one field per line at the struct's own
+    // indent; an inline one is spliced between braces and takes no indent.
+    let pad = if sep == "\n" { "            " } else { "" };
+    for (name, _, d) in cur_state_fields(func) {
+        let _ = write!(t, "{pad}{name}: {d},{sep}");
+    }
+    t
+}
+/// The `cur_<output>` initializer lines for a capture literal: the value(s) the
+/// opener just produced, so `value()` is right the instant the handle exists.
+fn cur_capture_fields(func: &FuncDef, typing: &Typing) -> String {
+    let nullable = super::common::nullable_output_names(func);
+    let mut t = String::new();
+    for out in &func.outputs {
+        let name = &out.name;
+        if nullable.contains(name) {
+            // No slot to read: a declinable output's array may be absent.
+            // `lastCur_<name>` is the transcribed open loop's own shadow of
+            // the guarded store (`nullable_shadow`), computed every
+            // iteration regardless of decline — matching what an Update
+            // recomputes, so `Open(P)+updates` and `Open(n)` agree.
+            let _ = writeln!(t, "            cur_{name}: lastCur_{name},");
+        } else if typing.ctx.vec_vars.contains(&format!("sc_{name}")) {
+            // A composed producer holds the caller's slice through the stride
+            // alias, so the output name itself is mutably borrowed here.
+            let _ = writeln!(t, "            cur_{name}: sc_{name}[*outNBElement - 1],");
+        } else {
+            let _ = writeln!(
+                t,
+                "            cur_{name}: {name}[(*outNBElement - 1) * outStride],"
+            );
+        }
+    }
+    t
+}
+
 /// The private state struct from a prebuilt (name, rust_type, default) list.
 fn emit_state_struct_from(o: &mut String, func: &FuncDef, fields: &[(String, String, String)]) {
-    emit_state_struct_decl(o, &state_type_name(func), fields, &[]);
+    emit_state_struct_decl(o, func, &state_type_name(func), fields, &[]);
+}
+
+/// The `cur_<output>` field list — the value(s) at the last bar the stream
+/// counted, handed back by `value()`. Appended by every tier's state struct
+/// through the one declaration funnel, so a tier cannot be added without them.
+///
+/// Distinct from `lastOut_` even where both exist (DX): that one is the
+/// PREVIOUS bar's output, read by the body while computing this one.
+fn cur_state_fields(func: &FuncDef) -> Vec<(String, String, String)> {
+    func.outputs
+        .iter()
+        .map(|out| {
+            let t = out_rust_type(func, &out.name);
+            let d = if t == "i32" { "0_i32" } else { "0.0_f64" };
+            (format!("cur_{}", out.name), t.to_string(), d.to_string())
+        })
+        .collect()
 }
 
 /// `struct <State> { .. }` from a field list, with an optional comment line
@@ -905,10 +966,14 @@ fn emit_state_struct_from(o: &mut String, func: &FuncDef, fields: &[(String, Str
 /// rest.
 fn emit_state_struct_decl(
     o: &mut String,
+    func: &FuncDef,
     state: &str,
     fields: &[(String, String, String)],
     comments: &[(&str, String)],
 ) {
+    let owned: Vec<(String, String, String)> =
+        fields.iter().cloned().chain(cur_state_fields(func)).collect();
+    let fields = &owned[..];
     let _ = writeln!(o, "#[derive(Debug, Clone)]\n#[allow(non_snake_case, dead_code)]\nstruct {state} {{");
     for (name, rty, _) in fields {
         for (field, text) in comments {
@@ -1020,18 +1085,30 @@ fn build_step_ctx(func: &FuncDef, models: &[&StreamModel], typing: &Typing) -> R
 /// whatever it is handed. A handle cannot do that, because its state is
 /// retained: one non-finite bar poisons every recursive accumulator in it for
 /// the rest of its life, long after the feed recovers.
-fn finite_bar_check(func: &FuncDef, indent: &str) -> String {
+///
+/// `advance` belongs to the committing entry points only: the rejected bar is
+/// still a bar and is still counted, but `peek` takes `&self` and must count
+/// nothing — pass `false` there and the borrow checker keeps it honest.
+fn finite_bar_check(func: &FuncDef, indent: &str, advance: bool) -> String {
     let bars = streaming::input_array_names(func);
     if bars.is_empty() {
         return String::new();
     }
     let conds: Vec<String> = bars.iter().map(|b| format!("!{b}.is_finite()")).collect();
+    let inner = format!("{indent}    ");
+    let advance = if advance { advance_out_count(&inner) } else { String::new() };
     format!(
-        "{indent}if {} {{\n{indent}    return Err(RetCode::BadParam);\n{indent}}}\n",
+        "{indent}if {} {{\n{advance}{inner}return Err(RetCode::BadParam);\n{indent}}}\n",
         conds.join(" || ")
     )
 }
 
+/// The one spelling of the `OutRange` advance. The saturation guard is not
+/// optional: the count is an index like any other and `TA_MAX_INDEX` bounds it
+/// (#180), so a stream driven past it must stop counting rather than wrap.
+fn advance_out_count(indent: &str) -> String {
+    format!("{indent}if self.out.count < Core::MAX_INDEX {{\n{indent}    self.out.count += 1;\n{indent}}}\n")
+}
 
 
 /// The state fields a transition writes, and the transition with every mention
@@ -1244,12 +1321,32 @@ fn peek_frame_arm(
         other => Some(other),
     });
 
+    // A peek commits nothing, so `cur_<out>` never carries the previous bar's
+    // output into the transition; a frame that answers through its out-param
+    // never reads the local at all. C's dead-local hygiene (#344) deletes the
+    // whole local there — do the same here: the declaration and its stores go
+    // together, or the survivor would not compile (issue #353).
+    let dead_curs: Vec<(String, VarType)> = func
+        .outputs
+        .iter()
+        .map(|o| format!("cur_{}", o.name))
+        .filter(|n| {
+            locals.contains(n) && streaming::peek_local_is_never_read(&body_ir, n)
+        })
+        .map(|n| (n, VarType::Real))
+        .collect();
+    let body_ir = streaming::purge_dead_temp_stores(&body_ir, &dead_curs);
+    let dead_cur_names: HashSet<&str> = dead_curs.iter().map(|(n, _)| n.as_str()).collect();
+
     let mut out = String::new();
-    for (name, ty) in &model.temps {
+    for (name, ty) in &streaming::temps_used(&model.temps, &body_ir) {
         let (rty, default) = field_type_and_default(typing, name, ty, false);
         out.push_str(&decl_line(&pad, name, &rty, default.as_ref()));
     }
     for name in &locals {
+        if dead_cur_names.contains(name.as_str()) {
+            continue;
+        }
         let _ = writeln!(out, "{pad}let mut {name} = sp.{name};");
     }
     for sh in &pt.shadows {
@@ -1300,10 +1397,15 @@ fn peek_frame_arm(
 
 /// The scaffolding every frame sits in: a block, so the `&mut` output
 /// rebindings end before the method returns them by value.
-fn peek_frame_head(func: &FuncDef) -> String {
+///
+/// `body` is the rest of the frame, already rendered: a stateless one reads
+/// nothing out of the handle, and binding it anyway is an unused local.
+fn peek_frame_head(func: &FuncDef, body: &str) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "        {{");
-    let _ = writeln!(out, "            let sp = &self.state;");
+    if body.contains("sp.") {
+        let _ = writeln!(out, "            let sp = &self.state;");
+    }
     // Rebinding each output as `&mut` keeps the body's `(*out) = …` spelling,
     // and with it every cast the step renders.
     for o in &func.outputs {
@@ -1325,7 +1427,7 @@ fn build_peek_frame(
     counter: &Cell<usize>,
 ) -> Option<String> {
     let arm = peek_frame_arm(func, model, &RustStreamNames, typing, ctx, enums, registry, helpers, counter, 12)?;
-    let mut out = peek_frame_head(func);
+    let mut out = peek_frame_head(func, &arm);
     out.push_str(&arm);
     let _ = writeln!(out, "        }}");
     Some(out)
@@ -1349,15 +1451,15 @@ fn build_peek_frame_dual(
     let (ma, mb) = (&dmp.mode_a, &dmp.mode_b);
     let a = peek_frame_arm(func, ma, &RustStreamNames, typing, ctx, enums, registry, helpers, counter, 16)?;
     let b = peek_frame_arm(func, mb, &RustStreamNames, typing, ctx, enums, registry, helpers, counter, 16)?;
-    let mut out = peek_frame_head(func);
+    let mut rest = String::new();
     // Identity (HMA period 1) short-circuits ahead of the predicate, as it does
     // in the batch and in Open: it is a property of the function, not of a mode.
-    if let Some(st) = streaming::identity_step_branch(ma, &RustStreamNames) {
+    if let Some(st) = streaming::identity_peek_branch(ma, &RustStreamNames) {
         let st = answer_bare_returns_rust(func, std::slice::from_ref(&st));
         let var_inits: HashMap<String, &Expr> = HashMap::new();
         let output_names: Vec<String> = func.outputs.iter().map(|o| o.name.clone()).collect();
         for s in &st {
-            out.push_str(&render_statement(
+            rest.push_str(&render_statement(
                 s, 12, ctx, &[], &var_inits, &output_names, opt_real_params, enums, registry,
                 helpers, counter,
             ));
@@ -1365,12 +1467,14 @@ fn build_peek_frame_dual(
     }
     let pred = params_on_state(func, &dmp.predicate);
     let pred = render_expr(&pred, ctx, opt_real_params, registry, helpers);
-    let _ = writeln!(out, "            if {pred} {{");
-    out.push_str(&a);
-    let _ = writeln!(out, "            }} else {{");
-    out.push_str(&b);
-    let _ = writeln!(out, "            }}");
-    let _ = writeln!(out, "        }}");
+    let _ = writeln!(rest, "            if {pred} {{");
+    rest.push_str(&a);
+    let _ = writeln!(rest, "            }} else {{");
+    rest.push_str(&b);
+    let _ = writeln!(rest, "            }}");
+    let _ = writeln!(rest, "        }}");
+    let mut out = peek_frame_head(func, &rest);
+    out.push_str(&rest);
     Some(out)
 }
 
@@ -2027,8 +2131,19 @@ fn emit_open_region(
     // body keeps the empty set — a `<n>_step_impl` writes `&mut f64` scalars, and
     // nothing there is declinable.
     let mut open_ctx = typing.ctx.clone();
-    open_ctx.nullable_outputs = super::common::nullable_output_names(func);
+    let nullable = super::common::nullable_output_names(func);
+    open_ctx.nullable_outputs.clone_from(&nullable);
+    // The handle's `cur_<out>` has to hold what the store *would* have
+    // written even when the caller declined it — an Update always recomputes
+    // it (mama.c), so a capture that instead reads the array (absent) or
+    // defaults to zero diverges from `Open(P)+updates` the moment the store's
+    // RHS isn't already a bare local. Every guarded store also lands here,
+    // unconditionally (Java/C# `lastCur_*`); `cur_capture_fields` reads it.
+    open_ctx.nullable_shadow = true;
     let ctx = &open_ctx;
+    for name in &nullable {
+        let _ = writeln!(o, "        let mut lastCur_{name}: f64 = 0.0_f64;");
+    }
     let for_loop_vars = collect_for_loop_vars(body);
     let output_names: Vec<String> = func.outputs.iter().map(|out| out.name.clone()).collect();
     let opt_real_params: Vec<String> = func
@@ -2162,6 +2277,12 @@ fn emit_identity_fast_path(
     // Identity state: params captured, everything else deterministic defaults
     // (1-slot buffers keep the transition's cap-0 guard well-defined).
     let _ = writeln!(o, "            let state = {state} {{");
+    // The identity path produces its input verbatim, so the value at the last
+    // committed bar is the last history bar — the same expression the stride-0
+    // fill below writes.
+    for (out, inp) in &idp.pairs {
+        let _ = writeln!(o, "                cur_{out}: {inp}[historyLen - 1],");
+    }
     for (name, _, default) in fields {
         let _ = writeln!(o, "                {name}: {default},");
     }
@@ -2427,6 +2548,11 @@ fn emit_capture(
             "            lastOut_{name}: {name}[(*outNBElement - 1) * outStride],"
         );
     }
+    // Seed the value accessor from the same slot: an Open that succeeded
+    // produced at least one value, so `value()` is total on a live handle. A
+    // DECLINABLE output has no slot to read, so it takes the body's own
+    // variable — the same one the step retains from.
+    o.push_str(&cur_capture_fields(func, typing));
     for lag in &model.lags {
         for k in 1..=lag.depth {
             let _ = writeln!(
@@ -2678,9 +2804,10 @@ fn open_and_fill_doctest(
     let out_vars: Vec<(String, bool, bool)> = func
         .outputs
         .iter()
-        .map(|out| {
+        .zip(super::rust_doc::output_var_names(func))
+        .map(|(out, var)| {
             (
-                super::rust_doc::output_var_name(out),
+                var,
                 out_is_int(func, &out.name),
                 nullable.contains(&out.name),
             )
@@ -2803,180 +2930,49 @@ fn emit_update_and_peek(
          \x20   /// # Errors\n\
          \x20   ///\n\
          \x20   /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).\n\
-         \x20   /// That check runs before anything is written, so the handle is left\n\
-         \x20   /// exactly as it was and the stream stays usable:\n\
-         \x20   /// skip the bar, or close and re-open on a clean history. This is the\n\
-         \x20   /// one place the streaming tier is stricter than the batch API, which\n\
-         \x20   /// computes on whatever it is given — a handle retains its state, so a\n\
-         \x20   /// single non-finite bar would poison every later value it produces."
+         \x20   /// That check runs before anything is written, so the handle's state is\n\
+         \x20   /// left exactly as it was and the stream stays usable: skip the bar, or\n\
+         \x20   /// close and re-open on a clean history. This is the one place the\n\
+         \x20   /// streaming tier is stricter than the batch API, which computes on\n\
+         \x20   /// whatever it is given — a handle retains its state, so a single\n\
+         \x20   /// non-finite bar would poison every later value it produces.\n\
+         \x20   ///\n\
+         \x20   /// [`Self::out_range`] counts the rejected bar all the same: it happened,\n\
+         \x20   /// so two handles fed the same series stay positionally aligned even when\n\
+         \x20   /// one rejects a bar the other accepts."
     );
     let _ = writeln!(o, "    #[doc(alias = \"TA_{n}_Update\")]");
     let _ = writeln!(
         o,
         "    pub fn update(&mut self, {sig_bars}) -> Result<{vt}, RetCode> {{"
     );
-    o.push_str(&finite_bar_check(func, "        "));
+    o.push_str(&finite_bar_check(func, "        ", true));
+    // Retain the value(s) this bar produced where the step has no transition
+    // tail to ride on — the composed, dispatch and period-bank steps write the
+    // caller's slots directly. `step_fallible` is exactly that set. Placed with
+    // the count so the two describe the same bar.
+    let cur_retain = || -> String {
+        if !step_fallible {
+            return String::new();
+        }
+        let mut t = String::new();
+        for out in &func.outputs {
+            let nm = &out.name;
+            let _ = writeln!(t, "        self.state.cur_{nm} = {nm};");
+        }
+        t
+    };
     o.push_str(&out_decls);
     let _ = writeln!(
         o,
         "        Core::{sn}_step_impl(&mut self.state, {cs_args}{fwd_bars}{out_refs}){step_try};"
     );
-    // After the step, so a rejected bar (non-finite here, or a sub-stream's
-    // reject through `?`) leaves the range exactly where it was. `peek` runs the
-    // same step on a copy and so never reaches this.
-    let _ = writeln!(
-        o,
-        "        if self.out.count < Core::MAX_INDEX {{\n\
-         \x20           self.out.count += 1;\n\
-         \x20       }}"
-    );
+    o.push_str(&cur_retain());
+    // After the step: a sub-stream rejecting through `?` must not count the
+    // bar, and the non-finite check above owns the one rejection that does.
+    o.push_str(&advance_out_count("        "));
     let _ = writeln!(o, "        Ok({ret})");
     let _ = writeln!(o, "    }}\n");
-    // --- update_and_fill ------------------------------------------------------
-    // One emitter for every tier: each one owns a `<n>_step_impl` with the same
-    // surface, so the n-bar filler is that step in a loop whatever the tier
-    // underneath is (issue #246).
-    //
-    // Slices carry their own lengths, so there is no `barCount` parameter and no
-    // aliasing guard — `&[f64]` and `&mut [f64]` cannot alias, which is the C
-    // hazard the C wrapper has to reject by hand.
-    let mut in_sig = String::new();
-    let mut len_checks: Vec<String> = Vec::new();
-    for (k, a) in inputs.iter().enumerate() {
-        let _ = write!(in_sig, "{a}: &[f64], ");
-        if k > 0 {
-            len_checks.push(format!("{a}.len() != {}.len()", inputs[0]));
-        }
-    }
-    // A `nullable` output may be declined here exactly as at the opener (rule
-    // U6a): `Option<&mut [T]>`, bounded only where it was supplied, and its
-    // slot for the bar swapped for a throwaway sink so the step still computes
-    // it. The choice is the CALL's, not the handle's — nothing recorded at
-    // `Open` constrains what this call presents.
-    let nullable = super::common::nullable_output_names(func);
-    let mut out_sig = String::new();
-    let mut sink_decls = String::new();
-    for out in &func.outputs {
-        let (t, z) = if out_is_int(func, &out.name) { ("i32", "0_i32") } else { ("f64", "0.0_f64") };
-        let name = &out.name;
-        if nullable.contains(name) {
-            let _ = write!(out_sig, "mut {name}: Option<&mut [{t}]>, ");
-            len_checks.push(format!("{name}.as_deref().is_some_and(|o| o.len() < barCount)"));
-            let _ = writeln!(sink_decls, "        let mut sink_{name}: {t} = {z};");
-        } else {
-            let _ = write!(out_sig, "{name}: &mut [{t}], ");
-            len_checks.push(format!("{name}.len() < barCount"));
-        }
-    }
-    let count_src = inputs
-        .first()
-        .map_or_else(|| "0".to_string(), |a| format!("{a}.len()"));
-    let idx_bars: String = inputs
-        .iter()
-        .map(|a| format!("{a}[i]"))
-        .collect::<Vec<_>>()
-        .join(", ");
-    let idx_outs: String = func
-        .outputs
-        .iter()
-        .map(|out| {
-            if nullable.contains(&out.name) {
-                format!("slot_{}", out.name)
-            } else {
-                format!("&mut {}[i]", out.name)
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(", ");
-    let step_args = if idx_bars.is_empty() {
-        idx_outs.clone()
-    } else {
-        format!("{idx_bars}, {idx_outs}")
-    };
-    // Rule U6a reads the same as S6a, and a caller of this tier needs telling in
-    // the same place a caller of the opener is told.
-    let declinable = if nullable.is_empty() {
-        String::new()
-    } else {
-        let list = super::common::nullable_output_list(func)
-            .iter()
-            .map(|n| format!("`{n}`"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        format!(
-            "\x20   ///\n\
-             \x20   /// {list} may be declined with `None`, per call and independently of\n\
-             \x20   /// what the opener was given: the value is still computed —\n\
-             \x20   /// [`Self::update`] reports it — and nothing is written out.\n"
-        )
-    };
-    let _ = writeln!(
-        o,
-        "    /// Commit `n` closed bars and write their `n` values, in one call —\n\
-         \x20   /// exactly `n` back-to-back [`Self::update`] calls, with one set of\n\
-         \x20   /// argument checks instead of `n`. `n` is `{count_src}`; the outputs must\n\
-         \x20   /// hold at least that many. Never allocates.\n\
-         {declinable}\
-         \x20   ///\n\
-         \x20   /// [`Self::out_range`] counts what was committed, which is what makes the\n\
-         \x20   /// rejection below readable: there is no second out-parameter for it.\n\
-         \x20   ///\n\
-         \x20   /// # Errors\n\
-         \x20   ///\n\
-         \x20   /// [`RetCode::BadParam`] if the input slices differ in length, if an output\n\
-         \x20   /// is shorter than the bar count — neither commits anything — or if a bar\n\
-         \x20   /// is not finite. A non-finite bar `k` is rejected exactly as `update`\n\
-         \x20   /// rejects it: bars `0..k` stay committed and their values written, bar `k`\n\
-         \x20   /// and everything after it is not, and `out_range().count` has advanced by\n\
-         \x20   /// `k`."
-    );
-    let _ = writeln!(o, "    #[doc(alias = \"TA_{n}_UpdateAndFill\")]");
-    let _ = writeln!(
-        o,
-        "    pub fn update_and_fill(&mut self, {}) -> Result<(), RetCode> {{",
-        format!("{in_sig}{out_sig}").trim_end_matches(", ")
-    );
-    let _ = writeln!(o, "        let barCount = {count_src};");
-    if !len_checks.is_empty() {
-        let _ = writeln!(
-            o,
-            "        if {} {{\n            return Err(RetCode::BadParam);\n        }}",
-            len_checks.join(" || ")
-        );
-    }
-    o.push_str(&sink_decls);
-    let _ = writeln!(o, "        for i in 0..barCount {{");
-    if !inputs.is_empty() {
-        let conds: Vec<String> = inputs.iter().map(|a| format!("!{a}[i].is_finite()")).collect();
-        let _ = writeln!(
-            o,
-            "            if {} {{\n                return Err(RetCode::BadParam);\n            }}",
-            conds.join(" || ")
-        );
-    }
-    for out in &func.outputs {
-        let name = &out.name;
-        if nullable.contains(name) {
-            let _ = writeln!(
-                o,
-                "            let slot_{name} = match {name}.as_deref_mut() {{ Some(_s) => &mut _s[i], None => &mut sink_{name} }};"
-            );
-        }
-    }
-    let _ = writeln!(
-        o,
-        "            Core::{sn}_step_impl(&mut self.state, {cs_args}{step_args}){step_try};"
-    );
-    let _ = writeln!(
-        o,
-        "            if self.out.count < Core::MAX_INDEX {{\n\
-         \x20               self.out.count += 1;\n\
-         \x20           }}"
-    );
-    let _ = writeln!(o, "        }}");
-    let _ = writeln!(o, "        Ok(())");
-    let _ = writeln!(o, "    }}\n");
-
     let _ = writeln!(
         o,
         "    /// Evaluate a forming bar without committing — bit-identical to what the\n\
@@ -2988,14 +2984,15 @@ fn emit_update_and_peek(
          \x20   ///\n\
          \x20   /// # Errors\n\
          \x20   ///\n\
-         \x20   /// [`RetCode::BadParam`] if any bar value is not finite, exactly as\n\
-         \x20   /// `update` rejects it."
+         \x20   /// [`RetCode::BadParam`] if any bar value is not finite, on the same test\n\
+         \x20   /// `update` applies — but a rejected peek changes nothing at all, where a\n\
+         \x20   /// rejected `update` still counts the bar in [`Self::out_range`]."
     );
     let _ = writeln!(o, "    #[doc(alias = \"TA_{n}_Peek\")]");
     let _ = writeln!(o, "    pub fn peek(&self, {sig_bars}) -> Result<{vt}, RetCode> {{");
     // Ahead of the frame, not left to the transition: a rejected bar must not
     // run any of it.
-    o.push_str(&finite_bar_check(func, "        "));
+    o.push_str(&finite_bar_check(func, "        ", false));
     // Not a fallback: every tier emits a frame, and a tier that could not is a
     // generator bug to fail on, not to ship a copying peek for. Java and C#
     // already answer that way, and the three must agree — a silent degradation
@@ -3005,17 +3002,50 @@ fn emit_update_and_peek(
     o.push_str(frame);
     let _ = writeln!(o, "        Ok({ret})");
     let _ = writeln!(o, "    }}\n");
+    // The value accessor. `update` and `peek` both hand a value back, so this
+    // exists for the handle that has outlived the call that produced one — the
+    // case a fork creates: `clone()` gives a second handle at the same bar, and
+    // without this there is no way to ask it what that bar was short of
+    // committing another one.
+    let cur_expr = {
+        let parts: Vec<String> = func
+            .outputs
+            .iter()
+            .map(|o| format!("self.state.cur_{}", o.name))
+            .collect();
+        if parts.len() == 1 {
+            parts[0].clone()
+        } else {
+            format!("({})", parts.join(", "))
+        }
+    };
+    let _ = writeln!(
+        o,
+        "    /// The value(s) at the last bar the stream counted — the bar\n\
+         \x20   /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,\n\
+         \x20   /// refreshed by every accepted `update`, and left\n\
+         \x20   /// alone by `peek`.\n\
+         \x20   ///\n\
+         \x20   /// A clone carries them verbatim, so a forked handle can be asked its\n\
+         \x20   /// current value without committing a bar to find out.\n\
+         \x20   #[must_use]\n\
+         \x20   #[doc(alias = \"TA_{n}_Value\")]\n\
+         \x20   pub fn value(&self) -> {vt} {{\n\
+         \x20       {cur_expr}\n\
+         \x20   }}\n"
+    );
     // The range accessor. Rust's `OpenAndFill` keeps returning the range beside
     // the handle (#179 C15) — this is the same pair, and the only way to read it
     // after an update or off a plain `Open`.
     let _ = writeln!(
         o,
-        "    /// The bars this stream has produced a value for, in the input series'\n\
+        "    /// The bars this stream has an output for, in the input series'\n\
          \x20   /// coordinates: `[beg_idx, beg_idx + count)`.\n\
          \x20   ///\n\
          \x20   /// It is what [`Core::{n}`] reports over the same bars: the opener sets it\n\
-         \x20   /// to `(lookback, historyLen - lookback)`, every accepted `update` adds one\n\
-         \x20   /// to the count, `peek` leaves it alone, and a clone carries it verbatim.\n\
+         \x20   /// to `(lookback, historyLen - lookback)`, every `update` adds one to the\n\
+         \x20   /// count — a bar rejected for being non-finite included, because it still\n\
+         \x20   /// happened — `peek` leaves it alone, and a clone carries it verbatim.\n\
          \x20   /// A plain `Open` hands back only the last value, a subset of this range,\n\
          \x20   /// because the caller chose not to take the fill.\n\
          \x20   #[doc(alias = \"TA_StreamOutRange\")]\n\
@@ -3335,6 +3365,7 @@ fn plan_ctx(func: &FuncDef, enums: &HashMap<String, EnumDef>) -> RustRenderCtx {
         enum_vars: super::rust_lang::enum_local_types(func),
         circbuf_hybrid_static: HashMap::new(),
         nullable_outputs: HashSet::new(),
+        nullable_shadow: false,
     }
 }
 
@@ -3401,7 +3432,7 @@ fn emit_dispatch(
         "Sub-stream, tagged by {}; `{sub_enum}::Identity` on the identity path.",
         dp.param
     );
-    emit_state_struct_decl(o, &state, &state_fields, &[("sub", sub_note)]);
+    emit_state_struct_decl(o, func, &state, &state_fields, &[("sub", sub_note)]);
     let _ = writeln!(o, "#[derive(Debug, Clone)]\nenum {sub_enum} {{");
     if dp.identity.is_some() {
         let _ = writeln!(o, "    Identity,");
@@ -3570,7 +3601,12 @@ fn emit_dispatch(
             }
             let _ = writeln!(
                 o,
-                "            let state = {state} {{ {params_join}, sub: {sub_enum}::Identity }};"
+                "            let state = {state} {{ {params_join}, sub: {sub_enum}::Identity, {} }};",
+                idp.pairs
+                    .iter()
+                    .map(|(out, inp)| format!("cur_{out}: {inp}[historyLen - 1],"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
             );
             match mode {
                 OutMode::Core => unreachable!("dispatch tier is exempt from the merge"),
@@ -3726,7 +3762,22 @@ fn emit_dispatch(
         }
         let _ = writeln!(o, "            _ => return Err(RetCode::BadParam),");
         let _ = writeln!(o, "        }};");
-        let _ = writeln!(o, "        let state = {state} {{ {params_join}, sub }};");
+        // The dispatch value is whatever the sub produced: `value` on the
+        // scalar opener, the last filled slot on the filling ones.
+        let cur_seed: String = func
+            .outputs
+            .iter()
+            .map(|out| {
+                let nm = &out.name;
+                match mode {
+                    OutMode::Scalar => format!("cur_{nm}: value,"),
+                    OutMode::Fill => format!("cur_{nm}: {nm}[fillRange.count - 1],"),
+                    _ => format!("cur_{nm}: {nm}[*outNBElement - 1],"),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        let _ = writeln!(o, "        let state = {state} {{ {params_join}, sub, {cur_seed} }};");
         match mode {
             OutMode::Core => unreachable!("dispatch tier is exempt from the merge"),
             OutMode::Scalar => {
@@ -3824,7 +3875,7 @@ fn emit_period_bank(
         "One sub-{} stream per period in [{min}, {max}], advanced in lockstep.",
         callee.to_uppercase()
     );
-    emit_state_struct_decl(o, &state, &state_fields, &[("bank", bank_note)]);
+    emit_state_struct_decl(o, func, &state, &state_fields, &[("bank", bank_note)]);
 
     let _ = writeln!(o, "{IMPL_ALLOW}impl Core {{");
 
@@ -3896,7 +3947,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "        let mut cp: i32 = {period}[historyLen - 1] as i32;");
     let _ = writeln!(o, "        if cp < {min} {{\n            cp = {min};\n        }} else if cp > {max} {{\n            cp = {max};\n        }}");
     let _ = writeln!(o, "        let lastValue_{out}: f64 = scratch[(cp - {min}) as usize];");
-    let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
+    let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank, cur_{out}: lastValue_{out} }};");
     let _ = writeln!(
         o,
         "        Ok(({handle} {{ {cs_ctor}state, out: OutRange {{ beg_idx: subStart, count: historyLen - subStart }} }}, lastValue_{out}))"
@@ -3946,7 +3997,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "            {out}[t - lookbackTotal] = scratch[(cp - {min}) as usize];");
     let _ = writeln!(o, "            t += 1;");
     let _ = writeln!(o, "        }}");
-    let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank }};");
+    let _ = writeln!(o, "        let state = {state} {{ {params_join}, bank, cur_{out}: {out}[historyLen - lookbackTotal - 1] }};");
     let _ = writeln!(
         o,
         "        Ok(({handle} {{ {cs_ctor}state, out: OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }} }}, OutRange {{ beg_idx: lookbackTotal, count: historyLen - lookbackTotal }}))"
@@ -4628,8 +4679,11 @@ fn emit_composed_open(
             o, func, model, &model.state, typing, registry, helpers, counter, &extra,
         );
     } else {
-        // Loopless pipeline: params + extras + subs/rings only.
-        let _ = writeln!(o, "        let state = {state} {{");
+        // Loopless pipeline: params + extras + subs/rings only. The value(s)
+        // are not produced until the sub-streams have filled below, so `cur_`
+        // starts at its default and is seeded once the fill has run.
+        let _ = writeln!(o, "        let mut state = {state} {{");
+        o.push_str(&cur_ctor_defaults(func, "\n"));
         for p in &func.optional_inputs {
             let _ = writeln!(o, "            {},", p.name);
         }
@@ -4644,6 +4698,14 @@ fn emit_composed_open(
         // the ONE place a stride multiply cannot express the difference — a bulk
         // copy takes a base slice, not a subscript.
         {
+            // Seed the value accessor from the stride-aware alias BEFORE the
+            // hand-back: `sc_<out>` borrows `<out>` at stride 1, so reading it
+            // after the copy-out would hold that borrow across the write.
+            if cp.producer.is_none() {
+                for out in outputs {
+                    let _ = writeln!(o, "        state.cur_{out} = sc_{out}[*outNBElement - 1];");
+                }
+            }
             for out in outputs {
                 if alias_fill {
                     // Stride 1 already wrote through the borrow — nothing to hand
@@ -4894,7 +4956,7 @@ fn emit_composed(
             true,
         )
         .map(|body| {
-            let mut f = peek_frame_head(func);
+            let mut f = peek_frame_head(func, &body);
             f.push_str(&body);
             let _ = writeln!(f, "        }}");
             f

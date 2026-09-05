@@ -74,6 +74,7 @@ impl Core {
     ///
     /// [`RetCode::BadParam`] when a parameter is out of range. Integer parameters accept
     /// [`Core::INTEGER_DEFAULT`] to select their default value.
+    #[doc(alias = "TA_MINMAXINDEX_Lookback")]
     #[inline]
     pub fn MINMAXINDEX_Lookback(&self, mut optInTimePeriod: i32) -> Result<usize, RetCode> {
         if ((optInTimePeriod) as i32) == (i32::MIN) {
@@ -266,6 +267,7 @@ impl Core {
     ///
     /// [`Core::MINMAX`] · [`Core::MIN`] · [`Core::MAX`] · [`Core::MININDEX`] ·
     /// [`Core::MAXINDEX`]
+    #[doc(alias = "TA_MINMAXINDEX")]
     #[doc(alias = "LowestHighestIndex")]
     pub fn MINMAXINDEX(
         &self,
@@ -319,13 +321,13 @@ impl Core {
 /// over the same series. Open with [`Core::minmaxindex_open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
 ///
-/// [`Self::out_range`] reports the bars it has produced a value for.
+/// [`Self::out_range`] reports the bars this handle has an output for.
 #[must_use = "a stream does nothing unless updated; dropping it closes the stream"]
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_MINMAXINDEX_Stream")]
 pub struct MinmaxindexStream {
     state: MinmaxindexStreamState,
-    /// The bars this handle has produced a value for — see [`Self::out_range`].
+    /// The bars this handle has an output for — see [`Self::out_range`].
     out: OutRange,
 }
 
@@ -342,6 +344,8 @@ struct MinmaxindexStreamState {
     today: i32,
     xMask: i32,
     x_inReal: Vec<f64>,
+    cur_outMinIdx: i32,
+    cur_outMaxIdx: i32,
 }
 
 #[allow(unused_variables)]
@@ -398,6 +402,8 @@ impl Core {
         (*outMinIdx) = (sp.lowestIdx) as i32;
         sp.trailingIdx += 1;
         sp.today += 1;
+        sp.cur_outMinIdx = (*outMinIdx);
+        sp.cur_outMaxIdx = (*outMaxIdx);
     }
 
     /// The single whole-history transcription behind [`Core::minmaxindex_open_internal`]
@@ -532,6 +538,8 @@ impl Core {
             lowestIdx: (lowestIdx) as i32,
             i: (i) as i32,
             today: (today) as i32,
+            cur_outMinIdx: outMinIdx[(*outNBElement - 1) * outStride],
+            cur_outMaxIdx: outMaxIdx[(*outNBElement - 1) * outStride],
             xMask: (physX - 1) as i32,
             x_inReal,
         };
@@ -661,15 +669,22 @@ impl MinmaxindexStream {
     /// # Errors
     ///
     /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).
-    /// That check runs before anything is written, so the handle is left
-    /// exactly as it was and the stream stays usable:
-    /// skip the bar, or close and re-open on a clean history. This is the
-    /// one place the streaming tier is stricter than the batch API, which
-    /// computes on whatever it is given — a handle retains its state, so a
-    /// single non-finite bar would poison every later value it produces.
+    /// That check runs before anything is written, so the handle's state is
+    /// left exactly as it was and the stream stays usable: skip the bar, or
+    /// close and re-open on a clean history. This is the one place the
+    /// streaming tier is stricter than the batch API, which computes on
+    /// whatever it is given — a handle retains its state, so a single
+    /// non-finite bar would poison every later value it produces.
+    ///
+    /// [`Self::out_range`] counts the rejected bar all the same: it happened,
+    /// so two handles fed the same series stay positionally aligned even when
+    /// one rejects a bar the other accepts.
     #[doc(alias = "TA_MINMAXINDEX_Update")]
     pub fn update(&mut self, inReal: f64) -> Result<(i32, i32), RetCode> {
         if !inReal.is_finite() {
+            if self.out.count < Core::MAX_INDEX {
+                self.out.count += 1;
+            }
             return Err(RetCode::BadParam);
         }
         let mut outMinIdx: i32 = 0_i32;
@@ -681,40 +696,6 @@ impl MinmaxindexStream {
         Ok((outMinIdx, outMaxIdx))
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inReal.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what was committed, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k`.
-    #[doc(alias = "TA_MINMAXINDEX_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inReal: &[f64], outMinIdx: &mut [i32], outMaxIdx: &mut [i32]) -> Result<(), RetCode> {
-        let barCount = inReal.len();
-        if outMinIdx.len() < barCount || outMaxIdx.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inReal[i].is_finite() {
-                return Err(RetCode::BadParam);
-            }
-            Core::minmaxindex_step_impl(&mut self.state, inReal[i], &mut outMinIdx[i], &mut outMaxIdx[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -724,8 +705,9 @@ impl MinmaxindexStream {
     ///
     /// # Errors
     ///
-    /// [`RetCode::BadParam`] if any bar value is not finite, exactly as
-    /// `update` rejects it.
+    /// [`RetCode::BadParam`] if any bar value is not finite, on the same test
+    /// `update` applies — but a rejected peek changes nothing at all, where a
+    /// rejected `update` still counts the bar in [`Self::out_range`].
     #[doc(alias = "TA_MINMAXINDEX_Peek")]
     pub fn peek(&self, inReal: f64) -> Result<(i32, i32), RetCode> {
         if !inReal.is_finite() {
@@ -792,18 +774,30 @@ impl MinmaxindexStream {
             }
             (*outMaxIdx) = (highestIdx) as i32;
             (*outMinIdx) = (lowestIdx) as i32;
-            trailingIdx += 1;
-            today += 1;
         }
         Ok((outMinIdx, outMaxIdx))
     }
 
-    /// The bars this stream has produced a value for, in the input series'
+    /// The value(s) at the last bar the stream counted — the bar
+    /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
+    /// refreshed by every accepted `update`, and left
+    /// alone by `peek`.
+    ///
+    /// A clone carries them verbatim, so a forked handle can be asked its
+    /// current value without committing a bar to find out.
+    #[must_use]
+    #[doc(alias = "TA_MINMAXINDEX_Value")]
+    pub fn value(&self) -> (i32, i32) {
+        (self.state.cur_outMinIdx, self.state.cur_outMaxIdx)
+    }
+
+    /// The bars this stream has an output for, in the input series'
     /// coordinates: `[beg_idx, beg_idx + count)`.
     ///
     /// It is what [`Core::MINMAXINDEX`] reports over the same bars: the opener sets it
-    /// to `(lookback, historyLen - lookback)`, every accepted `update` adds one
-    /// to the count, `peek` leaves it alone, and a clone carries it verbatim.
+    /// to `(lookback, historyLen - lookback)`, every `update` adds one to the
+    /// count — a bar rejected for being non-finite included, because it still
+    /// happened — `peek` leaves it alone, and a clone carries it verbatim.
     /// A plain `Open` hands back only the last value, a subset of this range,
     /// because the caller chose not to take the fill.
     #[doc(alias = "TA_StreamOutRange")]

@@ -87,6 +87,90 @@ DEF_FUNCTION( DIV,
              );
 /* DIV END */
 
+/* DONCHIAN BEGIN */
+const TA_OutputParameterInfo TA_DEF_UI_Output_Real_DONCHIAN_UpperBand =
+                               { TA_Output_Real, "outRealUpperBand", TA_OUT_UPPER_LIMIT };
+
+const TA_OutputParameterInfo TA_DEF_UI_Output_Real_DONCHIAN_MiddleBand =
+                               { TA_Output_Real, "outRealMiddleBand", TA_OUT_LINE };
+
+const TA_OutputParameterInfo TA_DEF_UI_Output_Real_DONCHIAN_LowerBand =
+                               { TA_Output_Real, "outRealLowerBand", TA_OUT_LOWER_LIMIT };
+
+static const TA_InputParameterInfo    *TA_DONCHIAN_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Price_HL,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_DONCHIAN_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real_DONCHIAN_UpperBand,
+  &TA_DEF_UI_Output_Real_DONCHIAN_MiddleBand,
+  &TA_DEF_UI_Output_Real_DONCHIAN_LowerBand,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_DONCHIAN_OptInputs[] =
+{ &TA_DEF_UI_TimePeriod_20_MINIMUM2,
+  NULL
+};
+
+DEF_FUNCTION( DONCHIAN,
+              TA_GroupId_OverlapStudies,
+              "Donchian Channels",
+              TA_FUNC_FLG_OVERLAP | TA_FUNC_FLG_STREAM
+             );
+/* DONCHIAN END */
+
+/* DPO BEGIN */
+static const TA_IntegerRange TA_DEF_DPO_TimePeriod =
+{
+   2,
+   100000,
+   10,
+   60,
+   5
+};
+
+static const TA_OptInputParameterInfo TA_DEF_UI_D_DPO_TimePeriod =
+{
+   TA_OptInput_IntegerRange,
+   "optInTimePeriod",
+   0,
+
+   "Time Period",
+   (const void *)&TA_DEF_DPO_TimePeriod,
+   20,
+   "Time period",
+
+   NULL
+};
+
+static const TA_InputParameterInfo    *TA_DPO_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Real,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_DPO_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_DPO_OptInputs[] =
+{ &TA_DEF_UI_D_DPO_TimePeriod,
+  NULL
+};
+
+DEF_FUNCTION( DPO,
+              TA_GroupId_MomentumIndicators,
+              "Detrended Price Oscillator",
+              TA_FUNC_FLG_STREAM
+             );
+/* DPO END */
+
 /* DX BEGIN */
 static const TA_InputParameterInfo    *TA_DX_Inputs[]    =
 {
@@ -120,6 +204,8 @@ const TA_FuncDef *TA_DEF_TableD[] =
 {
    ADD_TO_TABLE(DEMA),
    ADD_TO_TABLE(DIV),
+   ADD_TO_TABLE(DONCHIAN),
+   ADD_TO_TABLE(DPO),
    ADD_TO_TABLE(DX),
    NULL
 };

@@ -85,6 +85,7 @@ impl Core {
     ///
     /// [`RetCode::BadParam`] when a parameter is out of range. Integer parameters accept
     /// [`Core::INTEGER_DEFAULT`] to select their default value.
+    #[doc(alias = "TA_PLUS_DI_Lookback")]
     #[inline]
     pub fn PLUS_DI_Lookback(&self, mut optInTimePeriod: i32) -> Result<usize, RetCode> {
         if ((optInTimePeriod) as i32) == (i32::MIN) {
@@ -140,7 +141,6 @@ impl Core {
         let mut prevPlusDM: f64 = 0.0_f64;
         let mut prevTR: f64 = 0.0_f64;
         let mut tempReal: f64 = 0.0_f64;
-        let tempReal2: f64 = 0.0_f64;
         let mut diffP: f64 = 0.0_f64;
         let mut diffM: f64 = 0.0_f64;
         let mut i: usize = 0_usize;
@@ -506,6 +506,7 @@ impl Core {
     ///
     /// * J. Welles Wilder, *New Concepts in Technical Trading Systems*, Trend Research (ISBN
     ///   0894590278)
+    #[doc(alias = "TA_PLUS_DI")]
     #[doc(alias = "DI")]
     #[doc(alias = "PlusDirectionalIndicator")]
     #[doc(alias = "PDI")]
@@ -566,13 +567,13 @@ impl Core {
 /// over the same series. Open with [`Core::plus_di_open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
 ///
-/// [`Self::out_range`] reports the bars it has produced a value for.
+/// [`Self::out_range`] reports the bars this handle has an output for.
 #[must_use = "a stream does nothing unless updated; dropping it closes the stream"]
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_PLUS_DI_Stream")]
 pub struct PlusDiStream {
     state: PlusDiStreamState,
-    /// The bars this handle has produced a value for — see [`Self::out_range`].
+    /// The bars this handle has an output for — see [`Self::out_range`].
     out: OutRange,
 }
 
@@ -585,6 +586,7 @@ struct PlusDiStreamState {
     prevClose: f64,
     prevPlusDM: f64,
     prevTR: f64,
+    cur_outReal: f64,
 }
 
 #[allow(unused_variables)]
@@ -629,6 +631,7 @@ impl Core {
                 (*outReal) = 0.0 as f64;
             }
             sp.prevClose = inClose;
+            sp.cur_outReal = (*outReal);
         } else {
             let mut tempReal: f64 = 0.0_f64;
             let mut diffP: f64 = 0.0_f64;
@@ -670,6 +673,7 @@ impl Core {
             } else {
                 (*outReal) = 0.0;
             }
+            sp.cur_outReal = (*outReal);
         }
     }
 
@@ -712,7 +716,6 @@ impl Core {
             let mut prevPlusDM: f64 = 0.0_f64;
             let mut prevTR: f64 = 0.0_f64;
             let mut tempReal: f64 = 0.0_f64;
-            let mut tempReal2: f64 = 0.0_f64;
             let mut diffP: f64 = 0.0_f64;
             let mut diffM: f64 = 0.0_f64;
             let mut i: usize = 0_usize;
@@ -879,6 +882,7 @@ impl Core {
                 prevClose,
                 prevPlusDM,
                 prevTR,
+                cur_outReal: outReal[(*outNBElement - 1) * outStride],
             };
             Ok(PlusDiStream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         } else {
@@ -891,7 +895,6 @@ impl Core {
             let mut prevPlusDM: f64 = 0.0_f64;
             let mut prevTR: f64 = 0.0_f64;
             let mut tempReal: f64 = 0.0_f64;
-            let mut tempReal2: f64 = 0.0_f64;
             let mut diffP: f64 = 0.0_f64;
             let mut diffM: f64 = 0.0_f64;
             let mut i: usize = 0_usize;
@@ -1145,6 +1148,7 @@ impl Core {
                 prevClose,
                 prevPlusDM,
                 prevTR,
+                cur_outReal: outReal[(*outNBElement - 1) * outStride],
             };
             Ok(PlusDiStream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
         }
@@ -1274,15 +1278,22 @@ impl PlusDiStream {
     /// # Errors
     ///
     /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).
-    /// That check runs before anything is written, so the handle is left
-    /// exactly as it was and the stream stays usable:
-    /// skip the bar, or close and re-open on a clean history. This is the
-    /// one place the streaming tier is stricter than the batch API, which
-    /// computes on whatever it is given — a handle retains its state, so a
-    /// single non-finite bar would poison every later value it produces.
+    /// That check runs before anything is written, so the handle's state is
+    /// left exactly as it was and the stream stays usable: skip the bar, or
+    /// close and re-open on a clean history. This is the one place the
+    /// streaming tier is stricter than the batch API, which computes on
+    /// whatever it is given — a handle retains its state, so a single
+    /// non-finite bar would poison every later value it produces.
+    ///
+    /// [`Self::out_range`] counts the rejected bar all the same: it happened,
+    /// so two handles fed the same series stay positionally aligned even when
+    /// one rejects a bar the other accepts.
     #[doc(alias = "TA_PLUS_DI_Update")]
     pub fn update(&mut self, inHigh: f64, inLow: f64, inClose: f64) -> Result<f64, RetCode> {
         if !inHigh.is_finite() || !inLow.is_finite() || !inClose.is_finite() {
+            if self.out.count < Core::MAX_INDEX {
+                self.out.count += 1;
+            }
             return Err(RetCode::BadParam);
         }
         let mut outReal: f64 = 0.0_f64;
@@ -1291,40 +1302,6 @@ impl PlusDiStream {
             self.out.count += 1;
         }
         Ok(outReal)
-    }
-
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inHigh.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what was committed, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k`.
-    #[doc(alias = "TA_PLUS_DI_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inHigh: &[f64], inLow: &[f64], inClose: &[f64], outReal: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inHigh.len();
-        if inLow.len() != inHigh.len() || inClose.len() != inHigh.len() || outReal.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
-                return Err(RetCode::BadParam);
-            }
-            Core::plus_di_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
     }
 
     /// Evaluate a forming bar without committing — bit-identical to what the
@@ -1336,8 +1313,9 @@ impl PlusDiStream {
     ///
     /// # Errors
     ///
-    /// [`RetCode::BadParam`] if any bar value is not finite, exactly as
-    /// `update` rejects it.
+    /// [`RetCode::BadParam`] if any bar value is not finite, on the same test
+    /// `update` applies — but a rejected peek changes nothing at all, where a
+    /// rejected `update` still counts the bar in [`Self::out_range`].
     #[doc(alias = "TA_PLUS_DI_Peek")]
     pub fn peek(&self, inHigh: f64, inLow: f64, inClose: f64) -> Result<f64, RetCode> {
         if !inHigh.is_finite() || !inLow.is_finite() || !inClose.is_finite() {
@@ -1351,7 +1329,6 @@ impl PlusDiStream {
                 let mut tempReal: f64 = 0.0_f64;
                 let mut diffP: f64 = 0.0_f64;
                 let mut diffM: f64 = 0.0_f64;
-                let mut prevClose = sp.prevClose;
                 let mut prevHigh = sp.prevHigh;
                 let mut prevLow = sp.prevLow;
                 tempReal = inHigh;
@@ -1366,11 +1343,11 @@ impl PlusDiStream {
                     // Case 1 and 3: +DM=diffP,-DM=0
                     let mut _true_range_6: f64;
                     let mut range_6: f64 = prevHigh - prevLow;
-                    let mut tmp_6: f64 = (prevHigh - prevClose).abs();
+                    let mut tmp_6: f64 = (prevHigh - sp.prevClose).abs();
                     if tmp_6 > range_6 {
                         range_6 = tmp_6;
                     }
-                    tmp_6 = (prevLow - prevClose).abs();
+                    tmp_6 = (prevLow - sp.prevClose).abs();
                     if tmp_6 > range_6 {
                         range_6 = tmp_6;
                     }
@@ -1384,7 +1361,6 @@ impl PlusDiStream {
                 } else {
                     (*outReal) = 0.0 as f64;
                 }
-                prevClose = inClose;
             } else {
                 let mut tempReal: f64 = 0.0_f64;
                 let mut diffP: f64 = 0.0_f64;
@@ -1436,12 +1412,26 @@ impl PlusDiStream {
         Ok(outReal)
     }
 
-    /// The bars this stream has produced a value for, in the input series'
+    /// The value(s) at the last bar the stream counted — the bar
+    /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
+    /// refreshed by every accepted `update`, and left
+    /// alone by `peek`.
+    ///
+    /// A clone carries them verbatim, so a forked handle can be asked its
+    /// current value without committing a bar to find out.
+    #[must_use]
+    #[doc(alias = "TA_PLUS_DI_Value")]
+    pub fn value(&self) -> f64 {
+        self.state.cur_outReal
+    }
+
+    /// The bars this stream has an output for, in the input series'
     /// coordinates: `[beg_idx, beg_idx + count)`.
     ///
     /// It is what [`Core::PLUS_DI`] reports over the same bars: the opener sets it
-    /// to `(lookback, historyLen - lookback)`, every accepted `update` adds one
-    /// to the count, `peek` leaves it alone, and a clone carries it verbatim.
+    /// to `(lookback, historyLen - lookback)`, every `update` adds one to the
+    /// count — a bar rejected for being non-finite included, because it still
+    /// happened — `peek` leaves it alone, and a clone carries it verbatim.
     /// A plain `Open` hands back only the last value, a subset of this range,
     /// because the caller chose not to take the fill.
     #[doc(alias = "TA_StreamOutRange")]

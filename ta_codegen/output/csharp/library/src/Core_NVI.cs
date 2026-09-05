@@ -363,14 +363,15 @@ public partial class Core
 
       internal NviStream( Core core ) { this.core = core; }
 
-      /// <summary>The bars this stream has produced a value for, in the input series'
-      /// coordinates: <c>[BegIdx, BegIdx + Count)</c>.</summary>
+      /// <summary>The bars this stream has an output for, in the input series' coordinates:
+      /// <c>[BegIdx, BegIdx + Count)</c>.</summary>
       /// <remarks>
       /// <para>It is what <c>Core.Nvi</c> reports over the same bars: the opener sets it
-      /// to <c>(lookback, historyLen - lookback)</c>, every accepted <c>Update</c>
-      /// adds one to the count, <c>Peek</c> leaves it alone, and <c>Clone</c>
-      /// carries it verbatim. A plain <c>Open</c> hands back only the last value, a
-      /// subset of this range, because the caller chose not to take the fill.</para>
+      /// to <c>(lookback, historyLen - lookback)</c>, every <c>Update</c> adds one
+      /// to the count — a non-finite bar is rejected but still counted, because the
+      /// bar happened — <c>Peek</c> leaves it alone, and <c>Clone</c> carries it
+      /// verbatim. A plain <c>Open</c> hands back only the last value, a subset of
+      /// this range, because the caller chose not to take the fill.</para>
       /// </remarks>
       public OutRange OutRange => new OutRange(outRangeBegIdx, outRangeCount);
 
@@ -390,18 +391,25 @@ public partial class Core
       /// <para>Allocates nothing — neither handle state nor a return value.</para>
       /// <para>Throws <see cref="System.ArgumentException"/> if any bar value is not
       /// finite (NaN or an infinity). That check runs before anything is written,
-      /// so the handle is left exactly as it was and the stream stays usable: skip
-      /// the bar, or re-open on a clean history. This is the one place the
-      /// streaming tier is stricter than the batch API, which computes on whatever
-      /// it is given: a handle retains its state, so a single non-finite bar would
-      /// poison every later value it produces.</para>
+      /// so no state moves, <see cref="Value"/> still answers the previous value,
+      /// and the stream stays usable — just carry on with the next bar.
+      /// <see cref="OutRange"/> does advance: the bar happened, so it is counted,
+      /// which keeps two handles fed the same series positionally aligned when only
+      /// one of them rejects a bar. This is the one place the streaming tier is
+      /// stricter than the batch API, which computes on whatever it is given: a
+      /// handle retains its state, so a single non-finite bar would poison every
+      /// later value it produces.</para>
       /// </remarks>
       /// <param name="inClose">This bar's close price.</param>
       /// <param name="inVolume">This bar's volume.</param>
       /// <returns>The value at the bar just committed.</returns>
       public double Update( double inClose, double inVolume )
       {
-         if( !double.IsFinite(inClose) || !double.IsFinite(inVolume) ) throw Core.StreamFailure("NVI", "update", RetCode.BadParam);
+         if( !double.IsFinite(inClose) || !double.IsFinite(inVolume) )
+         {
+            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
+            throw Core.StreamFailure("NVI", "update", RetCode.BadParam);
+         }
          core.NviStepImpl(this, inClose, inVolume);
          if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
          return cur_outReal;
@@ -427,17 +435,15 @@ public partial class Core
          double tempClose = 0.0;
          double tempVolume = 0.0;
          double tempNVI = 0.0;
-         double cur_outReal = sp.cur_outReal;
-         double prevClose = sp.prevClose;
+         double cur_outReal = 0.0;
          double prevNVI = sp.prevNVI;
-         double prevVolume = sp.prevVolume;
          tempClose = inClose;
          tempVolume = inVolume;
          /* prevClose != 0 guards the percentage-change division: a zero previous
           * close is a degenerate input that would otherwise emit NaN/Inf; carry
           * the index forward unchanged instead. Never triggers on real prices.
           */
-         if( tempVolume < prevVolume && prevClose != 0.0 ) {
+         if( tempVolume < sp.prevVolume && sp.prevClose != 0.0 ) {
             /* The index is a running product, so it has no upper bound: enough
              * compounding gains push it past the largest double. Keep the last
              * representable value instead of writing +/-Inf, which no caller can
@@ -450,46 +456,18 @@ public partial class Core
              * overflowing one.
              */
             tempNVI = prevNVI;
-            tempNVI += (tempClose - prevClose) / prevClose * tempNVI;
+            tempNVI += (tempClose - sp.prevClose) / sp.prevClose * tempNVI;
             if( (double.IsFinite(tempNVI)) ) {
                prevNVI = tempNVI;
             }
          }
          cur_outReal = prevNVI;
-         prevClose = tempClose;
-         prevVolume = tempVolume;
          return cur_outReal;
       }
 
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what was committed, which is what makes a
-      /// rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with bars <c>0..k</c> committed and written, bar <c>k</c> and
-      /// everything after it not, and the count advanced by <c>k</c>.</para>
-      /// </remarks>
-      /// <param name="inClose">Closed bars for <c>inClose</c>, oldest first.</param>
-      /// <param name="inVolume">Closed bars for <c>inVolume</c>, oldest first.</param>
-      /// <param name="outReal">Receives one <c>outReal</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inClose, ReadOnlySpan<double> inVolume, Span<double> outReal )
-      {
-         int barCount = inClose.Length;
-         if( inVolume.Length != barCount || outReal.Length < barCount || outReal.Overlaps(inClose) || outReal.Overlaps(inVolume) ) throw Core.StreamFailure("NVI", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inClose[i]) || !double.IsFinite(inVolume[i]) ) throw Core.StreamFailure("NVI", "updateAndFill", RetCode.BadParam);
-            core.NviStepImpl(this, inClose[i], inVolume[i]);
-            outReal[i] = cur_outReal;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
-      }
-
-      /// <summary>The value at the most recently committed bar — the last history bar right
-      /// after open, then whatever the latest <see cref="Update"/> returned.</summary>
+      /// <summary>The value at the last bar this stream counted — the bar
+      /// <see cref="OutRange"/> ends on. The last history bar right after open,
+      /// then whatever the latest accepted <see cref="Update"/> returned.</summary>
       /// <remarks>
       /// <para><see cref="Peek"/> does not change it.</para>
       /// </remarks>

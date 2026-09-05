@@ -37,12 +37,14 @@
  *  -------------------------------------------------------------------
  *  MF       Mario Fortier
  *  CC       Claude Code (AI assistant)
+ *  KL       Kevin Lin
  *
  * Change history:
  *
  *  MMDDYY BY     Description
  *  -------------------------------------------------------------------
  *  082026 MF,CC  First version. SMI legs (#238).
+ *  090526 KL     COPPOCK legs (#362).
  *
  */
 
@@ -198,6 +200,61 @@ static ErrorNumber test_smi_flat_window( void );
 static ErrorNumber test_smi_inplace( const TA_History *history );
 static ErrorNumber test_smi_tulip_vector( const TA_History *history );
 
+/* ---- COPPOCK (issue #362) ---- */
+
+/* Parameter grid. Includes the published defaults, w == 1 (the WMA stage
+ * degenerates to identity), p1 == p2, p1 > p2 (accepted, not swapped -- the
+ * formula is symmetric and the lookback keys off the max), the smallest legal
+ * periods everywhere, and one lag long enough that only a tail of the corpus
+ * produces output. */
+static const struct { int w, p1, p2; } coppockGrid[] =
+{
+   { 10, 11, 14 },   /* the published defaults */
+   {  1, 11, 14 },   /* w == 1 */
+   { 10, 14, 11 },   /* p1 > p2 */
+   {  5,  7,  7 },   /* p1 == p2 */
+   {  1,  1,  1 },   /* smallest legal everywhere */
+   {  3,  1, 200 },  /* long lag, output only near the tail */
+   { 20,  2,  2 },
+};
+#define NB_COPPOCK_GRID (sizeof(coppockGrid)/sizeof(coppockGrid[0]))
+
+/* startIdx grid: 0/1 clamp to the lookback; the rest move the WMA re-anchor
+ * phase, which the reference must reproduce for the memcmp to hold. */
+static const int coppockStartGrid[] = { 0, 1, 23, 24, 100, 251 };
+#define NB_COPPOCK_START (sizeof(coppockStartGrid)/sizeof(coppockStartGrid[0]))
+
+/* Regression pins on TA_SREF close, defaults (10,11,14): pandas 2.3.3, the
+ * textbook composition (ROC sum -> rolling weighted mean, explicit dot over
+ * weights 1..10 / 55), captured locally. Spot bars picked with |value| >~ 1;
+ * outBegIdx/outNBElement on this corpus are 23/229.
+ *
+ * rel 1e-11, NOT tighter: TA_WMA carries a running periodSum/periodSub across
+ * the range where pandas recomputes a fresh dot per window, and that residue
+ * random-walks with call length (measured worst rel ~2e-12 on this corpus).
+ * The gap is shipped-TA_WMA behaviour, not COPPOCK's -- do not "fix" a future
+ * excursion by loosening this to 1e-6. */
+static const struct { int bar; double v; } coppockPins[] =
+{
+   {  23, -13.478673401598931 },
+   {  60, -5.6416423019625759 },
+   { 100, 15.80717920778371 },
+   { 200, -22.586650343498274 },
+   { 251, -4.566857586063839 },
+};
+#define NB_COPPOCK_PINS (sizeof(coppockPins)/sizeof(coppockPins[0]))
+#define COPPOCK_PIN_REL 1e-11
+#define COPPOCK_PIN_ABS 1e-11
+
+static ErrorNumber test_coppock_differential( const TA_History *history );
+static ErrorNumber test_coppock_pins( const TA_History *history );
+static ErrorNumber test_coppock_flat_and_zero_guard( void );
+static ErrorNumber test_coppock_inplace( const TA_History *history );
+
+static ErrorNumber test_er_differential( const TA_History *history );
+static ErrorNumber test_er_kama_reconstruction( const TA_History *history );
+static ErrorNumber test_er_pins_and_edges( const TA_History *history );
+
 /**** Global functions definitions. ****/
 ErrorNumber test_func_composite2( TA_History *history )
 {
@@ -226,6 +283,34 @@ ErrorNumber test_func_composite2( TA_History *history )
       return retValue;
 
    retValue = test_smi_tulip_vector( history );
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_coppock_differential( history );
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_coppock_pins( history );
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_coppock_flat_and_zero_guard();
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_coppock_inplace( history );
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_er_differential( history );
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_er_kama_reconstruction( history );
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_er_pins_and_edges( history );
    if( retValue != TA_TEST_PASS )
       return retValue;
 
@@ -700,6 +785,697 @@ static ErrorNumber test_smi_tulip_vector( const TA_History *history )
                  outSMI[idx], smiTulip[v].smi, outSMI[idx] - smiTulip[v].smi );
          return TA_TESTUTIL_TFRR_BAD_CALCULATION;
       }
+   }
+   return TA_TEST_PASS;
+}
+
+/* ==================== COPPOCK (issue #362) ==================== */
+
+/* Build the reference from shipped primitives only: TA_ROC(p1) + TA_ROC(p2),
+ * summed over the aligned overlap, into TA_WMA(w). `startIdx` matters beyond
+ * range selection: TA_WMA's 8*w re-anchor counts from its own clamped start,
+ * and TA_COPPOCK's fused stage counts from ITS clamped start, so the WMA leg
+ * must start at the S-coordinate of the caller's clamped start or the phases
+ * -- and the memcmp -- drift apart.
+ */
+static ErrorNumber coppock_build_reference( const TA_History *history,
+                                            int startIdx,
+                                            int w, int p1, int p2,
+                                            TA_Real *ref, int *refBeg, int *refNb )
+{
+   static TA_Real r1[SMI_CAP], r2[SMI_CAP], sum[SMI_CAP], wma[SMI_CAP];
+   TA_Integer beg1, nb1, beg2, nb2, begW, nbW;
+   TA_RetCode rc;
+   int i, n, maxP, lookback, clamped, sWma;
+   int nbBars = (int)history->nbBars;
+
+   maxP = (p1 > p2) ? p1 : p2;
+   lookback = TA_COPPOCK_Lookback( w, p1, p2 );
+   clamped = (startIdx < lookback) ? lookback : startIdx;
+
+   rc = TA_ROC( 0, nbBars - 1, history->close, p1, &beg1, &nb1, r1 );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   rc = TA_ROC( 0, nbBars - 1, history->close, p2, &beg2, &nb2, r2 );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+
+   /* sum[k] is bar maxP+k -- the first bar where both ROCs exist. */
+   n = nbBars - maxP;
+   for( i = 0; i < n; i++ )
+      sum[i] = r1[maxP + i - (int)beg1] + r2[maxP + i - (int)beg2];
+
+   sWma = clamped - maxP;   /* >= w-1 because clamped >= maxP + w - 1 */
+   rc = TA_WMA( sWma, n - 1, sum, w, &begW, &nbW, wma );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+
+   *refBeg = maxP + (int)begW;
+   *refNb  = (int)nbW;
+   for( i = 0; i < (int)nbW; i++ )
+      ref[i] = wma[i];
+   return TA_TEST_PASS;
+}
+
+/* (1) COMPOSITE DIFFERENTIAL, bit-exact. Proves the fusion, not the formula:
+ * both sides could share a wrong formula, which is what the pins are for. */
+static ErrorNumber test_coppock_differential( const TA_History *history )
+{
+   unsigned int g, s;
+   int i, nbBars, nbChecked = 0;
+   TA_RetCode rc;
+   TA_Integer beg, nb;
+   ErrorNumber e;
+   int refBeg, refNb, lookback, refStart;
+   static TA_Real out[SMI_CAP], ref[SMI_CAP];
+
+   nbBars = (int)history->nbBars;
+
+   for( s = 0; s < NB_COPPOCK_START; s++ )
+   {
+      int startIdx = coppockStartGrid[s];
+
+      for( g = 0; g < NB_COPPOCK_GRID; g++ )
+      {
+         int w = coppockGrid[g].w, p1 = coppockGrid[g].p1, p2 = coppockGrid[g].p2;
+
+         rc = TA_COPPOCK( startIdx, nbBars - 1, history->close,
+                          w, p1, p2, &beg, &nb, out );
+         if( rc != TA_SUCCESS )
+         {
+            printf( "COPPOCK differential Fail [start %d w %d p1 %d p2 %d]: retCode %d\n",
+                    startIdx, w, p1, p2, (int)rc );
+            return TA_TESTUTIL_TFRR_BAD_RETCODE;
+         }
+
+         lookback = TA_COPPOCK_Lookback( w, p1, p2 );
+         refStart = (startIdx < lookback) ? lookback : startIdx;
+         if( refStart > nbBars - 1 )
+         {
+            if( nb != 0 )
+            {
+               printf( "COPPOCK differential Fail [start %d w %d p1 %d p2 %d]: "
+                       "expected no output, got nb=%d\n", startIdx, w, p1, p2, (int)nb );
+               return TA_TESTUTIL_TFRR_BAD_BEGIDX;
+            }
+            continue;
+         }
+
+         if( (int)beg != refStart || (int)nb != nbBars - refStart )
+         {
+            printf( "COPPOCK differential Fail [start %d w %d p1 %d p2 %d]: "
+                    "range (%d,%d), expected (%d,%d)\n",
+                    startIdx, w, p1, p2, (int)beg, (int)nb, refStart, nbBars - refStart );
+            return TA_TESTUTIL_TFRR_BAD_BEGIDX;
+         }
+
+         e = coppock_build_reference( history, startIdx, w, p1, p2, ref, &refBeg, &refNb );
+         if( e != TA_TEST_PASS )
+         {
+            printf( "COPPOCK differential Fail [start %d w %d p1 %d p2 %d]: "
+                    "reference construction failed\n", startIdx, w, p1, p2 );
+            return e;
+         }
+         if( refBeg != (int)beg || refNb != (int)nb )
+         {
+            printf( "COPPOCK differential Fail [start %d w %d p1 %d p2 %d]: "
+                    "reference range (%d,%d) vs (%d,%d)\n",
+                    startIdx, w, p1, p2, refBeg, refNb, (int)beg, (int)nb );
+            return TA_TESTUTIL_TFRR_BAD_BEGIDX;
+         }
+
+         /* Bit-exact, element by element (memcmp semantics with a usable
+          * diagnostic on the first divergence). */
+         for( i = 0; i < (int)nb; i++ )
+         {
+            if( memcmp( &out[i], &ref[i], sizeof(TA_Real) ) != 0 )
+            {
+               printf( "COPPOCK differential Fail [start %d w %d p1 %d p2 %d] bar %d: "
+                       "fused %.17g != composed %.17g\n",
+                       startIdx, w, p1, p2, (int)beg + i, out[i], ref[i] );
+               return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+            }
+            nbChecked++;
+         }
+      }
+   }
+
+   if( nbChecked < 5000 )
+   {
+      printf( "COPPOCK differential Fail: only %d value(s) compared; the grid has "
+              "been reduced to the point where this leg is no longer evidence\n", nbChecked );
+      return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+   }
+   return TA_TEST_PASS;
+}
+
+/* (2) EXTERNAL PINS: the formula leg. See the table's comment for provenance
+ * and for why the tolerance is 1e-11 and must not be loosened. */
+static ErrorNumber test_coppock_pins( const TA_History *history )
+{
+   unsigned int p;
+   TA_RetCode rc;
+   TA_Integer beg, nb;
+   double err;
+   const char *mode;
+   static TA_Real out[SMI_CAP];
+
+   rc = TA_COPPOCK( 0, (int)history->nbBars - 1, history->close,
+                    10, 11, 14, &beg, &nb, out );
+   if( rc != TA_SUCCESS )
+   {
+      printf( "COPPOCK pins Fail: retCode %d\n", (int)rc );
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   }
+   if( beg != 23 || nb != 229 )
+   {
+      printf( "COPPOCK pins Fail: range (%d,%d), the pandas capture had (23,229)\n",
+              (int)beg, (int)nb );
+      return TA_TESTUTIL_TFRR_BAD_BEGIDX;
+   }
+   for( p = 0; p < NB_COPPOCK_PINS; p++ )
+   {
+      int idx = coppockPins[p].bar - (int)beg;
+      if( !checkOracleValue( out[idx], coppockPins[p].v,
+                             COPPOCK_PIN_REL, COPPOCK_PIN_ABS, &err, &mode ) )
+      {
+         printf( "COPPOCK pins Fail bar %d: got %.17g expected %.17g "
+                 "(%s=%.3e > rel %.3e / abs %.3e)\n",
+                 coppockPins[p].bar, out[idx], coppockPins[p].v, mode, err,
+                 COPPOCK_PIN_REL, COPPOCK_PIN_ABS );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+   return TA_TEST_PASS;
+}
+
+/* (3) FLAT INPUT => exactly 0.0 everywhere (every ROC is 0), and a ZERO in
+ * the input => every output finite AND equal to the composed reference.
+ *
+ * The flat half proves nothing about the guard: a flat series never divides by
+ * zero, so it takes the non-guard arm and its exact zeros are an accident of
+ * the data. Finiteness alone does not pin the guard either -- any finite
+ * neutral passes it. What pins it is the memcmp below against
+ * TA_ROC + TA_ROC -> TA_WMA, which carries TA_ROC's own guard: change
+ * COPPOCK's neutral away from 0.0 and that comparison is what fails. */
+static ErrorNumber test_coppock_flat_and_zero_guard( void )
+{
+   static TA_Real in[64], out[64];
+   TA_RetCode rc;
+   TA_Integer beg, nb;
+   int i, sawNonZero;
+
+   for( i = 0; i < 64; i++ )
+      in[i] = 100.0;
+   rc = TA_COPPOCK( 0, 63, in, 10, 11, 14, &beg, &nb, out );
+   if( rc != TA_SUCCESS || nb <= 0 )
+   {
+      printf( "COPPOCK flat Fail: retCode %d nb %d\n", (int)rc, (int)nb );
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   }
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( out[i] != 0.0 )
+      {
+         printf( "COPPOCK flat Fail bar %d: %.17g != 0.0 exactly\n", (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   /* One zero mid-series: both ROC denominators cross it. */
+   for( i = 0; i < 64; i++ )
+      in[i] = 100.0 + (double)(i % 7);
+   in[30] = 0.0;
+   rc = TA_COPPOCK( 0, 63, in, 10, 11, 14, &beg, &nb, out );
+   if( rc != TA_SUCCESS || nb <= 0 )
+   {
+      printf( "COPPOCK zero-guard Fail: retCode %d nb %d\n", (int)rc, (int)nb );
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   }
+   sawNonZero = 0;
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( !(out[i] > -1e15 && out[i] < 1e15) )   /* catches inf and NaN */
+      {
+         printf( "COPPOCK zero-guard Fail bar %d: %.17g is not finite\n",
+                 (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+      if( out[i] != 0.0 )
+         sawNonZero = 1;
+   }
+   {
+      /* TA_ROC's guard is the arbiter of what a zero denominator contributes. */
+      static TA_Real gr1[64], gr2[64], gsum[64], gwma[64];
+      TA_Integer gb1, gn1, gb2, gn2, gbW, gnW;
+      int gi, gn, gmaxP, glb, gsWma;
+
+      gmaxP = 14;
+      glb   = TA_COPPOCK_Lookback( 10, 11, 14 );
+      if( TA_ROC( 0, 63, in, 11, &gb1, &gn1, gr1 ) != TA_SUCCESS ||
+          TA_ROC( 0, 63, in, 14, &gb2, &gn2, gr2 ) != TA_SUCCESS )
+      {
+         printf( "COPPOCK zero-guard Fail: reference TA_ROC failed\n" );
+         return TA_TESTUTIL_TFRR_BAD_RETCODE;
+      }
+      gn = 64 - gmaxP;
+      for( gi = 0; gi < gn; gi++ )
+         gsum[gi] = gr1[gmaxP + gi - (int)gb1] + gr2[gmaxP + gi - (int)gb2];
+      gsWma = glb - gmaxP;
+      if( TA_WMA( gsWma, gn - 1, gsum, 10, &gbW, &gnW, gwma ) != TA_SUCCESS )
+      {
+         printf( "COPPOCK zero-guard Fail: reference TA_WMA failed\n" );
+         return TA_TESTUTIL_TFRR_BAD_RETCODE;
+      }
+      if( (int)nb != (int)gnW )
+      {
+         printf( "COPPOCK zero-guard Fail: nb %d != reference %d\n",
+                 (int)nb, (int)gnW );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+      for( gi = 0; gi < (int)gnW; gi++ )
+      {
+         if( memcmp( &out[gi], &gwma[gi], sizeof(TA_Real) ) != 0 )
+         {
+            printf( "COPPOCK zero-guard Fail bar %d: %.17g != composed %.17g "
+                    "(the ROC zero-guard neutral is not TA_ROC's)\n",
+                    (int)beg + gi, out[gi], gwma[gi] );
+            return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+         }
+      }
+   }
+
+   if( !sawNonZero )
+   {
+      printf( "COPPOCK zero-guard Fail: every output is 0.0 -- the leg is vacuous\n" );
+      return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+   }
+   return TA_TEST_PASS;
+}
+
+/* (4) IN-PLACE: outReal == inReal. The fused loop's lowest read at iteration
+ * k is index k and its write is out[k], read before write -- assert it
+ * instead of trusting the comment. */
+static ErrorNumber test_coppock_inplace( const TA_History *history )
+{
+   static TA_Real buf[SMI_CAP], out[SMI_CAP];
+   TA_RetCode rc;
+   TA_Integer beg1, nb1, beg2, nb2;
+   int i, nbBars = (int)history->nbBars;
+
+   for( i = 0; i < nbBars; i++ )
+      buf[i] = history->close[i];
+
+   rc = TA_COPPOCK( 0, nbBars - 1, history->close, 10, 11, 14, &beg1, &nb1, out );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   rc = TA_COPPOCK( 0, nbBars - 1, buf, 10, 11, 14, &beg2, &nb2, buf );
+   if( rc != TA_SUCCESS )
+   {
+      printf( "COPPOCK in-place Fail: retCode %d\n", (int)rc );
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   }
+   if( beg1 != beg2 || nb1 != nb2 )
+   {
+      printf( "COPPOCK in-place Fail: range (%d,%d) vs (%d,%d)\n",
+              (int)beg2, (int)nb2, (int)beg1, (int)nb1 );
+      return TA_TESTUTIL_TFRR_BAD_BEGIDX;
+   }
+   for( i = 0; i < (int)nb1; i++ )
+   {
+      if( memcmp( &buf[i], &out[i], sizeof(TA_Real) ) != 0 )
+      {
+         printf( "COPPOCK in-place Fail bar %d: aliased %.17g != separate %.17g\n",
+                 (int)beg1 + i, buf[i], out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+   return TA_TEST_PASS;
+}
+
+/* ==================== ER (issue #350) ==================== */
+
+/* Frozen goldens on TA_SREF close, P=10: pandas-ta-classic 0.6.52 (bitwise
+ * identical there to a faithful transcription on this corpus, per the issue's
+ * measurement). rel 1e-12, not bitwise: pandas' rolling sum is
+ * Kahan-compensated where this is a plain running total. */
+static const struct { int bar; double v; } erPins[] =
+{
+   {  10, 0.2689735388194244 },
+   {  12, 0.2608283275371483 },
+   {  60, 0.029812292970187775 },
+   { 135, 0.20913884007029845 },
+   { 210, 0.3852895148669799 },
+   { 251, 0.15714285714285622 },
+};
+#define NB_ER_PINS (sizeof(erPins)/sizeof(erPins[0]))
+#define ER_PIN_REL 1e-12
+#define ER_PIN_ABS 1e-12
+
+static const int erPeriodGrid[] = { 2, 10, 30, 100 };
+#define NB_ER_PERIOD (sizeof(erPeriodGrid)/sizeof(erPeriodGrid[0]))
+static const int erStartGrid[] = { 0, 1, 10, 11, 100, 251 };
+#define NB_ER_START (sizeof(erStartGrid)/sizeof(erStartGrid[0]))
+
+/* (1) COMPOSITE DIFFERENTIAL, bit-exact. Reference: shipped TA_MOM(c, P) for
+ * the numerator, |TA_MOM(c, 1)| -> TA_SUM(P) for the path, then this
+ * function's own two decisions re-applied: the flat-run purge and the signed
+ * `sum <= mom` clamp. Like SMI it is NOT a pure composition -- the guards are
+ * hand-written -- which is why it lives here and not test_composite.c. TA_SUM
+ * is anchored at the fused loop's clamped start (its running sum rounds
+ * differently from a fresh prime). Proves the fusion, not the formula. */
+static ErrorNumber test_er_differential( const TA_History *history )
+{
+   static TA_Real momP[SMI_CAP], mom1[SMI_CAP], absm[SMI_CAP], sums[SMI_CAP];
+   static TA_Real out[SMI_CAP], ref[SMI_CAP];
+   TA_RetCode rc;
+   TA_Integer beg, nb, begS, nbS;
+   unsigned int p, s;
+   int i, n, startIdx, refStart, nbBars, nullRun, nbChecked = 0;
+   double sum, mom;
+
+   nbBars = (int)history->nbBars;
+
+   for( s = 0; s < NB_ER_START; s++ )
+   {
+      startIdx = erStartGrid[s];
+      for( p = 0; p < NB_ER_PERIOD; p++ )
+      {
+         n = erPeriodGrid[p];
+
+         rc = TA_ER( startIdx, nbBars - 1, history->close, n, &beg, &nb, out );
+         if( rc != TA_SUCCESS )
+         {
+            printf( "ER differential Fail [start %d n %d]: retCode %d\n",
+                    startIdx, n, (int)rc );
+            return TA_TESTUTIL_TFRR_BAD_RETCODE;
+         }
+         refStart = (startIdx < n) ? n : startIdx;
+         if( refStart > nbBars - 1 )
+         {
+            if( nb != 0 )
+               return TA_TESTUTIL_TFRR_BAD_BEGIDX;
+            continue;
+         }
+         if( (int)beg != refStart || (int)nb != nbBars - refStart )
+         {
+            printf( "ER differential Fail [start %d n %d]: range (%d,%d)\n",
+                    startIdx, n, (int)beg, (int)nb );
+            return TA_TESTUTIL_TFRR_BAD_BEGIDX;
+         }
+
+         /* Numerator: signed MOM(P) at each output bar. */
+         rc = TA_MOM( refStart, nbBars - 1, history->close, n, &begS, &nbS, momP );
+         if( rc != TA_SUCCESS || (int)begS != refStart )
+            return TA_TESTUTIL_TFRR_BAD_RETCODE;
+         /* Path: |1-bar changes|, then TA_SUM(P) anchored at the clamped
+          * start. mom1 slot i-1 is the change into bar i, TRANGE-style. */
+         rc = TA_MOM( 1, nbBars - 1, history->close, 1, &begS, &nbS, mom1 );
+         if( rc != TA_SUCCESS || (int)begS != 1 )
+            return TA_TESTUTIL_TFRR_BAD_RETCODE;
+         for( i = 0; i < (int)nbS; i++ )
+            absm[i] = fabs( mom1[i] );
+         rc = TA_SUM( refStart - 1, (int)nbS - 1, absm, n, &begS, &nbS, sums );
+         if( rc != TA_SUCCESS )
+            return TA_TESTUTIL_TFRR_BAD_RETCODE;
+
+         /* Re-apply the two decisions: flat purge and signed clamp. */
+         nullRun = 0;
+         for( i = 0; i < (int)nb; i++ )
+         {
+            int bar = refStart + i;
+            /* track the flat run over the window ending at `bar` */
+            if( i == 0 )
+            {
+               int k;
+               nullRun = 0;
+               for( k = bar - n + 1; k <= bar; k++ )
+               {
+                  if( history->close[k] - history->close[k-1] == 0.0 )
+                     nullRun++;
+                  else
+                     nullRun = 0;
+               }
+            }
+            else
+            {
+               if( history->close[bar] - history->close[bar-1] == 0.0 )
+                  nullRun++;
+               else
+                  nullRun = 0;
+            }
+            sum = sums[i];
+            if( nullRun >= n )
+               sum = 0.0;
+            mom = momP[i];
+            if( sum <= mom )
+               ref[i] = 1.0;
+            else
+               ref[i] = fabs( mom / sum );
+            if( memcmp( &out[i], &ref[i], sizeof(TA_Real) ) != 0 )
+            {
+               printf( "ER differential Fail [start %d n %d] bar %d: fused %.17g "
+                       "!= composed %.17g\n", startIdx, n, bar, out[i], ref[i] );
+               return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+            }
+            nbChecked++;
+         }
+      }
+   }
+   if( nbChecked < 3000 )
+   {
+      printf( "ER differential Fail: only %d value(s) compared\n", nbChecked );
+      return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+   }
+   return TA_TEST_PASS;
+}
+
+/* (2) KAMA RECONSTRUCTION: rebuild TA_KAMA from TA_ER and memcmp. Bit-exact
+ * by construction -- a regression guard against future drift between the two
+ * bodies, not independent evidence. KAMA's smoothing constants are fixed
+ * fast=2/slow=30. */
+static ErrorNumber test_er_kama_reconstruction( const TA_History *history )
+{
+   static TA_Real er[SMI_CAP], kama[SMI_CAP], recon[SMI_CAP];
+   const double constMax = 2.0/(30.0+1.0);
+   const double constDiff = 2.0/(2.0+1.0) - constMax;
+   TA_RetCode rc;
+   TA_Integer begE, nbE, begK, nbK;
+   int i, n = 10, nbBars = (int)history->nbBars;
+   double prev, sc;
+
+   TA_SetUnstablePeriod( TA_FUNC_UNST_KAMA, 0 );
+   rc = TA_ER( 0, nbBars - 1, history->close, n, &begE, &nbE, er );
+   if( rc != TA_SUCCESS || begE != n )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   rc = TA_KAMA( 0, nbBars - 1, history->close, n, &begK, &nbK, kama );
+   if( rc != TA_SUCCESS || begK != n || nbK != nbE )
+   {
+      printf( "ER/KAMA Fail: KAMA range (%d,%d) vs ER (%d,%d)\n",
+              (int)begK, (int)nbK, (int)begE, (int)nbE );
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   }
+
+   prev = history->close[n-1];   /* kama.c seeds on the bar before the first output */
+   for( i = 0; i < (int)nbE; i++ )
+   {
+      /* The generated ta_KAMA.c lowers both steps through explicit fma()
+       * (#183's EMA-recursion treatment) -- the reconstruction must too, or
+       * it diverges in the last bit. */
+      sc = fma( er[i], constDiff, constMax );
+      sc *= sc;
+      prev = fma( history->close[n + i] - prev, sc, prev );
+      recon[i] = prev;
+   }
+   if( memcmp( recon, kama, (size_t)nbK * sizeof(TA_Real) ) != 0 )
+   {
+      for( i = 0; i < (int)nbK; i++ )
+         if( memcmp( &recon[i], &kama[i], sizeof(TA_Real) ) != 0 ) break;
+      printf( "ER/KAMA Fail bar %d: reconstructed %.17g != TA_KAMA %.17g -- the "
+              "two bodies have drifted\n", n + i, recon[i], kama[i] );
+      return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+   }
+   return TA_TEST_PASS;
+}
+
+/* (3) PINS + (4) EDGES. */
+static ErrorNumber test_er_pins_and_edges( const TA_History *history )
+{
+   static TA_Real out[SMI_CAP], ref[SMI_CAP], buf[SMI_CAP];
+   TA_RetCode rc;
+   TA_Integer beg, nb;
+   double err;
+   const char *mode;
+   unsigned int p;
+   int i, nbOver, nbBars = (int)history->nbBars;
+
+   rc = TA_ER( 0, nbBars - 1, history->close, 10, &beg, &nb, out );
+   if( rc != TA_SUCCESS || beg != 10 || nb != nbBars - 10 )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( p = 0; p < NB_ER_PINS; p++ )
+   {
+      int idx = erPins[p].bar - (int)beg;
+      if( !checkOracleValue( out[idx], erPins[p].v, ER_PIN_REL, ER_PIN_ABS,
+                             &err, &mode ) )
+      {
+         printf( "ER pins Fail bar %d: got %.17g expected %.17g (%s=%.3e)\n",
+                 erPins[p].bar, out[idx], erPins[p].v, mode, err );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   /* Dead-flat from bar 0: 0/0 answers exactly 1.0 through `0 <= 0`, never
+    * NaN. The priming sum is already an exact 0.0 here, so this leg says
+    * nothing about the nullRun purge -- the one below is what sees it. */
+   for( i = 0; i < 64; i++ )
+      buf[i] = 100.0;
+   rc = TA_ER( 0, 63, buf, 10, &beg, &nb, out );
+   if( rc != TA_SUCCESS || nb <= 0 )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( out[i] != 1.0 )
+      {
+         printf( "ER flat Fail bar %d: %.17g != exact 1.0\n", (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   /* Flat AFTER live bars, which is the only shape the nullRun purge can
+    * change. Three unit steps and one 1e16 step: past the big one the unit
+    * steps are below an ULP of the price, so the series is flat from bar 3
+    * on while the running sum still carries the priming window's residue.
+    * Once the window is entirely flat the numerator is an exact 0.0 and that
+    * residue is POSITIVE -- which the clamp cannot mask, since `residue <= 0`
+    * is false -- so an unpurged sum reports 0.0 and reads a dead-flat market
+    * as maximally inefficient. The purge starts firing at bar 14; asserting
+    * from bar 20 (the first window lying wholly in the flat tail) keeps the
+    * claim simple. Delete the purge in er.c and every asserted bar goes red
+    * at 0.0; the flat-from-bar-0 leg above stays green. */
+   buf[0] = 100.0;
+   for( i = 1; i <= 10; i++ )
+      buf[i] = buf[i-1] + ( i == 3 ? 1.0e16 : 1.0 );
+   for( i = 11; i < 64; i++ )
+      buf[i] = buf[10];
+   rc = TA_ER( 0, 63, buf, 10, &beg, &nb, out );
+   if( rc != TA_SUCCESS || nb <= 0 )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( (int)beg + i >= 20 && out[i] != 1.0 )
+      {
+         printf( "ER purge Fail bar %d: %.17g != exact 1.0 -- a flat window "
+                 "carrying the running sum's residue\n", (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   /* Round trip (c[t] == c[t-P] with movement in between) => exactly 0.0:
+    * the numerator is an exact 0 and the path sum is positive. */
+   for( i = 0; i < 64; i++ )
+      buf[i] = ( i & 1 ) ? 101.0 : 100.0;   /* zigzag; even P=10 => MOM(10) == 0 */
+   rc = TA_ER( 0, 63, buf, 10, &beg, &nb, out );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( out[i] != 0.0 )
+      {
+         printf( "ER zigzag Fail bar %d: %.17g != exact 0.0\n", (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   /* Monotone UP: the clamp fires (sum == mom in exact math; FP can nudge
+    * the raw ratio above 1) => exactly 1.0 everywhere. */
+   for( i = 0; i < 64; i++ )
+      buf[i] = 100.0 + (double)i * 0.7;
+   rc = TA_ER( 0, 63, buf, 10, &beg, &nb, out );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( out[i] != 1.0 )
+      {
+         printf( "ER monotone-up Fail bar %d: %.17g != exact 1.0 -- the signed "
+                 "clamp did not fire\n", (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   /* Monotone DOWN: the clamp compares against the SIGNED numerator, so it
+    * never fires here and the raw fabs ratio is free to exceed 1.0 by a few
+    * ULP. A uniform decrement does not show it -- the sum comes out exactly
+    * equal to the net move on every window, so the band is satisfied under
+    * the fabs clamp `er.c` forbids just as well. These two alternating
+    * decrements put 24 of the 54 outputs strictly above 1.0, which is what
+    * the forbidden edit would pin back to exactly 1.0.
+    *
+    * So: the band, AND a count of bars that are strictly greater than 1.0.
+    * The count is the discriminating half; the band is what keeps it honest
+    * about the magnitude. */
+   for( i = 0; i < 64; i++ )
+      buf[i] = ( i == 0 ) ? 77.04
+                          : buf[i-1] - ( ( i & 1 ) ? 1.8512 : 1.9002 );
+   rc = TA_ER( 0, 63, buf, 10, &beg, &nb, out );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   nbOver = 0;
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( !(out[i] > 1.0 - 1e-12 && out[i] < 1.0 + 1e-12) )
+      {
+         printf( "ER monotone-down Fail bar %d: %.17g outside 1 +- 1e-12\n",
+                 (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+      if( out[i] > 1.0 )
+         nbOver++;
+   }
+   if( nbOver == 0 )
+   {
+      printf( "ER monotone-down Fail: no output exceeded 1.0 -- the clamp is "
+              "no longer asymmetric, or the series stopped discriminating\n" );
+      return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+   }
+
+   /* Zero denominator on a window that is NOT flat. A step absorbed on the
+    * way into the running sum is subtracted later at full precision, so the
+    * sum can reach exactly 0.0 while live terms remain in the window. Paired
+    * with a down move the clamp is false (`0.0 <= negative`), and without
+    * er.c's `sumROC1 <= 0.0` guard the division returns +Inf. The nullRun
+    * purge does not cover this: the window is not flat. */
+   buf[0] = 1.0e16;
+   buf[1] = 0.0;
+   buf[2] = -1.0;
+   buf[3] = -2.0;
+   buf[4] = -3.0;
+   for( i = 5; i < 64; i++ )
+      buf[i] = -4.0;
+   rc = TA_ER( 0, 63, buf, 5, &beg, &nb, out );
+   if( rc != TA_SUCCESS || nb <= 0 )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( i = 0; i < (int)nb; i++ )
+   {
+      if( !TA_IS_FINITE( out[i] ) || out[i] > 1.0 + 1e-12 )
+      {
+         printf( "ER zero-denominator Fail bar %d: %.17g -- the path sum "
+                 "reached 0.0 on a live window\n", (int)beg + i, out[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   /* In-place aliasing: the trailingValue cache is what makes it safe. */
+   rc = TA_ER( 0, nbBars - 1, history->close, 10, &beg, &nb, ref );
+   if( rc != TA_SUCCESS )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( i = 0; i < nbBars; i++ )
+      buf[i] = history->close[i];
+   rc = TA_ER( 0, nbBars - 1, buf, 10, &beg, &nb, buf );
+   if( rc != TA_SUCCESS || memcmp( buf, ref, (size_t)nb * sizeof(TA_Real) ) != 0 )
+   {
+      printf( "ER in-place Fail: aliased call differs from separate-buffer call\n" );
+      return TA_TESTUTIL_TFRR_BAD_CALCULATION;
    }
    return TA_TEST_PASS;
 }

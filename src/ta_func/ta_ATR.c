@@ -57,6 +57,8 @@
  *  052603 MF     Adapt code to compile with .NET Managed C++
  *  070626 MF,CC  Speed optimization: True Range computed inline in a
  *                single pass (bit-exact, no temporary buffer).
+ *  090326 MF,CC  #338 Two-coefficient Wilder step; no divide in the
+ *                loop-carried chain.
  */
 
 TA_LIB_API int TA_ATR_Lookback( int optInTimePeriod )
@@ -75,6 +77,7 @@ TA_LIB_API int TA_ATR_Lookback( int optInTimePeriod )
    return optInTimePeriod + TA_GLOBALS_UNSTABLE_PERIOD(TA_FUNC_UNST_ATR,Atr);
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_ATR( int    startIdx,
                               int    endIdx,
                               const double inHigh[],
@@ -92,6 +95,8 @@ TA_LIB_API TA_RetCode TA_ATR( int    startIdx,
    int nbATR;
    double prevATR;
    double periodTotal;
+   double wAlpha;
+   double wBeta;
    double val2;
    double val3;
    double greatest;
@@ -142,22 +147,29 @@ TA_LIB_API TA_RetCode TA_ATR( int    startIdx,
    {
       return TA_SUCCESS;
    }
-   /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-    * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR),
-    * so the single general path handles every period >= 1.
+   /* wAlpha is derived FROM wBeta, never the reverse: only that order makes
+    * wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
+    * measures closer to the exact recursion than the 1/period-first spelling
+    * at nearly every period. The order is a gated contract, not a preference:
+    * swapping it reddens the frozen v0.6.4 comparison, and breaks the
+    * bit-for-bit identity TA_RMA(TA_TRANGE(h,l,c),n) == TA_ATR(n).
+    * The pair is exactly (1, 0) at period 1 -- hence no period-1 arm.
     */
+   wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
+   wAlpha = 1.0 - wBeta;
    /* The True Range of each bar is computed inline in a single
     * pass. No temporary buffer is needed.
     *
     * The arithmetic order below is the bit-exactness contract
-    * (do not reorder or fuse operations):
+    * (do not reorder):
     *  - True Range: start from high-low, then compare/replace
     *    with the two previous-close distances, in that order.
     *  - Seed: the first 'period' True Range values are summed,
     *    accumulated from 0.0 in input order, then divided by
     *    the period.
-    *  - Wilder smoothing: multiply by period-1, add the True
-    *    Range, divide by period, as three separate statements.
+    *  - Wilder smoothing: ONE statement. Splitting it back
+    *    unfuses the multiply-add and puts a second latency on
+    *    the recurrence's dependency chain.
     *
     * In-place (outReal being one of the input arrays) is
     * supported: each output is written only after every input
@@ -195,12 +207,6 @@ TA_LIB_API TA_RetCode TA_ATR( int    startIdx,
       today += 1;
    }
    prevATR = periodTotal / optInTimePeriod;
-   /* Subsequent value are smoothed using the
-    * previous ATR value (Wilder's approach).
-    *  1) Multiply the previous ATR by 'period-1'.
-    *  2) Add today TR value.
-    *  3) Divide by 'period'.
-    */
    /* Skip the unstable period. */
    i = TA_GLOBALS_UNSTABLE_PERIOD(TA_FUNC_UNST_ATR,Atr);
    while( i != 0 )
@@ -221,9 +227,7 @@ TA_LIB_API TA_RetCode TA_ATR( int    startIdx,
       {
          greatest = val3;
       }
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = fma(wBeta, prevATR, wAlpha * greatest);
       today += 1;
       i -= 1;
    }
@@ -252,9 +256,7 @@ TA_LIB_API TA_RetCode TA_ATR( int    startIdx,
       {
          greatest = val3;
       }
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = fma(wBeta, prevATR, wAlpha * greatest);
       outReal[outIdx++] = prevATR;
       today += 1;
    }
@@ -263,6 +265,7 @@ TA_LIB_API TA_RetCode TA_ATR( int    startIdx,
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_RetCode TA_S_ATR( int    startIdx,
                      int    endIdx,
                      const float inHigh[],
@@ -280,6 +283,8 @@ TA_RetCode TA_S_ATR( int    startIdx,
    int nbATR;
    double prevATR;
    double periodTotal;
+   double wAlpha;
+   double wBeta;
    double val2;
    double val3;
    double greatest;
@@ -318,6 +323,8 @@ TA_RetCode TA_S_ATR( int    startIdx,
    {
       return TA_SUCCESS;
    }
+   wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
+   wAlpha = 1.0 - wBeta;
    today = startIdx - lookbackTotal + 1;
    periodTotal = 0.0;
    i = optInTimePeriod;
@@ -358,9 +365,7 @@ TA_RetCode TA_S_ATR( int    startIdx,
       {
          greatest = val3;
       }
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = fma(wBeta, prevATR, wAlpha * greatest);
       today += 1;
       i -= 1;
    }
@@ -383,9 +388,7 @@ TA_RetCode TA_S_ATR( int    startIdx,
       {
          greatest = val3;
       }
-      prevATR *= optInTimePeriod - 1;
-      prevATR += greatest;
-      prevATR /= optInTimePeriod;
+      prevATR = fma(wBeta, prevATR, wAlpha * greatest);
       outReal[outIdx++] = prevATR;
       today += 1;
    }
@@ -397,12 +400,16 @@ TA_RetCode TA_S_ATR( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_ATR_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_ATR_Value). */
+   double cur_outReal;
    int optInTimePeriod;
    double prevATR;
+   double wAlpha;
+   double wBeta;
    double lag1_inClose;
 };
 
@@ -432,10 +439,9 @@ static void TA_ATR_StepImpl( struct TA_ATR_Stream *sp, double inHigh, double inL
    {
       greatest = val3;
    }
-   sp->prevATR *= sp->optInTimePeriod - 1;
-   sp->prevATR += greatest;
-   sp->prevATR /= sp->optInTimePeriod;
+   sp->prevATR = fma(sp->wBeta, sp->prevATR, sp->wAlpha * greatest);
    *outReal= sp->prevATR;
+   sp->cur_outReal = *outReal;
    sp->lag1_inClose = inClose;
 }
 
@@ -443,8 +449,6 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
 {
    struct TA_ATR_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -463,9 +467,6 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int i;
@@ -475,6 +476,8 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
       int nbATR;
       double prevATR = 0.0;
       double periodTotal;
+      double wAlpha = 0.0;
+      double wBeta = 0.0;
       double val2;
       double val3;
       double greatest;
@@ -504,22 +507,29 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
       {
          return TA_INSUFFICIENT_HISTORY;
       }
-      /* Period 1 needs no smoothing: the Wilder recursion below degenerates
-       * to the raw True Range at every bar (prevATR = (prevATR*0 + TR)/1 = TR),
-       * so the single general path handles every period >= 1.
+      /* wAlpha is derived FROM wBeta, never the reverse: only that order makes
+       * wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
+       * measures closer to the exact recursion than the 1/period-first spelling
+       * at nearly every period. The order is a gated contract, not a preference:
+       * swapping it reddens the frozen v0.6.4 comparison, and breaks the
+       * bit-for-bit identity TA_RMA(TA_TRANGE(h,l,c),n) == TA_ATR(n).
+       * The pair is exactly (1, 0) at period 1 -- hence no period-1 arm.
        */
+      wBeta = (double)(optInTimePeriod - 1) / (double)optInTimePeriod;
+      wAlpha = 1.0 - wBeta;
       /* The True Range of each bar is computed inline in a single
        * pass. No temporary buffer is needed.
        *
        * The arithmetic order below is the bit-exactness contract
-       * (do not reorder or fuse operations):
+       * (do not reorder):
        *  - True Range: start from high-low, then compare/replace
        *    with the two previous-close distances, in that order.
        *  - Seed: the first 'period' True Range values are summed,
        *    accumulated from 0.0 in input order, then divided by
        *    the period.
-       *  - Wilder smoothing: multiply by period-1, add the True
-       *    Range, divide by period, as three separate statements.
+       *  - Wilder smoothing: ONE statement. Splitting it back
+       *    unfuses the multiply-add and puts a second latency on
+       *    the recurrence's dependency chain.
        *
        * In-place (outReal being one of the input arrays) is
        * supported: each output is written only after every input
@@ -557,12 +567,6 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
          today += 1;
       }
       prevATR = periodTotal / optInTimePeriod;
-      /* Subsequent value are smoothed using the
-       * previous ATR value (Wilder's approach).
-       *  1) Multiply the previous ATR by 'period-1'.
-       *  2) Add today TR value.
-       *  3) Divide by 'period'.
-       */
       /* Skip the unstable period. */
       i = TA_GLOBALS_UNSTABLE_PERIOD(TA_FUNC_UNST_ATR,Atr);
       while( i != 0 )
@@ -583,9 +587,7 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
          {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = fma(wBeta, prevATR, wAlpha * greatest);
          today += 1;
          i -= 1;
       }
@@ -614,9 +616,7 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
          {
             greatest = val3;
          }
-         prevATR *= optInTimePeriod - 1;
-         prevATR += greatest;
-         prevATR /= optInTimePeriod;
+         prevATR = fma(wBeta, prevATR, wAlpha * greatest);
          outReal[outIdx++ * outStride] = prevATR;
          today += 1;
       }
@@ -629,9 +629,12 @@ static TA_RetCode TA_ATR_OpenImpl( struct TA_ATR_Stream **stream, const double i
       memset( sp, 0, sizeof(*sp) );
       sp->optInTimePeriod = optInTimePeriod;
       sp->prevATR = prevATR;
+      sp->wAlpha = wAlpha;
+      sp->wBeta = wBeta;
       sp->lag1_inClose = inClose[historyLen - 1];
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -682,26 +685,31 @@ TA_RetCode TA_ATR_OpenAndFillInternal( struct TA_ATR_Stream **stream, const doub
 TA_LIB_API TA_RetCode TA_ATR_Update( TA_ATR_Stream *stream, double inHigh, double inLow, double inClose, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_ATR_StepImpl( stream, inHigh, inLow, inClose, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_ATR_Peek( const TA_ATR_Stream *stream, double inHigh, double inLow, double inClose, double *outReal )
 {
-   struct TA_ATR_Stream scratch;
-   struct TA_ATR_Stream *sp = &scratch;
+   const struct TA_ATR_Stream *sp = stream;
    double val2;
    double val3;
    double greatest;
    double tempCY;
    double tempLT;
    double tempHT;
+   double prevATR;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   prevATR = sp->prevATR;
    /* Find the greatest of the 3 values. */
    tempLT = inLow;
    tempHT = inHigh;
@@ -718,33 +726,35 @@ TA_LIB_API TA_RetCode TA_ATR_Peek( const TA_ATR_Stream *stream, double inHigh, d
    {
       greatest = val3;
    }
-   sp->prevATR *= sp->optInTimePeriod - 1;
-   sp->prevATR += greatest;
-   sp->prevATR /= sp->optInTimePeriod;
-   *outReal= sp->prevATR;
-   sp->lag1_inClose = inClose;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_ATR_UpdateAndFill( TA_ATR_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow || (const void *)outReal == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) ) return TA_BAD_PARAM;
-      TA_ATR_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
+   prevATR = fma(sp->wBeta, prevATR, sp->wAlpha * greatest);
+   *outReal= prevATR;
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_ATR_Close( TA_ATR_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ATR_Value( const TA_ATR_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ATR_Clone( const TA_ATR_Stream *stream, TA_ATR_Stream **clone )
+{
+   struct TA_ATR_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_ATR_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   *clone = sp;
    return TA_SUCCESS;
 }
 

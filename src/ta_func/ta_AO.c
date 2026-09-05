@@ -314,10 +314,12 @@ TA_RetCode TA_S_AO( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_AO_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_AO_Value). */
+   double cur_outReal;
    int optInFastPeriod;
    int optInSlowPeriod;
    double sumFast;
@@ -369,6 +371,7 @@ static void TA_AO_StepImpl( struct TA_AO_Stream *sp, double inHigh, double inLow
    sp->sumFast -= sp->ring_trailingFastIdx_derived[sp->ringPos_trailingFastIdx];
    sp->sumSlow -= sp->ring_trailingSlowIdx_derived[sp->ringPos_trailingSlowIdx];
    *outReal= tempReal;
+   sp->cur_outReal = *outReal;
    sp->ring_trailingFastIdx_derived[sp->ringPos_trailingFastIdx] = (inHigh + inLow) / 2.0;
    sp->ringPos_trailingFastIdx = sp->ringPos_trailingFastIdx + 1;
    if( sp->ringPos_trailingFastIdx >= sp->ringCap_trailingFastIdx )
@@ -387,8 +390,6 @@ static TA_RetCode TA_AO_OpenImpl( struct TA_AO_Stream **stream, const double inH
 {
    struct TA_AO_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -411,9 +412,6 @@ static TA_RetCode TA_AO_OpenImpl( struct TA_AO_Stream **stream, const double inH
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       double sumFast = 0.0;
@@ -560,6 +558,7 @@ static TA_RetCode TA_AO_OpenImpl( struct TA_AO_Stream **stream, const double inH
       sp->ringPos_trailingSlowIdx = 0;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -610,7 +609,11 @@ TA_RetCode TA_AO_OpenAndFillInternal( struct TA_AO_Stream **stream, const double
 TA_LIB_API TA_RetCode TA_AO_Update( TA_AO_Stream *stream, double inHigh, double inLow, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_AO_StepImpl( stream, inHigh, inLow, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
@@ -618,10 +621,13 @@ TA_LIB_API TA_RetCode TA_AO_Update( TA_AO_Stream *stream, double inHigh, double 
 
 TA_LIB_API TA_RetCode TA_AO_Peek( const TA_AO_Stream *stream, double inHigh, double inLow, double *outReal )
 {
-   struct TA_AO_Stream scratch;
-   struct TA_AO_Stream *sp = &scratch;
+   const struct TA_AO_Stream *sp = stream;
    double medianPrice;
    double tempReal;
+   double sumFast;
+   double sumSlow;
+   double *ring_trailingFastIdx_derived;
+   double *ring_trailingSlowIdx_derived;
    int pkSlot0 = -1;
    double pkVal0 = 0.0;
    int pkSlot1 = -1;
@@ -629,7 +635,10 @@ TA_LIB_API TA_RetCode TA_AO_Peek( const TA_AO_Stream *stream, double inHigh, dou
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   sumFast = sp->sumFast;
+   sumSlow = sp->sumSlow;
+   ring_trailingFastIdx_derived = sp->ring_trailingFastIdx_derived;
+   ring_trailingSlowIdx_derived = sp->ring_trailingSlowIdx_derived;
    if( sp->ringCap_trailingFastIdx == 0 )
    {
       pkSlot0 = 0;
@@ -641,53 +650,60 @@ TA_LIB_API TA_RetCode TA_AO_Peek( const TA_AO_Stream *stream, double inHigh, dou
       pkVal1 = (inHigh + inLow) / 2.0;
    }
    medianPrice = (inHigh + inLow) / 2.0;
-   sp->sumFast += medianPrice;
-   sp->sumSlow += medianPrice;
+   sumFast += medianPrice;
+   sumSlow += medianPrice;
    /* Snapshot the oscillator before either total drops its trailing bar,
     * mirroring the add-new / snapshot / subtract-old order of TA_SMA.
     */
-   tempReal = sp->sumFast / (double)sp->optInFastPeriod - sp->sumSlow / (double)sp->optInSlowPeriod;
+   tempReal = sumFast / (double)sp->optInFastPeriod - sumSlow / (double)sp->optInSlowPeriod;
    /* Read both trailing bars before writing the output. When startIdx is
     * clamped to the lookback the longer window's trailing index equals
     * outIdx exactly, so a store hoisted above this would read back the
     * value it had just overwritten whenever the caller aliases outReal
     * over inHigh or inLow.
     */
-   sp->sumFast -= (sp->ringPos_trailingFastIdx != pkSlot0) ? sp->ring_trailingFastIdx_derived[sp->ringPos_trailingFastIdx] : pkVal0;
-   sp->sumSlow -= (sp->ringPos_trailingSlowIdx != pkSlot1) ? sp->ring_trailingSlowIdx_derived[sp->ringPos_trailingSlowIdx] : pkVal1;
+   sumFast -= (sp->ringPos_trailingFastIdx != pkSlot0) ? ring_trailingFastIdx_derived[sp->ringPos_trailingFastIdx] : pkVal0;
+   sumSlow -= (sp->ringPos_trailingSlowIdx != pkSlot1) ? ring_trailingSlowIdx_derived[sp->ringPos_trailingSlowIdx] : pkVal1;
    *outReal= tempReal;
-   sp->ringPos_trailingFastIdx = sp->ringPos_trailingFastIdx + 1;
-   if( sp->ringPos_trailingFastIdx >= sp->ringCap_trailingFastIdx )
-   {
-      sp->ringPos_trailingFastIdx = 0;
-   }
-   sp->ringPos_trailingSlowIdx = sp->ringPos_trailingSlowIdx + 1;
-   if( sp->ringPos_trailingSlowIdx >= sp->ringCap_trailingSlowIdx )
-   {
-      sp->ringPos_trailingSlowIdx = 0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_AO_UpdateAndFill( TA_AO_Stream *stream, const double inHigh[], const double inLow[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) ) return TA_BAD_PARAM;
-      TA_AO_StepImpl( stream, inHigh[i], inLow[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_AO_Close( TA_AO_Stream *stream )
 {
    TA_AO_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_AO_Value( const TA_AO_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_AO_Clone( const TA_AO_Stream *stream, TA_AO_Stream **clone )
+{
+   struct TA_AO_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_AO_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->ring_trailingFastIdx_derived = NULL;
+   sp->ring_trailingSlowIdx_derived = NULL;
+   if( stream->ring_trailingFastIdx_derived )
+   { size_t copyN = (size_t)(sp->ringCap_trailingFastIdx > 0 ? sp->ringCap_trailingFastIdx : 1);
+     sp->ring_trailingFastIdx_derived = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->ring_trailingFastIdx_derived ) { TA_AO_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->ring_trailingFastIdx_derived, stream->ring_trailingFastIdx_derived, sizeof(double) * copyN ); }
+   if( stream->ring_trailingSlowIdx_derived )
+   { size_t copyN = (size_t)(sp->ringCap_trailingSlowIdx > 0 ? sp->ringCap_trailingSlowIdx : 1);
+     sp->ring_trailingSlowIdx_derived = (double *)TA_Malloc( sizeof(double) * copyN );
+     if( !sp->ring_trailingSlowIdx_derived ) { TA_AO_Close( sp ); return TA_ALLOC_ERR; }
+     memcpy( sp->ring_trailingSlowIdx_derived, stream->ring_trailingSlowIdx_derived, sizeof(double) * copyN ); }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

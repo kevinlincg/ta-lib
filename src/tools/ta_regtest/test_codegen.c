@@ -374,7 +374,7 @@ static void note_compat_skip(const char *lang, const char *what)
 
 /* ---- Global timing results store (Task 12) ---- */
 
-#define MAX_FUNCTIONS 200
+#define MAX_FUNCTIONS 512
 
 typedef struct {
     char   funcName[64];
@@ -470,7 +470,7 @@ static int check_stream_counter_parity( void )
 {
     int javaIdx = lang_index_by_name("java");
     int csIdx   = lang_index_by_name("csharp");
-    int i, bad = 0, compared = 0;
+    int i, bad = 0;
 
     if( javaIdx < 0 || csIdx < 0 )
         return 0;
@@ -480,7 +480,6 @@ static int check_stream_counter_parity( void )
         const FuncStreamCounters *r = &g_streamCounters[i];
         if( !r->seen[javaIdx] || !r->seen[csIdx] )
             continue;
-        compared++;
         if( r->legs[javaIdx] != r->legs[csIdx]
             || r->benign[javaIdx] != r->benign[csIdx] )
         {
@@ -492,11 +491,6 @@ static int check_stream_counter_parity( void )
             bad++;
         }
     }
-    if( compared > 0 )
-    {
-        printf("  Java/C# stream counter parity: %d function(s) compared, "
-               "%d mismatch(es)\n", compared, bad);
-    }
     return bad;
 }
 
@@ -505,12 +499,12 @@ static int check_stream_counter_parity( void )
 #define CODEGEN_EPSILON  1e-6   /* float leg (TA_S_*): single-precision noise */
 /* Double-leg cross-language / cross-version tolerance. Tightened from 1e-6 to
  * 1e-9 (issue #113 follow-up): a full-precision measurement of every language
- * server vs the frozen reference showed the real floor is <1e-11 for all 161
- * functions except LINEARREG_ANGLE (~4.4e-10, the authorized #103 recurrence) —
+ * server vs the frozen reference showed the real floor is <1e-11 for every
+ * function except LINEARREG_ANGLE (~4.4e-10, the authorized recurrence) —
  * the %.15g transport was never the limit. Applied as 1e-9 * max(1, |value|). */
 #define CODEGEN_EPSILON_DOUBLE  1e-9
 #define JSON_BUF_SIZE    (128 * 1024)   /* 128KB: enough for OHLCV inputs */
-#define MAX_OUTPUTS      3              /* Max outputs any TA function has */
+#define MAX_OUTPUTS      CODEGEN_MAX_OUTPUTS   /* enforced at startup, issue #352 */
 
 /* ---- Minimal JSON helpers (no library dependency) ---- */
 
@@ -712,6 +706,7 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"CMO",          TA_FUNC_UNST_CMO},
     {"DX",           TA_FUNC_UNST_DX},
     {"EMA",          TA_FUNC_UNST_EMA},
+    {"HA",           TA_FUNC_UNST_HA},
     {"HT_DCPERIOD",  TA_FUNC_UNST_HT_DCPERIOD},
     {"HT_DCPHASE",   TA_FUNC_UNST_HT_DCPHASE},
     {"HT_PHASOR",    TA_FUNC_UNST_HT_PHASOR},
@@ -726,13 +721,16 @@ static const UnstableLookup UNSTABLE_MAP[] = {
      * enum entries are retained for ABI but no longer advertise instability.
      */
     {"KAMA",         TA_FUNC_UNST_KAMA},
+    {"ERI",          TA_FUNC_UNST_EMA},
     {"MAMA",         TA_FUNC_UNST_MAMA},
     {"MINUS_DI",     TA_FUNC_UNST_MINUS_DI},
     {"MINUS_DM",     TA_FUNC_UNST_MINUS_DM},
     {"NATR",         TA_FUNC_UNST_NATR},
     {"PLUS_DI",      TA_FUNC_UNST_PLUS_DI},
     {"PLUS_DM",      TA_FUNC_UNST_PLUS_DM},
+    {"RMA",          TA_FUNC_UNST_RMA},
     {"RSI",          TA_FUNC_UNST_RSI},
+    {"RVI",          TA_FUNC_UNST_RVI},
     {"T3",           TA_FUNC_UNST_T3},
     /* EMA-derived: doRangeTest sweeps UNST_EMA, as the hand MA tests do. */
     {"DEMA",         TA_FUNC_UNST_EMA},
@@ -752,15 +750,56 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"PVO",          TA_FUNC_UNST_EMA},
     /* EFI smooths its force series with the same EMA. */
     {"EFI",          TA_FUNC_UNST_EMA},
+    /* ZLEMA de-lags the input and hands it to the same EMA recurrence, seeded
+     * the same way, so its whole trajectory shifts with UNST_EMA. */
+    {"ZLEMA",        TA_FUNC_UNST_EMA},
+    /* CVI smooths the high-low spread with the same EMA and takes a percent
+     * rate of change of it, so both the anchor and the whole line move with
+     * UNST_EMA. */
+    {"CVI",          TA_FUNC_UNST_EMA},
+    /* MASSI stacks two EMA of the high-low range and sums their ratio, so both
+     * of its stage anchors -- and therefore the whole line -- move with
+     * UNST_EMA. Its lookback carries the unstable period TWICE. */
+    {"MASSI",        TA_FUNC_UNST_EMA},
+    /* KC is recursive through BOTH of its callees -- EMA of the typical price
+     * and the Wilder ATR -- so it is converging, not finite-window, and it is
+     * the first function here whose legs carry DIFFERENT ids. BOTH rows are
+     * required: each leg seeds at its own lookback, so sweeping one id warms one
+     * leg and leaves the other exactly as cold as it was, while the envelope
+     * tightens around it. Measured with only UNST_EMA listed, KC moved 1.8%
+     * across startIdx at unstable period 140 where 0.15% was allowed. Without
+     * any entry it classified EPSILON and moved 0.25% where ~1e-13 was allowed. */
+    {"KC",           TA_FUNC_UNST_EMA},
+    {"KC",           TA_FUNC_UNST_ATR},
     /* SMI's three EMA stages are seeded and advanced exactly as ema.c does,
      * and its lookback is the sum of three ema_lookback() terms, so the whole
      * pipeline shifts with UNST_EMA. Measured: outBegIdx 45 -> 54 at the
      * defaults when the unstable period is set to 3. */
     {"SMI",          TA_FUNC_UNST_EMA},
+    /* TSI carries the raw momentum and its magnitude through two EMA stages
+     * seeded exactly as ema.c seeds, and its lookback sums two ema_lookback()
+     * terms, so both stage anchors and the whole line shift with UNST_EMA. */
+    {"TSI",          TA_FUNC_UNST_EMA},
     /* ADXR/STOCHRSI own knobs were inert and retired (#129); they converge
      * via their internal ADX/RSI, like the EMA-derived set above. */
     {"ADXR",         TA_FUNC_UNST_ADX},
     {"STOCHRSI",     TA_FUNC_UNST_RSI},
+    /* SUPERTREND is listed for the SECOND consumer of this map, not the first.
+     * It carries `path_dependent`, so stability_class() answers SKIP before it
+     * ever asks about an unstable id and the range envelope is not what this row
+     * buys. What it buys is the stream K-leg: `isUnstable` is this map OR the
+     * function's own flag, and SUPERTREND declares neither, so without a row
+     * here stream_verify runs every language at K == 0 only -- and the ATR
+     * warm-up loop the body carries for exactly that setting is never entered on
+     * the streaming path in any of the four. */
+    {"SUPERTREND",   TA_FUNC_UNST_ATR},
+    /* KDJ declares no unstable flag of its own -- its instability arrives
+     * through the MA type its two smoothing hops select, and the default is
+     * the recursive RMA. Without a row here stability_class() falls to the
+     * EPSILON default and the range sweep compares a converging function at
+     * ~1e-13; the second consumer is the stream K-leg, whose v == 0 defaults
+     * vector runs only for a function this map calls unstable. */
+    {"KDJ",          TA_FUNC_UNST_RMA},
 };
 #define NUM_UNSTABLE_MAP (sizeof(UNSTABLE_MAP) / sizeof(UNSTABLE_MAP[0]))
 
@@ -772,6 +811,104 @@ static TA_FuncUnstId get_unst_id(const char *funcName)
             return UNSTABLE_MAP[i].id;
     }
     return TA_TEST_UNST_NONE;
+}
+
+/* Every unstable-period id one function inherits, not just the first.
+ *
+ * A function may appear on more than one row: it is recursive through callees
+ * that carry DIFFERENT ids (KC, through TA_EMA and TA_ATR). The range sweep has
+ * to move all of them together -- it warms only the ids it is handed, so an id
+ * left at zero is a leg that never converges while the envelope tightens around
+ * it, and the sweep then fails for a reason that has nothing to do with the
+ * function being wrong. Returns the count written. */
+static int get_unst_ids(const char *funcName, TA_FuncUnstId *out, int maxOut)
+{
+    int n = 0;
+    for( unsigned int i = 0; i < NUM_UNSTABLE_MAP; i++ )
+    {
+        if( strcmp(funcName, UNSTABLE_MAP[i].name) != 0 )
+            continue;
+        if( n < maxOut )
+            out[n] = UNSTABLE_MAP[i].id;
+        n++;
+    }
+    return n > maxOut ? maxOut : n;
+}
+
+/* Self-check on UNSTABLE_MAP, run on every ta_regtest invocation.
+ *
+ * The table is hand-maintained against the generator's own answer (see
+ * generator/tests/stability_suite.rs, which pins what each function inherits),
+ * so the two can drift. What is checked here is the property the sweep depends
+ * on rather than the contents: no row names TA_TEST_UNST_NONE, no (name,id) pair
+ * repeats, setting a function's set moves every member, and at least one
+ * function carries more than one id -- without that last one the multi-id path
+ * below is dead code and nothing would notice it breaking. */
+ErrorNumber test_codegen_unstable_map( void )
+{
+    unsigned int i, j;
+    int multi = 0;
+
+    for( i = 0; i < NUM_UNSTABLE_MAP; i++ )
+    {
+        if( UNSTABLE_MAP[i].id == TA_TEST_UNST_NONE )
+        {
+            printf( "\nUNSTABLE_MAP: row %u (%s) names TA_TEST_UNST_NONE\n",
+                    i, UNSTABLE_MAP[i].name );
+            return TA_UNSTABLE_MAP_INCOMPLETE;
+        }
+        for( j = i + 1; j < NUM_UNSTABLE_MAP; j++ )
+        {
+            if( strcmp( UNSTABLE_MAP[i].name, UNSTABLE_MAP[j].name ) == 0
+                && UNSTABLE_MAP[i].id == UNSTABLE_MAP[j].id )
+            {
+                printf( "\nUNSTABLE_MAP: %s repeats id %d\n",
+                        UNSTABLE_MAP[i].name, (int)UNSTABLE_MAP[i].id );
+                return TA_UNSTABLE_MAP_INCOMPLETE;
+            }
+        }
+    }
+
+    for( i = 0; i < NUM_UNSTABLE_MAP; i++ )
+    {
+        TA_FuncUnstId ids[TA_MAX_SWEPT_UNST];
+        int n, k, seen = 0;
+
+        for( j = 0; j < i; j++ )
+            if( strcmp( UNSTABLE_MAP[i].name, UNSTABLE_MAP[j].name ) == 0 )
+                seen = 1;
+        if( seen )
+            continue;   /* count each function once, not each row */
+
+        n = get_unst_ids( UNSTABLE_MAP[i].name, ids, TA_MAX_SWEPT_UNST );
+        if( n >= 2 )
+            multi++;
+
+        /* Behavioural: the sweep's setter must move every id of the set. */
+        for( k = 0; k < n; k++ )
+            TA_SetUnstablePeriod( ids[k], 0 );
+        sweep_set_unstable( ids, n, 7 );
+        for( k = 0; k < n; k++ )
+        {
+            if( TA_GetUnstablePeriod( ids[k] ) != 7 )
+            {
+                printf( "\nUNSTABLE_MAP: %s id %d did not move with its set\n",
+                        UNSTABLE_MAP[i].name, (int)ids[k] );
+                return TA_UNSTABLE_MAP_INCOMPLETE;
+            }
+            TA_SetUnstablePeriod( ids[k], 0 );
+        }
+    }
+
+    if( multi < 1 )
+    {
+        printf( "\nUNSTABLE_MAP: no function declares more than one unstable id, "
+                "so the multi-id sweep is never exercised. A composite recursive "
+                "through two different ids (KC: TA_EMA + TA_ATR) must list both.\n" );
+        return TA_UNSTABLE_MAP_INCOMPLETE;
+    }
+
+    return TA_TEST_PASS;
 }
 
 /* ---- Generic CodegenRangeTestParam (Task 6) ---- */
@@ -1338,7 +1475,7 @@ static void compare_codegen_output_generic(
                 /* Double leg, tightened 1e-6 -> 1e-9 (issue #113 follow-up).
                  * A full-precision measurement of every language server against the
                  * frozen reference found the cross-language / cross-version
-                 * divergence is <1e-11 for all 161 functions EXCEPT LINEARREG_ANGLE
+                 * divergence is <1e-11 for every function EXCEPT LINEARREG_ANGLE
                  * (~4.4e-10, the authorized #103 O(1) sliding-sum recurrence vs the
                  * frozen O(n) recompute). The 1e-6 floor was never a transport
                  * limit — the transport contributes <1e-11, and since #257/#258
@@ -1792,6 +1929,11 @@ static TA_RangeStability stability_class(const TA_FuncInfo *funcInfo)
         "MIN", "MAX", "MINMAX", "MIDPOINT", "MIDPRICE", "WILLR", "AROON", "AROONOSC",
         /* fresh per-bar rescan (window re-summed in bar-absolute order each output) */
         "AVGDEV",
+        /* fresh per-bar rescan, integer count -- no FP total carried across bars */
+        "PERCENTRANK",
+        /* incrementally maintained sorted window -- the state is exact copies
+         * of input values, so the output is an input element verbatim */
+        "PERCENTILE",
         /* fresh sliding window, no accumulator */
         "IMI",
         /* NOTE: LINEARREG / LINEARREG_ANGLE / LINEARREG_INTERCEPT / LINEARREG_SLOPE
@@ -1848,6 +1990,26 @@ static TA_RangeStability stability_class(const TA_FuncInfo *funcInfo)
 
 /* ---- Filter helper ---- */
 
+/* Documented in test_codegen.h. */
+int codegen_short_filter_token_matches(const char *name, const char *token)
+{
+    size_t len = strlen(token);
+    const char *p = name;
+
+    while( *p )
+    {
+        const char *end = strchr(p, '_');
+        size_t segLen = (end == NULL) ? strlen(p) : (size_t)(end - p);
+
+        if( segLen == len && strncmp(p, token, len) == 0 )
+            return 1;
+        if( end == NULL )
+            return 0;
+        p = end + 1;
+    }
+    return 0;
+}
+
 static int codegen_matches_filter(const char *filter, const char *name)
 {
     char filterCopy[1024];
@@ -1858,7 +2020,11 @@ static int codegen_matches_filter(const char *filter, const char *name)
     token = strtok(filterCopy, ",");
     while( token != NULL )
     {
-        if( strstr(name, token) != NULL ) return 1;
+        if( strlen(token) <= 2 )
+        {
+            if( codegen_short_filter_token_matches(name, token) ) return 1;
+        }
+        else if( strstr(name, token) != NULL ) return 1;
         token = strtok(NULL, ",");
     }
     return 0;
@@ -1933,7 +2099,7 @@ typedef struct {
     /* Of those, the ones whose class actually compared VALUES across ranges.
      * TA_STABLE_SKIP reaches the leg and checks coherency only, so counting it
      * as "verified" overstates the ratchet below -- and the inert set grows
-     * with every new path-dependent indicator (NVI, PVI, WAD today). */
+     * with every new post-cutover path-dependent indicator. */
     int               postCutRangeValueCompared;
     int               langIndex;   /* index into ALL_LANGUAGES */
     const CodegenLanguage *lang;
@@ -1946,15 +2112,21 @@ typedef struct {
     int               streamSkipped;
     int               streamRejectArms;
     int               streamFillFunctions; /* funcs whose OpenAndFill == batch(0,n-1) bitwise */
-    int               streamPeekFunctions; /* funcs that ran the peek-idempotence probe */
-    long long         streamPeekProbes;    /* probes run (peek, other bar, peek again) */
-    int               streamUFillFunctions;/* funcs whose UpdateAndFill == batch over the same bars (#246) */
+    int               streamPeekFunctions; /* funcs that ran the peek non-commit leg */
+    long long         streamPeekProbes;    /* peeks run by that leg */
+    int               streamPeekRepFunctions; /* funcs that ran the repeat probe */
+    long long         streamPeekRepProbes;    /* triples run (peek t, peek t-1, peek t) */
+    int               streamFillBars;      /* bars the OpenAndFill leg actually value-compared */
     int               streamStateFunctions; /* funcs whose handle state matched Open(n) (#240) */
     int               streamStateLegs;      /* legs that compared handle state (#240) */
     int               streamRangeFunctions; /* funcs whose handle OutRange matched batch (#241) */
     int               streamRangeLegs;      /* legs that compared the handle's OutRange (#241) */
     int               streamRangeSites;     /* OR of the range-compare sites that fired (#241) */
     int               streamRangeSitesAll;  /* the set of sites this server says it has */
+    int               streamCloneFunctions; /* funcs whose fork was driven to the end (#287) */
+    int               streamValueFunctions; /* funcs whose Value accessor was probed (#287) */
+    long long         streamValueLegs;      /* Value probes run */
+    long long         streamCloneLegs;      /* fork legs run */
     long long         streamBenign;        /* cross-tier +0.0/-0.0 pairs (#147) — never a failure */
 } ForEachFuncContext;
 
@@ -2106,10 +2278,13 @@ static void test_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
                     (int)ctx->history->nbBars > postLookback )
                 {
                     TA_RangeStability postStability = stability_class(funcInfo);
-                    ErrorNumber rangeErr = doRangeTestEx(
+                    TA_FuncUnstId postIds[TA_MAX_SWEPT_UNST];
+                    int nbPostIds = get_unst_ids(funcInfo->name, postIds,
+                                                 TA_MAX_SWEPT_UNST);
+                    ErrorNumber rangeErr = doRangeTestMulti(
                         codegen_range_generic,
                         postStability,
-                        get_unst_id(funcInfo->name),
+                        postIds, nbPostIds,
                         (void *)&params,
                         funcInfo->nbOutput,
                         get_integer_tolerance(funcInfo));
@@ -2319,10 +2494,12 @@ static void test_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
     ErrorNumber errNb = TA_TEST_PASS;
     if( nbElem > 0 && params.codegenError == TA_TEST_PASS )
     {
-        errNb = doRangeTestEx(
+        TA_FuncUnstId sweepIds[TA_MAX_SWEPT_UNST];
+        int nbSweepIds = get_unst_ids(funcInfo->name, sweepIds, TA_MAX_SWEPT_UNST);
+        errNb = doRangeTestMulti(
             codegen_range_generic,
             stability_class(funcInfo),
-            get_unst_id(funcInfo->name),
+            sweepIds, nbSweepIds,
             (void *)&params,
             funcInfo->nbOutput,
             get_integer_tolerance(funcInfo));
@@ -2433,11 +2610,12 @@ static void test_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
  * max, and the affected run summaries print the skip count so the exclusion
  * is loud, never silent. Current-vs-current gates are unaffected and DO
  * exercise the new value: --xlang-hash, stream_verify's enum sweep, the
- * VARIANT gate and the COMPOSITE hand tests (TA_MAType_HMA dispatch parity).
- * When a frozen oracle is re-frozen on a tag that includes #139, raise (or
- * retire) this max accordingly. */
+ * VARIANT gate and the per-function hand tests (TA_MAType_HMA, TA_MAType_ZLEMA
+ * and TA_MAType_RMA dispatch parity). When a frozen oracle is re-frozen on a tag
+ * that includes #139, raise (or retire) this max accordingly. */
 #define FROZEN_ORACLE_MATYPE_MAX 8   /* == TA_MAType_T3; 9+ postdate the frozen
-                                        oracles (HMA #139, DISABLED #93, DEFAULT #182) */
+                                        oracles (HMA #139, DISABLED #93,
+                                        DEFAULT #182, ZLEMA #347, RMA #348) */
 static long long g_frozenEnumSkips = 0;
 
 static int frozen_excludes_enum_value(const TA_OptInputParameterInfo *oi, int value)
@@ -3134,9 +3312,9 @@ static void sweep_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
 /* Sized for the widest stream-vector enumeration: MACDEXT carries 3 MAType
  * params, so its count is 8*M-1 in the MAType-list length M (base 4 + 3 params *
  * (2 base-vector crosses * (M-1) non-default arms + 1 out-of-list) + the 2 *
- * (M-1) multi-enum diagonal, #181). M=12 today (#93 added DISABLED, #182
- * DEFAULT) => 95; 128 keeps runway for 4 more MATypes before MACDEXT reaches
- * it again. Overflow is a hard failure, never a skip. */
+ * (M-1) multi-enum diagonal, #181). M=13 today (#93 added DISABLED, #182
+ * DEFAULT, #347 ZLEMA) => 103; 128 keeps runway for 3 more MATypes before
+ * MACDEXT reaches it again. Overflow is a hard failure, never a skip. */
 #define STREAM_MAX_VEC 128
 #define STREAM_N       240
 /* Stream-leg variants: 0 = ambient defaults, 1 = unstable period, 2 = Metastock,
@@ -3329,7 +3507,7 @@ static int stream_build_vectors(const TA_FuncInfo *fi,
      * all-EMA call to TA_MACD's single lockstep pass, the streaming tier
      * composes the generic three-MA path instead, and no stream leg ever
      * selected all-EMA to hold the two to each other. The full cross is M^N
-     * (1331 vectors for MACDEXT at M=12) and is what makes this deliberately
+     * (2197 vectors for MACDEXT at M=13) and is what makes this deliberately
      * uncovered; the diagonal is M-1 and reaches every "all slots equal" guard.
      *
      * Crossed with the same base vectors as the sweep above, which puts the
@@ -3458,15 +3636,19 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
     int vecIsMin[STREAM_MAX_VEC];
     int nvec, v, variant, legs = 0, rejArms = 0, vecOverflow = 0;
     int fillChecked = 0;   /* set once any leg reports OpenAndFill was verified */
-    int ufillChecked = 0;  /* set once any leg reports UpdateAndFill was verified (#246) */
     int stateChecked = 0;  /* set once any leg reports the state-equivalence compare */
     int stateLegs = 0;     /* how many legs actually compared handle state */
     int stateOfLegs = 0;   /* value legs in the requests that reported it */
     int rangeChecked = 0;  /* set once any leg reports the OutRange compare (#241) */
-    int peekProbes = 0;    /* peek-idempotence probes this request ran */
+    int peekProbes = 0;    /* peeks the non-commit leg ran */
+    int peekReps = 0;      /* repeat probes this request ran */
     int rangeLegs = 0;     /* how many legs actually compared a handle's OutRange */
     int rangeSites = 0;    /* OR of the range-compare sites that fired */
     int rangeSitesAll = 0; /* the set the server says it has */
+    int cloneChecked = 0;  /* this function ran the fork leg */
+    int valueChecked = 0;  /* this function probed its Value accessor */
+    int valueLegs = 0;
+    int cloneLegs = 0;     /* fork legs it ran */
     long long benign = 0;  /* signed-zero cases this function's legs reported */
     int isUnstable;
 
@@ -3580,7 +3762,10 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
                                         ctx->responseBuf, JSON_BUF_SIZE);
             if( pipeErr != TA_TEST_PASS )
             {
-                printf("STREAM PIPE FAIL [TA_%s]\n", funcInfo->name);
+                /* Print the request: a dead pipe leaves no response to read,
+                 * so without this there is nothing to replay by hand. */
+                printf("STREAM PIPE FAIL [TA_%s]\n  request:  %s\n",
+                       funcInfo->name, ctx->requestBuf);
                 ctx->error = pipeErr;
                 return;
             }
@@ -3615,32 +3800,14 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
              * server-side too, so it fails even if this check regresses. */
             if( stream_flag(ctx->responseBuf, "\"fill_checked\":") == 1 )
             {
+                int bars = stream_flag(ctx->responseBuf, "\"fill_bars\":");
                 fillChecked = 1;
+                if( bars >= 0 )
+                    ctx->streamFillBars = (ctx->streamFillBars < 0 ? 0 : ctx->streamFillBars) + bars;
                 if( stream_flag(ctx->responseBuf, "\"fill_ok\":") != 1 )
                 {
                     printf("STREAM FILL MISMATCH [TA_%s] vector=%d K=%d compat=%d "
                            "(OpenAndFill array != batch(0,n-1))\n"
-                           "  request:  %s\n  response: %s\n",
-                           funcInfo->name, v, K, compat,
-                           ctx->requestBuf, ctx->responseBuf);
-                    ctx->failed++;
-                    ctx->error = TA_CODEGEN_STREAM_MISMATCH;
-                    return;
-                }
-            }
-            /* UpdateAndFill leg (#246): Open(P) plus ONE UpdateAndFill over the
-             * remaining bars must write exactly what batch(0,n-1) reports for
-             * those bars, reject an aliased output, and treat a zero count as a
-             * no-op. Reported apart from fill_ok so a regression names which of
-             * the two filling entry points broke; folded into ok server-side
-             * too, so it fails even if this check regresses. */
-            if( stream_flag(ctx->responseBuf, "\"ufill_checked\":") == 1 )
-            {
-                ufillChecked = 1;
-                if( stream_flag(ctx->responseBuf, "\"ufill_ok\":") != 1 )
-                {
-                    printf("STREAM UPDATEFILL MISMATCH [TA_%s] vector=%d K=%d compat=%d "
-                           "(UpdateAndFill over the tail != batch over the same bars)\n"
                            "  request:  %s\n  response: %s\n",
                            funcInfo->name, v, K, compat,
                            ctx->requestBuf, ctx->responseBuf);
@@ -3681,7 +3848,7 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
              * startIdx-anchored open. It ties the streaming tier to the batch
              * tier through one number pair, which no value leg does: every one
              * of those compares outputs, and an output is the same whether the
-             * handle knows how many of them it has produced. Checked before the
+             * handle knows how many bars it has consumed. Checked before the
              * generic ok flag so the failure names the leg; folded into ok
              * server-side too. */
             if( stream_flag(ctx->responseBuf, "\"range_checked\":") == 1 )
@@ -3713,6 +3880,83 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
             {
                 int pc = stream_flag(ctx->responseBuf, "\"peek_checked\":");
                 if( pc > 0 ) peekProbes += pc;
+            }
+            /* Repeat probe: peek(t), peek(t-1), peek(t) with no update in
+             * between must answer the same bits twice. Its own flag so a
+             * failure names the property, and its own counter because
+             * `peek_rep_ok` reads the same whether the probe ran or was
+             * dropped. Every server answers it — this is the cross-language
+             * observer of a committing peek, the non-commit leg above being
+             * C-only. */
+            {
+                int pr = stream_flag(ctx->responseBuf, "\"peek_reps\":");
+                int pj = stream_flag(ctx->responseBuf, "\"peek_rejects\":");
+                if( pr > 0 ) peekReps += pr;
+                /* A peek is allowed to refuse a bar: the probe feeds it one the
+                 * batch never visits, and a composed stream can derive a
+                 * non-finite intermediate from finite inputs. A refusal is
+                 * counted here rather than failed -- but it must stay the
+                 * exception. More refusals than completed probes means the leg
+                 * has stopped measuring and its `peek_rep_ok` is vacuous. */
+                if( pj > 0 && pj > pr )
+                {
+                    printf("STREAM PEEK REJECT FLOOD [TA_%s] vector=%d K=%d compat=%d\n"
+                           "  %d peek refusal(s) against %d completed repeat probe(s)\n"
+                           "  request:  %s\n  response: %s\n",
+                           funcInfo->name, v, K, compat, pj, pr,
+                           ctx->requestBuf, ctx->responseBuf);
+                    ctx->failed++;
+                    ctx->error = TA_CODEGEN_STREAM_MISMATCH;
+                    return;
+                }
+                if( stream_flag(ctx->responseBuf, "\"peek_rep_ok\":") == 0 )
+                {
+                    printf("STREAM PEEK REPEAT MISMATCH [TA_%s] vector=%d K=%d compat=%d\n"
+                           "  peek(t), peek(t-1), peek(t) did not answer the same bits twice\n"
+                           "  request:  %s\n  response: %s\n",
+                           funcInfo->name, v, K, compat,
+                           ctx->requestBuf, ctx->responseBuf);
+                    ctx->failed++;
+                    ctx->error = TA_CODEGEN_STREAM_MISMATCH;
+                    return;
+                }
+            }
+            /* Fork leg (#287). Its own counter: `ok` already folds `clone_ok`
+             * in, so this is not about catching a failure — it is about
+             * catching the leg going ABSENT, which no pass/fail flag can say. */
+            {
+                int cc = stream_flag(ctx->responseBuf, "\"clone_checked\":");
+                int cl = stream_flag(ctx->responseBuf, "\"clone_legs\":");
+                if( cc == 1 ) cloneChecked = 1;
+                if( cl > 0 ) cloneLegs += cl;
+                {
+                    int vc = stream_flag(ctx->responseBuf, "\"value_checked\":");
+                    int vl = stream_flag(ctx->responseBuf, "\"value_legs\":");
+                    if( vc == 1 ) valueChecked = 1;
+                    if( vl > 0 ) valueLegs += vl;
+                    if( stream_flag(ctx->responseBuf, "\"value_ok\":") == 0 )
+                    {
+                        printf("STREAM VALUE MISMATCH [TA_%s] vector=%d K=%d compat=%d\n"
+                               "  the Value accessor did not report the bar the stream is on\n"
+                               "  request:  %s\n  response: %s\n",
+                               funcInfo->name, v, K, compat,
+                               ctx->requestBuf, ctx->responseBuf);
+                        ctx->failed++;
+                        ctx->error = TA_CODEGEN_STREAM_MISMATCH;
+                        return;
+                    }
+                }
+                if( stream_flag(ctx->responseBuf, "\"clone_ok\":") == 0 )
+                {
+                    printf("STREAM CLONE MISMATCH [TA_%s] vector=%d K=%d compat=%d\n"
+                           "  a forked stream did not stay independent of its original\n"
+                           "  request:  %s\n  response: %s\n",
+                           funcInfo->name, v, K, compat,
+                           ctx->requestBuf, ctx->responseBuf);
+                    ctx->failed++;
+                    ctx->error = TA_CODEGEN_STREAM_MISMATCH;
+                    return;
+                }
             }
             if( stream_flag(ctx->responseBuf, "\"ok\":") != 1 ||
                 stream_flag(ctx->responseBuf, "\"peek_ok\":") != 1 )
@@ -3762,14 +4006,19 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
      * the run — see FuncStreamCounters. */
     record_stream_counters(funcInfo->name, ctx->langIndex, legs, benign);
     if( fillChecked ) ctx->streamFillFunctions++;
-    if( ufillChecked ) ctx->streamUFillFunctions++;
     if( stateChecked ) ctx->streamStateFunctions++;
     if( rangeChecked ) ctx->streamRangeFunctions++;
     if( peekProbes > 0 ) ctx->streamPeekFunctions++;
     ctx->streamPeekProbes += peekProbes;
+    if( peekReps > 0 ) ctx->streamPeekRepFunctions++;
+    ctx->streamPeekRepProbes += peekReps;
     ctx->streamRangeLegs += rangeLegs;
     ctx->streamRangeSites |= rangeSites;
     ctx->streamRangeSitesAll |= rangeSitesAll;
+    ctx->streamCloneLegs += cloneLegs;
+    if( cloneChecked ) ctx->streamCloneFunctions++;
+    ctx->streamValueLegs += valueLegs;
+    if( valueChecked ) ctx->streamValueFunctions++;
     /* Per-leg, not per-function: a function counts as covered as soon as ONE of
      * its legs compares, so without this a reference open that quietly failed
      * on 15 of 16 legs would still read as full coverage. Every leg that
@@ -3879,7 +4128,6 @@ static ErrorNumber test_predicate_parity(CodegenPipe *cp, const CodegenLanguage 
             }
         }
     }
-    printf("  Predicate parity (IS_ZERO family): %d values x 3 builtins match the C macro\n", n);
     return TA_TEST_PASS;
 }
 
@@ -4014,8 +4262,6 @@ static ErrorNumber test_index_range_xlang(CodegenPipe *cp, const CodegenLanguage
             nbChecked++;
         }
     }
-    printf("  Index range (#180): %d case(s) match C's TA_MAX_INDEX contract\n",
-           nbChecked);
     return TA_TEST_PASS;
 }
 
@@ -4115,9 +4361,6 @@ static ErrorNumber test_unstable_wildcard(CodegenPipe *cp, const CodegenLanguage
         }
     }
 
-    printf("  Unstable-period wildcard: set-all reaches EMA (ADOSC outBegIdx %d at "
-           "unstable %d, %d at %d)\n",
-           expected[0], periods[0], expected[1], periods[1]);
     return TA_TEST_PASS;
     #undef UW_NBBAR
     #undef UW_FAST
@@ -4259,8 +4502,6 @@ static ErrorNumber test_unstable_bounds(CodegenPipe *cp, const CodegenLanguage *
             (int)TA_FUNC_UNST_ALL);
     codegen_pipe_call(cp, reqBuf, respBuf, JSON_BUF_SIZE);
 
-    printf("  Unstable-period bounds: %d accepted, %lld and %lld refused with no write\n",
-           (int)TA_MAX_INDEX, rejects[0], rejects[1]);
     return TA_TEST_PASS;
     #undef UB_NBBAR
     #undef UB_FAST
@@ -4307,6 +4548,84 @@ static int stream_fuzz_port_selfcheck(CodegenPipe *cp, char *requestBuf, char *r
     return fuzzFails;
 }
 
+/* Java is the one backend whose server carries its OWN copy of the shipped
+ * Core -- spliced from the fragments -- so it is the only one that can measure a
+ * different text than the library ships (#322). Both artifacts are stamped with
+ * a digest of the generated method text at generate time; equal means the pair
+ * came from a single generate. Asked over the WIRE rather than compared on disk,
+ * because that is what a stale class directory is still visible through.
+ *
+ * Counted, not merely compared: a server that answered nothing would otherwise
+ * read exactly like a server that agreed. */
+static long g_gencodeDigestChecked = 0;
+/* Set from the language loop, NOT from the check: a gutted check then leaves the
+   floor below unsatisfied instead of quietly satisfying it. */
+static int g_gencodeDigestEligible = 0;
+
+static int codegen_json_get_string( const char *json, const char *field,
+                                    char *out, int outSize )
+{
+   char key[64];
+   const char *p, *q;
+   int n;
+
+   (void)snprintf( key, sizeof(key), "\"%s\"", field );
+   p = strstr( json, key );
+   if( !p ) return 0;
+   p = strchr( p + strlen(key), ':' );
+   if( !p ) return 0;
+   p = strchr( p, '"' );
+   if( !p ) return 0;
+   p++;
+   q = strchr( p, '"' );
+   if( !q ) return 0;
+   n = (int)(q - p);
+   if( n >= outSize ) n = outSize - 1;
+   memcpy( out, p, (size_t)n );
+   out[n] = '\0';
+   return 1;
+}
+
+static ErrorNumber codegen_check_gencode_digest( CodegenPipe *cp, const CodegenLanguage *lang )
+{
+   char req[64], resp[1024];
+   char spliced[64], shipped[64];
+
+   /* Every other server compiles or links the shipped artifact, so it has no
+      second text that could drift and no stamp to answer with. */
+   if( strcmp( lang->name, "java" ) != 0 ) return TA_TEST_PASS;
+
+   (void)snprintf( req, sizeof(req), "{\"method\":\"gencode_digest\"}" );
+   if( codegen_pipe_call( cp, req, resp, (int)sizeof(resp) ) != TA_TEST_PASS
+       || !codegen_json_get_string( resp, "spliced", spliced, (int)sizeof(spliced) )
+       || !codegen_json_get_string( resp, "shipped", shipped, (int)sizeof(shipped) ) )
+   {
+      printf( "\nCODEGEN FAILED: the %s server did not answer gencode_digest — it\n"
+              "  predates the build-stamp gate, so nothing here can tell whether it is\n"
+              "  running the shipped library or an older copy of it (#322).\n"
+              "  Recover with:  scripts/build.py servers\n",
+              lang->display );
+      return TA_CODEGEN_GENCODE_DIGEST_SKEW;
+   }
+
+   if( strcmp( spliced, shipped ) != 0 )
+   {
+      printf( "\nCODEGEN FAILED: the %s server is NOT running the shipped library.\n"
+              "  spliced into the server: %s\n"
+              "  shipped in Core.java:    %s\n"
+              "  The two came from different generate runs, so every value this\n"
+              "  language reports would describe code that is not what ships (#322).\n"
+              "  Recover with:  scripts/build.py generate && scripts/build.py servers\n"
+              "  (a `generate --func=<NAME>` run deliberately skips the shipped\n"
+              "   Core.java, which is how the two part.)\n",
+              lang->display, spliced, shipped );
+      return TA_CODEGEN_GENCODE_DIGEST_SKEW;
+   }
+
+   g_gencodeDigestChecked++;
+   return TA_TEST_PASS;
+}
+
 static ErrorNumber test_codegen_for_language(
     const CodegenLanguage *lang,
     int langIndex,
@@ -4321,6 +4640,8 @@ static ErrorNumber test_codegen_for_language(
     printf("Codegen verification: %s\n", lang->display);
     printf("---------------------------------------------\n");
 
+    if( strcmp(lang->name, "java") == 0 ) g_gencodeDigestEligible = 1;
+
     errNb = codegen_pipe_open(&cp, lang->argv);
     if( errNb != TA_TEST_PASS )
     {
@@ -4332,7 +4653,14 @@ static ErrorNumber test_codegen_for_language(
         printf("\n");
         return errNb;
     }
-    printf("  Server started (pid=%d)\n", cp.child_pid);
+
+    /* Before anything is measured: prove this server IS the shipped library. */
+    errNb = codegen_check_gencode_digest(&cp, lang);
+    if( errNb != TA_TEST_PASS )
+    {
+        codegen_pipe_close(&cp);
+        return errNb;
+    }
 
     /* Allocate reusable JSON buffers */
     char *requestBuf = malloc(JSON_BUF_SIZE);
@@ -4491,12 +4819,9 @@ static ErrorNumber test_codegen_for_language(
             }
         }
 
-        printf("  Ref differential sweep: %d variants across %d functions%s\n",
-               ctx.sweepVariants, ctx.sweepFunctions,
-               ctx.error == TA_TEST_PASS ? ", all match ta_ref_serve" : "");
         if( g_frozenEnumSkips > 0 )
             printf("  post-freeze enums: %lld MAType value(s) > %d excluded vs ta_ref_serve "
-                   "(#139, #93, #182; covered current-vs-current by xlang-hash/stream/COMPOSITE)\n",
+                   "(#139, #93, #182, #347, #348; covered current-vs-current by xlang-hash/stream/COMPOSITE)\n",
                    g_frozenEnumSkips, FROZEN_ORACLE_MATYPE_MAX);
     }
 
@@ -4523,35 +4848,21 @@ static ErrorNumber test_codegen_for_language(
             ctx.streamFillFunctions = 0;
             ctx.streamPeekFunctions = 0;
             ctx.streamPeekProbes = 0;
-            ctx.streamUFillFunctions = 0;
+            ctx.streamPeekRepFunctions = 0;
+            ctx.streamPeekRepProbes = 0;
+            ctx.streamFillBars = -1;
             ctx.streamStateFunctions = 0;
             ctx.streamStateLegs     = 0;
             ctx.streamRangeFunctions = 0;
             ctx.streamRangeLegs     = 0;
             ctx.streamRangeSites    = 0;
             ctx.streamRangeSitesAll = 0;
+            ctx.streamCloneFunctions = 0;
+            ctx.streamCloneLegs     = 0;
+            ctx.streamValueFunctions = 0;
+            ctx.streamValueLegs     = 0;
             ctx.streamBenign        = 0;
             TA_ForEachFunc(stream_one_function, &ctx);
-            /* The benign total is printed unconditionally, zero included: the
-             * whole point of counting the +/-0 class rather than ignoring it is
-             * that a change which starts flipping zeros shows up as a number
-             * moving off 0, in a line that is always there to compare against. */
-            printf("  Stream verify: %d functions, %d legs bit-exact vs batch, "
-                   "%d expected-reject probes, %d without a stream, "
-                   "%lld benign signed-zero\n"
-                   "  OpenAndFill verify: %d functions, filled array == batch(0,n-1) bitwise\n"
-                   "  UpdateAndFill verify: %d functions, n bars in one call == batch over the same bars\n"
-                   "  State-equivalence verify: %d functions, %d legs, handle after "
-                   "Open(P)+updates == handle after Open(n) bitwise\n"
-                   "  OutRange verify: %d functions, %d legs across %d of %d compare "
-                   "site(s), the handle's range == the batch range over the same bars\n",
-                   ctx.streamFunctions, ctx.streamLegs, ctx.streamRejectArms,
-                   ctx.streamSkipped, ctx.streamBenign, ctx.streamFillFunctions,
-                   ctx.streamUFillFunctions,
-                   ctx.streamStateFunctions, ctx.streamStateLegs,
-                   ctx.streamRangeFunctions, ctx.streamRangeLegs,
-                   codegen_popcount(ctx.streamRangeSites),
-                   codegen_popcount(ctx.streamRangeSitesAll));
             /* Coverage ratchet: every function with a server stream must ALSO
              * verify OpenAndFill (the emit side and this verify side both gate on
              * the same has_open_and_fill, so they cannot desync silently — but if
@@ -4568,19 +4879,27 @@ static ErrorNumber test_codegen_for_language(
                        ctx.streamFillFunctions, ctx.streamFunctions);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
-            /* The same ratchet for UpdateAndFill (#246). It has the same shape
-             * as the fill floor above and exists for the same reason: the leg
-             * is unconditional in every server, so a function that streams and
-             * reports no UpdateAndFill leg is a tier whose emitter was missed —
-             * which the legs floor and the value legs both read as full
-             * coverage. */
-            if( ctx.error == TA_TEST_PASS &&
-                ctx.streamUFillFunctions != ctx.streamFunctions )
+            /* A leg that RAN is not a leg that COMPARED. `fill_checked` is set
+             * before the comparison loop, so an emitter that walks the loop zero
+             * times satisfies the floor above while checking no value at all --
+             * which is exactly what a dangling `else` did to the C server between
+             * #287 and #331: the loop bound to the wrong `if`, and every bar of
+             * every function went uncompared for four releases with all gates
+             * green. Count the bars, not the visits.
+             *
+             * C only. The other three servers build the same comparison as a
+             * structured `else { }` whose block cannot re-bind when a statement
+             * is inserted above it; C assembles it as text, which is what made
+             * the re-binding possible and invisible. A server reporting no count
+             * leaves this at -1 and is not measured here rather than passing a
+             * floor it never answered. */
+            if( ctx.error == TA_TEST_PASS && ctx.streamFillBars >= 0 &&
+                ctx.streamFillBars < ctx.streamFunctions )
             {
-                printf("STREAM UPDATEFILL VACUOUS: only %d of %d streaming functions "
-                       "verified UpdateAndFill — every streamable function must also "
-                       "gate-verify its n-bar filler\n",
-                       ctx.streamUFillFunctions, ctx.streamFunctions);
+                printf("STREAM FILL VACUOUS: the OpenAndFill leg ran for %d function(s) "
+                       "but value-compared only %d bar(s) -- a leg that reports checked "
+                       "while comparing nothing\n",
+                       ctx.streamFunctions, ctx.streamFillBars);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
             /* The same ratchet for the state-equivalence leg (#240). The
@@ -4614,10 +4933,14 @@ static ErrorNumber test_codegen_for_language(
                        "streaming functions\n", lang->name, ctx.streamFunctions);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
-            if( codegen_lang_has_peek_probe(lang->name) )
-                printf("  Peek non-commit verify: %d functions, %lld peek(s), a peeked "
-                       "handle stays bit-identical to a twin that was not\n",
-                       ctx.streamPeekFunctions, ctx.streamPeekProbes);
+            if( ctx.error == TA_TEST_PASS && ctx.streamValueFunctions > 0 &&
+                ctx.streamValueFunctions != ctx.streamFunctions )
+            {
+                printf("STREAM VALUE VACUOUS: only %d of %d streaming functions probed "
+                       "their Value accessor\n",
+                       ctx.streamValueFunctions, ctx.streamFunctions);
+                ctx.error = TA_CODEGEN_STREAM_MISMATCH;
+            }
             /* Without this floor a server that stopped peeking reads exactly
              * like one that peeked and passed. */
             if( ctx.error == TA_TEST_PASS && ctx.streamFunctions != 0 &&
@@ -4627,6 +4950,27 @@ static ErrorNumber test_codegen_for_language(
                 printf("STREAM PEEK VACUOUS: only %d of %d streaming functions ran "
                        "the peek non-commit leg\n",
                        ctx.streamPeekFunctions, ctx.streamFunctions);
+                ctx.error = TA_CODEGEN_STREAM_MISMATCH;
+            }
+            /* The repeat probe's floor, and it is UNCONDITIONAL: every server
+             * answers it, so a language reporting none is one whose emitter was
+             * missed — which is exactly how the peek probe went unwatched
+             * outside C for as long as it did. A probe count floor rides along
+             * because the per-function one survives a probe that fired once. */
+            if( ctx.error == TA_TEST_PASS && ctx.streamFunctions != 0 &&
+                ctx.streamPeekRepFunctions != ctx.streamFunctions )
+            {
+                printf("STREAM PEEK REPEAT VACUOUS: only %d of %d streaming functions "
+                       "ran the repeat probe\n",
+                       ctx.streamPeekRepFunctions, ctx.streamFunctions);
+                ctx.error = TA_CODEGEN_STREAM_MISMATCH;
+            }
+            if( ctx.error == TA_TEST_PASS && ctx.streamFunctions != 0 &&
+                ctx.streamPeekRepProbes < (long long)ctx.streamFunctions * 4 )
+            {
+                printf("STREAM PEEK REPEAT THIN: %lld repeat probe(s) over %d "
+                       "streaming functions\n",
+                       ctx.streamPeekRepProbes, ctx.streamFunctions);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
             /* The range leg's ratchet (#241). Unlike the state leg this one is
@@ -4641,6 +4985,21 @@ static ErrorNumber test_codegen_for_language(
                 printf("STREAM RANGE VACUOUS: only %d of %d streaming functions "
                        "compared the handle's OutRange against the batch range\n",
                        ctx.streamRangeFunctions, ctx.streamFunctions);
+                ctx.error = TA_CODEGEN_STREAM_MISMATCH;
+            }
+            /* The fork leg's own floor (#287), the same shape as the range one
+             * above and for the same reason: `clone_ok` says a fork MISBEHAVED,
+             * and says nothing at all when the leg stopped being emitted. Every
+             * streaming function has a fork in every backend, so the floor is
+             * unconditional — a function that did not report one is a tier whose
+             * emitter was missed. Servers with no fork leg report 0 and are
+             * skipped, so this cannot fire on a backend that has not got one. */
+            if( ctx.error == TA_TEST_PASS && ctx.streamCloneFunctions > 0 &&
+                ctx.streamCloneFunctions != ctx.streamFunctions )
+            {
+                printf("STREAM CLONE VACUOUS: only %d of %d streaming functions "
+                       "drove a forked stream to the end\n",
+                       ctx.streamCloneFunctions, ctx.streamFunctions);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
             /* Per-SITE, not per-total. The floor above counts functions and
@@ -5013,11 +5372,11 @@ static void write_markdown_report(const char *filepath, const char *languageFilt
     for( unsigned int li = 0; li < NUM_LANGUAGES; li++ ) {
         if( !showLang[li] ) continue;
         double avg = langMeasured[li] > 0 ? langSum[li] / langMeasured[li] : 0;
-        char avgStr[32], vsStr[32];
+        char avgStr[40], vsStr[32];
         if( langMeasured[li] < total / 2 ) {
-            fmt_ns(avgStr, sizeof(avgStr), avg);
-            char tmp[40]; snprintf(tmp, sizeof(tmp), "~%s*", avgStr);
-            avgStr[0] = '\0'; strncat(avgStr, tmp, sizeof(avgStr) - 1);
+            char raw[32];
+            fmt_ns(raw, sizeof(raw), avg);
+            snprintf(avgStr, sizeof(avgStr), "~%s*", raw);
             snprintf(vsStr, sizeof(vsStr), "*%d/%d measured", langMeasured[li], total);
         } else {
             fmt_ns(avgStr, sizeof(avgStr), avg);
@@ -5092,10 +5451,11 @@ static const char *const argv_064[] = {"./ta_064_serve", NULL};
                              * 3 period ranges (<= 6 candidates + 2 reject + 1
                              * sentinel each) + 3 MAType lists (M-1 values + 1
                              * sentinel each, #162) + the defaults vector <= 3*M+28
-                             * in the MAType-list length M. M=12 today => 64 worst
-                             * case, 63 actually built (one of optInSignalPeriod's
-                             * boundary candidates lands on its own default and is
-                             * dropped). 80 gives runway to M=17, and still matches
+                             * in the MAType-list length M. M=13 today => 67 worst
+                             * case, one fewer actually built (one of
+                             * optInSignalPeriod's boundary candidates lands on its
+                             * own default and is dropped). 80 gives runway to M=17,
+                             * and still matches
                              * STREAM_MAX_VEC.
                              * fuzz_build_vectors reports any overflow (this cap or
                              * the cand cap) and the caller fails the run loudly. */
@@ -5530,6 +5890,13 @@ static const TA_Fuzz064Tol FUZZ_064_TOL[] = {
     { "WMA",                 TOL_REL_IN, 1e-9, 0.0 },  /* #255                               */
     { "STOCH",               TOL_REL_IN, 1e-9, 0.0 },  /* #255  via TA_MAType_WMA            */
     { "STOCHF",              TOL_REL_IN, 1e-9, 0.0 },  /* #255  via TA_MAType_WMA            */
+    /* #338 the two-coefficient Wilder step. Named rather than left to the FMA
+     * transition bucket, whose 1e-9 is six orders looser than these two need
+     * and would swallow a real ATR regression whole. Input-relative because an
+     * ATR is a convex combination of true ranges; NATR divides by a close, so
+     * it is a percentage and output-relative. */
+    { "ATR",                 TOL_REL_IN,  2e-15, 0.0 }, /* #338  measured 5.19e-16 */
+    { "NATR",                TOL_REL_OUT, 4e-15, 0.0 }, /* #338  measured 1.29e-15 */
     { "IMI",                 TOL_NAN_TO, 50.0, 0.0 },  /* #112 all-flat window 0/0 -> NaN, now 50.0 */
 };
 
@@ -6429,7 +6796,8 @@ ErrorNumber fuzz_ref064(const char *functionFilter)
                ctx.skipped98);
     if( ctx.cciTol > 0 )
         printf("manifest-tolerated: %lld case(s) under an authorized latest->0.6.4 entry "
-               "(CCI #7 near-zero; LINEARREG family + TSF #103 sliding-sum; IMI #112 NaN->50.0)\n", ctx.cciTol);
+               "(CCI #7 near-zero; LINEARREG family + TSF #103 sliding-sum; IMI #112 NaN->50.0; "
+               "ATR/NATR #338 two-coefficient Wilder step)\n", ctx.cciTol);
 #if FMA_TRANSITION_TOLERANCE
     if( ctx.fmaTol > 0 )
         printf("fma-rebaseline: %lld case(s) within the 1e-9 relative FMA contract vs 0.6.4 "
@@ -6455,7 +6823,7 @@ ErrorNumber fuzz_ref064(const char *functionFilter)
                ctx.mfiSkipped);
     if( g_frozenEnumSkips > 0 )
         printf("post-freeze enums: %lld MAType value(s) > %d excluded vs v0.6.4 "
-               "(#139, #93, #182; covered current-vs-current by xlang-hash/stream/COMPOSITE)\n",
+               "(#139, #93, #182, #347, #348; covered current-vs-current by xlang-hash/stream/COMPOSITE)\n",
                g_frozenEnumSkips, FROZEN_ORACLE_MATYPE_MAX);
     if( ctx.varianceSkipped > 0 )
         printf("variance-skipped: %lld VAR/STDDEV/BBANDS case(s) ill-conditioned for 0.6.4 (kappa > %.0e, issue #118); every better-conditioned case was compared\n",
@@ -9197,6 +9565,37 @@ static void cdl_collect(const TA_FuncInfo *fi, void *opaque)
     { L->h[L->n] = fi->handle; L->nm[L->n] = fi->name; L->n++; }
 }
 
+/* ---- Output-arity cap guard (issue #352) ----
+ * CODEGEN_MAX_OUTPUTS is a hand-written cap over hand-written buffers; nothing
+ * else checks it. Every comparison loop in this file clamps at it, so a wider
+ * function would report PASS with outputs 3+ never compared, and
+ * CodegenRangeTestParam's buffer arrays are sized with it, so the unclamped
+ * loops would read past the struct. Fail loudly at startup instead — called
+ * from main() ahead of every run mode, because --fuzz-064 and --xlang-hash are
+ * self-contained early returns that never reach test_codegen(), and their
+ * buffers and clamped loops live in this file too. The library must be
+ * initialized when this runs (TA_ForEachFunc walks the registered table). */
+static void arity_cap_check(const TA_FuncInfo *funcInfo, void *opaqueData)
+{
+    if( funcInfo->nbOutput > MAX_OUTPUTS )
+    {
+        printf("\nFAIL - %s has %u outputs but CODEGEN_MAX_OUTPUTS is %d.\n"
+               "       Raise it in test_codegen.h; the harness buffers and\n"
+               "       clamped loops size from it.\n",
+               funcInfo->name, (unsigned int)funcInfo->nbOutput, MAX_OUTPUTS);
+        (*(int *)opaqueData)++;
+    }
+}
+
+ErrorNumber codegen_output_arity_within_cap(void)
+{
+    int wide = 0;
+    TA_ForEachFunc(arity_cap_check, &wide);
+    if( wide != 0 )
+        return TA_CODEGEN_OUTPUT_ARITY_EXCEEDS_CAP;
+    return TA_TEST_PASS;
+}
+
 static ErrorNumber verify_fuzz_candle_nonvacuous(void)
 {
     CdlList L; int i, failed = 0;
@@ -9467,6 +9866,16 @@ ErrorNumber test_codegen(const TA_History *history,
 
     print_timing_table(languageFilter);
 
+    /* Non-vacuity for the build-stamp gate. Java reaching the sweep with no
+     * digest comparison means the check stopped running, which reads exactly
+     * like the two artifacts agreeing (#322). */
+    if( g_gencodeDigestEligible && g_gencodeDigestChecked == 0 )
+    {
+        printf("\nCODEGEN FAILED: the Java build-stamp gate compared nothing — the\n"
+               "  server was never asked whether it is running the shipped library\n");
+        return TA_CODEGEN_GENCODE_DIGEST_VACUOUS;
+    }
+
     /* Non-vacuity for the float leg: it compares a language's single-precision
      * entry point against its own double one, and a server that silently ignored
      * "use_float" would compare the double result with itself and pass. The
@@ -9486,7 +9895,7 @@ ErrorNumber test_codegen(const TA_History *history,
      * parameter) rather than a bare count, so a --function= filter naming only
      * parameterless functions is a legitimate zero rather than a failure. */
     {
-        long sentinelTotal = 0, sentinelEligible = 0;
+        long sentinelEligible = 0;
         for( unsigned int li = 0; li < NUM_LANGUAGES; li++ )
         {
             if( g_floatSentinelEligible[li] > 0 && g_floatSentinelWithOutput[li] == 0 )
@@ -9498,7 +9907,6 @@ ErrorNumber test_codegen(const TA_History *history,
                        g_floatSentinelCompared[li]);
                 return TA_CODEGEN_OUTPUT_MISMATCH;
             }
-            sentinelTotal    += g_floatSentinelWithOutput[li];
             sentinelEligible += g_floatSentinelEligible[li];
         }
 
@@ -9576,19 +9984,12 @@ ErrorNumber test_codegen(const TA_History *history,
         {
             static const int FLOORED[] = { 0, 2, 12, 13 };   /* Success, BadParam, both index codes */
             unsigned int li, b, fi;
-            int anyLang = 0;
             for( li = 0; li < NUM_LANGUAGES; li++ )
             {
                 long total = 0;
                 for( b = 0; b < RC_BUCKETS; b++ ) total += g_retCodeSeen[li][b];
                 if( total == 0 )
                     continue;               /* language not run */
-                anyLang = 1;
-                printf("  retCode census [%s]:", ALL_LANGUAGES[li].display);
-                for( b = 0; b < RC_BUCKETS; b++ )
-                    if( g_retCodeSeen[li][b] > 0 )
-                        printf(" %s=%ld", RC_NAME[b], g_retCodeSeen[li][b]);
-                printf("\n");
                 if( g_retCodeSeen[li][RC_BUCKETS - 1] > 0 )
                 {
                     printf("\nCODEGEN FAILED: %s answered %ld call(s) with a code outside "
@@ -9670,47 +10071,8 @@ ErrorNumber test_codegen(const TA_History *history,
                     return TA_CODEGEN_OUTPUT_MISMATCH;
                 }
             }
-            {
-                long slackTotal = 0;
-                for( unsigned int li = 0; li < NUM_LANGUAGES; li++ )
-                    slackTotal += g_slackCalls[li];
-                if( slackTotal > 0 )
-                    printf("  output bound: %ld call(s) at the produced count + %d "
-                           "(slack is legal), the rest exactly at it\n",
-                           slackTotal, OUT_SLACK_PAD);
-            }
 
-            if( startSweepTotal > 0 )
-            {
-                printf("  startIdx-axis sweep: %ld range(s) with output compared "
-                       "at startIdx > 0", startSweepTotal);
-                if( g_startSweepSkipped98 > 0 )
-                    printf(", %ld withheld (TRIX/NATR partial range — the frozen "
-                           "reference predates issue #98)", g_startSweepSkipped98);
-                printf("\n");
-            }
 
-            /* Printed per language, not as a total: the differential floor
-             * above tests one language against the others, so the numbers it
-             * reads have to be visible. Printed even where the value legs found
-             * plenty, because a produced count of zero is the one answer the
-             * value legs cannot examine. */
-            {
-                long zeroTotal = 0;
-                for( unsigned int li = 0; li < NUM_LANGUAGES; li++ )
-                    zeroTotal += g_zeroCountCompared[li];
-                if( zeroTotal > 0 )
-                {
-                    printf("  produced count at zero:");
-                    for( unsigned int li = 0; li < NUM_LANGUAGES; li++ )
-                        if( g_codegenCompared[li] > 0 || g_zeroCountCompared[li] > 0 )
-                            printf(" %s=%ld", ALL_LANGUAGES[li].display,
-                                   g_zeroCountCompared[li]);
-                    printf("  (comparison(s), one per output, where C produced nothing "
-                           "and the server's own count was checked against it; no "
-                           "output element is diffed there)\n");
-                }
-            }
         }
 
         /* The per-language floor above is silent when NOTHING is eligible
@@ -9787,12 +10149,6 @@ ErrorNumber test_codegen(const TA_History *history,
         {
             printf("All %d language(s) passed codegen verification (float leg: %ld "
                    "acknowledged comparison(s))\n", langsTested, g_floatLegCompared);
-            printf("  default-sentinel pass: %ld comparison(s) with output over %ld "
-                   "eligible function-language pair(s)", sentinelTotal, sentinelEligible);
-            if( g_floatSentinelEnumWithheld > 0 )
-                printf(", %ld choice-list slot(s) withheld (see "
-                       "codegen_lang_can_pass_enum_sentinel)", g_floatSentinelEnumWithheld);
-            printf("\n");
         }
         else
             printf("All %d language(s) passed codegen verification (no float leg: "
@@ -9868,11 +10224,11 @@ ErrorNumber test_codegen(const TA_History *history,
             if( !language_matches_filter(languageFilter, ALL_LANGUAGES[li].name) )
                 continue;
             double avg = langMeasured[li] > 0 ? langSum[li] / langMeasured[li] : 0;
-            char avgStr[32], vsStr[32];
+            char avgStr[40], vsStr[32];
             if( langMeasured[li] < total / 2 ) {
-                fmt_ns(avgStr, sizeof(avgStr), avg);
-                char tmp[40]; snprintf(tmp, sizeof(tmp), "~%s*", avgStr);
-                avgStr[0] = '\0'; strncat(avgStr, tmp, sizeof(avgStr) - 1);
+                char raw[32];
+                fmt_ns(raw, sizeof(raw), avg);
+                snprintf(avgStr, sizeof(avgStr), "~%s*", raw);
                 snprintf(vsStr, sizeof(vsStr), "*%d/%d measured", langMeasured[li], total);
             } else {
                 fmt_ns(avgStr, sizeof(avgStr), avg);

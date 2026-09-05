@@ -38,6 +38,10 @@ pub enum MAType {
     DISABLED = 10,
     /// Not a moving average: selects the documented default of whichever parameter it is passed to.
     DEFAULT = 11,
+    /// The `TA_MAType_ZLEMA` moving average.
+    ZLEMA = 12,
+    /// The `TA_MAType_RMA` moving average.
+    RMA = 13,
 }
 
 impl TryFrom<i32> for MAType {
@@ -69,6 +73,8 @@ impl TryFrom<i32> for MAType {
             9 => Self::HMA,
             10 => Self::DISABLED,
             11 => Self::DEFAULT,
+            12 => Self::ZLEMA,
+            13 => Self::RMA,
             i32::MIN => Self::DEFAULT,
             _ => return Err(RetCode::BadParam),
         })
@@ -96,6 +102,7 @@ mod acos;
 mod ad;
 mod add;
 mod adosc;
+mod adr;
 mod adx;
 mod adxr;
 mod ao;
@@ -176,16 +183,26 @@ mod ceil;
 mod cmf;
 mod cmo;
 mod cmou;
+mod coppock;
 mod correl;
 mod cos;
 mod cosh;
+mod cumsum;
+mod cvi;
 mod dema;
 mod div;
+mod donchian;
+mod dpo;
 mod dx;
 mod efi;
 mod ema;
+mod er;
+mod eri;
 mod exp;
 mod floor;
+mod fosc;
+mod fractal;
+mod ha;
 mod hma;
 mod ht_dcperiod;
 mod ht_dcphase;
@@ -195,6 +212,8 @@ mod ht_trendline;
 mod ht_trendmode;
 mod imi;
 mod kama;
+mod kc;
+mod kdj;
 mod linearreg;
 mod linearreg_angle;
 mod linearreg_intercept;
@@ -207,6 +226,7 @@ mod macdext;
 mod macdfix;
 mod mama;
 mod marketfi;
+mod massi;
 mod mavp;
 mod max;
 mod maxindex;
@@ -225,17 +245,23 @@ mod mult;
 mod natr;
 mod nvi;
 mod obv;
+mod percentile;
+mod percentrank;
 mod plus_di;
 mod plus_dm;
 mod ppo;
 mod pvi;
 mod pvo;
+mod pvt;
 mod qstick;
+mod rma;
 mod roc;
 mod rocp;
 mod rocr;
 mod rocr100;
 mod rsi;
+mod rvi;
+mod rvol;
 mod sar;
 mod sarext;
 mod sin;
@@ -249,6 +275,7 @@ mod stochf;
 mod stochrsi;
 mod sub;
 mod sum;
+mod supertrend;
 mod t3;
 mod tan;
 mod tanh;
@@ -257,15 +284,19 @@ mod trange;
 mod trima;
 mod trix;
 mod tsf;
+mod tsi;
 mod typprice;
 mod ultosc;
 mod var;
+mod vhf;
+mod vortex;
 mod vwap;
 mod vwma;
 mod wad;
 mod wclprice;
 mod willr;
 mod wma;
+mod zlema;
 
 // Generated stream handles (one per streamable indicator):
 pub use ac::AcStream;
@@ -274,6 +305,7 @@ pub use acos::AcosStream;
 pub use ad::AdStream;
 pub use add::AddStream;
 pub use adosc::AdoscStream;
+pub use adr::AdrStream;
 pub use adx::AdxStream;
 pub use adxr::AdxrStream;
 pub use ao::AoStream;
@@ -354,16 +386,26 @@ pub use ceil::CeilStream;
 pub use cmf::CmfStream;
 pub use cmo::CmoStream;
 pub use cmou::CmouStream;
+pub use coppock::CoppockStream;
 pub use correl::CorrelStream;
 pub use cos::CosStream;
 pub use cosh::CoshStream;
+pub use cumsum::CumsumStream;
+pub use cvi::CviStream;
 pub use dema::DemaStream;
 pub use div::DivStream;
+pub use donchian::DonchianStream;
+pub use dpo::DpoStream;
 pub use dx::DxStream;
 pub use efi::EfiStream;
 pub use ema::EmaStream;
+pub use er::ErStream;
+pub use eri::EriStream;
 pub use exp::ExpStream;
 pub use floor::FloorStream;
+pub use fosc::FoscStream;
+pub use fractal::FractalStream;
+pub use ha::HaStream;
 pub use hma::HmaStream;
 pub use ht_dcperiod::HtDcperiodStream;
 pub use ht_dcphase::HtDcphaseStream;
@@ -373,6 +415,8 @@ pub use ht_trendline::HtTrendlineStream;
 pub use ht_trendmode::HtTrendmodeStream;
 pub use imi::ImiStream;
 pub use kama::KamaStream;
+pub use kc::KcStream;
+pub use kdj::KdjStream;
 pub use linearreg::LinearregStream;
 pub use linearreg_angle::LinearregAngleStream;
 pub use linearreg_intercept::LinearregInterceptStream;
@@ -385,6 +429,7 @@ pub use macdext::MacdextStream;
 pub use macdfix::MacdfixStream;
 pub use mama::MamaStream;
 pub use marketfi::MarketfiStream;
+pub use massi::MassiStream;
 pub use mavp::MavpStream;
 pub use max::MaxStream;
 pub use maxindex::MaxindexStream;
@@ -403,17 +448,23 @@ pub use mult::MultStream;
 pub use natr::NatrStream;
 pub use nvi::NviStream;
 pub use obv::ObvStream;
+pub use percentile::PercentileStream;
+pub use percentrank::PercentrankStream;
 pub use plus_di::PlusDiStream;
 pub use plus_dm::PlusDmStream;
 pub use ppo::PpoStream;
 pub use pvi::PviStream;
 pub use pvo::PvoStream;
+pub use pvt::PvtStream;
 pub use qstick::QstickStream;
+pub use rma::RmaStream;
 pub use roc::RocStream;
 pub use rocp::RocpStream;
 pub use rocr::RocrStream;
 pub use rocr100::Rocr100Stream;
 pub use rsi::RsiStream;
+pub use rvi::RviStream;
+pub use rvol::RvolStream;
 pub use sar::SarStream;
 pub use sarext::SarextStream;
 pub use sin::SinStream;
@@ -427,6 +478,7 @@ pub use stochf::StochfStream;
 pub use stochrsi::StochrsiStream;
 pub use sub::SubStream;
 pub use sum::SumStream;
+pub use supertrend::SupertrendStream;
 pub use t3::T3Stream;
 pub use tan::TanStream;
 pub use tanh::TanhStream;
@@ -435,12 +487,16 @@ pub use trange::TrangeStream;
 pub use trima::TrimaStream;
 pub use trix::TrixStream;
 pub use tsf::TsfStream;
+pub use tsi::TsiStream;
 pub use typprice::TyppriceStream;
 pub use ultosc::UltoscStream;
 pub use var::VarStream;
+pub use vhf::VhfStream;
+pub use vortex::VortexStream;
 pub use vwap::VwapStream;
 pub use vwma::VwmaStream;
 pub use wad::WadStream;
 pub use wclprice::WclpriceStream;
 pub use willr::WillrStream;
 pub use wma::WmaStream;
+pub use zlema::ZlemaStream;

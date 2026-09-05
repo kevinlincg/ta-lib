@@ -572,10 +572,12 @@ TA_RetCode TA_S_SAR( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_SAR_Stream {
-   /* The bars this handle has a value for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_StreamOutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_SAR_Value). */
+   double cur_outReal;
    double optInAcceleration;
    double optInMaximum;
    int isLong;
@@ -732,6 +734,7 @@ static void TA_SAR_StepImpl( struct TA_SAR_Stream *sp, double inHigh, double inL
          sar = newHigh;
       }
    }
+   sp->cur_outReal = *outReal;
    sp->newHigh = newHigh;
    sp->newLow = newLow;
    sp->sar = sar;
@@ -741,8 +744,6 @@ static TA_RetCode TA_SAR_OpenImpl( struct TA_SAR_Stream **stream, const double i
 {
    struct TA_SAR_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -765,9 +766,6 @@ static TA_RetCode TA_SAR_OpenImpl( struct TA_SAR_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       TA_RetCode retCode;
@@ -1042,6 +1040,7 @@ static TA_RetCode TA_SAR_OpenImpl( struct TA_SAR_Stream **stream, const double i
       sp->sar = sar;
       sp->outRangeBegIdx = *outBegIdx;
       sp->outRangeCount = *outNBElement;
+      sp->cur_outReal = outReal[(*outNBElement - 1) * outStride];
       *stream = sp;
       return TA_SUCCESS;
    }
@@ -1092,25 +1091,34 @@ TA_RetCode TA_SAR_OpenAndFillInternal( struct TA_SAR_Stream **stream, const doub
 TA_LIB_API TA_RetCode TA_SAR_Update( TA_SAR_Stream *stream, double inHigh, double inLow, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) )
+   {
+      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
+      return TA_BAD_PARAM;
+   }
    TA_SAR_StepImpl( stream, inHigh, inLow, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 
+TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, double inLow, double *outReal )
 {
-   struct TA_SAR_Stream scratch;
-   struct TA_SAR_Stream *sp = &scratch;
+   const struct TA_SAR_Stream *sp = stream;
    double prevHigh;
    double prevLow;
+   double af;
+   double ep;
+   int isLong;
    double newHigh;
    double newLow;
    double sar;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
-   scratch = *stream;
+   af = sp->af;
+   ep = sp->ep;
+   isLong = sp->isLong;
    newHigh = sp->newHigh;
    newLow = sp->newLow;
    sar = sp->sar;
@@ -1118,14 +1126,14 @@ TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, d
    prevHigh = newHigh;
    newLow = inLow;
    newHigh = inHigh;
-   if( sp->isLong == 1 )
+   if( isLong == 1 )
    {
       /* Switch to short if the low penetrates the SAR value. */
       if( newLow <= sar )
       {
          /* Switch and Overide the SAR with the ep */
-         sp->isLong = 0;
-         sar = sp->ep;
+         isLong = 0;
+         sar = ep;
          /* Make sure the overide SAR is within
           * yesterday's and today's range.
           */
@@ -1140,10 +1148,10 @@ TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, d
          /* Output the overide SAR */
          *outReal= sar;
          /* Adjust af and ep */
-         sp->af = sp->optInAcceleration;
-         sp->ep = newLow;
+         af = sp->optInAcceleration;
+         ep = newLow;
          /* Calculate the new SAR */
-         sar = fma(sp->af, sp->ep - sar, sar);
+         sar = fma(af, ep - sar, sar);
          /* Make sure the new SAR is within
           * yesterday's and today's range.
           */
@@ -1161,17 +1169,17 @@ TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, d
          /* Output the SAR (was calculated in the previous iteration) */
          *outReal= sar;
          /* Adjust af and ep. */
-         if( newHigh > sp->ep )
+         if( newHigh > ep )
          {
-            sp->ep = newHigh;
-            sp->af += sp->optInAcceleration;
-            if( sp->af > sp->optInMaximum )
+            ep = newHigh;
+            af += sp->optInAcceleration;
+            if( af > sp->optInMaximum )
             {
-               sp->af = sp->optInMaximum;
+               af = sp->optInMaximum;
             }
          }
          /* Calculate the new SAR */
-         sar = fma(sp->af, sp->ep - sar, sar);
+         sar = fma(af, ep - sar, sar);
          /* Make sure the new SAR is within
           * yesterday's and today's range.
           */
@@ -1188,8 +1196,8 @@ TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, d
    } else if( newHigh >= sar )
    {
       /* Switch and Overide the SAR with the ep */
-      sp->isLong = 1;
-      sar = sp->ep;
+      isLong = 1;
+      sar = ep;
       /* Make sure the overide SAR is within
        * yesterday's and today's range.
        */
@@ -1204,10 +1212,10 @@ TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, d
       /* Output the overide SAR */
       *outReal= sar;
       /* Adjust af and ep */
-      sp->af = sp->optInAcceleration;
-      sp->ep = newHigh;
+      af = sp->optInAcceleration;
+      ep = newHigh;
       /* Calculate the new SAR */
-      sar = fma(sp->af, sp->ep - sar, sar);
+      sar = fma(af, ep - sar, sar);
       /* Make sure the new SAR is within
        * yesterday's and today's range.
        */
@@ -1225,17 +1233,17 @@ TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, d
       /* Output the SAR (was calculated in the previous iteration) */
       *outReal= sar;
       /* Adjust af and ep. */
-      if( newLow < sp->ep )
+      if( newLow < ep )
       {
-         sp->ep = newLow;
-         sp->af += sp->optInAcceleration;
-         if( sp->af > sp->optInMaximum )
+         ep = newLow;
+         af += sp->optInAcceleration;
+         if( af > sp->optInMaximum )
          {
-            sp->af = sp->optInMaximum;
+            af = sp->optInMaximum;
          }
       }
       /* Calculate the new SAR */
-      sar = fma(sp->af, sp->ep - sar, sar);
+      sar = fma(af, ep - sar, sar);
       /* Make sure the new SAR is within
        * yesterday's and today's range.
        */
@@ -1248,31 +1256,33 @@ TA_LIB_API TA_RetCode TA_SAR_Peek( const TA_SAR_Stream *stream, double inHigh, d
          sar = newHigh;
       }
    }
-   sp->newHigh = newHigh;
-   sp->newLow = newLow;
-   sp->sar = sar;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_SAR_UpdateAndFill( TA_SAR_Stream *stream, const double inHigh[], const double inLow[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) ) return TA_BAD_PARAM;
-      TA_SAR_StepImpl( stream, inHigh[i], inLow[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 
 TA_LIB_API TA_RetCode TA_SAR_Close( TA_SAR_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_SAR_Value( const TA_SAR_Stream *stream, double *outReal )
+{
+   if( !stream || !outReal ) return TA_BAD_PARAM;
+   *outReal = stream->cur_outReal;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_SAR_Clone( const TA_SAR_Stream *stream, TA_SAR_Stream **clone )
+{
+   struct TA_SAR_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_SAR_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   *clone = sp;
    return TA_SUCCESS;
 }
 

@@ -4,15 +4,45 @@
 #include "ta_error_number.h"
 #include "ta_test_priv.h"
 
+/* The widest output arity the hand-written harness sizes its buffers for.
+ * The generated side counts this from the corpus (backends/common.rs
+ * max_output_arity(), #262); this define is the one place the number is still
+ * written down by hand. It is enforced, not assumed: main() fails at startup
+ * with TA_CODEGEN_OUTPUT_ARITY_EXCEEDS_CAP if any registered function is
+ * wider (codegen_output_arity_within_cap below), because the comparison loops
+ * clamp at this cap (a wider function would silently pass with its extra
+ * outputs unverified) and the range-test param struct sizes its buffer arrays
+ * with it (issue #352). */
+#define CODEGEN_MAX_OUTPUTS  4
+
 /* Run codegen verification tests against one or more languages.
  * languageFilter: comma-separated list of languages to test (NULL = test all).
  *   Valid values: "rust", "c", "java", "csharp"
  * functionFilter: CSV list of function names to test (NULL = test all).
  * Errors loudly if a requested language's server cannot be started.
  */
+ErrorNumber test_codegen_unstable_map( void );
+
+/* Fails with TA_CODEGEN_OUTPUT_ARITY_EXCEEDS_CAP if any registered function
+ * has nbOutput > CODEGEN_MAX_OUTPUTS (issue #352). Call with the library
+ * initialized, ahead of every run mode — the clamped loops and sized buffers
+ * this protects are used by the normal suite, --codegen, --fuzz-064 and
+ * --xlang-hash alike. */
+ErrorNumber codegen_output_arity_within_cap( void );
+
 ErrorNumber test_codegen(const TA_History *history,
                          const char *languageFilter,
                          const char *functionFilter);
+
+/* The --function rule for a SHORT token (one or two characters): it must be a
+ * whole '_'-delimited component of `name`, so DI selects DI, PLUS_DI and
+ * MINUS_DI but not DIV, and HT selects the HT_* family. Longer tokens stay a
+ * plain substring match. Two letters sit inside too many names to narrow
+ * anything loosely -- "MA" is a substring of 26 shipped names, "ER" of 12 --
+ * so a short token matched by substring runs a sweep the caller cannot opt out
+ * of. Callers apply this to a function name, or to one element of a group tag.
+ */
+int codegen_short_filter_token_matches(const char *name, const char *token);
 
 /* Can this language server select a compatibility variant?
  * Only C still carries the deprecated TA_SetCompatibility. Rust, Java and the

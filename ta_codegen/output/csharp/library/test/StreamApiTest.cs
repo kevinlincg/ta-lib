@@ -542,144 +542,6 @@ public static class StreamApiTest
         _b6a++;
     }
 
-    /// <summary>Rule U6a: <c>UpdateAndFill</c> declines a nullable output exactly
-    /// as the opener does, and the choice is the CALL's — the four open/fill
-    /// combinations are all accepted and all compute the same numbers.</summary>
-    /// <remarks>Non-vacuous in the same directions as the opener's probe, plus the
-    /// one this rule adds. The supplied run is the oracle, and the comparison a
-    /// backend that stopped computing FAMA cannot satisfy is the handle's own
-    /// <c>Value</c> after the fill, not the arrays. The mixed combinations are the
-    /// point of the rule: declining at <c>OpenAndFill</c> and supplying here — and
-    /// the reverse — must be as ordinary as either matching pair. A declining call
-    /// must still bound <c>outMAMA</c>, and still bound <c>outFAMA</c> where it IS
-    /// supplied.</remarks>
-    private const double U6aCanary = -1.2345678901234e300;
-
-    private static double[] CanaryFilled(int n)
-    {
-        var a = new double[n];
-        Array.Fill(a, U6aCanary);
-        return a;
-    }
-
-    private static bool WasWritten(double[] a)
-    {
-        foreach (double v in a) if (v == U6aCanary) return false;
-        return true;
-    }
-
-    private static void ADeclinedOutputAtUpdateAndFillIsAPropertyOfTheCall()
-    {
-        var core = new Core();
-        double[] closes = Closes(252);
-        int produced = closes.Length - core.MAMA_Lookback(0.5, 0.05);
-        var bars = new double[8];
-        for (int i = 0; i < bars.Length; i++) bars[i] = closes[closes.Length - 1] + 1.0 + i * 0.25;
-
-        Core.MamaStream Opened(bool declinedAtOpen) =>
-            declinedAtOpen
-                ? core.MamaOpenAndFill(closes, 0.5, 0.05, new double[produced], default)
-                : core.MamaOpenAndFill(closes, 0.5, 0.05, new double[produced], new double[produced]);
-
-        // The oracle: supplied at open, supplied here.
-        Core.MamaStream oracle = Opened(false);
-        // Canary-filled, not zero-filled: comparing two arrays the fill never
-        // wrote would otherwise pass on their shared initial value, which is
-        // exactly the break the supplied/supplied leg below is meant to catch.
-        double[] refMama = CanaryFilled(bars.Length);
-        double[] refFama = CanaryFilled(bars.Length);
-        oracle.UpdateAndFill(bars, refMama, refFama);
-        _u6a++;
-        Check(WasWritten(refMama) && WasWritten(refFama), "the oracle fill wrote both outputs");
-        double oracleFama = oracle.Value.FAMA;
-        double oracleMama = oracle.Value.MAMA;
-
-        foreach (bool declinedAtOpen in new[] { false, true })
-        {
-            string what = declinedAtOpen ? "declined at open" : "supplied at open";
-
-            Core.MamaStream h = Opened(declinedAtOpen);
-            double[] mama = CanaryFilled(bars.Length);
-            h.UpdateAndFill(bars, mama, default);
-            _u6a++;
-            Check(WasWritten(mama) && refMama.AsSpan().SequenceEqual(mama),
-                what + ", declined here: outMAMA");
-            _u6a++;
-            Check(h.OutRange.BegIdx == oracle.OutRange.BegIdx
-                  && h.OutRange.Count == oracle.OutRange.Count,
-                what + ", declined here: the range");
-            // The state, not the write: FAMA feeds the next bar.
-            _u6a++;
-            Check(BitConverter.DoubleToInt64Bits(h.Value.FAMA)
-                  == BitConverter.DoubleToInt64Bits(oracleFama),
-                what + ", declined here: a declined outFAMA is still computed");
-            _u6a++;
-            Check(BitConverter.DoubleToInt64Bits(h.Value.MAMA)
-                  == BitConverter.DoubleToInt64Bits(oracleMama),
-                what + ", declined here: the handle's outMAMA");
-
-            Core.MamaStream h2 = Opened(declinedAtOpen);
-            double[] mama2 = CanaryFilled(bars.Length);
-            double[] fama2 = CanaryFilled(bars.Length);
-            h2.UpdateAndFill(bars, mama2, fama2);
-            _u6a++;
-            Check(WasWritten(mama2) && WasWritten(fama2)
-                  && refMama.AsSpan().SequenceEqual(mama2) && refFama.AsSpan().SequenceEqual(fama2),
-                what + ", supplied here: both outputs");
-        }
-
-        // "May differ again on the NEXT call" — the sentence the whole rule rests
-        // on. One handle, three fills, alternating; each has to agree with an
-        // oracle driven the same way with everything supplied.
-        Core.MamaStream alt = Opened(false);
-        Core.MamaStream altRef = Opened(false);
-        bool[] plan = { true, false, true };
-        for (int k = 0; k < plan.Length; k++)
-        {
-            var leg = new double[bars.Length];
-            for (int i = 0; i < bars.Length; i++) leg[i] = bars[i] + k;
-            double[] wantM = CanaryFilled(leg.Length);
-            double[] wantF = CanaryFilled(leg.Length);
-            altRef.UpdateAndFill(leg, wantM, wantF);
-            double[] gotM = CanaryFilled(leg.Length);
-            double[] gotF = CanaryFilled(leg.Length);
-            if (plan[k])
-            {
-                alt.UpdateAndFill(leg, gotM, default);
-            }
-            else
-            {
-                alt.UpdateAndFill(leg, gotM, gotF);
-                _u6a++;
-                Check(WasWritten(gotF) && wantF.AsSpan().SequenceEqual(gotF),
-                    $"alternating leg {k}: outFAMA");
-            }
-            _u6a++;
-            Check(WasWritten(gotM) && wantM.AsSpan().SequenceEqual(gotM)
-                  && alt.OutRange.Count == altRef.OutRange.Count,
-                $"alternating leg {k}: outMAMA and the range");
-        }
-        _u6a++;
-        Check(BitConverter.DoubleToInt64Bits(alt.Value.FAMA)
-              == BitConverter.DoubleToInt64Bits(altRef.Value.FAMA),
-            "alternating the declined set left the handle's FAMA identical");
-
-        // Declining one output disarms neither the other's bound nor its own
-        // where it IS supplied, and a rejected fill commits nothing.
-        Core.MamaStream guarded = Opened(false);
-        int before = guarded.OutRange.Count;
-        CheckThrows<ArgumentException>(
-            () => guarded.UpdateAndFill(bars, new double[bars.Length - 1], default),
-            "an undersized outMAMA is still rejected when outFAMA is declined");
-        _u6a++;
-        CheckThrows<ArgumentException>(
-            () => guarded.UpdateAndFill(bars, new double[bars.Length], new double[bars.Length - 1]),
-            "a supplied outFAMA is still bounded");
-        _u6a++;
-        Check(guarded.OutRange.Count == before, "a rejected fill commits nothing");
-        _u6a++;
-    }
-
     /// <summary>Rule S5, from both sides. The bound is
     /// <c>historyLen - lookback</c> — the count the fill actually writes, not
     /// the width of the history — so an exactly-sized output has to be ACCEPTED
@@ -1045,8 +907,6 @@ public static class StreamApiTest
     private static int _s5;
     /* Rule B6a at the opener — a declined output, counted apart from S5's. */
     private static int _b6a;
-    /* Rule U6a at UpdateAndFill — counted apart from the opener's. */
-    private static int _u6a;
 
     private static int _nfOpen;
     private static int _nfBar;
@@ -1231,56 +1091,113 @@ public static class StreamApiTest
               + $"({_nfOpen}/{_nfBar}/{_nfState})");
     }
 
-    private static int _ufCommits;
-    private static int _ufValues;
-    private static int _ufSlots;
+    /* ---- rule U3, stated absolutely (docs/error-handling-spec.md 2.4) ---- */
 
-    private const int UfN = 6;
-    private const int UfBad = 3;
-    private const double UfCanary = -1.2345678901234e300;
-    private const int UfCanaryI = -987654321;
+    /* Advance counters, one per property, each incremented AT its assertion. */
+    private static int _advRejects;
+    private static int _advHolds;
+    private static int _advResumes;
+    private static int _advValues;
+    private static int _advPeekStills;
 
-    private static void UfRangeEq(string what, OutRange a, OutRange b)
+    private static void AdvReject(string what, Func<OutRange> range, Action bad)
     {
-        Check(a.BegIdx == b.BegIdx && a.Count == b.Count,
-              $"{what}: UpdateAndFill committed ({a.BegIdx},{a.Count}), "
-              + $"{UfBad} Updates committed ({b.BegIdx},{b.Count})");
-        _ufCommits++;
+        OutRange before = range();
+        ThrowsBadParam(what + ": Update must reject a non-finite bar", bad);
+        OutRange after = range();
+        Check(after.BegIdx == before.BegIdx && after.Count == before.Count + 1,
+              $"{what}: a rejected Update left ({after.BegIdx},{after.Count}), "
+              + $"expected ({before.BegIdx},{before.Count + 1})");
+        _advRejects++;
     }
 
-    private static void UfValueEq(string what, double a, double b)
+    private static void AdvHeld(string what, double before, double after)
     {
-        Check(Bits(a) == Bits(b), $"{what}: UpdateAndFill wrote {a} where Update returned {b}");
-        _ufValues++;
+        Check(Bits(before) == Bits(after),
+              $"{what}: a rejected call moved Value ({before} -> {after})");
+        _advHolds++;
     }
 
-    private static void UfUntouched(string what, double x)
+    private static void AdvResume(string what, Func<OutRange> range, Action good)
     {
-        Check(Bits(x) == Bits(UfCanary), $"{what}: UpdateAndFill wrote past the bar it rejected");
-        _ufSlots++;
+        OutRange before = range();
+        try
+        {
+            good();
+        }
+        catch (Exception e)
+        {
+            Check(false, $"{what}: the good bar after a rejection threw {e.GetType().Name}");
+        }
+        OutRange after = range();
+        Check(after.BegIdx == before.BegIdx && after.Count == before.Count + 1,
+              $"{what}: a committed Update left ({after.BegIdx},{after.Count}), "
+              + $"expected ({before.BegIdx},{before.Count + 1})");
+        _advResumes++;
     }
 
-    /// <summary><c>UpdateAndFill</c> commits the bars before the one it rejects.</summary>
+    /* The resumed bar produced a value AND the handle kept it — so the "Value
+       did not move" assertions above cannot be passing because the handle
+       stopped producing anything at all. */
+    private static void AdvProduced(string what, double returned, double held)
+    {
+        Check(double.IsFinite(returned) && Bits(returned) == Bits(held),
+              $"{what}: after the rejected bar, Update returned {returned} and "
+              + $"Value reports {held}");
+        _advValues++;
+    }
+
+    private static void AdvPeekStill(string what, Func<OutRange> range, Action c, bool mustReject)
+    {
+        OutRange before = range();
+        if (mustReject)
+        {
+            ThrowsBadParam(what + ": Peek must reject a non-finite bar", c);
+        }
+        else
+        {
+            try
+            {
+                c();
+            }
+            catch (Exception e)
+            {
+                Check(false, $"{what}: a Peek of a good bar must not throw {e.GetType().Name}");
+            }
+        }
+        OutRange after = range();
+        Check(after.BegIdx == before.BegIdx && after.Count == before.Count,
+              $"{what}: Peek moved the range ({before.BegIdx},{before.Count}) -> "
+              + $"({after.BegIdx},{after.Count})");
+        _advPeekStills++;
+    }
+
+    /// <summary>What ONE rejected <c>Update</c> costs, in absolute numbers.</summary>
     /// <remarks>
-    /// <para><c>UpdateAndFill</c> is <c>n</c> back-to-back <see cref="object"/>
-    /// <c>Update</c> calls and nothing else, so a non-finite bar <c>k</c> throws
-    /// exactly as <c>Update</c> would — and the bars before it stay committed with
-    /// their values written. That is the one place in the API where a call fails
-    /// AND leaves output behind, so what it leaves is pinned against a CONTROL
-    /// handle driven over the same first <c>k</c> bars one at a time: same
-    /// <c>OutRange</c>, same values, same answer on the next good bar, and nothing
-    /// written at or above <c>k</c>. A whole-array pre-scan would satisfy "it
-    /// throws" and fail every one of those.</para>
-    /// <para>Coverage is by the emitter each tier's <c>UpdateAndFill</c> comes
-    /// from: SMA stands for the whole step-loop family, BBANDS adds three outputs,
-    /// MA both dispatch arms, MAVP the period bank and CDLDOJI an integer output
-    /// over four inputs.</para>
+    /// <para>The non-finite gate above pins a rejected <c>Update</c> against a
+    /// control handle. That is an EQUIVALENCE, and therefore symmetric: it cannot
+    /// see a change that moves both sides equally. Delete the advance from the
+    /// emitted reject arm and both handles move at once, so the whole suite —
+    /// here, in C and in Java — stays green, leaving the rule pinned only by the generator's source-text
+    /// gate. This method compares against no control at all: it reads
+    /// <c>OutRange</c>, offers one bad bar, and demands the exact numbers.</para>
+    /// <para>Both halves of U3 are asserted on the SAME call — the count moved by
+    /// exactly one AND <c>Value</c> did not move. A change that stepped the state
+    /// without counting, or counted while stepping, satisfies either half alone;
+    /// only the pair pins "counted, not committed".</para>
+    /// <para>Then a good bar, which must still produce a value and advance by one:
+    /// refusing a bar beats computing on it only if the handle survives the refusal.
+    /// And the mirror — <c>Peek</c> advances NOTHING, rejected or not. That half
+    /// regresses silently, because a counting Peek breaks no value anywhere.</para>
+    /// <para>Coverage is by stream TIER, as everywhere else in this file: the loop
+    /// tier, dual-mode, both dispatch arms, the period bank, two composed
+    /// multi-output functions, and an integer output over four price inputs.</para>
     /// </remarks>
-    private static void UpdateAndFillCommitsThePrefix()
+    private static void ARejectedUpdateCostsExactlyOneBar()
     {
         var core = new Core();
         const int warm = 60;
-        double[] closes = Closes(warm + UfN + 1);
+        double[] closes = Closes(warm + 2);
         double[] highs = new double[closes.Length];
         double[] lows = new double[closes.Length];
         double[] opens = new double[closes.Length];
@@ -1292,219 +1209,153 @@ public static class StreamApiTest
             opens[i] = closes[i] - 0.4;
             periods[i] = 5.0 + (i % 11);
         }
-        var c = closes[..warm].ToArray();
-        var h = highs[..warm].ToArray();
-        var l = lows[..warm].ToArray();
-        var o = opens[..warm].ToArray();
-        var pp = periods[..warm].ToArray();
 
         double[] bad = { double.NaN, double.PositiveInfinity, double.NegativeInfinity };
 
         foreach (double v in bad)
         {
-            double[] bars = new double[UfN];
-            double[] goodBars = new double[UfN];
-            for (int i = 0; i < UfN; i++)
-            {
-                bars[i] = closes[warm + i];
-                goodBars[i] = closes[warm + i];
-            }
-            bars[UfBad] = v;
+            var c = closes[..warm].ToArray();
+            var h = highs[..warm].ToArray();
+            var l = lows[..warm].ToArray();
+            var o = opens[..warm].ToArray();
+            var p = periods[..warm].ToArray();
 
-            /* --- the shared step loop --------------------------------------- */
-            var sa = core.SmaOpen(c, 14);
-            var sb = core.SmaOpen(c, 14);
-            double[] want = new double[UfBad];
-            for (int i = 0; i < UfBad; i++)
-            {
-                want[i] = sb.Update(bars[i]);
-            }
-            double[] outp = new double[UfN];
-            Array.Fill(outp, UfCanary);
-            BarMustReject("SMA.UpdateAndFill", () => sa.UpdateAndFill(bars, outp));
-            UfRangeEq("SMA", sa.OutRange, sb.OutRange);
-            for (int i = 0; i < UfBad; i++)
-            {
-                UfValueEq("SMA", outp[i], want[i]);
-            }
-            for (int i = UfBad; i < UfN; i++)
-            {
-                UfUntouched("SMA", outp[i]);
-            }
-            StateMustHold("SMA(UpdateAndFill)",
-                sa.Update(closes[warm + UfN]), sb.Update(closes[warm + UfN]));
+            /* --- loop tier --------------------------------------------------- */
+            var s = core.SmaOpen(c, 14);
+            double sPeekHeld = s.Value;
+            AdvPeekStill("SMA(bad)", () => s.OutRange, () => s.Peek(v), true);
+            AdvHeld("SMA(peek)", sPeekHeld, s.Value);
+            AdvPeekStill("SMA(good)", () => s.OutRange, () => s.Peek(closes[warm]), false);
+            double sHeld = s.Value;
+            AdvReject("SMA", () => s.OutRange, () => s.Update(v));
+            AdvHeld("SMA", sHeld, s.Value);
+            double sGot = 0.0;
+            AdvResume("SMA", () => s.OutRange, () => sGot = s.Update(closes[warm]));
+            AdvProduced("SMA", sGot, s.Value);
 
-            /* --- composed, three outputs ------------------------------------ */
-            var ba = core.BbandsOpen(c, 20, 2.0, 2.0, MAType.SMA);
-            var bb = core.BbandsOpen(c, 20, 2.0, 2.0, MAType.SMA);
-            var wantB = new (double U, double M, double L)[UfBad];
-            for (int i = 0; i < UfBad; i++)
-            {
-                var w = bb.Update(bars[i]);
-                wantB[i] = (w.RealUpperBand, w.RealMiddleBand, w.RealLowerBand);
-            }
-            double[] bu = new double[UfN];
-            double[] bm = new double[UfN];
-            double[] bl = new double[UfN];
-            Array.Fill(bu, UfCanary);
-            Array.Fill(bm, UfCanary);
-            Array.Fill(bl, UfCanary);
-            BarMustReject("BBANDS.UpdateAndFill", () => ba.UpdateAndFill(bars, bu, bm, bl));
-            UfRangeEq("BBANDS", ba.OutRange, bb.OutRange);
-            for (int i = 0; i < UfBad; i++)
-            {
-                UfValueEq("BBANDS.upper", bu[i], wantB[i].U);
-                UfValueEq("BBANDS.middle", bm[i], wantB[i].M);
-                UfValueEq("BBANDS.lower", bl[i], wantB[i].L);
-            }
-            for (int i = UfBad; i < UfN; i++)
-            {
-                UfUntouched("BBANDS.upper", bu[i]);
-                UfUntouched("BBANDS.middle", bm[i]);
-                UfUntouched("BBANDS.lower", bl[i]);
-            }
-            /* Value is built fresh from the handle's fields here (a record
-               struct, no cache), so it names the last committed bar for free —
-               asserted anyway, because Java's does need a refresh and the two
-               surfaces are meant to agree. */
-            Check(Bits(ba.Value.RealUpperBand) == Bits(wantB[UfBad - 1].U),
-                  "BBANDS: Value must name the last committed bar after a partial fill");
-            _ufValues++;
+            /* --- dual-mode tier, three price inputs -------------------------- */
+            var d = core.MinusDiOpen(h, l, c, 14);
+            double dPeekHeld = d.Value;
+            AdvPeekStill("MINUS_DI(bad)", () => d.OutRange,
+                () => d.Peek(highs[warm], v, closes[warm]), true);
+            AdvHeld("MINUS_DI(peek)", dPeekHeld, d.Value);
+            AdvPeekStill("MINUS_DI(good)", () => d.OutRange,
+                () => d.Peek(highs[warm], lows[warm], closes[warm]), false);
+            double dHeld = d.Value;
+            AdvReject("MINUS_DI", () => d.OutRange,
+                () => d.Update(highs[warm], lows[warm], v));
+            AdvHeld("MINUS_DI", dHeld, d.Value);
+            double dGot = 0.0;
+            AdvResume("MINUS_DI", () => d.OutRange,
+                () => dGot = d.Update(highs[warm], lows[warm], closes[warm]));
+            AdvProduced("MINUS_DI", dGot, d.Value);
 
-            /* --- dispatch, both arms (period 1 is the identity loop) --------- */
+            /* --- dispatch, both arms; period 1 is the identity loop, which never
+               reaches a sub-stream and carries its own advance ---------------- */
             foreach (int period in new[] { 1, 14 })
             {
-                var ma = core.MaOpen(c, period, MAType.SMA);
-                var mb = core.MaOpen(c, period, MAType.SMA);
-                double[] wantM = new double[UfBad];
-                for (int i = 0; i < UfBad; i++)
-                {
-                    wantM[i] = mb.Update(bars[i]);
-                }
-                double[] mo = new double[UfN];
-                Array.Fill(mo, UfCanary);
-                BarMustReject($"MA({period}).UpdateAndFill", () => ma.UpdateAndFill(bars, mo));
-                UfRangeEq($"MA({period})", ma.OutRange, mb.OutRange);
-                for (int i = 0; i < UfBad; i++)
-                {
-                    UfValueEq("MA", mo[i], wantM[i]);
-                }
-                for (int i = UfBad; i < UfN; i++)
-                {
-                    UfUntouched("MA", mo[i]);
-                }
+                var m = core.MaOpen(c, period, MAType.SMA);
+                double mPeekHeld = m.Value;
+                AdvPeekStill($"MA({period},bad)", () => m.OutRange, () => m.Peek(v), true);
+                AdvHeld($"MA({period},peek)", mPeekHeld, m.Value);
+                AdvPeekStill($"MA({period},good)", () => m.OutRange,
+                    () => m.Peek(closes[warm]), false);
+                double mHeld = m.Value;
+                AdvReject($"MA({period})", () => m.OutRange, () => m.Update(v));
+                AdvHeld($"MA({period})", mHeld, m.Value);
+                double mGot = 0.0;
+                AdvResume($"MA({period})", () => m.OutRange, () => mGot = m.Update(closes[warm]));
+                AdvProduced($"MA({period})", mGot, m.Value);
             }
 
-            /* --- period bank: poison the PERIOD series, the input that reaches
-               an (int) cast ------------------------------------------------- */
-            double[] pers = new double[UfN];
-            for (int i = 0; i < UfN; i++)
-            {
-                pers[i] = 2.0 + (i % 8);
-            }
-            pers[UfBad] = v;
-            var va = core.MavpOpen(c, pp, 2, 30, MAType.SMA);
-            var vb = core.MavpOpen(c, pp, 2, 30, MAType.SMA);
-            double[] wantV = new double[UfBad];
-            for (int i = 0; i < UfBad; i++)
-            {
-                wantV[i] = vb.Update(goodBars[i], pers[i]);
-            }
-            double[] vo = new double[UfN];
-            Array.Fill(vo, UfCanary);
-            BarMustReject("MAVP.UpdateAndFill", () => va.UpdateAndFill(goodBars, pers, vo));
-            UfRangeEq("MAVP", va.OutRange, vb.OutRange);
-            for (int i = 0; i < UfBad; i++)
-            {
-                UfValueEq("MAVP", vo[i], wantV[i]);
-            }
-            for (int i = UfBad; i < UfN; i++)
-            {
-                UfUntouched("MAVP", vo[i]);
-            }
+            /* --- period bank; the poisoned slot is the PERIOD, the input that
+               reaches an (int) cast -------------------------------------------- */
+            var vp = core.MavpOpen(c, p, 2, 30, MAType.SMA);
+            double vPeekHeld = vp.Value;
+            AdvPeekStill("MAVP(bad)", () => vp.OutRange, () => vp.Peek(closes[warm], v), true);
+            AdvHeld("MAVP(peek)", vPeekHeld, vp.Value);
+            AdvPeekStill("MAVP(good)", () => vp.OutRange,
+                () => vp.Peek(closes[warm], p[0]), false);
+            double vHeld = vp.Value;
+            AdvReject("MAVP", () => vp.OutRange, () => vp.Update(closes[warm], v));
+            AdvHeld("MAVP", vHeld, vp.Value);
+            double vGot = 0.0;
+            AdvResume("MAVP", () => vp.OutRange, () => vGot = vp.Update(closes[warm], p[0]));
+            AdvProduced("MAVP", vGot, vp.Value);
 
-            /* --- integer output, four inputs; poison the LOW ----------------- */
-            double[] os = new double[UfN];
-            double[] hs = new double[UfN];
-            double[] ls = new double[UfN];
-            for (int i = 0; i < UfN; i++)
-            {
-                os[i] = opens[warm + i];
-                hs[i] = highs[warm + i];
-                ls[i] = lows[warm + i];
-            }
-            ls[UfBad] = v;
-            var ja = core.CdldojiOpen(o, h, l, c);
-            var jb = core.CdldojiOpen(o, h, l, c);
-            int[] wantJ = new int[UfBad];
-            for (int i = 0; i < UfBad; i++)
-            {
-                wantJ[i] = jb.Update(os[i], hs[i], ls[i], goodBars[i]);
-            }
-            int[] jo = new int[UfN];
-            Array.Fill(jo, UfCanaryI);
-            BarMustReject("CDLDOJI.UpdateAndFill",
-                () => ja.UpdateAndFill(os, hs, ls, goodBars, jo));
-            UfRangeEq("CDLDOJI", ja.OutRange, jb.OutRange);
-            for (int i = 0; i < UfBad; i++)
-            {
-                Check(jo[i] == wantJ[i],
-                      $"CDLDOJI: UpdateAndFill wrote {jo[i]} where Update returned {wantJ[i]}");
-                _ufValues++;
-            }
-            for (int i = UfBad; i < UfN; i++)
-            {
-                Check(jo[i] == UfCanaryI, "CDLDOJI: UpdateAndFill wrote past the rejected bar");
-                _ufSlots++;
-            }
+            /* --- composed, three outputs: all three must be left alone ------- */
+            var b = core.BbandsOpen(c, 20, 2.0, 2.0, MAType.SMA);
+            var bPeekHeld = b.Value;
+            AdvPeekStill("BBANDS(bad)", () => b.OutRange, () => b.Peek(v), true);
+            AdvHeld("BBANDS.upper(peek)", bPeekHeld.RealUpperBand, b.Value.RealUpperBand);
+            AdvHeld("BBANDS.middle(peek)", bPeekHeld.RealMiddleBand, b.Value.RealMiddleBand);
+            AdvHeld("BBANDS.lower(peek)", bPeekHeld.RealLowerBand, b.Value.RealLowerBand);
+            AdvPeekStill("BBANDS(good)", () => b.OutRange, () => b.Peek(closes[warm]), false);
+            var bHeld = b.Value;
+            AdvReject("BBANDS", () => b.OutRange, () => b.Update(v));
+            AdvHeld("BBANDS.upper", bHeld.RealUpperBand, b.Value.RealUpperBand);
+            AdvHeld("BBANDS.middle", bHeld.RealMiddleBand, b.Value.RealMiddleBand);
+            AdvHeld("BBANDS.lower", bHeld.RealLowerBand, b.Value.RealLowerBand);
+            Core.BbandsValue bGot = default;
+            AdvResume("BBANDS", () => b.OutRange, () => bGot = b.Update(closes[warm]));
+            AdvProduced("BBANDS.upper", bGot.RealUpperBand, b.Value.RealUpperBand);
+            AdvProduced("BBANDS.middle", bGot.RealMiddleBand, b.Value.RealMiddleBand);
+            AdvProduced("BBANDS.lower", bGot.RealLowerBand, b.Value.RealLowerBand);
+
+            /* --- composed, one sub feeding the next -------------------------- */
+            var k = core.StochOpen(h, l, c, 5, 3, MAType.SMA, 3, MAType.SMA);
+            var kPeekHeld = k.Value;
+            AdvPeekStill("STOCH(bad)", () => k.OutRange,
+                () => k.Peek(highs[warm], v, closes[warm]), true);
+            AdvHeld("STOCH.slowK(peek)", kPeekHeld.SlowK, k.Value.SlowK);
+            AdvHeld("STOCH.slowD(peek)", kPeekHeld.SlowD, k.Value.SlowD);
+            AdvPeekStill("STOCH(good)", () => k.OutRange,
+                () => k.Peek(highs[warm], lows[warm], closes[warm]), false);
+            var kHeld = k.Value;
+            AdvReject("STOCH", () => k.OutRange, () => k.Update(v, lows[warm], closes[warm]));
+            AdvHeld("STOCH.slowK", kHeld.SlowK, k.Value.SlowK);
+            AdvHeld("STOCH.slowD", kHeld.SlowD, k.Value.SlowD);
+            Core.StochValue kGot = default;
+            AdvResume("STOCH", () => k.OutRange,
+                () => kGot = k.Update(highs[warm], lows[warm], closes[warm]));
+            AdvProduced("STOCH.slowK", kGot.SlowK, k.Value.SlowK);
+            AdvProduced("STOCH.slowD", kGot.SlowD, k.Value.SlowD);
+
+            /* --- integer output over four price inputs ----------------------- */
+            var j = core.CdldojiOpen(o, h, l, c);
+            int jPeekHeld = j.Value;
+            AdvPeekStill("CDLDOJI(bad)", () => j.OutRange,
+                () => j.Peek(opens[warm], highs[warm], lows[warm], v), true);
+            Check(j.Value == jPeekHeld, "CDLDOJI: a rejected Peek moved Value");
+            _advHolds++;
+            AdvPeekStill("CDLDOJI(good)", () => j.OutRange,
+                () => j.Peek(opens[warm], highs[warm], lows[warm], closes[warm]), false);
+            int jHeld = j.Value;
+            AdvReject("CDLDOJI", () => j.OutRange,
+                () => j.Update(opens[warm], highs[warm], v, closes[warm]));
+            Check(j.Value == jHeld, "CDLDOJI: a rejected Update moved Value");
+            _advHolds++;
+            /* A zero-bodied bar, so the resumed value is 100 — distinguishable
+               from the 0 an unwritten slot would also read. */
+            int jGot = 0;
+            AdvResume("CDLDOJI", () => j.OutRange,
+                () => jGot = j.Update(closes[warm], highs[warm], lows[warm], closes[warm]));
+            Check(jGot == 100 && j.Value == jGot,
+                  $"CDLDOJI: the bar after the rejection produced {jGot}");
+            _advValues++;
         }
 
-        /* The rejections spans make visible: a short output, and an output that
-           OVERLAPS an input — `Span.Overlaps` sees the partially-shifted case
-           Java's reference equality cannot. Plus the zero-bar call, a success
-           that changes nothing. */
-        var s2 = core.SmaOpen(c, 14);
-        OutRange before = s2.OutRange;
-        double[] tail = new double[UfN];
-        for (int i = 0; i < UfN; i++)
-        {
-            tail[i] = closes[warm + i];
-        }
-        double[] o2 = new double[UfN];
-        Array.Fill(o2, UfCanary);
-        s2.UpdateAndFill(ReadOnlySpan<double>.Empty, o2);
-        Check(before.BegIdx == s2.OutRange.BegIdx && before.Count == s2.OutRange.Count,
-              "a zero-bar UpdateAndFill must not move the handle");
-        _ufCommits++;
-        UfUntouched("SMA(zero bars)", o2[0]);
-        BarMustReject("SMA.UpdateAndFill(short output)",
-            () => s2.UpdateAndFill(tail, new double[UfN - 1]));
-        /* Overlap, NOT a length mistake: both spans are exactly barCount long
-           and sit one element apart in the same array, so the only condition
-           that can reject is `Span.Overlaps` — the partially-shifted case
-           Java's reference equality cannot see. */
-        double[] wide = new double[UfN + 1];
-        for (int i = 0; i < UfN + 1; i++)
-        {
-            wide[i] = closes[warm + i];
-        }
-        BarMustReject("SMA.UpdateAndFill(output overlaps input)",
-            () => s2.UpdateAndFill(wide.AsSpan(0, UfN), wide.AsSpan(1, UfN)));
-        Check(before.BegIdx == s2.OutRange.BegIdx && before.Count == s2.OutRange.Count,
-              "a rejected UpdateAndFill must not move the handle");
-        _ufCommits++;
-        /* Control: the same call, correctly sized and disjoint, succeeds and
-           advances by exactly the bars it was handed. */
-        s2.UpdateAndFill(tail, o2);
-        Check(s2.OutRange.Count == before.Count + UfN,
-              "UpdateAndFill must advance by every bar it commits");
-        _ufCommits++;
+        Console.WriteLine($"  Rejected-Update advance gate (U3, absolute): {_advRejects} "
+            + $"rejection(s) counted once, {_advHolds} untouched value(s), {_advResumes} "
+            + $"resumed bar(s), {_advValues} value(s) produced, {_advPeekStills} "
+            + "Peek(s) that moved nothing");
 
-        /* Non-vacuity. Literal floors, every counter incremented at its
+        /* Non-vacuity. Literal floors, every counter incremented at its own
            assertion. */
-        Check(_ufCommits >= 21 && _ufValues >= 75 && _ufSlots >= 73,
-              $"the UpdateAndFill gate ran fewer checks than it was written with "
-              + $"({_ufCommits}/{_ufValues}/{_ufSlots})");
+        Check(_advRejects >= 24 && _advHolds >= 66 && _advResumes >= 24
+              && _advValues >= 33 && _advPeekStills >= 48,
+              "the rejected-Update advance gate ran fewer checks than it was written "
+              + $"with ({_advRejects}/{_advHolds}/{_advResumes}/{_advValues}/{_advPeekStills})");
     }
 
     public static int Run()
@@ -1519,13 +1370,11 @@ public static class StreamApiTest
         NullArgumentsAreNamed();
         TheFillOutputBoundFromBothSides();
         ADeclinedFillOutputIsStillComputed();
-        ADeclinedOutputAtUpdateAndFillIsAPropertyOfTheCall();
         TheFillOutputBoundHoldsOnEveryTier();
         // Literal floors, HERE and not inside the methods above: a floor that
         // rides its own method is deleted along with the call it guards.
         Check(_s5 >= 5, $"the fill-capacity gate ran fewer checks than it was written with ({_s5})");
         Check(_b6a >= 6, $"the declined-output gate ran fewer checks than it was written with ({_b6a})");
-        Check(_u6a >= 19, $"the declined-at-updateAndFill gate ran fewer checks than it was written with ({_u6a})");
         IntegerSentinelSelectsTheDocumentedDefault();
         SettingsAreCapturedFromTheOpeningCore();
         UpdateDoesNotAllocate();
@@ -1533,7 +1382,7 @@ public static class StreamApiTest
         MultiOutputValueIsAStruct();
         CatalogueAgreesWithTheEmittedSurface();
         NonFiniteInputsAreRejected();
-        UpdateAndFillCommitsThePrefix();
+        ARejectedUpdateCostsExactlyOneBar();
 
         if (_failures == 0)
         {

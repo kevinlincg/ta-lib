@@ -1,80 +1,60 @@
 //! Generates the C# streaming API section appended to each shipped
-//! `Core_<NAME>.cs` — the managed .NET sibling of `java_stream.rs` /
-//! `rust_stream.rs` / `c_stream.rs`.
-//!
-//! Like the other three it consumes the backend-neutral [`crate::streaming`]
-//! layer (`StreamPlan`, `StreamModel`, `build_transition`, the `NameMap` trait)
-//! and renders through the existing [`super::csharp`] statement/expression
-//! walkers. `streaming.rs` and the three shipped stream emitters are not
-//! touched by this module — that is what keeps the other backends byte-frozen
-//! by construction while this one lands.
+//! `Core_<NAME>.cs`. Like the other stream emitters it consumes the
+//! backend-neutral [`crate::streaming`] layer (`StreamPlan`, `StreamModel`,
+//! `build_transition`, the `NameMap` trait) and renders through the
+//! [`super::csharp`] statement/expression walkers.
 //!
 //! # Pinned decisions
 //!
 //! - **The handle is a `public sealed class <Name>Stream` nested in
-//!   `partial class Core`** — PascalCase, acronym single-capitalized (issue
-//!   #278; only the batch tier still spells `<NAME>` verbatim) — with a
-//!   *sibling* nested `public readonly record struct <Name>Value` for
-//!   multi-output functions. The `Value` type cannot itself be named `Value`:
-//!   a nested type and a member of the same name is CS0102, and the member
-//!   name is the one every language's documentation references.
+//!   `partial class Core`**, with a *sibling* nested
+//!   `public readonly record struct <Name>Value` for multi-output functions.
+//!   That type cannot itself be named `Value`: a nested type sharing a member's
+//!   name is CS0102, and the member name is the one every language's
+//!   documentation references.
 //!
-//! - **Every handle field is `internal`, every constructor `internal`.** A
-//!   *sibling* nested type cannot reach another's `private` members, and
-//!   `MavpStream`'s copy constructor builds `MaStream` copies while
-//!   `MaStream`'s step calls `SmaStream.Update`. One rule beats per-field
-//!   analysis, and `internal` is invisible to consumers. Internal constructors
-//!   additionally stop `System.Text.Json` from minting a half-built handle,
-//!   which is the positive act C# needs where Java gets not-serializable free.
+//! - **Every handle field and constructor is `internal`.** A sibling nested
+//!   type cannot reach another's `private` members, and handles do call across
+//!   each other (a copy constructor building another's copy, a step calling
+//!   another's `Update`). One rule beats per-field analysis, and `internal` is
+//!   invisible to consumers. It also stops `System.Text.Json` minting a
+//!   half-built handle — the positive act C# needs where Java gets
+//!   not-serializable for free.
 //!
 //! - **The step stays a method on `Core`, not on the handle.** Transcribed
-//!   bodies render unstable-period reads as
-//!   `this.unstablePeriod[(int)FuncUnstId.X]`, which only compiles inside a
-//!   `Core` instance method. Measured, `core.Step(sp, x)` versus
-//!   `this.Step(x)` is 3.44–3.54 against 3.39–3.47 ns/bar — indistinguishable.
-//!
-//! - **No `cachedValue` field.** Java caches the boxed multi-output `Value` so
-//!   that `value()` allocates nothing; a `readonly record struct` return is
-//!   0 B/update by construction (measured against 40 B/update for the
-//!   Java-shaped class). One fewer field, one fewer store per bar, and one
-//!   fewer thing the copy path can get wrong.
+//!   bodies read the unstable period as `this.unstablePeriod[(int)FuncUnstId.X]`,
+//!   which only compiles inside a `Core` instance method; passing the handle in
+//!   measured indistinguishable from `this`.
 //!
 //! - **The `NameMap` prefixes are Java's, verbatim** (`sp.x`, `sp.cur_y`,
-//!   `sp.ring_v_a`, ...). This is load-bearing, not cosmetic:
-//!   [`super::fma::stream_base`] strips exactly `sp->`, `sp.` and `cur_` to
-//!   decide integer-versus-float typing, so any other scheme needs `fma.rs`
-//!   extended, and getting that wrong is a ~1 ULP cross-language divergence
-//!   with nothing pointing at the cause.
+//!   `sp.ring_v_a`, ...). Load-bearing: [`super::fma::stream_base`] strips
+//!   exactly `sp->`, `sp.` and `cur_` to decide integer-versus-float typing, so
+//!   any other scheme needs `fma.rs` extended, and getting that wrong is a
+//!   ~1 ULP cross-language divergence with nothing pointing at the cause.
 //!
-//! - **Double-only.** `single_precision` is always `false` and no `float[]`
-//!   overload is emitted; the streaming contract is `double` in every language.
+//! - **Double-only.** No `float` overload is emitted; the streaming contract is
+//!   `double` in every language.
 //!
-//! # Emission rules that are measurements, not preferences
+//! # Emission rules that were measured, not preferred
 //!
-//! Each of these was measured on the shipped shape (dotnet 10, pinned cores,
-//! interleaved arms, min-of-N over 3–5 process launches). They are recorded so
-//! that a later reader does not re-optimize on intuition in either direction.
+//! Recorded so that a later reader does not re-optimize on intuition:
 //!
-//! - No `MethodImpl` attributes. `Update` is 3.39–3.51 ns/bar inlinable against
-//!   6.69–7.10 behind `NoInlining`; the JIT's IL-size heuristic already inlines
-//!   the small steps and correctly declines the ~400-byte candlestick ones.
-//! - `Update`/`Peek`/`Value` stay thin — no validation, no null checks (there
-//!   are no array arguments), no logging. That is what keeps them inlinable.
-//! - No unsafe indexing: `MemoryMarshal.GetArrayDataReference` + `Unsafe.Add`
-//!   measured 4.26–4.55 against 3.44–3.47 ns/bar — a *regression*.
-//! - No array-hoisting pass (3.35–3.48 against 3.39–3.47 — noise). Hoist only a
+//! - No `MethodImpl` attributes: the JIT's IL-size heuristic already inlines
+//!   the small steps and correctly declines the big candlestick ones.
+//! - `Update`/`Peek`/`Value` stay thin — no validation, no logging. That is
+//!   what keeps them inlinable.
+//! - No unsafe indexing (`MemoryMarshal.GetArrayDataReference` + `Unsafe.Add`
+//!   measured a *regression*) and no array-hoisting pass (noise). Hoist only a
 //!   *counted* loop bound, where it genuinely drops a check.
-//! - No `[StructLayout]`: the CLR uses `LayoutKind.Auto` for reference types
-//!   and packs them itself; `Sequential` would disable that.
+//! - No `[StructLayout]`: the CLR packs reference types itself under
+//!   `LayoutKind.Auto`, and `Sequential` would disable that.
 //! - Rings stay `double[]`/`int[]` fields. `Span<T>` cannot be a field (CS8345)
 //!   and `Memory<T>` costs a span materialization per access.
 //! - The copy constructor uses `new T[n]` + `Array.Copy`, never
 //!   `(double[])x.Clone()` — 2.3x.
-//! - Dispatch is a `switch` + cast, but *not* because virtual calls are slow:
-//!   an interface call measured 4.41–4.74 against the switch's 5.55–5.72
-//!   ns/bar. The switch wins on cross-language parity and on not adding a type
-//!   hierarchy across 172 handles, and that is the whole argument.
-
+//! - Dispatch is a `switch` + cast, and *not* because virtual calls are slow —
+//!   an interface call measured faster. The switch wins on cross-language
+//!   parity and on not adding a type hierarchy across every handle.
 use std::cell::Cell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
@@ -283,10 +263,6 @@ fn field_type_and_default(ty: &VarType) -> (String, String) {
 
 /// The params + `cur_<out>` fields every tier's handle carries
 /// (dispatch/period-bank/loopless-composed build on exactly this base).
-///
-/// There is no `cachedValue`: the C# `Value` is a `readonly record struct`
-/// returned by value, so caching it would cost a field and a store per bar and
-/// buy nothing.
 fn base_fields(func: &FuncDef) -> Vec<Field> {
     let mut fields: Vec<Field> = Vec::new();
     for p in &func.optional_inputs {
@@ -911,7 +887,7 @@ fn emit_handle_class_with_members(
         let _ = writeln!(o, "      internal {cty} {name}{init};");
     }
     o.push_str(extra_members);
-    // The bars this handle has produced a value for (issue #241). Two ints
+    // The bars this handle has an output for (issue #241). Two ints
     // rather than an `OutRange` field: `OutRange` is a readonly struct, so a
     // per-bar count bump would have to rebuild it, and `Update` is the hot path.
     let _ = writeln!(o, "      internal int outRangeBegIdx;");
@@ -921,16 +897,17 @@ fn emit_handle_class_with_members(
 
     let mut d = XmlDoc::new();
     d.summary(
-        "The bars this stream has produced a value for, in the input series' \
+        "The bars this stream has an output for, in the input series' \
          coordinates: <c>[BegIdx, BegIdx + Count)</c>.",
     );
     d.open("remarks");
     d.para(&format!(
         "It is what <c>Core.{base}</c> reports over the same bars: the opener sets it to \
-         <c>(lookback, historyLen - lookback)</c>, every accepted <c>Update</c> adds one to \
-         the count, <c>Peek</c> leaves it alone, and <c>Clone</c> carries it verbatim. A \
-         plain <c>Open</c> hands back only the last value, a subset of this range, because \
-         the caller chose not to take the fill."
+         <c>(lookback, historyLen - lookback)</c>, every <c>Update</c> adds one to the count \
+         — a non-finite bar is rejected but still counted, because the bar happened — \
+         <c>Peek</c> leaves it alone, and <c>Clone</c> carries it verbatim. A plain \
+         <c>Open</c> hands back only the last value, a subset of this range, because the \
+         caller chose not to take the fill."
     ));
     d.close("remarks");
     o.push('\n');
@@ -973,11 +950,9 @@ fn emit_handle_class_with_members(
 /// `public readonly record struct` in batch output order, components named
 /// after the outputs (`outSlowK` → `SlowK`).
 ///
-/// A record struct, not Java's record class: the return is copied to the
-/// caller's frame, so `Update` allocates nothing at all (measured 0 B/update
-/// against 40 B/update for the Java-shaped cached class), which is also why
-/// there is no `cachedValue` field to keep it free. `Deconstruct` comes free —
-/// `var (up, mid, low) = s.Update(bar);`.
+/// A record struct: the return is copied to the caller's frame, so `Update`
+/// allocates nothing and needs no out-parameter to stay free. `Deconstruct`
+/// comes free — `var (up, mid, low) = s.Update(bar);`.
 fn emit_value_type(o: &mut String, func: &FuncDef) {
     if !has_value_type(func) {
         return;
@@ -1046,6 +1021,16 @@ fn fresh_value_expr(func: &FuncDef, handle_var: &str) -> String {
     }
 }
 
+/// The handle's produced-bar count, bumped by one.
+///
+/// Saturating: nothing bounds how many bars a live stream is fed, and past
+/// `MAX_INDEX` the count has left the batch index domain anyway. Every entry
+/// point that advances renders it from here, so the guard cannot drift between
+/// them.
+fn advance_out_range(indent: &str) -> String {
+    format!("{indent}if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;\n")
+}
+
 /// The per-bar finite-input rejection for `Update`/`Peek`: one `double.IsFinite`
 /// per scalar bar input, before the handle is touched.
 ///
@@ -1055,18 +1040,29 @@ fn fresh_value_expr(func: &FuncDef, handle_var: &str) -> String {
 /// retained: one non-finite bar poisons every recursive accumulator in it for
 /// the rest of its life, long after the feed recovers.
 ///
+/// `advance` is the U3 half of that contract: a committing entry point counts
+/// the rejected bar before it throws, because the bar happened and occupies a
+/// position in the series. Pass `false` only where nothing commits — `Peek`,
+/// whose receiver must stay untouched under every outcome.
+///
 /// Routed through `Core.StreamFailure` so the message prefix and the exception
 /// type match the open rejections exactly.
-fn finite_bar_check(func: &FuncDef, indent: &str, what: &str) -> String {
+fn finite_bar_check(func: &FuncDef, indent: &str, what: &str, advance: bool) -> String {
     let bars = streaming::input_array_names(func);
     if bars.is_empty() {
         return String::new();
     }
     let n = base_name(func);
     let conds: Vec<String> = bars.iter().map(|b| format!("!double.IsFinite({b})")).collect();
+    let cond = conds.join(" || ");
+    let throw = format!("throw Core.StreamFailure(\"{n}\", \"{what}\", RetCode.BadParam);");
+    if !advance {
+        return format!("{indent}if( {cond} ) {throw}\n");
+    }
+    let inner = format!("{indent}   ");
     format!(
-        "{indent}if( {} ) throw Core.StreamFailure(\"{n}\", \"{what}\", RetCode.BadParam);\n",
-        conds.join(" || ")
+        "{indent}if( {cond} )\n{indent}{{\n{}{inner}{throw}\n{indent}}}\n",
+        advance_out_range(&inner)
     )
 }
 
@@ -1074,7 +1070,6 @@ fn finite_bar_check(func: &FuncDef, indent: &str, what: &str) -> String {
 fn emit_update_peek_value_clone(o: &mut String, func: &FuncDef, frame: Option<&str>) {
     emit_update_method(o, func);
     emit_peek_method(o, func, frame);
-    emit_update_and_fill_method(o, func);
     emit_value_property(o, func);
     emit_clone_method(o, func);
 }
@@ -1094,11 +1089,14 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
     );
     d.para(
         "Throws <see cref=\"System.ArgumentException\"/> if any bar value is not finite \
-         (NaN or an infinity). That check runs before anything is written, so the handle \
-         is left exactly as it was and the stream stays usable: skip the bar, or re-open \
-         on a clean history. This is the one place the streaming tier is stricter than \
-         the batch API, which computes on whatever it is given: a handle retains its \
-         state, so a single non-finite bar would poison every later value it produces.",
+         (NaN or an infinity). That check runs before anything is written, so no state \
+         moves, <see cref=\"Value\"/> still answers the previous value, and the stream \
+         stays usable — just carry on with the next bar. <see cref=\"OutRange\"/> does \
+         advance: the bar happened, so it is counted, which keeps two handles fed the \
+         same series positionally aligned when only one of them rejects a bar. This is \
+         the one place the streaming tier is stricter than the batch API, which computes \
+         on whatever it is given: a handle retains its state, so a single non-finite bar \
+         would poison every later value it produces.",
     );
     d.close("remarks");
     for input in &inputs {
@@ -1109,16 +1107,11 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
     o.push_str(&d.render(6));
     let _ = writeln!(o, "      public {vt} Update( {sig_bars} )");
     let _ = writeln!(o, "      {{");
-    o.push_str(&finite_bar_check(func, "         ", "update"));
+    o.push_str(&finite_bar_check(func, "         ", "update", true));
     let _ = writeln!(o, "         core.{base}StepImpl(this, {fwd_bars});");
-    // After the step and after the finite-bar reject, so a rejected bar leaves
-    // the range where it was. `Peek` runs a frame that commits nothing and so
-    // never reaches this. Saturating: nothing bounds how many bars a live stream
-    // is fed, and past MAX_INDEX it has left the batch index domain anyway.
-    let _ = writeln!(
-        o,
-        "         if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;"
-    );
+    // The accepted bar's own bump; the rejected one is counted on the reject
+    // path above. `Peek` runs a frame that commits nothing and reaches neither.
+    o.push_str(&advance_out_range("         "));
     let _ = writeln!(o, "         return {};", fresh_value_expr(func, ""));
     let _ = writeln!(o, "      }}");
 }
@@ -1138,11 +1131,10 @@ fn emit_peek_method(o: &mut String, func: &FuncDef, frame: Option<&str>) {
          return — the same transition, with every store it would make carried in a local \
          instead. Never writes this handle, so peeks may run concurrently with each other.",
     );
-    // Conditional, because for the handles whose accumulator the frame still
-    // copies the unconditional claim was false: a C# array field is a
-    // reference, so a frame that writes one has to copy it, and that copy is a
-    // real per-call allocation. The flat-in-period cost — the claim the frame
-    // exists to keep — holds either way, and is what both sentences lead with.
+    // Conditional, because a frame that still has to copy an accumulator — no
+    // shipped one does — allocates per call, and the unconditional claim would
+    // be false for it. The flat-in-period cost, the claim the frame exists to
+    // keep, holds either way and is what both sentences lead with.
     if frame.is_some_and(|f| f.contains("Array.Copy(")) {
         d.para(
             "It copies no buffer: the frame runs against this handle, reading its buffers \
@@ -1169,139 +1161,11 @@ fn emit_peek_method(o: &mut String, func: &FuncDef, frame: Option<&str>) {
     let _ = writeln!(o, "      {{");
     // Ahead of the frame, not left to the transition: a rejected bar must not
     // run any of it.
-    o.push_str(&finite_bar_check(func, "         ", "peek"));
+    o.push_str(&finite_bar_check(func, "         ", "peek", false));
     let body = frame.expect("every tier emits a peek frame");
     let _ = writeln!(o, "         {class} sp = this;");
     o.push_str(body);
     let _ = writeln!(o, "         return {};", fresh_value_expr(func, ""));
-    let _ = writeln!(o, "      }}");
-}
-
-// --- UpdateAndFill ---------------------------------------------------------------
-/// `UpdateAndFill`'s XML doc — hoisted so the emitter itself stays readable.
-fn update_and_fill_doc(func: &FuncDef, inputs: &[String]) -> XmlDoc {
-    let mut d = XmlDoc::new();
-    d.summary(
-        "Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.",
-    );
-    d.open("remarks");
-    d.para(
-        "Exactly <c>n</c> back-to-back <see cref=\"Update\"/> calls, with one set of \
-         argument checks instead of <c>n</c>. The outputs must hold at least <c>n</c> \
-         values and must not overlap an input or each other.",
-    );
-    d.para(
-        "<see cref=\"OutRange\"/> counts what was committed, which is what makes a \
-         rejection readable: a non-finite bar <c>k</c> throws \
-         <see cref=\"System.ArgumentException\"/> exactly as <see cref=\"Update\"/> would, \
-         with bars <c>0..k</c> committed and written, bar <c>k</c> and everything after it \
-         not, and the count advanced by <c>k</c>.",
-    );
-    // Rule U6a reads the same as S6a, and a caller of this tier needs telling in
-    // the same place a caller of the opener is told.
-    {
-        let names = super::common::nullable_output_list(func);
-        if !names.is_empty() {
-            let list = names
-                .iter()
-                .map(|n| format!("<c>{n}</c>"))
-                .collect::<Vec<_>>()
-                .join(", ");
-            d.para(&format!(
-                "{list} may be declined with an empty span, per call and independently of \
-                 what the opener was given: the value is still computed — \
-                 <see cref=\"Value\"/> reports it — and nothing is written out."
-            ));
-        }
-    }
-    d.close("remarks");
-    for input in inputs {
-        d.param(input, &format!("Closed bars for <c>{input}</c>, oldest first."));
-    }
-    for out in &func.outputs {
-        d.param(
-            &out.name,
-            &format!("Receives one <c>{}</c> value per bar committed.", out.name),
-        );
-    }
-    d
-}
-
-fn emit_update_and_fill_method(o: &mut String, func: &FuncDef) {
-    let raw = base_name(func);
-    let base = pascal_words(&raw);
-    let inputs = streaming::input_array_names(func);
-
-    // One emitter for every tier: each owns a `<base>StepImpl` with the same
-    // surface, so the n-bar filler is that step in a loop (issue #246). No
-    // `Value` cache to keep in step on the way out, unlike Java: a multi-output
-    // `Value` here is a record struct built fresh from the handle's fields.
-    let mut sig = String::new();
-    for a in &inputs {
-        let _ = write!(sig, "ReadOnlySpan<double> {a}, ");
-    }
-    for out in &func.outputs {
-        let t = if out_is_int(func, &out.name) { "int" } else { "double" };
-        let _ = write!(sig, "Span<{t}> {}, ", out.name);
-    }
-    let sig = sig.trim_end_matches(", ");
-    let count_src = inputs
-        .first()
-        .map_or_else(|| "0".to_string(), |a| format!("{a}.Length"));
-    o.push('\n');
-    o.push_str(&update_and_fill_doc(func, &inputs).render(6));
-    let _ = writeln!(o, "      public void UpdateAndFill( {sig} )");
-    let _ = writeln!(o, "      {{");
-    let _ = writeln!(o, "         int barCount = {count_src};");
-    let mut checks: Vec<String> = inputs
-        .iter()
-        .skip(1)
-        .map(|a| format!("{a}.Length != barCount"))
-        .collect();
-    // A `nullable` output may be declined here exactly as at the opener (rule
-    // U6a), per call: bounded only where it was supplied, and its store guarded.
-    // Nothing recorded at `Open` constrains what this call presents. An empty
-    // span IS the declination, as it is at the opener — a span cannot be null.
-    let nullable = super::common::nullable_output_names(func);
-    for out in &func.outputs {
-        if nullable.contains(&out.name) {
-            checks.push(format!("(!{0}.IsEmpty && {0}.Length < barCount)", out.name));
-        } else {
-            checks.push(format!("{}.Length < barCount", out.name));
-        }
-    }
-    if let Some(alias) = alias_condition(func, &inputs) {
-        checks.push(alias);
-    }
-    if !checks.is_empty() {
-        let _ = writeln!(
-            o,
-            "         if( {} ) throw Core.StreamFailure(\"{raw}\", \"updateAndFill\", RetCode.BadParam);",
-            checks.join(" || ")
-        );
-    }
-    let _ = writeln!(o, "         for( int i = 0; i < barCount; i++ )");
-    let _ = writeln!(o, "         {{");
-    if !inputs.is_empty() {
-        let conds: Vec<String> = inputs
-            .iter()
-            .map(|b| format!("!double.IsFinite({b}[i])"))
-            .collect();
-        let _ = writeln!(
-            o,
-            "            if( {} ) throw Core.StreamFailure(\"{raw}\", \"updateAndFill\", RetCode.BadParam);",
-            conds.join(" || ")
-        );
-    }
-    let idx_bars: Vec<String> = inputs.iter().map(|a| format!("{a}[i]")).collect();
-    let _ = writeln!(o, "            core.{base}StepImpl(this, {});", idx_bars.join(", "));
-    for out in &func.outputs {
-        let name = &out.name;
-        let guard = if nullable.contains(name) { format!("if( !{name}.IsEmpty ) ") } else { String::new() };
-        let _ = writeln!(o, "            {guard}{name}[i] = cur_{name};");
-    }
-    let _ = writeln!(o, "            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;");
-    let _ = writeln!(o, "         }}");
     let _ = writeln!(o, "      }}");
 }
 
@@ -1311,8 +1175,9 @@ fn emit_value_property(o: &mut String, func: &FuncDef) {
 
     let mut d = XmlDoc::new();
     d.summary(
-        "The value at the most recently committed bar — the last history bar right after \
-         open, then whatever the latest <see cref=\"Update\"/> returned.",
+        "The value at the last bar this stream counted — the bar <see cref=\"OutRange\"/> \
+         ends on. The last history bar right after open, then whatever the latest \
+         accepted <see cref=\"Update\"/> returned.",
     );
     d.open("remarks");
     d.para("<see cref=\"Peek\"/> does not change it.");
@@ -1469,7 +1334,7 @@ fn localize_state_writes(
 /// value. It sits above the mode predicate, so the outputs it names are
 /// declared by the frame rather than by either arm.
 fn identity_branch_as_frame(func: &FuncDef, model: &StreamModel) -> Option<Vec<Statement>> {
-    let st = streaming::identity_step_branch(model, &CsStreamNames)?;
+    let st = streaming::identity_peek_branch(model, &CsStreamNames)?;
     let answer = fresh_value_expr(func, "");
     let bare: HashMap<String, String> = func
         .outputs
@@ -1629,24 +1494,32 @@ fn peek_frame_arm_named(
         fields.iter().map(|(n, t, _)| (n.as_str(), t.as_str())).collect();
 
     let mut out = String::new();
-    for (name, ty) in &model.temps {
+    for (name, ty) in &streaming::temps_used(&model.temps, &body_ir) {
         let (cty, default) = field_type_and_default(ty);
         let _ = writeln!(out, "{pad}{cty} {name} = {default};");
     }
+    // A peek commits nothing, so the previous bar's output is never an input
+    // to the transition (issue #343) and seeding it is a dead field load.
+    let dead_seeds: BTreeSet<String> = func
+        .outputs
+        .iter()
+        .map(|o| format!("cur_{}", o.name))
+        .filter(|n| locals.contains(n) && streaming::peek_seed_is_dead(&body_ir, n))
+        .collect();
     for name in &locals {
         if predeclared.contains(name) {
             continue;
         }
         let cty = types.get(name.as_str()).copied()?;
         // A C# array field is a reference: taking it plain would write the
-        // handle through it. Only the accumulators `peek_transition_widest`
-        // refused reach here — two to five elements, never a period-sized
-        // buffer, which the frame only ever reads. Allocate and `Array.Copy`
-        // rather than `Clone()`, the same shape the copy constructor states its
-        // case for.
+        // handle through it. Allocate and `Array.Copy` rather than `Clone()`,
+        // the same shape the copy constructor states its case for.
         if let Some(elem) = cty.strip_suffix("[]") {
             let _ = writeln!(out, "{pad}{cty} {name} = new {elem}[sp.{name}.Length];");
             let _ = writeln!(out, "{pad}Array.Copy( sp.{name}, {name}, sp.{name}.Length );");
+        } else if dead_seeds.contains(name) {
+            let zero = if cty == "int" { "0" } else { "0.0" };
+            let _ = writeln!(out, "{pad}{cty} {name} = {zero};");
         } else {
             let _ = writeln!(out, "{pad}{cty} {name} = sp.{name};");
         }

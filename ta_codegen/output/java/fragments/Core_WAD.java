@@ -23,9 +23,9 @@
    public int WAD_Lookback( )
    {
       /* The first bar has no previous close, so it accumulates nothing and the
-       * line starts at 0.0 -- the same convention as the other four cumulative
-       * lines in the tree: OBV, AD, NVI and PVI all return 0 here and emit a
-       * seed value at startIdx. Tulip's ti_wad_start() returns 1 instead, so its
+       * line starts at 0.0 -- the same convention as the other cumulative
+       * lines in the tree: OBV, AD, NVI, PVI and PVT all return 0 here and emit
+       * a seed value at startIdx. Tulip's ti_wad_start() returns 1 instead, so its
        * series is this one without the leading zero.
        */
       return 0 ;
@@ -340,11 +340,11 @@
     * Open with {@link Core#wadOpen}; there is no close — the handle is
     * ordinary heap state, unreferenced handles are simply garbage-collected.
     * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
-    * {@code value} and {@code copy} must not race with an {@code update} on
+    * {@code value} and {@code clone} must not race with an {@code update} on
     * the same handle. With no concurrent {@code update}, {@code peek}/
-    * {@code value}/{@code copy} never write the handle and may be called
-    * concurrently after safe publication. Independent handles (including
-    * {@code copy()} results) are fully independent.
+    * {@code value}/{@code clone} never write the stream and may be called
+    * concurrently after safe publication. Independent streams (a
+    * {@code clone()} result included) are fully independent.
     * <p>Not serializable by design: to checkpoint, retain the history and
     * re-open — the result is bit-identical by contract.
     */
@@ -359,12 +359,13 @@
       WadStream( Core core ) { this.core = core; }
 
       /**
-       * The bars this stream has produced a value for, in the input series'
+       * The bars this stream has an output for, in the input series'
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#WAD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * accepted {@code update} adds one to the count, {@code peek} leaves
-       * it alone, and {@code copy()} carries it verbatim. A plain
+       * {@code update} adds one to the count — a bar rejected for being
+       * non-finite included, because it still happened — {@code peek} leaves
+       * it alone, and {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
@@ -384,48 +385,25 @@
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the handle is left exactly as it was —
-       * the stream stays usable, so skip the bar or re-open on a clean
-       * history. This is the one place the streaming tier is stricter than
+       * written, so the state is left exactly as it was: the rejected bar's
+       * output is the previous value, held, and {@link #value()} answers it.
+       * The stream stays usable, so skip the bar or re-open on a clean
+       * history. {@link #outRange()} does advance: the bar happened and
+       * occupies a position in the series, so the handle counts it, which is
+       * what keeps two handles on one feed aligned when only one rejects.
+       * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
+            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
             throw new TaLibArgumentException("WAD update: BadParam", RetCode.BadParam);
+         }
          core.wadStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what was committed, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * bars {@code 0..k} committed and written, bar {@code k} and everything
-       * after it not, and the count advanced by {@code k}.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double inClose[], double outReal[] ) {
-         requireArgument("WAD updateAndFill", "inHigh", inHigh);
-         requireArgument("WAD updateAndFill", "inLow", inLow);
-         requireArgument("WAD updateAndFill", "inClose", inClose);
-         requireArgument("WAD updateAndFill", "outReal", outReal);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || inClose.length != barCount || outReal.length < barCount || (Object)outReal == (Object)inHigh || (Object)outReal == (Object)inLow || (Object)outReal == (Object)inClose )
-            throw new TaLibArgumentException("WAD updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) )
-               throw new TaLibArgumentException("WAD updateAndFill: BadParam", RetCode.BadParam);
-            core.wadStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**
@@ -443,31 +421,30 @@
          WadStream sp = this;
          double close = 0.0;
          double trueExtreme = 0.0;
-         double cur_outReal = sp.cur_outReal;
-         double prevClose = sp.prevClose;
+         double cur_outReal = 0.0;
          double sum = sp.sum;
          close = inClose;
-         if( close > prevClose ) {
+         if( close > sp.prevClose ) {
             trueExtreme = inLow;
-            if( prevClose < trueExtreme ) {
-               trueExtreme = prevClose;
+            if( sp.prevClose < trueExtreme ) {
+               trueExtreme = sp.prevClose;
             }
             sum += close - trueExtreme;
-         } else if( close < prevClose ) {
+         } else if( close < sp.prevClose ) {
             trueExtreme = inHigh;
-            if( prevClose > trueExtreme ) {
-               trueExtreme = prevClose;
+            if( sp.prevClose > trueExtreme ) {
+               trueExtreme = sp.prevClose;
             }
             sum += close - trueExtreme;
          }
          cur_outReal = sum;
-         prevClose = close;
          return cur_outReal;
       }
 
       /**
-       * The value at the most recently committed bar — the last history bar
-       * right after open, then whatever the latest {@code update} returned.
+       * The value at the last bar this stream counted — the bar
+       * {@link #outRange()} ends on. The last history bar right after open,
+       * then whatever the latest accepted {@code update} returned.
        * A pure field read; {@code peek} does not change it.
        */
       public double value() {
@@ -475,10 +452,18 @@
       }
 
       /**
-       * An independent deep copy of this stream: both evolve separately from
-       * here on (the Java rendering of the Rust handle's {@code Clone}).
+       * An independent fork of this stream: both evolve separately from here
+       * on. Buffers are copied and sub-streams cloned recursively; the
+       * {@link Core} reference is shared, since a {@code Core} is immutable
+       * for a stream's lifetime.
+       *
+       * <p>Not the {@code Cloneable} protocol: this calls a copy constructor,
+       * never {@code super.clone()}, so it throws nothing.
+       *
+       * @return an independent stream at the same bar
        */
-      public WadStream copy() {
+      @Override
+      public WadStream clone() {
          return new WadStream(this);
       }
    }

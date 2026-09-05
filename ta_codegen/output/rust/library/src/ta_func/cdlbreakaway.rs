@@ -66,6 +66,7 @@ use super::*;
 impl Core {
     /// Lookback period for [`Core::CDLBREAKAWAY`]: the number of leading input values consumed
     /// before the first output value can be produced.
+    #[doc(alias = "TA_CDLBREAKAWAY_Lookback")]
     pub fn CDLBREAKAWAY_Lookback(&self) -> Result<usize, RetCode> {
         #[allow(non_snake_case)]
         let BodyLong_rangeType: i32 = self.candle_settings.body_long.range_type as i32;
@@ -171,7 +172,22 @@ impl Core {
                (if inClose[i - 3] >= inOpen[i - 3] { 1 } else { 0 - 1 }) == (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) &&
                (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 0 - (if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) &&
                (inClose[i - 4] - inOpen[i - 4]).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((inClose[i - 4]) - (inOpen[i - 4])).abs(), 1 => (inHigh[i - 4]) - (inLow[i - 4]), 2 => ((inHigh[i - 4]) - (if (inClose[i - 4]) >= (inOpen[i - 4]) { (inClose[i - 4]) } else { (inOpen[i - 4]) })) + ((if (inClose[i - 4]) >= (inOpen[i - 4]) { (inOpen[i - 4]) } else { (inClose[i - 4]) }) - (inLow[i - 4])), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st long
-               ((((if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && ((if (inOpen[i - 3]).max(inClose[i - 3]) < (inOpen[i - 4]).min(inClose[i - 4]) { 1 } else { 0 }) != 0) && inHigh[i - 2] < inHigh[i - 3] && inLow[i - 2] < inLow[i - 3] && inHigh[i - 1] < inHigh[i - 2] && inLow[i - 1] < inLow[i - 2] && inClose[i] > inOpen[i - 3] && inClose[i] < inClose[i - 4] || (if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 }) == 1 && ((if (inOpen[i - 3]).min(inClose[i - 3]) > (inOpen[i - 4]).max(inClose[i - 4]) { 1 } else { 0 }) != 0) && inHigh[i - 2] > inHigh[i - 3] && inLow[i - 2] > inLow[i - 3] && inHigh[i - 1] > inHigh[i - 2] && inLow[i - 1] > inLow[i - 2] && inClose[i] < inOpen[i - 3] && inClose[i] > inClose[i - 4]) // when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap
+               ((((if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // when 1st is black:
+                 ((if (inOpen[i - 3]).max(inClose[i - 3]) < (inOpen[i - 4]).min(inClose[i - 4]) { 1 } else { 0 }) != 0) && // 2nd gaps down
+                 inHigh[i - 2] < inHigh[i - 3] &&
+                 inLow[i - 2] < inLow[i - 3] &&                                   // 3rd has lower high and low than 2nd
+                 inHigh[i - 1] < inHigh[i - 2] &&
+                 inLow[i - 1] < inLow[i - 2] &&                                   // 4th has lower high and low than 3rd
+                 inClose[i] > inOpen[i - 3] &&
+                 inClose[i] < inClose[i - 4] ||                                   // 5th closes inside the gap
+                (if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 }) == 1 && // when 1st is white:
+                 ((if (inOpen[i - 3]).min(inClose[i - 3]) > (inOpen[i - 4]).max(inClose[i - 4]) { 1 } else { 0 }) != 0) && // 2nd gaps up
+                 inHigh[i - 2] > inHigh[i - 3] &&
+                 inLow[i - 2] > inLow[i - 3] &&                                   // 3rd has higher high and low than 2nd
+                 inHigh[i - 1] > inHigh[i - 2] &&
+                 inLow[i - 1] > inLow[i - 2] &&                                   // 4th has higher high and low than 3rd
+                 inClose[i] < inOpen[i - 3] &&
+                 inClose[i] > inClose[i - 4])                                     // 5th closes inside the gap
             {
                 outInteger[outIdx] = ((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) * 100) as i32;
                 outIdx += 1;
@@ -286,6 +302,7 @@ impl Core {
     /// # See also
     ///
     /// [`Core::CDLGAPSIDESIDEWHITE`] · [`Core::CDLRISEFALL3METHODS`] · [`Core::CDL3LINESTRIKE`]
+    #[doc(alias = "TA_CDLBREAKAWAY")]
     #[doc(alias = "Breakaway")]
     pub fn CDLBREAKAWAY(
         &self,
@@ -347,7 +364,7 @@ impl Core {
 /// over the same series. Open with [`Core::cdlbreakaway_open`]; dropping the handle
 /// closes the stream. Cloning it forks an independent stream.
 ///
-/// [`Self::out_range`] reports the bars it has produced a value for.
+/// [`Self::out_range`] reports the bars this handle has an output for.
 #[must_use = "a stream does nothing unless updated; dropping it closes the stream"]
 #[derive(Debug, Clone)]
 #[doc(alias = "TA_CDLBREAKAWAY_Stream")]
@@ -355,7 +372,7 @@ pub struct CdlbreakawayStream {
     /// The `BodyLong` setting this stream was opened with.
     cs_body_long: CandleSetting,
     state: CdlbreakawayStreamState,
-    /// The bars this handle has produced a value for — see [`Self::out_range`].
+    /// The bars this handle has an output for — see [`Self::out_range`].
     out: OutRange,
 }
 
@@ -383,6 +400,7 @@ struct CdlbreakawayStreamState {
     ringCap_BodyLongTrailingIdx: usize,
     ringLag_BodyLongTrailingIdx: usize,
     ring_BodyLongTrailingIdx_derived: Vec<f64>,
+    cur_outInteger: i32,
 }
 
 #[allow(unused_variables)]
@@ -418,7 +436,22 @@ impl Core {
            (if sp.lag3_inClose >= sp.lag3_inOpen { 1 } else { 0 - 1 }) == (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) &&
            (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 0 - (if inClose >= inOpen { 1 } else { 0 - 1 }) &&
            (sp.lag4_inClose - sp.lag4_inOpen).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (sp.BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((sp.lag4_inClose) - (sp.lag4_inOpen)).abs(), 1 => (sp.lag4_inHigh) - (sp.lag4_inLow), 2 => ((sp.lag4_inHigh) - (if (sp.lag4_inClose) >= (sp.lag4_inOpen) { (sp.lag4_inClose) } else { (sp.lag4_inOpen) })) + ((if (sp.lag4_inClose) >= (sp.lag4_inOpen) { (sp.lag4_inOpen) } else { (sp.lag4_inClose) }) - (sp.lag4_inLow)), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st long
-           ((((if sp.lag4_inClose >= sp.lag4_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && ((if (sp.lag3_inOpen).max(sp.lag3_inClose) < (sp.lag4_inOpen).min(sp.lag4_inClose) { 1 } else { 0 }) != 0) && sp.lag2_inHigh < sp.lag3_inHigh && sp.lag2_inLow < sp.lag3_inLow && sp.lag1_inHigh < sp.lag2_inHigh && sp.lag1_inLow < sp.lag2_inLow && inClose > sp.lag3_inOpen && inClose < sp.lag4_inClose || (if sp.lag4_inClose >= sp.lag4_inOpen { 1 } else { 0 - 1 }) == 1 && ((if (sp.lag3_inOpen).min(sp.lag3_inClose) > (sp.lag4_inOpen).max(sp.lag4_inClose) { 1 } else { 0 }) != 0) && sp.lag2_inHigh > sp.lag3_inHigh && sp.lag2_inLow > sp.lag3_inLow && sp.lag1_inHigh > sp.lag2_inHigh && sp.lag1_inLow > sp.lag2_inLow && inClose < sp.lag3_inOpen && inClose > sp.lag4_inClose) // when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap
+           ((((if sp.lag4_inClose >= sp.lag4_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // when 1st is black:
+             ((if (sp.lag3_inOpen).max(sp.lag3_inClose) < (sp.lag4_inOpen).min(sp.lag4_inClose) { 1 } else { 0 }) != 0) && // 2nd gaps down
+             sp.lag2_inHigh < sp.lag3_inHigh &&
+             sp.lag2_inLow < sp.lag3_inLow &&                                   // 3rd has lower high and low than 2nd
+             sp.lag1_inHigh < sp.lag2_inHigh &&
+             sp.lag1_inLow < sp.lag2_inLow &&                                   // 4th has lower high and low than 3rd
+             inClose > sp.lag3_inOpen &&
+             inClose < sp.lag4_inClose ||                                       // 5th closes inside the gap
+            (if sp.lag4_inClose >= sp.lag4_inOpen { 1 } else { 0 - 1 }) == 1 && // when 1st is white:
+             ((if (sp.lag3_inOpen).min(sp.lag3_inClose) > (sp.lag4_inOpen).max(sp.lag4_inClose) { 1 } else { 0 }) != 0) && // 2nd gaps up
+             sp.lag2_inHigh > sp.lag3_inHigh &&
+             sp.lag2_inLow > sp.lag3_inLow &&                                   // 3rd has higher high and low than 2nd
+             sp.lag1_inHigh > sp.lag2_inHigh &&
+             sp.lag1_inLow > sp.lag2_inLow &&                                   // 4th has higher high and low than 3rd
+             inClose < sp.lag3_inOpen &&
+             inClose > sp.lag4_inClose)                                         // 5th closes inside the gap
         {
             (*outInteger) = ((if inClose >= inOpen { 1 } else { 0 - 1 }) * 100) as i32;
         } else {
@@ -442,6 +475,7 @@ impl Core {
             }
         }
         sp.BodyLongPeriodTotal += _candlerange_1 - sp.ring_BodyLongTrailingIdx_derived[((sp.ringPos_BodyLongTrailingIdx + sp.ringCap_BodyLongTrailingIdx - sp.ringLag_BodyLongTrailingIdx - 4) % sp.ringCap_BodyLongTrailingIdx) as usize];
+        sp.cur_outInteger = (*outInteger);
         sp.lag4_inOpen = sp.lag3_inOpen;
         sp.lag3_inOpen = sp.lag2_inOpen;
         sp.lag2_inOpen = sp.lag1_inOpen;
@@ -555,7 +589,22 @@ impl Core {
                (if inClose[i - 3] >= inOpen[i - 3] { 1 } else { 0 - 1 }) == (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) &&
                (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 0 - (if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) &&
                (inClose[i - 4] - inOpen[i - 4]).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((inClose[i - 4]) - (inOpen[i - 4])).abs(), 1 => (inHigh[i - 4]) - (inLow[i - 4]), 2 => ((inHigh[i - 4]) - (if (inClose[i - 4]) >= (inOpen[i - 4]) { (inClose[i - 4]) } else { (inOpen[i - 4]) })) + ((if (inClose[i - 4]) >= (inOpen[i - 4]) { (inOpen[i - 4]) } else { (inClose[i - 4]) }) - (inLow[i - 4])), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st long
-               ((((if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && ((if (inOpen[i - 3]).max(inClose[i - 3]) < (inOpen[i - 4]).min(inClose[i - 4]) { 1 } else { 0 }) != 0) && inHigh[i - 2] < inHigh[i - 3] && inLow[i - 2] < inLow[i - 3] && inHigh[i - 1] < inHigh[i - 2] && inLow[i - 1] < inLow[i - 2] && inClose[i] > inOpen[i - 3] && inClose[i] < inClose[i - 4] || (if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 }) == 1 && ((if (inOpen[i - 3]).min(inClose[i - 3]) > (inOpen[i - 4]).max(inClose[i - 4]) { 1 } else { 0 }) != 0) && inHigh[i - 2] > inHigh[i - 3] && inLow[i - 2] > inLow[i - 3] && inHigh[i - 1] > inHigh[i - 2] && inLow[i - 1] > inLow[i - 2] && inClose[i] < inOpen[i - 3] && inClose[i] > inClose[i - 4]) // when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap
+               ((((if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // when 1st is black:
+                 ((if (inOpen[i - 3]).max(inClose[i - 3]) < (inOpen[i - 4]).min(inClose[i - 4]) { 1 } else { 0 }) != 0) && // 2nd gaps down
+                 inHigh[i - 2] < inHigh[i - 3] &&
+                 inLow[i - 2] < inLow[i - 3] &&                                   // 3rd has lower high and low than 2nd
+                 inHigh[i - 1] < inHigh[i - 2] &&
+                 inLow[i - 1] < inLow[i - 2] &&                                   // 4th has lower high and low than 3rd
+                 inClose[i] > inOpen[i - 3] &&
+                 inClose[i] < inClose[i - 4] ||                                   // 5th closes inside the gap
+                (if inClose[i - 4] >= inOpen[i - 4] { 1 } else { 0 - 1 }) == 1 && // when 1st is white:
+                 ((if (inOpen[i - 3]).min(inClose[i - 3]) > (inOpen[i - 4]).max(inClose[i - 4]) { 1 } else { 0 }) != 0) && // 2nd gaps up
+                 inHigh[i - 2] > inHigh[i - 3] &&
+                 inLow[i - 2] > inLow[i - 3] &&                                   // 3rd has higher high and low than 2nd
+                 inHigh[i - 1] > inHigh[i - 2] &&
+                 inLow[i - 1] > inLow[i - 2] &&                                   // 4th has higher high and low than 3rd
+                 inClose[i] < inOpen[i - 3] &&
+                 inClose[i] > inClose[i - 4])                                     // 5th closes inside the gap
             {
                 outInteger[({ let _v = outIdx; outIdx += 1; _v } * outStride) as usize] = ((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
@@ -619,6 +668,7 @@ impl Core {
         }
         let state = CdlbreakawayStreamState {
             BodyLongPeriodTotal,
+            cur_outInteger: outInteger[(*outNBElement - 1) * outStride],
             lag1_inOpen: inOpen[historyLen - 1],
             lag2_inOpen: inOpen[historyLen - 2],
             lag3_inOpen: inOpen[historyLen - 3],
@@ -772,15 +822,22 @@ impl CdlbreakawayStream {
     /// # Errors
     ///
     /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).
-    /// That check runs before anything is written, so the handle is left
-    /// exactly as it was and the stream stays usable:
-    /// skip the bar, or close and re-open on a clean history. This is the
-    /// one place the streaming tier is stricter than the batch API, which
-    /// computes on whatever it is given — a handle retains its state, so a
-    /// single non-finite bar would poison every later value it produces.
+    /// That check runs before anything is written, so the handle's state is
+    /// left exactly as it was and the stream stays usable: skip the bar, or
+    /// close and re-open on a clean history. This is the one place the
+    /// streaming tier is stricter than the batch API, which computes on
+    /// whatever it is given — a handle retains its state, so a single
+    /// non-finite bar would poison every later value it produces.
+    ///
+    /// [`Self::out_range`] counts the rejected bar all the same: it happened,
+    /// so two handles fed the same series stay positionally aligned even when
+    /// one rejects a bar the other accepts.
     #[doc(alias = "TA_CDLBREAKAWAY_Update")]
     pub fn update(&mut self, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64) -> Result<i32, RetCode> {
         if !inOpen.is_finite() || !inHigh.is_finite() || !inLow.is_finite() || !inClose.is_finite() {
+            if self.out.count < Core::MAX_INDEX {
+                self.out.count += 1;
+            }
             return Err(RetCode::BadParam);
         }
         let mut outInteger: i32 = 0_i32;
@@ -789,40 +846,6 @@ impl CdlbreakawayStream {
             self.out.count += 1;
         }
         Ok(outInteger)
-    }
-
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inOpen.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what was committed, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k`.
-    #[doc(alias = "TA_CDLBREAKAWAY_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inOpen: &[f64], inHigh: &[f64], inLow: &[f64], inClose: &[f64], outInteger: &mut [i32]) -> Result<(), RetCode> {
-        let barCount = inOpen.len();
-        if inHigh.len() != inOpen.len() || inLow.len() != inOpen.len() || inClose.len() != inOpen.len() || outInteger.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
-                return Err(RetCode::BadParam);
-            }
-            Core::cdlbreakaway_step_impl(&mut self.state, &self.cs_body_long, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
     }
 
     /// Evaluate a forming bar without committing — bit-identical to what the
@@ -834,8 +857,9 @@ impl CdlbreakawayStream {
     ///
     /// # Errors
     ///
-    /// [`RetCode::BadParam`] if any bar value is not finite, exactly as
-    /// `update` rejects it.
+    /// [`RetCode::BadParam`] if any bar value is not finite, on the same test
+    /// `update` applies — but a rejected peek changes nothing at all, where a
+    /// rejected `update` still counts the bar in [`Self::out_range`].
     #[doc(alias = "TA_CDLBREAKAWAY_Peek")]
     pub fn peek(&self, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64) -> Result<i32, RetCode> {
         if !inOpen.is_finite() || !inHigh.is_finite() || !inLow.is_finite() || !inClose.is_finite() {
@@ -845,107 +869,61 @@ impl CdlbreakawayStream {
         {
             let sp = &self.state;
             let outInteger = &mut outInteger;
-            let mut BodyLongPeriodTotal = sp.BodyLongPeriodTotal;
-            let mut lag1_inClose = sp.lag1_inClose;
-            let mut lag1_inHigh = sp.lag1_inHigh;
-            let mut lag1_inLow = sp.lag1_inLow;
-            let mut lag1_inOpen = sp.lag1_inOpen;
-            let mut lag2_inClose = sp.lag2_inClose;
-            let mut lag2_inHigh = sp.lag2_inHigh;
-            let mut lag2_inLow = sp.lag2_inLow;
-            let mut lag2_inOpen = sp.lag2_inOpen;
-            let mut lag3_inClose = sp.lag3_inClose;
-            let mut lag3_inHigh = sp.lag3_inHigh;
-            let mut lag3_inLow = sp.lag3_inLow;
-            let mut lag3_inOpen = sp.lag3_inOpen;
-            let mut lag4_inClose = sp.lag4_inClose;
-            let mut lag4_inHigh = sp.lag4_inHigh;
-            let mut lag4_inLow = sp.lag4_inLow;
-            let mut lag4_inOpen = sp.lag4_inOpen;
-            let mut ringPos_BodyLongTrailingIdx = sp.ringPos_BodyLongTrailingIdx;
-            let mut pkSlot0: usize = usize::MAX;
-            let mut pkVal0: f64 = 0.0_f64;
             #[allow(non_snake_case)]
             let BodyLong_rangeType: i32 = self.cs_body_long.range_type as i32;
             #[allow(non_snake_case)]
             let BodyLong_avgPeriod: i32 = self.cs_body_long.avg_period;
             #[allow(non_snake_case)]
             let BodyLong_factor: f64 = self.cs_body_long.factor;
-            pkSlot0 = ringPos_BodyLongTrailingIdx as usize;
-            let mut _candlerange_5: f64;
-            match BodyLong_rangeType {
-                0 => {
-                    _candlerange_5 = (inClose - inOpen).abs();
-                }
-                1 => {
-                    _candlerange_5 = inHigh - inLow;
-                }
-                2 => {
-                    _candlerange_5 = (inHigh - (if inClose >= inOpen { inClose } else { inOpen })) + ((if inClose >= inOpen { inOpen } else { inClose }) - inLow);
-                }
-                _ => {
-                    _candlerange_5 = 0.0;
-                }
-            }
-            pkVal0 = _candlerange_5;
-            if (if lag4_inClose >= lag4_inOpen { 1 } else { 0 - 1 }) == (if lag3_inClose >= lag3_inOpen { 1 } else { 0 - 1 }) && // 1st, 2nd, 4th same color, 5th opposite
-               (if lag3_inClose >= lag3_inOpen { 1 } else { 0 - 1 }) == (if lag1_inClose >= lag1_inOpen { 1 } else { 0 - 1 }) &&
-               (if lag1_inClose >= lag1_inOpen { 1 } else { 0 - 1 }) == 0 - (if inClose >= inOpen { 1 } else { 0 - 1 }) &&
-               (lag4_inClose - lag4_inOpen).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((lag4_inClose) - (lag4_inOpen)).abs(), 1 => (lag4_inHigh) - (lag4_inLow), 2 => ((lag4_inHigh) - (if (lag4_inClose) >= (lag4_inOpen) { (lag4_inClose) } else { (lag4_inOpen) })) + ((if (lag4_inClose) >= (lag4_inOpen) { (lag4_inOpen) } else { (lag4_inClose) }) - (lag4_inLow)), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st long
-               ((((if lag4_inClose >= lag4_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && ((if (lag3_inOpen).max(lag3_inClose) < (lag4_inOpen).min(lag4_inClose) { 1 } else { 0 }) != 0) && lag2_inHigh < lag3_inHigh && lag2_inLow < lag3_inLow && lag1_inHigh < lag2_inHigh && lag1_inLow < lag2_inLow && inClose > lag3_inOpen && inClose < lag4_inClose || (if lag4_inClose >= lag4_inOpen { 1 } else { 0 - 1 }) == 1 && ((if (lag3_inOpen).min(lag3_inClose) > (lag4_inOpen).max(lag4_inClose) { 1 } else { 0 }) != 0) && lag2_inHigh > lag3_inHigh && lag2_inLow > lag3_inLow && lag1_inHigh > lag2_inHigh && lag1_inLow > lag2_inLow && inClose < lag3_inOpen && inClose > lag4_inClose) // when 1st is black: 2nd gaps down 3rd has lower high and low than 2nd 4th has lower high and low than 3rd 5th closes inside the gap when 1st is white: 2nd gaps up 3rd has higher high and low than 2nd 4th has higher high and low than 3rd 5th closes inside the gap
+            if (if sp.lag4_inClose >= sp.lag4_inOpen { 1 } else { 0 - 1 }) == (if sp.lag3_inClose >= sp.lag3_inOpen { 1 } else { 0 - 1 }) && // 1st, 2nd, 4th same color, 5th opposite
+               (if sp.lag3_inClose >= sp.lag3_inOpen { 1 } else { 0 - 1 }) == (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) &&
+               (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 0 - (if inClose >= inOpen { 1 } else { 0 - 1 }) &&
+               (sp.lag4_inClose - sp.lag4_inOpen).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (sp.BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((sp.lag4_inClose) - (sp.lag4_inOpen)).abs(), 1 => (sp.lag4_inHigh) - (sp.lag4_inLow), 2 => ((sp.lag4_inHigh) - (if (sp.lag4_inClose) >= (sp.lag4_inOpen) { (sp.lag4_inClose) } else { (sp.lag4_inOpen) })) + ((if (sp.lag4_inClose) >= (sp.lag4_inOpen) { (sp.lag4_inOpen) } else { (sp.lag4_inClose) }) - (sp.lag4_inLow)), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st long
+               ((((if sp.lag4_inClose >= sp.lag4_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // when 1st is black:
+                 ((if (sp.lag3_inOpen).max(sp.lag3_inClose) < (sp.lag4_inOpen).min(sp.lag4_inClose) { 1 } else { 0 }) != 0) && // 2nd gaps down
+                 sp.lag2_inHigh < sp.lag3_inHigh &&
+                 sp.lag2_inLow < sp.lag3_inLow &&                                   // 3rd has lower high and low than 2nd
+                 sp.lag1_inHigh < sp.lag2_inHigh &&
+                 sp.lag1_inLow < sp.lag2_inLow &&                                   // 4th has lower high and low than 3rd
+                 inClose > sp.lag3_inOpen &&
+                 inClose < sp.lag4_inClose ||                                       // 5th closes inside the gap
+                (if sp.lag4_inClose >= sp.lag4_inOpen { 1 } else { 0 - 1 }) == 1 && // when 1st is white:
+                 ((if (sp.lag3_inOpen).min(sp.lag3_inClose) > (sp.lag4_inOpen).max(sp.lag4_inClose) { 1 } else { 0 }) != 0) && // 2nd gaps up
+                 sp.lag2_inHigh > sp.lag3_inHigh &&
+                 sp.lag2_inLow > sp.lag3_inLow &&                                   // 3rd has higher high and low than 2nd
+                 sp.lag1_inHigh > sp.lag2_inHigh &&
+                 sp.lag1_inLow > sp.lag2_inLow &&                                   // 4th has higher high and low than 3rd
+                 inClose < sp.lag3_inOpen &&
+                 inClose > sp.lag4_inClose)                                         // 5th closes inside the gap
             {
                 (*outInteger) = ((if inClose >= inOpen { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
                 (*outInteger) = 0;
             }
-            // add the current range and subtract the first range: this is done after the pattern recognition
-            // when avgPeriod is not 0, that means "compare with the previous candles" (it excludes the current candle)
-            let mut _candlerange_6: f64;
-            match BodyLong_rangeType {
-                0 => {
-                    _candlerange_6 = (lag4_inClose - lag4_inOpen).abs();
-                }
-                1 => {
-                    _candlerange_6 = lag4_inHigh - lag4_inLow;
-                }
-                2 => {
-                    _candlerange_6 = (lag4_inHigh - (if lag4_inClose >= lag4_inOpen { lag4_inClose } else { lag4_inOpen })) + ((if lag4_inClose >= lag4_inOpen { lag4_inOpen } else { lag4_inClose }) - lag4_inLow);
-                }
-                _ => {
-                    _candlerange_6 = 0.0;
-                }
-            }
-            BodyLongPeriodTotal += _candlerange_6 - (if (((ringPos_BodyLongTrailingIdx + sp.ringCap_BodyLongTrailingIdx - sp.ringLag_BodyLongTrailingIdx - 4) % sp.ringCap_BodyLongTrailingIdx) as usize) != pkSlot0 { sp.ring_BodyLongTrailingIdx_derived[((ringPos_BodyLongTrailingIdx + sp.ringCap_BodyLongTrailingIdx - sp.ringLag_BodyLongTrailingIdx - 4) % sp.ringCap_BodyLongTrailingIdx) as usize] } else { pkVal0 });
-            lag4_inOpen = lag3_inOpen;
-            lag3_inOpen = lag2_inOpen;
-            lag2_inOpen = lag1_inOpen;
-            lag1_inOpen = inOpen;
-            lag4_inHigh = lag3_inHigh;
-            lag3_inHigh = lag2_inHigh;
-            lag2_inHigh = lag1_inHigh;
-            lag1_inHigh = inHigh;
-            lag4_inLow = lag3_inLow;
-            lag3_inLow = lag2_inLow;
-            lag2_inLow = lag1_inLow;
-            lag1_inLow = inLow;
-            lag4_inClose = lag3_inClose;
-            lag3_inClose = lag2_inClose;
-            lag2_inClose = lag1_inClose;
-            lag1_inClose = inClose;
-            ringPos_BodyLongTrailingIdx = ringPos_BodyLongTrailingIdx + 1;
-            if ringPos_BodyLongTrailingIdx >= sp.ringCap_BodyLongTrailingIdx {
-                ringPos_BodyLongTrailingIdx = 0;
-            }
         }
         Ok(outInteger)
     }
 
-    /// The bars this stream has produced a value for, in the input series'
+    /// The value(s) at the last bar the stream counted — the bar
+    /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
+    /// refreshed by every accepted `update`, and left
+    /// alone by `peek`.
+    ///
+    /// A clone carries them verbatim, so a forked handle can be asked its
+    /// current value without committing a bar to find out.
+    #[must_use]
+    #[doc(alias = "TA_CDLBREAKAWAY_Value")]
+    pub fn value(&self) -> i32 {
+        self.state.cur_outInteger
+    }
+
+    /// The bars this stream has an output for, in the input series'
     /// coordinates: `[beg_idx, beg_idx + count)`.
     ///
     /// It is what [`Core::CDLBREAKAWAY`] reports over the same bars: the opener sets it
-    /// to `(lookback, historyLen - lookback)`, every accepted `update` adds one
-    /// to the count, `peek` leaves it alone, and a clone carries it verbatim.
+    /// to `(lookback, historyLen - lookback)`, every `update` adds one to the
+    /// count — a bar rejected for being non-finite included, because it still
+    /// happened — `peek` leaves it alone, and a clone carries it verbatim.
     /// A plain `Open` hands back only the last value, a subset of this range,
     /// because the caller chose not to take the fill.
     #[doc(alias = "TA_StreamOutRange")]
