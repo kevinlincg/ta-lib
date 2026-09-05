@@ -16,6 +16,19 @@ struct YamlFunc {
     inputs: Vec<YamlInput>,
     optional_inputs: Option<Vec<YamlOptParam>>,
     outputs: Vec<YamlOutput>,
+    doc_example: Option<YamlDocExample>,
+}
+
+/// `doc_example:` — a literal OHLC window the generated example runs on, and the
+/// value its last bar produces. Data only: the window is *found*, never derived
+/// at render time, so nothing here needs the generator to understand the pattern.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct YamlDocExample {
+    /// `[open, high, low, close]` per bar, oldest first.
+    bars: Vec<[f64; 4]>,
+    /// The output value carried by the last bar; every earlier bar is 0.
+    fires: i32,
 }
 
 /// Flags can be a single string or a list of strings.
@@ -74,6 +87,19 @@ struct YamlOutput {
     param_type: String,
     #[serde(default)]
     flags: YamlFlags,
+}
+
+/// A `doc_example:` block, checked for the two things that make the generated
+/// example a claim rather than a formality: more than one bar, and a value the
+/// last one fires with. A zero would render `assert_eq!(out[..], 0)`, which is
+/// exactly the vacuous example the block exists to replace.
+fn doc_example(name: &str, yaml: Option<YamlDocExample>) -> Option<crate::ir::DocExample> {
+    let e = yaml?;
+    assert!(
+        e.bars.len() > 1 && e.fires != 0,
+        "{name}: a doc_example carries a window and a non-zero value it fires on"
+    );
+    Some(crate::ir::DocExample { bars: e.bars, fires: e.fires })
 }
 
 fn yaml_val_to_f64(v: &serde_yaml::Value) -> f64 {
@@ -220,6 +246,7 @@ pub fn parse_yaml(path: &Path) -> FuncDef {
     // streaming API (it maps to TA_FUNC_FLG_STREAM like every other flag).
     let streaming = flags.iter().any(|f| f == "stream");
 
+    let name_for_msg = yaml.name.clone();
     FuncDef {
         name: yaml.name,
         group: yaml.group,
@@ -237,6 +264,7 @@ pub fn parse_yaml(path: &Path) -> FuncDef {
         has_explicit_private: false,
         header_comments: vec![],
         doc: None,
+        doc_example: doc_example(&name_for_msg, yaml.doc_example),
         streaming,
         alternates: vec![],
         resolved_stream_body: None,

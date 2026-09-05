@@ -464,11 +464,77 @@ pub(super) fn unit_domain(func: &FuncDef) -> bool {
     matches!(func.name.to_uppercase().as_str(), "ACOS" | "ASIN" | "TANH")
 }
 
+/// Bars in this function's example: the literal window when it carries one,
+/// otherwise the shared synthetic year.
+pub(super) fn example_len(func: &FuncDef) -> usize {
+    func.doc_example
+        .as_ref()
+        .map_or(EXAMPLE_LEN, |e| e.bars.len())
+}
+
+/// A window bar as a Rust `f64` literal. The windows are quoted to two decimals,
+/// so this only has to keep whole numbers from rendering as `100` — which would
+/// make the vector `Vec<i32>` and stop the example compiling.
+fn float_literal(v: f64) -> String {
+    let s = format!("{v}");
+    if s.contains(['.', 'e', 'E']) {
+        s
+    } else {
+        format!("{s}.0")
+    }
+}
+
+/// One OHLC component of a literal window, as `let high = vec![101.0, ...];`.
+///
+/// Written out in full rather than folded to a formula: the whole value of a
+/// window is that a reader can see the bars the pattern fired on, and a
+/// generated series is exactly what could not show that.
+fn window_series(name: &str, bars: &[[f64; 4]], component: usize) -> Vec<String> {
+    let vals: Vec<String> = bars
+        .iter()
+        .map(|b| float_literal(b[component]))
+        .collect();
+    let one_line = format!("let {name} = vec![{}];", vals.join(", "));
+    if one_line.len() <= WRAP {
+        return vec![one_line];
+    }
+    let mut out = vec![format!("let {name} = vec![")];
+    let mut line = String::from("    ");
+    for (i, v) in vals.iter().enumerate() {
+        let piece = if i + 1 == vals.len() {
+            v.clone()
+        } else {
+            format!("{v},")
+        };
+        if line.len() + piece.len() + 1 > WRAP {
+            out.push(line.trim_end().to_string());
+            line = String::from("    ");
+        }
+        line.push_str(&piece);
+        line.push(' ');
+    }
+    out.push(line.trim_end().to_string());
+    out.push("];".to_string());
+    out
+}
+
 /// The example input series for one input, as `(variable name, source lines)`.
 /// `open` and `close` both stay inside `[low, high]`: their offset from the bar
 /// midpoint never reaches 1.0. Returns `None` for an unknown input shape, which
 /// drops the example.
 fn example_input(func: &FuncDef, input: &str) -> Option<(&'static str, Vec<String>)> {
+    if let Some(example) = func.doc_example.as_ref() {
+        let component = match input {
+            "inOpen" => Some((0usize, "open")),
+            "inHigh" => Some((1, "high")),
+            "inLow" => Some((2, "low")),
+            "inClose" => Some((3, "close")),
+            _ => None,
+        };
+        if let Some((component, name)) = component {
+            return Some((name, window_series(name, &example.bars, component)));
+        }
+    }
     Some(match input {
         "inReal" if unit_domain(func) => ("data", series_def("data", UNIT_SERIES)),
         "inOpen" => (
@@ -605,7 +671,10 @@ fn example_doctest(
             ParamType::Integer => "0i32",
             _ => "0.0",
         };
-        lines.push(format!("let mut {var} = vec![{zero}; {EXAMPLE_LEN}];"));
+        lines.push(format!(
+            "let mut {var} = vec![{zero}; {}];",
+            example_len(func)
+        ));
         // A nullable output takes `Option<&mut [T]>` (rule B6a). The example
         // supplies it — `None` is documented on the parameter, and an example
         // that declined an output would not show what the function produces.
@@ -725,14 +794,6 @@ fn integer_domain_claim(
         // on the far side of the close. Asserting it here would put a claim the
         // function does not honour into the public documentation, and a doctest
         // that fails on legal input into the crate's test run.
-        // SUPERTREND's trend is the two-state latch, and the DOMAIN is all a
-        // doctest can honestly claim about it. The tempting relation -- that the
-        // flag says which side of the line price is on -- is FALSE: the carried
-        // bands can cross (`finalLower > finalUpper`, reachable at a low
-        // multiplier), and on a flip through crossed bands the emitted band lands
-        // on the far side of the close. Asserting it here would put a claim the
-        // function does not honour into the public documentation, and a doctest
-        // that fails on legal input into the crate's test run.
         ("SUPERTREND", _) => vec![
             "// the trend is a two-state latch: +1 riding the lower band, -1 the upper".to_string(),
             format!("assert!({var}[..out_range.count].iter().all(|&v| v == 1 || v == -1));"),
@@ -742,6 +803,23 @@ fn integer_domain_claim(
             "// the mode is a flag: 1 in a trend, 0 in a cycle".to_string(),
             format!("assert!({var}[..out_range.count].iter().all(|&v| v == 0 || v == 1));"),
         ],
+        // A candlestick on its own `doc_example` window: the window was chosen so
+        // the pattern fires on its LAST bar and nowhere else, which makes the two
+        // halves below a claim about what the function found -- not the bound that
+        // an all-zero output also satisfies (#179 E8d).
+        _ if func.doc_example.is_some() => {
+            let example = func.doc_example.as_ref().expect("matched on Some");
+            vec![
+                "// the window above is a worked instance of the pattern: it fires on the".to_string(),
+                "// last bar -- sign for direction, magnitude for strength -- and nowhere else"
+                    .to_string(),
+                format!(
+                    "assert_eq!({var}[out_range.count - 1], {});",
+                    example.fires
+                ),
+                format!("assert!({var}[..out_range.count - 1].iter().all(|&v| v == 0));"),
+            ]
+        }
         // Every candlestick pattern: 0, or +-80/+-100 for a pattern, or +-200 for
         // one the next bar confirmed (CDLHIKKAKE, CDLHIKKAKEMOD). The bound is the
         // one `TA_OUT_PATTERN_STRENGTH` already publishes to a metadata consumer.

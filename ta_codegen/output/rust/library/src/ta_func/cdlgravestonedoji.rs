@@ -324,17 +324,17 @@ impl Core {
     /// ```
     /// use ta_lib::Core;
     ///
-    /// let open: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64 - 0.05).sin())
-    ///     .collect();
-    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let close: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64).sin() + 0.8 * (0.7 * i as f64).sin())
-    ///     .collect();
+    /// let open = vec![
+    ///     94.81, 94.45, 94.42, 95.62, 96.38, 96.65, 96.43, 94.45, 94.21, 93.38, 92.05
+    /// ];
+    /// let high = vec![95.64, 95.04, 95.26, 96.27, 96.8, 97.5, 96.58, 94.96, 95.38, 94.06, 92.95];
+    /// let low = vec![94.36, 93.98, 93.72, 95.06, 95.68, 96.01, 95.85, 93.69, 93.57, 92.55, 91.84];
+    /// let close = vec![
+    ///     94.8, 93.99, 94.46, 95.46, 96.08, 96.88, 96.42, 94.79, 94.67, 93.73, 91.93
+    /// ];
     ///
     /// let core = Core::new();
-    /// let mut out = vec![0i32; 252];
+    /// let mut out = vec![0i32; 11];
     ///
     /// let out_range = core.CDLGRAVESTONEDOJI(
     ///     0, open.len() - 1, &open, &high, &low, &close,
@@ -342,9 +342,10 @@ impl Core {
     /// )?;
     /// assert!(out_range.count > 0);
     /// assert_eq!(out_range.beg_idx + out_range.count, open.len());
-    /// // a candlestick pattern reports 0 where it does not fire, and a signed
-    /// // strength -- negative bearish, positive bullish -- where it does
-    /// assert!(out[..out_range.count].iter().all(|&v| (-200..=200).contains(&v)));
+    /// // the window above is a worked instance of the pattern: it fires on the
+    /// // last bar -- sign for direction, magnitude for strength -- and nowhere else
+    /// assert_eq!(out[out_range.count - 1], 100);
+    /// assert!(out[..out_range.count - 1].iter().all(|&v| v == 0));
     /// # Ok::<(), ta_lib::RetCode>(())
     /// ```
     ///

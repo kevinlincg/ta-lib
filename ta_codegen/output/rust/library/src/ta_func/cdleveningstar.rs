@@ -408,17 +408,23 @@ impl Core {
     /// ```
     /// use ta_lib::Core;
     ///
-    /// let open: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64 - 0.05).sin())
-    ///     .collect();
-    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let close: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64).sin() + 0.8 * (0.7 * i as f64).sin())
-    ///     .collect();
+    /// let open = vec![
+    ///     85.37, 86.26, 84.76, 86.02, 86.67, 87.91, 88.27, 89.58, 91.45, 90.51, 89.13, 89.5,
+    ///     88.49
+    /// ];
+    /// let high = vec![
+    ///     85.84, 86.83, 85.35, 86.62, 86.92, 88.73, 88.89, 89.91, 91.5, 91.04, 90.01, 90.49, 88.8
+    /// ];
+    /// let low = vec![
+    ///     85.24, 85.73, 84.19, 85.62, 85.71, 87.37, 87.39, 89.2, 90.99, 90.51, 88.99, 89.3, 87.8
+    /// ];
+    /// let close = vec![
+    ///     85.36, 85.97, 85.08, 86.34, 86.46, 87.99, 88.19, 89.59, 91.14, 90.64, 89.34, 89.66,
+    ///     88.09
+    /// ];
     ///
     /// let core = Core::new();
-    /// let mut out = vec![0i32; 252];
+    /// let mut out = vec![0i32; 13];
     ///
     /// let out_range = core.CDLEVENINGSTAR(
     ///     0, open.len() - 1, &open, &high, &low, &close, 0.3,
@@ -426,9 +432,10 @@ impl Core {
     /// )?;
     /// assert!(out_range.count > 0);
     /// assert_eq!(out_range.beg_idx + out_range.count, open.len());
-    /// // a candlestick pattern reports 0 where it does not fire, and a signed
-    /// // strength -- negative bearish, positive bullish -- where it does
-    /// assert!(out[..out_range.count].iter().all(|&v| (-200..=200).contains(&v)));
+    /// // the window above is a worked instance of the pattern: it fires on the
+    /// // last bar -- sign for direction, magnitude for strength -- and nowhere else
+    /// assert_eq!(out[out_range.count - 1], -100);
+    /// assert!(out[..out_range.count - 1].iter().all(|&v| v == 0));
     /// # Ok::<(), ta_lib::RetCode>(())
     /// ```
     ///

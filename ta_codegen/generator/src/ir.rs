@@ -32,6 +32,15 @@ pub struct FuncDef {
     /// (see docs/ta_codegen_input_doc.md). Prose only — numbers stay in the YAML
     /// and are injected at render time.
     pub doc: Option<DocDef>,
+    /// A literal input window for the generated batch example, from the YAML
+    /// `doc_example:` block.
+    ///
+    /// The default example series is a smooth sine, and a pattern recognizer
+    /// mostly does not fire on one — so its example proved only that the values
+    /// stayed inside a range that an all-zero output also satisfies. A window
+    /// here replaces the series and lets the example assert what the function
+    /// actually found.
+    pub doc_example: Option<DocExample>,
     /// True when the YAML `flags:` list contains `stream`: generate the
     /// streaming API for this function (docs/streaming-api-proposal.md; the
     /// flag maps to TA_FUNC_FLG_STREAM in ta_abstract). Derived convenience
@@ -379,6 +388,22 @@ impl StreamTier {
             Self::T4 => "T4",
         }
     }
+}
+
+/// A literal OHLC window an example runs on instead of the synthetic series.
+///
+/// `bars` is `[open, high, low, close]` per bar, oldest first, and `fires` is
+/// the integer output the LAST bar carries — every earlier bar is 0. Both are
+/// asserted by the generated example, so a window that stops firing turns
+/// `cargo test --doc` red rather than degrading to a claim about nothing.
+///
+/// Two bars either side of the pattern is not enough: a candlestick compares
+/// each bar against a running average whose period is a *candle setting*, so the
+/// window has to carry the whole lookback the function reports.
+#[derive(Debug, Clone)]
+pub struct DocExample {
+    pub bars: Vec<[f64; 4]>,
+    pub fires: i32,
 }
 
 /// Parsed canonical documentation (`<name>.md`) for one function.

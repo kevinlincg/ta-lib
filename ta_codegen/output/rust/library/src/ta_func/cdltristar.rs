@@ -265,24 +265,33 @@ impl Core {
     /// ```
     /// use ta_lib::Core;
     ///
-    /// let open: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64 - 0.05).sin())
-    ///     .collect();
-    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let close: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64).sin() + 0.8 * (0.7 * i as f64).sin())
-    ///     .collect();
+    /// let open = vec![
+    ///     86.98, 86.98, 86.98, 86.98, 86.98, 86.98, 86.98, 86.98, 99.76, 99.76, 99.76, 56.45,
+    ///     99.76
+    /// ];
+    /// let high = vec![
+    ///     95.79, 89.92, 87.98, 87.98, 87.98, 87.98, 87.98, 87.98, 126.83, 116.0, 126.83, 56.95,
+    ///     100.76
+    /// ];
+    /// let low = vec![
+    ///     78.18, 84.05, 85.98, 85.98, 85.98, 85.98, 85.98, 85.98, 72.69, 83.52, 94.35, 55.95,
+    ///     98.76
+    /// ];
+    /// let close = vec![
+    ///     86.98, 86.98, 86.98, 86.98, 86.98, 86.98, 86.98, 86.98, 99.76, 99.76, 99.76, 56.45,
+    ///     99.76
+    /// ];
     ///
     /// let core = Core::new();
-    /// let mut out = vec![0i32; 252];
+    /// let mut out = vec![0i32; 13];
     ///
     /// let out_range = core.CDLTRISTAR(0, open.len() - 1, &open, &high, &low, &close, &mut out)?;
     /// assert!(out_range.count > 0);
     /// assert_eq!(out_range.beg_idx + out_range.count, open.len());
-    /// // a candlestick pattern reports 0 where it does not fire, and a signed
-    /// // strength -- negative bearish, positive bullish -- where it does
-    /// assert!(out[..out_range.count].iter().all(|&v| (-200..=200).contains(&v)));
+    /// // the window above is a worked instance of the pattern: it fires on the
+    /// // last bar -- sign for direction, magnitude for strength -- and nowhere else
+    /// assert_eq!(out[out_range.count - 1], 100);
+    /// assert!(out[..out_range.count - 1].iter().all(|&v| v == 0));
     /// # Ok::<(), ta_lib::RetCode>(())
     /// ```
     ///

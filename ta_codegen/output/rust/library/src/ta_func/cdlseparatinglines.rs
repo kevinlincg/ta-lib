@@ -398,17 +398,21 @@ impl Core {
     /// ```
     /// use ta_lib::Core;
     ///
-    /// let open: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64 - 0.05).sin())
-    ///     .collect();
-    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let close: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64).sin() + 0.8 * (0.7 * i as f64).sin())
-    ///     .collect();
+    /// let open = vec![
+    ///     87.77, 86.09, 86.22, 87.52, 88.04, 87.07, 86.95, 86.33, 86.52, 86.94, 85.25, 85.21
+    /// ];
+    /// let high = vec![
+    ///     88.46, 87.12, 87.09, 87.71, 88.84, 87.86, 87.81, 86.5, 87.12, 87.63, 85.79, 85.21
+    /// ];
+    /// let low = vec![
+    ///     87.24, 86.04, 86.0, 87.23, 87.17, 86.35, 86.35, 86.11, 86.33, 86.71, 84.71, 84.12
+    /// ];
+    /// let close = vec![
+    ///     87.75, 86.52, 86.11, 87.31, 88.23, 87.02, 87.29, 86.35, 86.84, 87.34, 85.65, 84.86
+    /// ];
     ///
     /// let core = Core::new();
-    /// let mut out = vec![0i32; 252];
+    /// let mut out = vec![0i32; 12];
     ///
     /// let out_range = core.CDLSEPARATINGLINES(
     ///     0, open.len() - 1, &open, &high, &low, &close,
@@ -416,9 +420,10 @@ impl Core {
     /// )?;
     /// assert!(out_range.count > 0);
     /// assert_eq!(out_range.beg_idx + out_range.count, open.len());
-    /// // a candlestick pattern reports 0 where it does not fire, and a signed
-    /// // strength -- negative bearish, positive bullish -- where it does
-    /// assert!(out[..out_range.count].iter().all(|&v| (-200..=200).contains(&v)));
+    /// // the window above is a worked instance of the pattern: it fires on the
+    /// // last bar -- sign for direction, magnitude for strength -- and nowhere else
+    /// assert_eq!(out[out_range.count - 1], -100);
+    /// assert!(out[..out_range.count - 1].iter().all(|&v| v == 0));
     /// # Ok::<(), ta_lib::RetCode>(())
     /// ```
     ///

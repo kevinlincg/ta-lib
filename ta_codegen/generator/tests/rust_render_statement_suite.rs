@@ -1122,7 +1122,14 @@ fn every_integer_output_carries_an_example_claim() {
             .zip(backends::rust_doc::output_var_names(&func))
             .filter(|(o, _)| o.param_type == ir::ParamType::Integer)
             .map(|(_, var)| {
-                usize::from(out.contains(&format!("{var}[..out_range.count]")))
+                // Two claim shapes, both naming this output's own variable: the
+                // domain over the whole write, and -- for a function whose example
+                // runs on a `doc_example` window -- the value its last bar fires
+                // with, plus the zeros before it.
+                usize::from(
+                    out.contains(&format!("{var}[..out_range.count]"))
+                        || out.contains(&format!("{var}[out_range.count - 1]")),
+                )
             })
             .sum();
         assert!(
@@ -1135,6 +1142,57 @@ fn every_integer_output_carries_an_example_claim() {
     assert_eq!(
         checked, 66,
         "expected the 66 integer-output functions, swept {checked}"
+    );
+}
+
+#[test]
+fn every_candlestick_example_runs_on_a_window_that_fires() {
+    // A candlestick's example ran on the shared synthetic year, and only 16 of the
+    // 61 patterns fire on it -- so the other 45 asserted a domain that an all-zero
+    // output satisfies too (#179 E8d). The window each one now carries is data in
+    // its own YAML, and this is the gate that a candlestick arriving without one
+    // rejoins that set silently: the emitted example would fall back to the
+    // `(-200..=200)` bound, which is green on a function that never fires.
+    //
+    // What the window is CORRECT is proved elsewhere and by construction: the
+    // example asserts the value, so `cargo test --doc` is red on a window that
+    // stops firing. This gate only pins that every candlestick has one.
+    let registry = make_registry();
+    let helpers = make_helpers();
+    let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../ta_codegen/input");
+    let mut checked = 0usize;
+    for entry in std::fs::read_dir(&base).expect("input dir") {
+        let entry = entry.expect("dir entry");
+        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().to_string();
+        let dir = entry.path();
+        if !dir.join(format!("{name}.c")).is_file() || !dir.join(format!("{name}.yaml")).is_file() {
+            continue;
+        }
+        let (func, enums) = load_indicator(&name);
+        if !func.flags.iter().any(|f| f == "candlestick") {
+            continue;
+        }
+        let example = func.doc_example.as_ref().unwrap_or_else(|| {
+            panic!("{name}: a candlestick needs a doc_example window its example fires on")
+        });
+        let fires = example.fires;
+        let out = backends::rust_lang::generate(&func, &enums, &registry, &helpers);
+        assert!(
+            out.contains(&format!("assert_eq!(out[out_range.count - 1], {fires});")),
+            "{name}: the example does not assert the window's own firing value"
+        );
+        assert!(
+            !out.contains("(-200..=200).contains(&v)"),
+            "{name}: the example fell back to the bound an all-zero output satisfies"
+        );
+        checked += 1;
+    }
+    assert_eq!(
+        checked, 61,
+        "expected the 61 candlestick patterns, swept {checked}"
     );
 }
 
@@ -1929,6 +1987,7 @@ fn rust_lookback_param_minus() {
         has_explicit_private: false,
         header_comments: vec![],
         doc: None,
+        doc_example: None,
         streaming: false,
         alternates: vec![],
         resolved_stream_body: None,
@@ -1975,6 +2034,7 @@ fn rust_lookback_none() {
         has_explicit_private: false,
         header_comments: vec![],
         doc: None,
+        doc_example: None,
         streaming: false,
         alternates: vec![],
         resolved_stream_body: None,
@@ -2179,6 +2239,7 @@ fn rust_lookback_code_renders_var_types_correctly() {
         has_explicit_private: false,
         header_comments: vec![],
         doc: None,
+        doc_example: None,
         streaming: false,
         alternates: vec![],
         resolved_stream_body: None,
@@ -2278,6 +2339,7 @@ fn rust_lookback_body_never_fuses_multiply_add() {
         has_explicit_private: false,
         header_comments: vec![],
         doc: None,
+        doc_example: None,
         streaming: false,
         alternates: vec![],
         resolved_stream_body: None,
@@ -2365,6 +2427,7 @@ fn rust_lookback_body_types_locals_by_declaration_not_name() {
             has_explicit_private: false,
             header_comments: vec![],
             doc: None,
+            doc_example: None,
             streaming: false,
             alternates: vec![],
             resolved_stream_body: None,

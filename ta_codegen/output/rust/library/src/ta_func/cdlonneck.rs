@@ -328,24 +328,29 @@ impl Core {
     /// ```
     /// use ta_lib::Core;
     ///
-    /// let open: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64 - 0.05).sin())
-    ///     .collect();
-    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let close: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64).sin() + 0.8 * (0.7 * i as f64).sin())
-    ///     .collect();
+    /// let open = vec![
+    ///     79.02, 78.06, 79.21, 80.01, 79.97, 79.44, 79.17, 77.94, 79.01, 79.05, 80.18, 79.31
+    /// ];
+    /// let high = vec![
+    ///     79.78, 78.62, 80.23, 80.57, 80.45, 80.22, 79.72, 78.69, 79.42, 79.83, 80.51, 79.79
+    /// ];
+    /// let low = vec![
+    ///     78.58, 77.58, 78.98, 79.28, 79.91, 78.6, 78.89, 77.38, 78.94, 78.29, 79.63, 79.03
+    /// ];
+    /// let close = vec![
+    ///     79.2, 78.39, 79.47, 79.75, 80.13, 79.3, 78.94, 77.84, 79.01, 79.37, 79.79, 79.66
+    /// ];
     ///
     /// let core = Core::new();
-    /// let mut out = vec![0i32; 252];
+    /// let mut out = vec![0i32; 12];
     ///
     /// let out_range = core.CDLONNECK(0, open.len() - 1, &open, &high, &low, &close, &mut out)?;
     /// assert!(out_range.count > 0);
     /// assert_eq!(out_range.beg_idx + out_range.count, open.len());
-    /// // a candlestick pattern reports 0 where it does not fire, and a signed
-    /// // strength -- negative bearish, positive bullish -- where it does
-    /// assert!(out[..out_range.count].iter().all(|&v| (-200..=200).contains(&v)));
+    /// // the window above is a worked instance of the pattern: it fires on the
+    /// // last bar -- sign for direction, magnitude for strength -- and nowhere else
+    /// assert_eq!(out[out_range.count - 1], -100);
+    /// assert!(out[..out_range.count - 1].iter().all(|&v| v == 0));
     /// # Ok::<(), ta_lib::RetCode>(())
     /// ```
     ///

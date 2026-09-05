@@ -413,17 +413,25 @@ impl Core {
     /// ```
     /// use ta_lib::Core;
     ///
-    /// let open: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64 - 0.05).sin())
-    ///     .collect();
-    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
-    /// let close: Vec<f64> = (0..252)
-    ///     .map(|i| 100.0 + 10.0 * (0.1 * i as f64).sin() + 0.8 * (0.7 * i as f64).sin())
-    ///     .collect();
+    /// let open = vec![
+    ///     100.0, 96.0, 91.0, 95.0, 102.0, 100.0, 102.0, 100.0, 102.0, 100.0, 100.0, 131.0, 116.0,
+    ///     114.0, 135.0
+    /// ];
+    /// let high = vec![
+    ///     100.0, 96.0, 94.0, 96.0, 103.0, 103.0, 103.0, 103.0, 103.0, 103.0, 121.0, 132.0, 117.0,
+    ///     115.0, 141.0
+    /// ];
+    /// let low = vec![
+    ///     97.0, 93.0, 88.0, 84.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 129.0, 114.0, 112.0,
+    ///     134.0
+    /// ];
+    /// let close = vec![
+    ///     97.0, 93.0, 89.0, 85.0, 100.0, 102.0, 100.0, 102.0, 100.0, 102.0, 120.0, 130.0, 115.0,
+    ///     113.0, 140.0
+    /// ];
     ///
     /// let core = Core::new();
-    /// let mut out = vec![0i32; 252];
+    /// let mut out = vec![0i32; 15];
     ///
     /// let out_range = core.CDLMATHOLD(
     ///     0, open.len() - 1, &open, &high, &low, &close, 0.5,
@@ -431,9 +439,10 @@ impl Core {
     /// )?;
     /// assert!(out_range.count > 0);
     /// assert_eq!(out_range.beg_idx + out_range.count, open.len());
-    /// // a candlestick pattern reports 0 where it does not fire, and a signed
-    /// // strength -- negative bearish, positive bullish -- where it does
-    /// assert!(out[..out_range.count].iter().all(|&v| (-200..=200).contains(&v)));
+    /// // the window above is a worked instance of the pattern: it fires on the
+    /// // last bar -- sign for direction, magnitude for strength -- and nowhere else
+    /// assert_eq!(out[out_range.count - 1], 100);
+    /// assert!(out[..out_range.count - 1].iter().all(|&v| v == 0));
     /// # Ok::<(), ta_lib::RetCode>(())
     /// ```
     ///

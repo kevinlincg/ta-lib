@@ -3475,6 +3475,7 @@ mod predef_tests {
             has_explicit_private: false,
             header_comments: vec![],
             doc: None,
+            doc_example: None,
             streaming: false,
             alternates: vec![],
             resolved_stream_body: None,
