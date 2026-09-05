@@ -910,6 +910,78 @@ fn legs_ADOSC(r: &mut Report) {
     r.legs_done("ADOSC", 4);
 }
 
+const V_ADR: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 1i32),
+];
+
+fn sub_ADR(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_ADR {
+        let Ok(lb) = core.ADR_Lookback(optInTimePeriod) else { continue; };
+        r.control("ADR", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ADR_Impl(0, lb, &inHigh, &inLow, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("ADR", label); continue; }
+        r.quiet("ADR", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ADR_Impl(0, lb - 1, &inHigh, &inLow, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_ADR(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.ADR_Lookback(optInTimePeriod) else { r.no_legs("ADR"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("ADR", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ADR_Impl(startIdx, endIdx, &inHigh, &inLow, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("ADR", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ADR_Impl(startIdx, endIdx, &inHigh, &inLow, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("ADR", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ADR_Impl(startIdx, endIdx, &inHigh, &inLow, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("ADR", 2);
+}
+
 const V_ADX: &[(&str, i32)] = &[
     ("defaults", i32::MIN),
     ("minimums", 2i32),
@@ -8879,6 +8951,65 @@ fn legs_CMOU(r: &mut Report) {
     r.legs_done("CMOU", 1);
 }
 
+const V_COPPOCK: &[(&str, i32, i32, i32)] = &[
+    ("defaults", i32::MIN, i32::MIN, i32::MIN),
+    ("minimums", 1i32, 1i32, 1i32),
+];
+
+fn sub_COPPOCK(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInWMAPeriod, optInROC1Period, optInROC2Period) in V_COPPOCK {
+        let Ok(lb) = core.COPPOCK_Lookback(optInWMAPeriod, optInROC1Period, optInROC2Period) else { continue; };
+        r.control("COPPOCK", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.COPPOCK_Impl(0, lb, &inReal, optInWMAPeriod, optInROC1Period, optInROC2Period, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("COPPOCK", label); continue; }
+        r.quiet("COPPOCK", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.COPPOCK_Impl(0, lb - 1, &inReal, optInWMAPeriod, optInROC1Period, optInROC2Period, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_COPPOCK(r: &mut Report) {
+    let core = Core::new();
+    let optInWMAPeriod = i32::MIN;
+    let optInROC1Period = i32::MIN;
+    let optInROC2Period = i32::MIN;
+    let Ok(lb) = core.COPPOCK_Lookback(optInWMAPeriod, optInROC1Period, optInROC2Period) else { r.no_legs("COPPOCK"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("COPPOCK", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.COPPOCK_Impl(startIdx, endIdx, &inReal, optInWMAPeriod, optInROC1Period, optInROC2Period, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("COPPOCK", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.COPPOCK_Impl(startIdx, endIdx, &inReal, optInWMAPeriod, optInROC1Period, optInROC2Period, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("COPPOCK", 1);
+}
+
 const V_CORREL: &[(&str, i32)] = &[
     ("defaults", i32::MIN),
     ("minimums", 1i32),
@@ -9059,6 +9190,134 @@ fn legs_COSH(r: &mut Report) {
         }));
     }
     r.legs_done("COSH", 1);
+}
+
+const V_CUMSUM: &[&str] = &[
+    "defaults",
+];
+
+fn sub_CUMSUM(r: &mut Report) {
+    let core = Core::new();
+    for &label in V_CUMSUM {
+        let Ok(lb) = core.CUMSUM_Lookback() else { continue; };
+        r.control("CUMSUM", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CUMSUM_Impl(0, lb, &inReal, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("CUMSUM", label); continue; }
+        r.quiet("CUMSUM", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CUMSUM_Impl(0, lb - 1, &inReal, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_CUMSUM(r: &mut Report) {
+    let core = Core::new();
+    let Ok(lb) = core.CUMSUM_Lookback() else { r.no_legs("CUMSUM"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("CUMSUM", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CUMSUM_Impl(startIdx, endIdx, &inReal, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("CUMSUM", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CUMSUM_Impl(startIdx, endIdx, &inReal, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("CUMSUM", 1);
+}
+
+const V_CVI: &[(&str, i32, i32)] = &[
+    ("defaults", i32::MIN, i32::MIN),
+    ("minimums", 2i32, 1i32),
+];
+
+fn sub_CVI(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod, optInROCPeriod) in V_CVI {
+        let Ok(lb) = core.CVI_Lookback(optInTimePeriod, optInROCPeriod) else { continue; };
+        r.control("CVI", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CVI_Impl(0, lb, &inHigh, &inLow, optInTimePeriod, optInROCPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("CVI", label); continue; }
+        r.quiet("CVI", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CVI_Impl(0, lb - 1, &inHigh, &inLow, optInTimePeriod, optInROCPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_CVI(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let optInROCPeriod = i32::MIN;
+    let Ok(lb) = core.CVI_Lookback(optInTimePeriod, optInROCPeriod) else { r.no_legs("CVI"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("CVI", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CVI_Impl(startIdx, endIdx, &inHigh, &inLow, optInTimePeriod, optInROCPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("CVI", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CVI_Impl(startIdx, endIdx, &inHigh, &inLow, optInTimePeriod, optInROCPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("CVI", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.CVI_Impl(startIdx, endIdx, &inHigh, &inLow, optInTimePeriod, optInROCPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("CVI", 2);
 }
 
 const V_DEMA: &[(&str, i32)] = &[
@@ -9268,6 +9527,63 @@ fn legs_DONCHIAN(r: &mut Report) {
         }));
     }
     r.legs_done("DONCHIAN", 2);
+}
+
+const V_DPO: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 2i32),
+];
+
+fn sub_DPO(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_DPO {
+        let Ok(lb) = core.DPO_Lookback(optInTimePeriod) else { continue; };
+        r.control("DPO", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.DPO_Impl(0, lb, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("DPO", label); continue; }
+        r.quiet("DPO", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.DPO_Impl(0, lb - 1, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_DPO(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.DPO_Lookback(optInTimePeriod) else { r.no_legs("DPO"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("DPO", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.DPO_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("DPO", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.DPO_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("DPO", 1);
 }
 
 const V_DX: &[(&str, i32)] = &[
@@ -9488,6 +9804,158 @@ fn legs_EMA(r: &mut Report) {
     r.legs_done("EMA", 1);
 }
 
+const V_ER: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 2i32),
+];
+
+fn sub_ER(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_ER {
+        let Ok(lb) = core.ER_Lookback(optInTimePeriod) else { continue; };
+        r.control("ER", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ER_Impl(0, lb, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("ER", label); continue; }
+        r.quiet("ER", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ER_Impl(0, lb - 1, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_ER(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.ER_Lookback(optInTimePeriod) else { r.no_legs("ER"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("ER", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ER_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("ER", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ER_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("ER", 1);
+}
+
+const V_ERI: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 1i32),
+];
+
+fn sub_ERI(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_ERI {
+        let Ok(lb) = core.ERI_Lookback(optInTimePeriod) else { continue; };
+        r.control("ERI", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outBullPower: Vec<f64> = Vec::with_capacity(1);
+            let mut outBearPower: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ERI_Impl(0, lb, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outBullPower, &mut outBearPower);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("ERI", label); continue; }
+        r.quiet("ERI", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outBullPower: Vec<f64> = Vec::with_capacity(1);
+            let mut outBearPower: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ERI_Impl(0, lb - 1, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outBullPower, &mut outBearPower);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_ERI(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.ERI_Lookback(optInTimePeriod) else { r.no_legs("ERI"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outBullPower: Vec<f64> = vec![Default::default(); 5];
+        let mut outBearPower: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("ERI", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ERI_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outBullPower, &mut outBearPower);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outBullPower: Vec<f64> = vec![Default::default(); 5];
+        let mut outBearPower: Vec<f64> = vec![Default::default(); 5];
+        r.leg("ERI", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ERI_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outBullPower, &mut outBearPower);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outBullPower: Vec<f64> = vec![Default::default(); 5];
+        let mut outBearPower: Vec<f64> = vec![Default::default(); 5];
+        r.leg("ERI", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ERI_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outBullPower, &mut outBearPower);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = Vec::with_capacity(1);
+        let mut outBullPower: Vec<f64> = vec![Default::default(); 5];
+        let mut outBearPower: Vec<f64> = vec![Default::default(); 5];
+        r.leg("ERI", "inClose", 2, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.ERI_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outBullPower, &mut outBearPower);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("ERI", 3);
+}
+
 const V_EXP: &[&str] = &[
     "defaults",
 ];
@@ -9596,6 +10064,268 @@ fn legs_FLOOR(r: &mut Report) {
         }));
     }
     r.legs_done("FLOOR", 1);
+}
+
+const V_FOSC: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 2i32),
+];
+
+fn sub_FOSC(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_FOSC {
+        let Ok(lb) = core.FOSC_Lookback(optInTimePeriod) else { continue; };
+        r.control("FOSC", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FOSC_Impl(0, lb, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("FOSC", label); continue; }
+        r.quiet("FOSC", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FOSC_Impl(0, lb - 1, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_FOSC(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.FOSC_Lookback(optInTimePeriod) else { r.no_legs("FOSC"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("FOSC", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FOSC_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("FOSC", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FOSC_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("FOSC", 1);
+}
+
+const V_FRACTAL: &[(&str, i32, i32)] = &[
+    ("defaults", i32::MIN, i32::MIN),
+    ("minimums", 1i32, 1i32),
+];
+
+fn sub_FRACTAL(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInLeftBars, optInRightBars) in V_FRACTAL {
+        let Ok(lb) = core.FRACTAL_Lookback(optInLeftBars, optInRightBars) else { continue; };
+        r.control("FRACTAL", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outSwingHigh: Vec<i32> = Vec::with_capacity(1);
+            let mut outSwingLow: Vec<i32> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(0, lb, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("FRACTAL", label); continue; }
+        r.quiet("FRACTAL", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outSwingHigh: Vec<i32> = Vec::with_capacity(1);
+            let mut outSwingLow: Vec<i32> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(0, lb - 1, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_FRACTAL(r: &mut Report) {
+    let core = Core::new();
+    let optInLeftBars = i32::MIN;
+    let optInRightBars = i32::MIN;
+    let Ok(lb) = core.FRACTAL_Lookback(optInLeftBars, optInRightBars) else { r.no_legs("FRACTAL"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outSwingHigh: Vec<i32> = vec![Default::default(); 5];
+        let mut outSwingLow: Vec<i32> = vec![Default::default(); 5];
+        r.legs_control("FRACTAL", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(startIdx, endIdx, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outSwingHigh: Vec<i32> = vec![Default::default(); 5];
+        let mut outSwingLow: Vec<i32> = vec![Default::default(); 5];
+        r.leg("FRACTAL", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(startIdx, endIdx, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let mut outSwingHigh: Vec<i32> = vec![Default::default(); 5];
+        let mut outSwingLow: Vec<i32> = vec![Default::default(); 5];
+        r.leg("FRACTAL", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(startIdx, endIdx, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("FRACTAL", 2);
+}
+
+const V_HA: &[&str] = &[
+    "defaults",
+];
+
+fn sub_HA(r: &mut Report) {
+    let core = Core::new();
+    for &label in V_HA {
+        let Ok(lb) = core.HA_Lookback() else { continue; };
+        r.control("HA", label, run(|| {
+            let inOpen: Vec<f64> = Vec::with_capacity(1);
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAOpen: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAHigh: Vec<f64> = Vec::with_capacity(1);
+            let mut outHALow: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAClose: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(0, lb, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("HA", label); continue; }
+        r.quiet("HA", label, lb, run(|| {
+            let inOpen: Vec<f64> = Vec::with_capacity(1);
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAOpen: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAHigh: Vec<f64> = Vec::with_capacity(1);
+            let mut outHALow: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAClose: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(0, lb - 1, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_HA(r: &mut Report) {
+    let core = Core::new();
+    let Ok(lb) = core.HA_Lookback() else { r.no_legs("HA"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("HA", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = Vec::with_capacity(1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inOpen", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inHigh", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inLow", 2, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = Vec::with_capacity(1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inClose", 3, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("HA", 4);
 }
 
 const V_HMA: &[(&str, i32)] = &[
@@ -10223,6 +10953,167 @@ fn legs_KC(r: &mut Report) {
         }));
     }
     r.legs_done("KC", 3);
+}
+
+const V_KDJ: &[(&str, i32, i32, MAType, i32, MAType)] = &[
+    ("defaults", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
+    ("minimums", 1i32, 1i32, MAType::DEFAULT, 1i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=SMA", i32::MIN, i32::MIN, MAType::SMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=SMA, periods doubled", 18i32, 6i32, MAType::SMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=EMA", i32::MIN, i32::MIN, MAType::EMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=EMA, periods doubled", 18i32, 6i32, MAType::EMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=WMA", i32::MIN, i32::MIN, MAType::WMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=WMA, periods doubled", 18i32, 6i32, MAType::WMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=DEMA", i32::MIN, i32::MIN, MAType::DEMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=DEMA, periods doubled", 18i32, 6i32, MAType::DEMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=TEMA", i32::MIN, i32::MIN, MAType::TEMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=TEMA, periods doubled", 18i32, 6i32, MAType::TEMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=TRIMA", i32::MIN, i32::MIN, MAType::TRIMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=TRIMA, periods doubled", 18i32, 6i32, MAType::TRIMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=KAMA", i32::MIN, i32::MIN, MAType::KAMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=KAMA, periods doubled", 18i32, 6i32, MAType::KAMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=MAMA", i32::MIN, i32::MIN, MAType::MAMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=MAMA, periods doubled", 18i32, 6i32, MAType::MAMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=T3", i32::MIN, i32::MIN, MAType::T3, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=T3, periods doubled", 18i32, 6i32, MAType::T3, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=HMA", i32::MIN, i32::MIN, MAType::HMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=HMA, periods doubled", 18i32, 6i32, MAType::HMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=DISABLED", i32::MIN, i32::MIN, MAType::DISABLED, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=DISABLED, periods doubled", 18i32, 6i32, MAType::DISABLED, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=DEFAULT, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=ZLEMA", i32::MIN, i32::MIN, MAType::ZLEMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=ZLEMA, periods doubled", 18i32, 6i32, MAType::ZLEMA, 6i32, MAType::DEFAULT),
+    ("optInSlowK_MAType=RMA", i32::MIN, i32::MIN, MAType::RMA, i32::MIN, MAType::DEFAULT),
+    ("optInSlowK_MAType=RMA, periods doubled", 18i32, 6i32, MAType::RMA, 6i32, MAType::DEFAULT),
+    ("optInSlowD_MAType=SMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::SMA),
+    ("optInSlowD_MAType=SMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::SMA),
+    ("optInSlowD_MAType=EMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::EMA),
+    ("optInSlowD_MAType=EMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::EMA),
+    ("optInSlowD_MAType=WMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::WMA),
+    ("optInSlowD_MAType=WMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::WMA),
+    ("optInSlowD_MAType=DEMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEMA),
+    ("optInSlowD_MAType=DEMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::DEMA),
+    ("optInSlowD_MAType=TEMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::TEMA),
+    ("optInSlowD_MAType=TEMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::TEMA),
+    ("optInSlowD_MAType=TRIMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::TRIMA),
+    ("optInSlowD_MAType=TRIMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::TRIMA),
+    ("optInSlowD_MAType=KAMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::KAMA),
+    ("optInSlowD_MAType=KAMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::KAMA),
+    ("optInSlowD_MAType=MAMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::MAMA),
+    ("optInSlowD_MAType=MAMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::MAMA),
+    ("optInSlowD_MAType=T3", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::T3),
+    ("optInSlowD_MAType=T3, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::T3),
+    ("optInSlowD_MAType=HMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::HMA),
+    ("optInSlowD_MAType=HMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::HMA),
+    ("optInSlowD_MAType=DISABLED", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DISABLED),
+    ("optInSlowD_MAType=DISABLED, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::DISABLED),
+    ("optInSlowD_MAType=DEFAULT", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::DEFAULT),
+    ("optInSlowD_MAType=DEFAULT, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::DEFAULT),
+    ("optInSlowD_MAType=ZLEMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::ZLEMA),
+    ("optInSlowD_MAType=ZLEMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::ZLEMA),
+    ("optInSlowD_MAType=RMA", i32::MIN, i32::MIN, MAType::DEFAULT, i32::MIN, MAType::RMA),
+    ("optInSlowD_MAType=RMA, periods doubled", 18i32, 6i32, MAType::DEFAULT, 6i32, MAType::RMA),
+];
+
+fn sub_KDJ(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType) in V_KDJ {
+        let Ok(lb) = core.KDJ_Lookback(optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType) else { continue; };
+        r.control("KDJ", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outK: Vec<f64> = Vec::with_capacity(1);
+            let mut outD: Vec<f64> = Vec::with_capacity(1);
+            let mut outJ: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.KDJ_Impl(0, lb, &inHigh, &inLow, &inClose, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &mut _b, &mut _n, &mut outK, &mut outD, &mut outJ);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("KDJ", label); continue; }
+        r.quiet("KDJ", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outK: Vec<f64> = Vec::with_capacity(1);
+            let mut outD: Vec<f64> = Vec::with_capacity(1);
+            let mut outJ: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.KDJ_Impl(0, lb - 1, &inHigh, &inLow, &inClose, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &mut _b, &mut _n, &mut outK, &mut outD, &mut outJ);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_KDJ(r: &mut Report) {
+    let core = Core::new();
+    let optInFastK_Period = i32::MIN;
+    let optInSlowK_Period = i32::MIN;
+    let optInSlowK_MAType = MAType::DEFAULT;
+    let optInSlowD_Period = i32::MIN;
+    let optInSlowD_MAType = MAType::DEFAULT;
+    let Ok(lb) = core.KDJ_Lookback(optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType) else { r.no_legs("KDJ"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outK: Vec<f64> = vec![Default::default(); 5];
+        let mut outD: Vec<f64> = vec![Default::default(); 5];
+        let mut outJ: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("KDJ", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.KDJ_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &mut _b, &mut _n, &mut outK, &mut outD, &mut outJ);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outK: Vec<f64> = vec![Default::default(); 5];
+        let mut outD: Vec<f64> = vec![Default::default(); 5];
+        let mut outJ: Vec<f64> = vec![Default::default(); 5];
+        r.leg("KDJ", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.KDJ_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &mut _b, &mut _n, &mut outK, &mut outD, &mut outJ);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outK: Vec<f64> = vec![Default::default(); 5];
+        let mut outD: Vec<f64> = vec![Default::default(); 5];
+        let mut outJ: Vec<f64> = vec![Default::default(); 5];
+        r.leg("KDJ", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.KDJ_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &mut _b, &mut _n, &mut outK, &mut outD, &mut outJ);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = Vec::with_capacity(1);
+        let mut outK: Vec<f64> = vec![Default::default(); 5];
+        let mut outD: Vec<f64> = vec![Default::default(); 5];
+        let mut outJ: Vec<f64> = vec![Default::default(); 5];
+        r.leg("KDJ", "inClose", 2, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.KDJ_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &mut _b, &mut _n, &mut outK, &mut outD, &mut outJ);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("KDJ", 3);
 }
 
 const V_LINEARREG: &[(&str, i32)] = &[
@@ -11082,6 +11973,79 @@ fn legs_MARKETFI(r: &mut Report) {
         }));
     }
     r.legs_done("MARKETFI", 3);
+}
+
+const V_MASSI: &[(&str, i32, i32)] = &[
+    ("defaults", i32::MIN, i32::MIN),
+    ("minimums", 2i32, 2i32),
+];
+
+fn sub_MASSI(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInFastPeriod, optInSlowPeriod) in V_MASSI {
+        let Ok(lb) = core.MASSI_Lookback(optInFastPeriod, optInSlowPeriod) else { continue; };
+        r.control("MASSI", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.MASSI_Impl(0, lb, &inHigh, &inLow, optInFastPeriod, optInSlowPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("MASSI", label); continue; }
+        r.quiet("MASSI", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.MASSI_Impl(0, lb - 1, &inHigh, &inLow, optInFastPeriod, optInSlowPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_MASSI(r: &mut Report) {
+    let core = Core::new();
+    let optInFastPeriod = i32::MIN;
+    let optInSlowPeriod = i32::MIN;
+    let Ok(lb) = core.MASSI_Lookback(optInFastPeriod, optInSlowPeriod) else { r.no_legs("MASSI"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("MASSI", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.MASSI_Impl(startIdx, endIdx, &inHigh, &inLow, optInFastPeriod, optInSlowPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("MASSI", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.MASSI_Impl(startIdx, endIdx, &inHigh, &inLow, optInFastPeriod, optInSlowPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("MASSI", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.MASSI_Impl(startIdx, endIdx, &inHigh, &inLow, optInFastPeriod, optInSlowPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("MASSI", 2);
 }
 
 const V_MAVP: &[(&str, i32, i32, MAType)] = &[
@@ -12360,6 +13324,121 @@ fn legs_OBV(r: &mut Report) {
     r.legs_done("OBV", 2);
 }
 
+const V_PERCENTILE: &[(&str, i32, f64)] = &[
+    ("defaults", i32::MIN, Core::REAL_DEFAULT),
+    ("minimums", 2i32, 0.0f64),
+];
+
+fn sub_PERCENTILE(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod, optInPercentile) in V_PERCENTILE {
+        let Ok(lb) = core.PERCENTILE_Lookback(optInTimePeriod, optInPercentile) else { continue; };
+        r.control("PERCENTILE", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTILE_Impl(0, lb, &inReal, optInTimePeriod, optInPercentile, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("PERCENTILE", label); continue; }
+        r.quiet("PERCENTILE", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTILE_Impl(0, lb - 1, &inReal, optInTimePeriod, optInPercentile, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_PERCENTILE(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let optInPercentile = Core::REAL_DEFAULT;
+    let Ok(lb) = core.PERCENTILE_Lookback(optInTimePeriod, optInPercentile) else { r.no_legs("PERCENTILE"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("PERCENTILE", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTILE_Impl(startIdx, endIdx, &inReal, optInTimePeriod, optInPercentile, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("PERCENTILE", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTILE_Impl(startIdx, endIdx, &inReal, optInTimePeriod, optInPercentile, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("PERCENTILE", 1);
+}
+
+const V_PERCENTRANK: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 2i32),
+];
+
+fn sub_PERCENTRANK(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_PERCENTRANK {
+        let Ok(lb) = core.PERCENTRANK_Lookback(optInTimePeriod) else { continue; };
+        r.control("PERCENTRANK", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTRANK_Impl(0, lb, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("PERCENTRANK", label); continue; }
+        r.quiet("PERCENTRANK", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTRANK_Impl(0, lb - 1, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_PERCENTRANK(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.PERCENTRANK_Lookback(optInTimePeriod) else { r.no_legs("PERCENTRANK"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("PERCENTRANK", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTRANK_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("PERCENTRANK", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PERCENTRANK_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("PERCENTRANK", 1);
+}
+
 const V_PLUS_DI: &[(&str, i32)] = &[
     ("defaults", i32::MIN),
     ("minimums", 1i32),
@@ -12763,6 +13842,76 @@ fn legs_PVO(r: &mut Report) {
         }));
     }
     r.legs_done("PVO", 1);
+}
+
+const V_PVT: &[&str] = &[
+    "defaults",
+];
+
+fn sub_PVT(r: &mut Report) {
+    let core = Core::new();
+    for &label in V_PVT {
+        let Ok(lb) = core.PVT_Lookback() else { continue; };
+        r.control("PVT", label, run(|| {
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let inVolume: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PVT_Impl(0, lb, &inClose, &inVolume, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("PVT", label); continue; }
+        r.quiet("PVT", label, lb, run(|| {
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let inVolume: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PVT_Impl(0, lb - 1, &inClose, &inVolume, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_PVT(r: &mut Report) {
+    let core = Core::new();
+    let Ok(lb) = core.PVT_Lookback() else { r.no_legs("PVT"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let inVolume: Vec<f64> = series("volume", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("PVT", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PVT_Impl(startIdx, endIdx, &inClose, &inVolume, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inClose: Vec<f64> = Vec::with_capacity(1);
+        let inVolume: Vec<f64> = series("volume", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("PVT", "inClose", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PVT_Impl(startIdx, endIdx, &inClose, &inVolume, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let inVolume: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("PVT", "inVolume", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.PVT_Impl(startIdx, endIdx, &inClose, &inVolume, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("PVT", 2);
 }
 
 const V_QSTICK: &[(&str, i32)] = &[
@@ -13177,6 +14326,121 @@ fn legs_RSI(r: &mut Report) {
         }));
     }
     r.legs_done("RSI", 1);
+}
+
+const V_RVI: &[(&str, i32, i32)] = &[
+    ("defaults", i32::MIN, i32::MIN),
+    ("minimums", 1i32, 2i32),
+];
+
+fn sub_RVI(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod, optInStdDevPeriod) in V_RVI {
+        let Ok(lb) = core.RVI_Lookback(optInTimePeriod, optInStdDevPeriod) else { continue; };
+        r.control("RVI", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVI_Impl(0, lb, &inReal, optInTimePeriod, optInStdDevPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("RVI", label); continue; }
+        r.quiet("RVI", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVI_Impl(0, lb - 1, &inReal, optInTimePeriod, optInStdDevPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_RVI(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let optInStdDevPeriod = i32::MIN;
+    let Ok(lb) = core.RVI_Lookback(optInTimePeriod, optInStdDevPeriod) else { r.no_legs("RVI"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("RVI", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVI_Impl(startIdx, endIdx, &inReal, optInTimePeriod, optInStdDevPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("RVI", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVI_Impl(startIdx, endIdx, &inReal, optInTimePeriod, optInStdDevPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("RVI", 1);
+}
+
+const V_RVOL: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 1i32),
+];
+
+fn sub_RVOL(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_RVOL {
+        let Ok(lb) = core.RVOL_Lookback(optInTimePeriod) else { continue; };
+        r.control("RVOL", label, run(|| {
+            let inVolume: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVOL_Impl(0, lb, &inVolume, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("RVOL", label); continue; }
+        r.quiet("RVOL", label, lb, run(|| {
+            let inVolume: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVOL_Impl(0, lb - 1, &inVolume, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_RVOL(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.RVOL_Lookback(optInTimePeriod) else { r.no_legs("RVOL"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inVolume: Vec<f64> = series("volume", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("RVOL", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVOL_Impl(startIdx, endIdx, &inVolume, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inVolume: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("RVOL", "inVolume", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.RVOL_Impl(startIdx, endIdx, &inVolume, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("RVOL", 1);
 }
 
 const V_SAR: &[(&str, f64, f64)] = &[
@@ -14787,6 +16051,64 @@ fn legs_TSF(r: &mut Report) {
     r.legs_done("TSF", 1);
 }
 
+const V_TSI: &[(&str, i32, i32)] = &[
+    ("defaults", i32::MIN, i32::MIN),
+    ("minimums", 2i32, 2i32),
+];
+
+fn sub_TSI(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInFirstPeriod, optInSecondPeriod) in V_TSI {
+        let Ok(lb) = core.TSI_Lookback(optInFirstPeriod, optInSecondPeriod) else { continue; };
+        r.control("TSI", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.TSI_Impl(0, lb, &inReal, optInFirstPeriod, optInSecondPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("TSI", label); continue; }
+        r.quiet("TSI", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.TSI_Impl(0, lb - 1, &inReal, optInFirstPeriod, optInSecondPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_TSI(r: &mut Report) {
+    let core = Core::new();
+    let optInFirstPeriod = i32::MIN;
+    let optInSecondPeriod = i32::MIN;
+    let Ok(lb) = core.TSI_Lookback(optInFirstPeriod, optInSecondPeriod) else { r.no_legs("TSI"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("TSI", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.TSI_Impl(startIdx, endIdx, &inReal, optInFirstPeriod, optInSecondPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("TSI", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.TSI_Impl(startIdx, endIdx, &inReal, optInFirstPeriod, optInSecondPeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("TSI", 1);
+}
+
 const V_TYPPRICE: &[&str] = &[
     "defaults",
 ];
@@ -15021,6 +16343,158 @@ fn legs_VAR(r: &mut Report) {
         }));
     }
     r.legs_done("VAR", 1);
+}
+
+const V_VHF: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 2i32),
+];
+
+fn sub_VHF(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_VHF {
+        let Ok(lb) = core.VHF_Lookback(optInTimePeriod) else { continue; };
+        r.control("VHF", label, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VHF_Impl(0, lb, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("VHF", label); continue; }
+        r.quiet("VHF", label, lb, run(|| {
+            let inReal: Vec<f64> = Vec::with_capacity(1);
+            let mut outReal: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VHF_Impl(0, lb - 1, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_VHF(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.VHF_Lookback(optInTimePeriod) else { r.no_legs("VHF"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inReal: Vec<f64> = series("real", endIdx + 1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("VHF", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VHF_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    {
+        let inReal: Vec<f64> = Vec::with_capacity(1);
+        let mut outReal: Vec<f64> = vec![Default::default(); 5];
+        r.leg("VHF", "inReal", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VHF_Impl(startIdx, endIdx, &inReal, optInTimePeriod, &mut _b, &mut _n, &mut outReal);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("VHF", 1);
+}
+
+const V_VORTEX: &[(&str, i32)] = &[
+    ("defaults", i32::MIN),
+    ("minimums", 1i32),
+];
+
+fn sub_VORTEX(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInTimePeriod) in V_VORTEX {
+        let Ok(lb) = core.VORTEX_Lookback(optInTimePeriod) else { continue; };
+        r.control("VORTEX", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outPlusVI: Vec<f64> = Vec::with_capacity(1);
+            let mut outMinusVI: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VORTEX_Impl(0, lb, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outPlusVI, &mut outMinusVI);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("VORTEX", label); continue; }
+        r.quiet("VORTEX", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outPlusVI: Vec<f64> = Vec::with_capacity(1);
+            let mut outMinusVI: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VORTEX_Impl(0, lb - 1, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outPlusVI, &mut outMinusVI);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_VORTEX(r: &mut Report) {
+    let core = Core::new();
+    let optInTimePeriod = i32::MIN;
+    let Ok(lb) = core.VORTEX_Lookback(optInTimePeriod) else { r.no_legs("VORTEX"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outPlusVI: Vec<f64> = vec![Default::default(); 5];
+        let mut outMinusVI: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("VORTEX", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VORTEX_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outPlusVI, &mut outMinusVI);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outPlusVI: Vec<f64> = vec![Default::default(); 5];
+        let mut outMinusVI: Vec<f64> = vec![Default::default(); 5];
+        r.leg("VORTEX", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VORTEX_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outPlusVI, &mut outMinusVI);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outPlusVI: Vec<f64> = vec![Default::default(); 5];
+        let mut outMinusVI: Vec<f64> = vec![Default::default(); 5];
+        r.leg("VORTEX", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VORTEX_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outPlusVI, &mut outMinusVI);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = Vec::with_capacity(1);
+        let mut outPlusVI: Vec<f64> = vec![Default::default(); 5];
+        let mut outMinusVI: Vec<f64> = vec![Default::default(); 5];
+        r.leg("VORTEX", "inClose", 2, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.VORTEX_Impl(startIdx, endIdx, &inHigh, &inLow, &inClose, optInTimePeriod, &mut _b, &mut _n, &mut outPlusVI, &mut outMinusVI);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("VORTEX", 3);
 }
 
 const V_VWAP: &[&str] = &[
@@ -15588,6 +17062,7 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("AD", sub_AD, legs_AD),
     ("ADD", sub_ADD, legs_ADD),
     ("ADOSC", sub_ADOSC, legs_ADOSC),
+    ("ADR", sub_ADR, legs_ADR),
     ("ADX", sub_ADX, legs_ADX),
     ("ADXR", sub_ADXR, legs_ADXR),
     ("AO", sub_AO, legs_AO),
@@ -15668,17 +17143,26 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("CMF", sub_CMF, legs_CMF),
     ("CMO", sub_CMO, legs_CMO),
     ("CMOU", sub_CMOU, legs_CMOU),
+    ("COPPOCK", sub_COPPOCK, legs_COPPOCK),
     ("CORREL", sub_CORREL, legs_CORREL),
     ("COS", sub_COS, legs_COS),
     ("COSH", sub_COSH, legs_COSH),
+    ("CUMSUM", sub_CUMSUM, legs_CUMSUM),
+    ("CVI", sub_CVI, legs_CVI),
     ("DEMA", sub_DEMA, legs_DEMA),
     ("DIV", sub_DIV, legs_DIV),
     ("DONCHIAN", sub_DONCHIAN, legs_DONCHIAN),
+    ("DPO", sub_DPO, legs_DPO),
     ("DX", sub_DX, legs_DX),
     ("EFI", sub_EFI, legs_EFI),
     ("EMA", sub_EMA, legs_EMA),
+    ("ER", sub_ER, legs_ER),
+    ("ERI", sub_ERI, legs_ERI),
     ("EXP", sub_EXP, legs_EXP),
     ("FLOOR", sub_FLOOR, legs_FLOOR),
+    ("FOSC", sub_FOSC, legs_FOSC),
+    ("FRACTAL", sub_FRACTAL, legs_FRACTAL),
+    ("HA", sub_HA, legs_HA),
     ("HMA", sub_HMA, legs_HMA),
     ("HT_DCPERIOD", sub_HT_DCPERIOD, legs_HT_DCPERIOD),
     ("HT_DCPHASE", sub_HT_DCPHASE, legs_HT_DCPHASE),
@@ -15689,6 +17173,7 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("IMI", sub_IMI, legs_IMI),
     ("KAMA", sub_KAMA, legs_KAMA),
     ("KC", sub_KC, legs_KC),
+    ("KDJ", sub_KDJ, legs_KDJ),
     ("LINEARREG", sub_LINEARREG, legs_LINEARREG),
     ("LINEARREG_ANGLE", sub_LINEARREG_ANGLE, legs_LINEARREG_ANGLE),
     ("LINEARREG_INTERCEPT", sub_LINEARREG_INTERCEPT, legs_LINEARREG_INTERCEPT),
@@ -15701,6 +17186,7 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("MACDFIX", sub_MACDFIX, legs_MACDFIX),
     ("MAMA", sub_MAMA, legs_MAMA),
     ("MARKETFI", sub_MARKETFI, legs_MARKETFI),
+    ("MASSI", sub_MASSI, legs_MASSI),
     ("MAVP", sub_MAVP, legs_MAVP),
     ("MAX", sub_MAX, legs_MAX),
     ("MAXINDEX", sub_MAXINDEX, legs_MAXINDEX),
@@ -15719,11 +17205,14 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("NATR", sub_NATR, legs_NATR),
     ("NVI", sub_NVI, legs_NVI),
     ("OBV", sub_OBV, legs_OBV),
+    ("PERCENTILE", sub_PERCENTILE, legs_PERCENTILE),
+    ("PERCENTRANK", sub_PERCENTRANK, legs_PERCENTRANK),
     ("PLUS_DI", sub_PLUS_DI, legs_PLUS_DI),
     ("PLUS_DM", sub_PLUS_DM, legs_PLUS_DM),
     ("PPO", sub_PPO, legs_PPO),
     ("PVI", sub_PVI, legs_PVI),
     ("PVO", sub_PVO, legs_PVO),
+    ("PVT", sub_PVT, legs_PVT),
     ("QSTICK", sub_QSTICK, legs_QSTICK),
     ("RMA", sub_RMA, legs_RMA),
     ("ROC", sub_ROC, legs_ROC),
@@ -15731,6 +17220,8 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("ROCR", sub_ROCR, legs_ROCR),
     ("ROCR100", sub_ROCR100, legs_ROCR100),
     ("RSI", sub_RSI, legs_RSI),
+    ("RVI", sub_RVI, legs_RVI),
+    ("RVOL", sub_RVOL, legs_RVOL),
     ("SAR", sub_SAR, legs_SAR),
     ("SAREXT", sub_SAREXT, legs_SAREXT),
     ("SIN", sub_SIN, legs_SIN),
@@ -15753,9 +17244,12 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("TRIMA", sub_TRIMA, legs_TRIMA),
     ("TRIX", sub_TRIX, legs_TRIX),
     ("TSF", sub_TSF, legs_TSF),
+    ("TSI", sub_TSI, legs_TSI),
     ("TYPPRICE", sub_TYPPRICE, legs_TYPPRICE),
     ("ULTOSC", sub_ULTOSC, legs_ULTOSC),
     ("VAR", sub_VAR, legs_VAR),
+    ("VHF", sub_VHF, legs_VHF),
+    ("VORTEX", sub_VORTEX, legs_VORTEX),
     ("VWAP", sub_VWAP, legs_VWAP),
     ("VWMA", sub_VWMA, legs_VWMA),
     ("WAD", sub_WAD, legs_WAD),
@@ -15801,7 +17295,7 @@ fn no_phantom_io() {
     // The corpus is the generator's, not a list kept by hand: a probe that
     // stopped being emitted is a shrinking sweep, which is the one way this
     // file can fail open.
-    assert_eq!(PROBES.len(), 181, "probe count");
+    assert_eq!(PROBES.len(), 201, "probe count");
     assert_eq!(
         PROBES.len(),
         crate::abstract_api::funcs().count(),

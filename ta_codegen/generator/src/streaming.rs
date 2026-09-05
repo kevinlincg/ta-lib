@@ -247,8 +247,8 @@ pub struct CalleeSig {
     /// The callee is YAML `stream`-flagged (its public stream API exists).
     pub streaming: bool,
     /// The callee is YAML `nan_inf_output`-flagged: a *successful* call of it can
-    /// return NaN or ±Inf (#191 — the seven domain holes: ACOS, ASIN, LN, LOG10,
-    /// SQRT, DIV, VWMA). Such a function may not be composed into another
+    /// return NaN or ±Inf (#191 — the eight domain holes: ACOS, ASIN, LN, LOG10,
+    /// SQRT, DIV, VWMA, RVOL). Such a function may not be composed into another
     /// function's stream; see [`reject_nonfinite_callees`].
     pub nan_inf_output: bool,
     /// Number of input ARRAYS (price components expanded).
@@ -871,6 +871,23 @@ enum FirstUse {
     NotMentioned,
     WriteFirst,
     ReadOrUnknown,
+}
+
+/// Whether the peek transition never reads `var` at all — a wholly dead local
+/// (issue #353), where the declaration and every store to it go together.
+/// Distinct from [`peek_seed_is_dead`] below: that proves only the SEED value
+/// unread and keeps a local the frame still writes and reads; this one holds
+/// only when the frame answers through something else entirely, so the local
+/// has no reason to exist. A compound store's self-read does not rescue it:
+/// [`names_read`] counts only the RHS of the canonical `v op= e` shape, and a
+/// self-feeding chain nothing else reads is dead with the rest. Any mention
+/// shape the walker cannot model lands in the read set and keeps the local.
+/// Callers strip the stores with [`purge_dead_temp_stores`].
+#[must_use]
+pub fn peek_local_is_never_read(body: &[Statement], var: &str) -> bool {
+    let mut read = BTreeSet::new();
+    names_read(body, &mut read);
+    !read.contains(var)
 }
 
 /// Whether seeding `var` from the handle at the top of a peek frame is dead:

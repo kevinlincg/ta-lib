@@ -19,7 +19,7 @@ Every TA function gets these calls:
 | `TA_<NAME>_Peek`   | any time on the **forming** bar     | evaluate a provisional bar **without** committing state |
 | `TA_<NAME>_Close`  | once                                | free the stream |
 
-Two more calls, `OpenAndFill` and `UpdateAndFill`, write array output instead of a single value — see [Array-Fill Calls](#array-fill-calls) below.
+One more call, `OpenAndFill`, writes array output instead of a single value — see [Array-Fill Open](#array-fill-open) below.
 
 Additional read-only [utility functions](#utility-calls) are available.
 
@@ -66,16 +66,13 @@ TA_CDLDOJI_Update( s, open, high, low, close, &outInteger );
 TA_MACD_Update( s, close, &macd, &signal, &hist );
 ```
 
-## Array-Fill Calls
+## Array-Fill Open
 
-`Open` and `Update` each write a single value per output. Two more calls write a full array instead — the same shape the [batch function](/api/) would produce — while still driving the stream:
+`Open` and `Update` each write a single value per output. One more call writes a full array instead — the same shape the [batch function](/api/) would produce — while still opening the stream:
 
 | Call | When | Does |
 |------|------|------|
 | `TA_<NAME>_OpenAndFill` | once, instead of `Open` | like `Open`, but returns the output for **every** history bar |
-| `TA_<NAME>_UpdateAndFill` | instead of a loop of `Update` | commit `barCount` closed bars and write a value for each |
-
-**`OpenAndFill`**
 
 ```c
 double out[300];                 /* one array per output */
@@ -86,14 +83,6 @@ TA_SMA_OpenAndFill( &s, history, historyLen, period,
 
 /* out[0 .. nbElement-1] is the SMA over all of history; then stream on: */
 TA_SMA_Update( s, newClose, &sma );
-```
-
-**`UpdateAndFill`**
-
-```c
-double gap[64], out[64];         /* one output array per output */
-
-TA_SMA_UpdateAndFill( s, gap, 64, out );   /* out[i] is the SMA at gap[i] */
 ```
 
 ## Utility Calls
@@ -151,7 +140,6 @@ See [Rules](#rules) for when concurrent reads of these are safe.
 |------|---------|
 | `TA_<NAME>_Open` / `TA_<NAME>_OpenAndFill` | <ul><li>`TA_INSUFFICIENT_HISTORY` when `historyLen` is below `lookback + 1` — the one failure worth retrying, since another bar might fix it</li><li>`TA_OUT_OF_RANGE_START_INDEX` when `historyLen` is 0</li><li>`TA_OUT_OF_RANGE_END_INDEX` when `historyLen` exceeds `TA_MAX_INDEX + 1`</li><li>`TA_BAD_PARAM` — a NULL pointer, or a parameter out of range</li><li>`TA_ALLOC_ERR` — a memory allocation failure</li></ul>On any of these, `*stream` is NULL. |
 | `TA_<NAME>_Update` / `TA_<NAME>_Peek` | `TA_BAD_PARAM` on NULL arguments, or invalid input such as NaN or ±Inf. The stream's **state** is untouched either way — nothing is committed, and the next call sees exactly what the last accepted bar left — but an `Update` rejected for a non-finite bar still advances the range by one (see [Utility Calls](#utility-calls)). A NULL argument advances nothing, and `Peek` never does. |
-| `TA_<NAME>_UpdateAndFill` | `TA_BAD_PARAM` on NULL arguments, a negative `barCount`, or an output aliasing an input or another output — none of which commits or counts anything. An invalid bar (NaN or ±Inf) also returns `TA_BAD_PARAM` and stops the call there: the bars before it are committed with their values written, the invalid bar is counted but neither committed nor written to its output slot, and the bars after it are untouched. `TA_StreamOutRange` says where it stopped — its last bar is the rejected one. |
 | `TA_<NAME>_Close`  | `TA_SUCCESS`; `TA_<NAME>_Close(NULL)` is a no-op |
 | `TA_<NAME>_Value` | `TA_BAD_PARAM` on a NULL stream or a NULL out-pointer for a required output. A declinable output may be NULL, and is then simply not written. |
 | `TA_<NAME>_Clone` | `TA_BAD_PARAM` on a NULL stream or a NULL `clone`; `TA_ALLOC_ERR` if any allocation fails. On either, `*clone` is NULL and the original is untouched. |

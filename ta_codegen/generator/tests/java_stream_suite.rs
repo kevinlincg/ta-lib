@@ -951,7 +951,7 @@ fn no_java_peek_copies_the_handle() {
             fully_shadowed.insert(name.clone());
         }
     }
-    assert!(swept > 170, "only {swept} peek(s) swept");
+    assert!(swept >= 200, "only {swept} peek(s) swept");
     assert_eq!(frames, swept, "{frames} of {swept} peek(s) run a frame");
     assert!(writes >= 500, "only {writes} local writes seen — the store sweep found nothing");
     assert!(
@@ -975,14 +975,14 @@ fn no_java_peek_copies_the_handle() {
         );
     }
 
-    // EXACTLY these two, not "at most". Both are composed peeks whose callee is
-    // far over C2's inline budget, so the sink is allocated whatever shape it
+    // EXACTLY these three, not "at most". Each is a composed peek whose callee
+    // is far over C2's inline budget, so the sink is allocated whatever shape it
     // takes — it allocated as a returned `Value` before #310 too. #325 records
-    // the analysis and the only fix (inlining the sub-frame). A third site
+    // the analysis and the only fix (inlining the sub-frame). A fourth site
     // means a new composed multi-output peek nobody costed; losing one means
     // #325 landed and this bound should tighten with it.
     let expected: BTreeSet<String> =
-        ["ma", "stochrsi"].iter().map(|s| (*s).to_string()).collect();
+        ["kdj", "ma", "stochrsi"].iter().map(|s| (*s).to_string()).collect();
     assert_eq!(
         sink_sites, expected,
         "the set of composed peeks allocating a sub-handle sink moved"
@@ -992,14 +992,14 @@ fn no_java_peek_copies_the_handle() {
 /// The committing verbs carry NO such residue: a composed `update` reads its
 /// multi-output sub-handle's committed `cur_*` through the sink-less overload.
 /// Pinned as an exact per-function COUNT, not a set — one site per function,
-/// the peek frame's, and a second on either would be a commit path that started
-/// allocating again.
+/// the peek frame's, and a second on any of them would be a commit path that
+/// started allocating again.
 ///
 /// Non-vacuity: the map is asserted non-empty and every counted line is required
 /// to be a real `new <N>Out()` allocation, so an emitter that stopped writing
 /// them fails here rather than passing with an empty sweep.
 #[test]
-fn the_composed_sub_handle_sinks_are_exactly_the_costed_two() {
+fn the_composed_sub_handle_sinks_are_exactly_the_costed_three() {
     let mut sites: BTreeMap<String, usize> = BTreeMap::new();
     for name in streaming_indicators() {
         let s = java_stream_section(&name);
@@ -1014,14 +1014,17 @@ fn the_composed_sub_handle_sinks_are_exactly_the_costed_two() {
             sites.insert(name, n);
         }
     }
-    let expected: BTreeMap<String, usize> =
-        [("ma".to_string(), 1usize), ("stochrsi".to_string(), 1usize)]
-            .into_iter()
-            .collect();
+    let expected: BTreeMap<String, usize> = [
+        ("kdj".to_string(), 1usize),
+        ("ma".to_string(), 1usize),
+        ("stochrsi".to_string(), 1usize),
+    ]
+    .into_iter()
+    .collect();
     assert!(!sites.is_empty(), "the sweep found no sink allocation at all");
     assert_eq!(
         sites, expected,
-        "the composed sub-handle sink sites moved (one peek frame on each of the two \
+        "the composed sub-handle sink sites moved (one peek frame on each of the three \
          composed multi-output callees, #325)"
     );
 }
