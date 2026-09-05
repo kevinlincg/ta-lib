@@ -65,6 +65,11 @@
  *                the fixed TA_IS_ZERO band beside the efficiency ratio, which
  *                forced the fastest adaptation on any instrument quoted small
  *                enough to fall under it.
+ *  090526 KL     Fix #385. Test the efficiency ratio's denominator for zero.
+ *                The asymmetric clamp cannot serve as that test: it compares
+ *                against the signed numerator, so it is false for every down
+ *                move, zero denominator included. Converges with TA_ER, whose
+ *                same defect was fixed in #350.
  */
 
 // Import types from parent module
@@ -252,13 +257,27 @@ impl Core {
         trailingValue = tempReal2;
         // Calculate the efficiency ratio.
         //
-        // The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-        // both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-        // sit beside it was not -- it declared the window flat, and forced the
-        // fastest adaptation, for every window of an instrument quoted below it
-        // (issue #253). A genuinely flat window is now recognized by the exact bar
-        // count above instead.
-        if sumROC1 <= periodROC {
+        // Two thresholds, and neither substitutes for the other:
+        //
+        //   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP would
+        //     give 1.0000000000000002. It compares against the SIGNED numerator, so
+        //     it only fires on up-moves. Do NOT "fix" that with fabs -- it changes
+        //     this function's output.
+        //   - `sumROC1 <= 0.0` is the denominator test, and it is the clamp above
+        //     that makes it necessary rather than redundant: on a down move the
+        //     clamp is false for every value of sumROC1, zero included (#385).
+        //
+        // Both are scale-consistent -- each side carries the quote unit, or none of
+        // them does. The fixed TA_IS_ZERO band that used to sit here was not: it
+        // declared the window flat, and forced the fastest adaptation, for every
+        // window of an instrument quoted below it (issue #253). A genuinely flat
+        // window is recognized by the exact bar count above instead.
+        //
+        // The denominator test is unreachable at THIS site -- a priming sum only
+        // ever has non-negative terms added to it, so reaching 0.0 means every term
+        // was 0.0, and then periodROC is 0.0 too and the clamp answers first. It is
+        // written anyway so all three sites read as one rule.
+        if sumROC1 <= 0.0 || sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sumROC1).abs();
@@ -284,9 +303,10 @@ impl Core {
             sumROC1 += (tempReal - inReal[today - 1]).abs();
             // Once a whole window of flat bars has gone by, every 1-day change it
             // spans is exactly zero, so the sum is known to be exactly zero and the
-            // residue can be dropped. That is what lets the efficiency ratio be
-            // decided by `sumROC1 <= periodROC` alone: a window that flat has
-            // periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+            // residue can be dropped -- otherwise the efficiency ratio divides that
+            // residue into itself. This purge answers only the FLAT window; it is
+            // not the denominator test, because the sum reaches 0.0 on live windows
+            // too, by absorption (#385).
             if tempReal - inReal[today - 1] == 0.0 {
                 nullRun += 1;
             } else {
@@ -300,7 +320,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -328,9 +348,10 @@ impl Core {
             sumROC1 += (tempReal - inReal[today - 1]).abs();
             // Once a whole window of flat bars has gone by, every 1-day change it
             // spans is exactly zero, so the sum is known to be exactly zero and the
-            // residue can be dropped. That is what lets the efficiency ratio be
-            // decided by `sumROC1 <= periodROC` alone: a window that flat has
-            // periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+            // residue can be dropped -- otherwise the efficiency ratio divides that
+            // residue into itself. This purge answers only the FLAT window; it is
+            // not the denominator test, because the sum reaches 0.0 on live windows
+            // too, by absorption (#385).
             if tempReal - inReal[today - 1] == 0.0 {
                 nullRun += 1;
             } else {
@@ -344,7 +365,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -526,9 +547,10 @@ impl Core {
         sp.sumROC1 += (tempReal - sp.lag1_inReal).abs();
         // Once a whole window of flat bars has gone by, every 1-day change it
         // spans is exactly zero, so the sum is known to be exactly zero and the
-        // residue can be dropped. That is what lets the efficiency ratio be
-        // decided by `sumROC1 <= periodROC` alone: a window that flat has
-        // periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+        // residue can be dropped -- otherwise the efficiency ratio divides that
+        // residue into itself. This purge answers only the FLAT window; it is
+        // not the denominator test, because the sum reaches 0.0 on live windows
+        // too, by absorption (#385).
         if tempReal - sp.lag1_inReal == 0.0 {
             sp.nullRun += 1;
         } else {
@@ -542,7 +564,7 @@ impl Core {
         // and outReal can be pointers to the same buffer.
         sp.trailingValue = tempReal2;
         // Calculate the efficiency ratio
-        if sp.sumROC1 <= periodROC {
+        if sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sp.sumROC1).abs();
@@ -692,13 +714,27 @@ impl Core {
         trailingValue = tempReal2;
         // Calculate the efficiency ratio.
         //
-        // The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-        // both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-        // sit beside it was not -- it declared the window flat, and forced the
-        // fastest adaptation, for every window of an instrument quoted below it
-        // (issue #253). A genuinely flat window is now recognized by the exact bar
-        // count above instead.
-        if sumROC1 <= periodROC {
+        // Two thresholds, and neither substitutes for the other:
+        //
+        //   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP would
+        //     give 1.0000000000000002. It compares against the SIGNED numerator, so
+        //     it only fires on up-moves. Do NOT "fix" that with fabs -- it changes
+        //     this function's output.
+        //   - `sumROC1 <= 0.0` is the denominator test, and it is the clamp above
+        //     that makes it necessary rather than redundant: on a down move the
+        //     clamp is false for every value of sumROC1, zero included (#385).
+        //
+        // Both are scale-consistent -- each side carries the quote unit, or none of
+        // them does. The fixed TA_IS_ZERO band that used to sit here was not: it
+        // declared the window flat, and forced the fastest adaptation, for every
+        // window of an instrument quoted below it (issue #253). A genuinely flat
+        // window is recognized by the exact bar count above instead.
+        //
+        // The denominator test is unreachable at THIS site -- a priming sum only
+        // ever has non-negative terms added to it, so reaching 0.0 means every term
+        // was 0.0, and then periodROC is 0.0 too and the clamp answers first. It is
+        // written anyway so all three sites read as one rule.
+        if sumROC1 <= 0.0 || sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sumROC1).abs();
@@ -724,9 +760,10 @@ impl Core {
             sumROC1 += (tempReal - inReal[today - 1]).abs();
             // Once a whole window of flat bars has gone by, every 1-day change it
             // spans is exactly zero, so the sum is known to be exactly zero and the
-            // residue can be dropped. That is what lets the efficiency ratio be
-            // decided by `sumROC1 <= periodROC` alone: a window that flat has
-            // periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+            // residue can be dropped -- otherwise the efficiency ratio divides that
+            // residue into itself. This purge answers only the FLAT window; it is
+            // not the denominator test, because the sum reaches 0.0 on live windows
+            // too, by absorption (#385).
             if tempReal - inReal[today - 1] == 0.0 {
                 nullRun += 1;
             } else {
@@ -740,7 +777,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -768,9 +805,10 @@ impl Core {
             sumROC1 += (tempReal - inReal[today - 1]).abs();
             // Once a whole window of flat bars has gone by, every 1-day change it
             // spans is exactly zero, so the sum is known to be exactly zero and the
-            // residue can be dropped. That is what lets the efficiency ratio be
-            // decided by `sumROC1 <= periodROC` alone: a window that flat has
-            // periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+            // residue can be dropped -- otherwise the efficiency ratio divides that
+            // residue into itself. This purge answers only the FLAT window; it is
+            // not the denominator test, because the sum reaches 0.0 on live windows
+            // too, by absorption (#385).
             if tempReal - inReal[today - 1] == 0.0 {
                 nullRun += 1;
             } else {
@@ -784,7 +822,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -1050,9 +1088,10 @@ impl KamaStream {
             sumROC1 += (tempReal - sp.lag1_inReal).abs();
             // Once a whole window of flat bars has gone by, every 1-day change it
             // spans is exactly zero, so the sum is known to be exactly zero and the
-            // residue can be dropped. That is what lets the efficiency ratio be
-            // decided by `sumROC1 <= periodROC` alone: a window that flat has
-            // periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+            // residue can be dropped -- otherwise the efficiency ratio divides that
+            // residue into itself. This purge answers only the FLAT window; it is
+            // not the denominator test, because the sum reaches 0.0 on live windows
+            // too, by absorption (#385).
             if tempReal - sp.lag1_inReal == 0.0 {
                 nullRun += 1;
             } else {
@@ -1066,7 +1105,7 @@ impl KamaStream {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();

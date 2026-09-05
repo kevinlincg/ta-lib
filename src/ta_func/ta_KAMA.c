@@ -67,6 +67,11 @@
  *                the fixed TA_IS_ZERO band beside the efficiency ratio, which
  *                forced the fastest adaptation on any instrument quoted small
  *                enough to fall under it.
+ *  090526 KL     Fix #385. Test the efficiency ratio's denominator for zero.
+ *                The asymmetric clamp cannot serve as that test: it compares
+ *                against the signed numerator, so it is false for every down
+ *                move, zero denominator included. Converges with TA_ER, whose
+ *                same defect was fixed in #350.
  */
 
 TA_LIB_API int TA_KAMA_Lookback( int optInTimePeriod )
@@ -214,14 +219,28 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
    trailingValue = tempReal2;
    /* Calculate the efficiency ratio.
     *
-    * The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-    * both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-    * sit beside it was not -- it declared the window flat, and forced the
-    * fastest adaptation, for every window of an instrument quoted below it
-    * (issue #253). A genuinely flat window is now recognized by the exact bar
-    * count above instead.
+    * Two thresholds, and neither substitutes for the other:
+    *
+    *   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP would
+    *     give 1.0000000000000002. It compares against the SIGNED numerator, so
+    *     it only fires on up-moves. Do NOT "fix" that with fabs -- it changes
+    *     this function's output.
+    *   - `sumROC1 <= 0.0` is the denominator test, and it is the clamp above
+    *     that makes it necessary rather than redundant: on a down move the
+    *     clamp is false for every value of sumROC1, zero included (#385).
+    *
+    * Both are scale-consistent -- each side carries the quote unit, or none of
+    * them does. The fixed TA_IS_ZERO band that used to sit here was not: it
+    * declared the window flat, and forced the fastest adaptation, for every
+    * window of an instrument quoted below it (issue #253). A genuinely flat
+    * window is recognized by the exact bar count above instead.
+    *
+    * The denominator test is unreachable at THIS site -- a priming sum only
+    * ever has non-negative terms added to it, so reaching 0.0 means every term
+    * was 0.0, and then periodROC is 0.0 too and the clamp answers first. It is
+    * written anyway so all three sites read as one rule.
     */
-   if( sumROC1 <= periodROC )
+   if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 
@@ -254,9 +273,10 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
       sumROC1 += fabs(tempReal - inReal[today - 1]);
       /* Once a whole window of flat bars has gone by, every 1-day change it
        * spans is exactly zero, so the sum is known to be exactly zero and the
-       * residue can be dropped. That is what lets the efficiency ratio be
-       * decided by `sumROC1 <= periodROC` alone: a window that flat has
-       * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+       * residue can be dropped -- otherwise the efficiency ratio divides that
+       * residue into itself. This purge answers only the FLAT window; it is
+       * not the denominator test, because the sum reaches 0.0 on live windows
+       * too, by absorption (#385).
        */
       if( tempReal - inReal[today - 1] == 0.0 )
       {
@@ -275,7 +295,7 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
        */
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio */
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -308,9 +328,10 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
       sumROC1 += fabs(tempReal - inReal[today - 1]);
       /* Once a whole window of flat bars has gone by, every 1-day change it
        * spans is exactly zero, so the sum is known to be exactly zero and the
-       * residue can be dropped. That is what lets the efficiency ratio be
-       * decided by `sumROC1 <= periodROC` alone: a window that flat has
-       * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+       * residue can be dropped -- otherwise the efficiency ratio divides that
+       * residue into itself. This purge answers only the FLAT window; it is
+       * not the denominator test, because the sum reaches 0.0 on live windows
+       * too, by absorption (#385).
        */
       if( tempReal - inReal[today - 1] == 0.0 )
       {
@@ -329,7 +350,7 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
        */
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio */
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -448,7 +469,7 @@ TA_RetCode TA_S_KAMA( int    startIdx,
    tempReal2 = (double)inReal[trailingIdx++];
    periodROC = tempReal - tempReal2;
    trailingValue = tempReal2;
-   if( sumROC1 <= periodROC )
+   if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 
@@ -478,7 +499,7 @@ TA_RetCode TA_S_KAMA( int    startIdx,
          sumROC1 = 0.0;
       }
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -512,7 +533,7 @@ TA_RetCode TA_S_KAMA( int    startIdx,
          sumROC1 = 0.0;
       }
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -586,9 +607,10 @@ static void TA_KAMA_StepImpl( struct TA_KAMA_Stream *sp, double inReal, double *
    sp->sumROC1 += fabs(tempReal - sp->lag1_inReal);
    /* Once a whole window of flat bars has gone by, every 1-day change it
     * spans is exactly zero, so the sum is known to be exactly zero and the
-    * residue can be dropped. That is what lets the efficiency ratio be
-    * decided by `sumROC1 <= periodROC` alone: a window that flat has
-    * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+    * residue can be dropped -- otherwise the efficiency ratio divides that
+    * residue into itself. This purge answers only the FLAT window; it is
+    * not the denominator test, because the sum reaches 0.0 on live windows
+    * too, by absorption (#385).
     */
    if( tempReal - sp->lag1_inReal == 0.0 )
    {
@@ -607,7 +629,7 @@ static void TA_KAMA_StepImpl( struct TA_KAMA_Stream *sp, double inReal, double *
     */
    sp->trailingValue = tempReal2;
    /* Calculate the efficiency ratio */
-   if( sp->sumROC1 <= periodROC )
+   if( sp->sumROC1 <= 0.0 || sp->sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 
@@ -774,14 +796,28 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio.
        *
-       * The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-       * both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-       * sit beside it was not -- it declared the window flat, and forced the
-       * fastest adaptation, for every window of an instrument quoted below it
-       * (issue #253). A genuinely flat window is now recognized by the exact bar
-       * count above instead.
+       * Two thresholds, and neither substitutes for the other:
+       *
+       *   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP would
+       *     give 1.0000000000000002. It compares against the SIGNED numerator, so
+       *     it only fires on up-moves. Do NOT "fix" that with fabs -- it changes
+       *     this function's output.
+       *   - `sumROC1 <= 0.0` is the denominator test, and it is the clamp above
+       *     that makes it necessary rather than redundant: on a down move the
+       *     clamp is false for every value of sumROC1, zero included (#385).
+       *
+       * Both are scale-consistent -- each side carries the quote unit, or none of
+       * them does. The fixed TA_IS_ZERO band that used to sit here was not: it
+       * declared the window flat, and forced the fastest adaptation, for every
+       * window of an instrument quoted below it (issue #253). A genuinely flat
+       * window is recognized by the exact bar count above instead.
+       *
+       * The denominator test is unreachable at THIS site -- a priming sum only
+       * ever has non-negative terms added to it, so reaching 0.0 means every term
+       * was 0.0, and then periodROC is 0.0 too and the clamp answers first. It is
+       * written anyway so all three sites read as one rule.
        */
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -814,9 +850,10 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
          sumROC1 += fabs(tempReal - inReal[today - 1]);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
-          * residue can be dropped. That is what lets the efficiency ratio be
-          * decided by `sumROC1 <= periodROC` alone: a window that flat has
-          * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+          * residue can be dropped -- otherwise the efficiency ratio divides that
+          * residue into itself. This purge answers only the FLAT window; it is
+          * not the denominator test, because the sum reaches 0.0 on live windows
+          * too, by absorption (#385).
           */
          if( tempReal - inReal[today - 1] == 0.0 )
          {
@@ -835,7 +872,7 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC )
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
          {
             tempReal = 1.0;
          } else 
@@ -868,9 +905,10 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
          sumROC1 += fabs(tempReal - inReal[today - 1]);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
-          * residue can be dropped. That is what lets the efficiency ratio be
-          * decided by `sumROC1 <= periodROC` alone: a window that flat has
-          * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+          * residue can be dropped -- otherwise the efficiency ratio divides that
+          * residue into itself. This purge answers only the FLAT window; it is
+          * not the denominator test, because the sum reaches 0.0 on live windows
+          * too, by absorption (#385).
           */
          if( tempReal - inReal[today - 1] == 0.0 )
          {
@@ -889,7 +927,7 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC )
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
          {
             tempReal = 1.0;
          } else 
@@ -1033,9 +1071,10 @@ TA_LIB_API TA_RetCode TA_KAMA_Peek( const TA_KAMA_Stream *stream, double inReal,
    sumROC1 += fabs(tempReal - sp->lag1_inReal);
    /* Once a whole window of flat bars has gone by, every 1-day change it
     * spans is exactly zero, so the sum is known to be exactly zero and the
-    * residue can be dropped. That is what lets the efficiency ratio be
-    * decided by `sumROC1 <= periodROC` alone: a window that flat has
-    * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+    * residue can be dropped -- otherwise the efficiency ratio divides that
+    * residue into itself. This purge answers only the FLAT window; it is
+    * not the denominator test, because the sum reaches 0.0 on live windows
+    * too, by absorption (#385).
     */
    if( tempReal - sp->lag1_inReal == 0.0 )
    {
@@ -1054,7 +1093,7 @@ TA_LIB_API TA_RetCode TA_KAMA_Peek( const TA_KAMA_Stream *stream, double inReal,
     */
    trailingValue = tempReal2;
    /* Calculate the efficiency ratio */
-   if( sumROC1 <= periodROC )
+   if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 

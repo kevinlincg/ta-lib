@@ -1,8 +1,8 @@
 //! Divisions by a loop-accumulated variable must be guarded on that same variable.
 //!
-//! Three defects in one week shared one shape (#381): the divisor was a variable
-//! accumulated across steady-loop iterations by add/subtract, and the guard that
-//! dominated the division tested *something else*.
+//! Four defects shared one shape (#381): the divisor was a variable accumulated across
+//! steady-loop iterations by add/subtract, and the guard that dominated the division
+//! tested *something else*.
 //!
 //!   - VORTEX divided by a running true-range sum gated on a flat-bar counter. FP
 //!     absorption drives the sum to exactly 0.0 while the counter is still short.
@@ -11,6 +11,9 @@
 //!     negative -VI — unreachable for a ratio of sums of fabs().
 //!   - ER used its asymmetric KAMA-parity clamp (`sumROC1 <= periodROC`) as the zero
 //!     guard. It cannot fire when `periodROC < 0`, so a zero denominator divided.
+//!   - KAMA, the fourth, is this sweep's own first find (#385) rather than a defect it
+//!     was written from: the same clamp on the same `sumROC1`, left alone when ER was
+//!     fixed. It divided by zero on an input the ER test already carried.
 //!
 //! No existing gate sees this class. All four backends are generated from one input
 //! body, so `--xlang-hash` agrees bitwise on the same wrong answer; `--codegen` has no
@@ -61,10 +64,10 @@ fn load() -> Vec<FuncDef> {
 
 /// Divisions the sweep reports that have been READ, each with what was concluded.
 ///
-/// Deliberately not named "known-safe": one entry below is an open question rather
-/// than a clearance. Annotating beats suppressing either way, because the entry states
-/// a reason that a later edit can contradict -- a bare allowlist states nothing and
-/// silently keeps holding once its reason expires.
+/// Deliberately not named "known-safe": an entry may record an open question as easily
+/// as a clearance (KAMA's did until #385 answered it). Annotating beats suppressing
+/// either way, because the entry states a reason that a later edit can contradict -- a
+/// bare allowlist states nothing and silently keeps holding once its reason expires.
 ///
 /// Keyed `(FUNC, divisor variable, why, required_flag)`. A non-empty `required_flag`
 /// means the reason rests on that YAML flag still being declared, which
@@ -82,15 +85,6 @@ const ANNOTATED: &[(&str, &str, &str, &str)] = &[
     ("HT_SINE", "smoothPeriod", "period clamped to [6,50] before the combination", ""),
     ("HT_TRENDMODE", "smoothPeriod", "period clamped to [6,50] before the combination", ""),
 
-    // OPEN, not cleared. KAMA divides by the same running `sumROC1` that ER does, under
-    // the same asymmetric clamp, and WITHOUT the exact denominator test ER gained in
-    // #350 -- `er.c:56` records the difference explicitly ("the one thing kama.c has no
-    // equivalent of"), and the #378 review asked for a fix that closes ER "without
-    // touching KAMA parity". So the gap is deliberate and documented, and whether the
-    // two should converge is a decision about KAMA's output, not a defect to patch
-    // under a sweep. Listed so the sweep is green and the question stays visible.
-    ("KAMA", "sumROC1", "OPEN: same shape as the ER defect fixed in #350; see #381", ""),
-
     // Unguarded BY DECISION, not by oversight. `vwma.c:124` divides by the rolling
     // volume sum with no test, and `vwma.yaml` declares `nan_inf_output` to say so --
     // the standing answer for this shape (set as the precedent for #56 RVOL; not 1.0,
@@ -100,8 +94,10 @@ const ANNOTATED: &[(&str, &str, &str, &str)] = &[
     // What clears it is statelessness, not the flag alone: #112's concern is a NaN
     // that POISONS AN ACCUMULATOR (#39's KVO B2 is the live case). VWMA carries
     // nothing across bars, so a non-finite value is contained to the bar that produced
-    // it. KAMA below is the contrast -- it carries `sumROC1`, so the same reasoning
-    // does not reach it.
+    // it. That is why this reasoning does not transfer to a function whose divisor is
+    // also its carried state: KAMA fed one non-finite ratio into `prevKAMA` and every
+    // later bar was NaN, which is what made #385 a fix rather than a second entry
+    // here.
     ("VWMA", "tempV", "unguarded by decision: stateless per bar", "nan_inf_output"),
 ];
 
@@ -538,6 +534,35 @@ fn the_sweep_detects_a_reintroduced_er_defect() {
     );
 }
 
+/// KAMA is the same proof on the same divisor, and it is the row that used to be
+/// annotated OPEN here.
+///
+/// Kept separate from ER's rather than folded into a loop over the two: the point of
+/// #385 is that these are two bodies, and a single parameterised test that silently
+/// found only one of them would read as covering both. `strip_exact_zero_test` is
+/// shared because the clause it removes is textually the same one.
+#[test]
+fn the_sweep_detects_a_reintroduced_kama_defect() {
+    let funcs = load();
+    let kama = funcs.iter().find(|f| f.name == "KAMA").expect("KAMA is in the input tree");
+
+    assert!(
+        findings_for(kama).is_empty(),
+        "KAMA ships with an exact `sumROC1 <= 0.0` denominator test since #385; the \
+         sweep should be silent on it"
+    );
+
+    let mut broken = kama.clone();
+    strip_exact_zero_test(&mut broken.body);
+    strip_exact_zero_test(&mut broken.private_body);
+    let found = findings_for(&broken);
+    assert!(
+        found.iter().any(|f| f.divisor == "sumROC1"),
+        "the sweep did not flag KAMA once its exact denominator test was removed — got \
+         {found:?}"
+    );
+}
+
 /// Remove `sumROC1 <= 0.0 ||` from every guard, leaving the asymmetric clamp.
 fn strip_exact_zero_test(body: &mut [Statement]) {
     fn is_exact_zero_test(e: &Expr) -> bool {
@@ -642,6 +667,30 @@ fn counter_gate_the_divide(body: &mut [Statement]) {
 /// allowlist cannot. That only holds if something actually checks — VWMA's clearance
 /// rests on `nan_inf_output` declaring that non-finite output is intended, so removing
 /// the flag should surface the entry rather than leave it silently holding.
+/// A row the sweep no longer reports is dead weight, and dead weight is the silent
+/// allowlist this table exists to avoid.
+///
+/// #385 is why this is asserted rather than assumed: KAMA's row was removed by hand
+/// with the fix, and nothing here would have noticed if it had been left behind — it
+/// would have gone on suppressing a finding that no longer existed, and then kept
+/// suppressing the next one to appear on the same divisor.
+#[test]
+fn every_annotation_still_describes_a_reported_division() {
+    let funcs = load();
+    for (name, divisor, why, _) in ANNOTATED {
+        let f = funcs
+            .iter()
+            .find(|f| f.name == *name)
+            .unwrap_or_else(|| panic!("{name} is annotated but not in the input tree"));
+        assert!(
+            findings_for(f).iter().any(|fd| fd.divisor == *divisor),
+            "{name}'s division by `{divisor}` is annotated \"{why}\", but the sweep no \
+             longer reports it -- the guard changed, or the division went. Delete the \
+             row; leaving it in place suppresses whatever appears there next."
+        );
+    }
+}
+
 #[test]
 fn annotation_reasons_still_hold() {
     let funcs = load();

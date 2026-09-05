@@ -254,6 +254,7 @@ static ErrorNumber test_coppock_inplace( const TA_History *history );
 static ErrorNumber test_er_differential( const TA_History *history );
 static ErrorNumber test_er_kama_reconstruction( const TA_History *history );
 static ErrorNumber test_er_pins_and_edges( const TA_History *history );
+static ErrorNumber test_kama_zero_denominator( void );
 
 /**** Global functions definitions. ****/
 ErrorNumber test_func_composite2( TA_History *history )
@@ -311,6 +312,10 @@ ErrorNumber test_func_composite2( TA_History *history )
       return retValue;
 
    retValue = test_er_pins_and_edges( history );
+   if( retValue != TA_TEST_PASS )
+      return retValue;
+
+   retValue = test_kama_zero_denominator();
    if( retValue != TA_TEST_PASS )
       return retValue;
 
@@ -1475,6 +1480,91 @@ static ErrorNumber test_er_pins_and_edges( const TA_History *history )
    if( rc != TA_SUCCESS || memcmp( buf, ref, (size_t)nb * sizeof(TA_Real) ) != 0 )
    {
       printf( "ER in-place Fail: aliased call differs from separate-buffer call\n" );
+      return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+   }
+   return TA_TEST_PASS;
+}
+
+/* (5) KAMA's own zero denominator (#385), on the series the ER leg above
+ * already carries.
+ *
+ * That is the finding, not a coincidence of construction: the input that
+ * demonstrates ER's guard was one TA_KAMA call away from demonstrating that
+ * KAMA had no such guard, and the reconstruction differential could not see it
+ * because it runs on the reference close series, where the denominator never
+ * reaches zero.
+ *
+ * Two claims, and the second is the stronger one:
+ *   - every KAMA output is finite. Before #385 the ratio was +Inf on the first
+ *     zero-denominator bar and `prevKAMA` was NaN for every bar after it, so
+ *     this leg fails 58 of 59 bars rather than one.
+ *   - reconstructing KAMA from TA_ER is still bit-exact HERE. Both bodies must
+ *     answer 1.0 on the same bars for that to hold, which is what makes it a
+ *     parity check on the guard itself rather than on the arithmetic around it.
+ */
+static ErrorNumber test_kama_zero_denominator( void )
+{
+   static TA_Real er[SMI_CAP], kama[SMI_CAP], recon[SMI_CAP], buf[SMI_CAP];
+   const double constMax = 2.0/(30.0+1.0);
+   const double constDiff = 2.0/(2.0+1.0) - constMax;
+   TA_RetCode rc;
+   TA_Integer begE, nbE, begK, nbK;
+   int i, n = 5;
+   double prev, sc;
+
+   /* A step absorbed on the way into the running sum, subtracted later at full
+    * precision: sumROC1 reaches exactly 0.0 with live terms still in the
+    * window. Paired with a down move the asymmetric clamp is false, so the
+    * else arm divides. The nullRun purge does not cover it -- the window is
+    * not flat. */
+   buf[0] = 1.0e16;
+   buf[1] = 0.0;
+   buf[2] = -1.0;
+   buf[3] = -2.0;
+   buf[4] = -3.0;
+   for( i = 5; i < 64; i++ )
+      buf[i] = -4.0;
+
+   TA_SetUnstablePeriod( TA_FUNC_UNST_KAMA, 0 );
+
+   rc = TA_KAMA( 0, 63, buf, n, &begK, &nbK, kama );
+   if( rc != TA_SUCCESS || nbK <= 0 )
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   for( i = 0; i < (int)nbK; i++ )
+   {
+      if( !TA_IS_FINITE( kama[i] ) )
+      {
+         printf( "KAMA zero-denominator Fail bar %d: %.17g -- the path sum "
+                 "reached 0.0 on a live window\n", (int)begK + i, kama[i] );
+         return TA_TESTUTIL_TFRR_BAD_CALCULATION;
+      }
+   }
+
+   rc = TA_ER( 0, 63, buf, n, &begE, &nbE, er );
+   if( rc != TA_SUCCESS || begE != begK || nbE != nbK )
+   {
+      printf( "KAMA/ER Fail: KAMA range (%d,%d) vs ER (%d,%d)\n",
+              (int)begK, (int)nbK, (int)begE, (int)nbE );
+      return TA_TESTUTIL_TFRR_BAD_RETCODE;
+   }
+
+   /* Same reconstruction as test_er_kama_reconstruction, including the fma()
+    * lowering the generated ta_KAMA.c uses. */
+   prev = buf[n-1];
+   for( i = 0; i < (int)nbE; i++ )
+   {
+      sc = fma( er[i], constDiff, constMax );
+      sc *= sc;
+      prev = fma( buf[n + i] - prev, sc, prev );
+      recon[i] = prev;
+   }
+   if( memcmp( recon, kama, (size_t)nbK * sizeof(TA_Real) ) != 0 )
+   {
+      for( i = 0; i < (int)nbK; i++ )
+         if( memcmp( &recon[i], &kama[i], sizeof(TA_Real) ) != 0 ) break;
+      printf( "KAMA/ER zero-denominator Fail bar %d: reconstructed %.17g != "
+              "TA_KAMA %.17g -- the two guards disagree\n",
+              (int)begK + i, recon[i], kama[i] );
       return TA_TESTUTIL_TFRR_BAD_CALCULATION;
    }
    return TA_TEST_PASS;
