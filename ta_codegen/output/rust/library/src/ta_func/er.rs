@@ -135,7 +135,7 @@ impl Core {
         //
         // This is a lift of TA_KAMA's inner efficiency ratio (kama.c) so the
         // two stay bit-identical -- the KAMA-reconstruction differential in
-        // test_composite2.c exists to keep it that way. Two guards are
+        // test_composite2.c exists to keep it that way. Three guards are
         // load-bearing and shared with kama.c:
         //
         //   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP
@@ -150,17 +150,15 @@ impl Core {
         //     absolute TA_IS_ZERO band it replaced fails the QUOTE-UNIT/SCALE
         //     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
         //     price-carrying sum).
-        //
-        // A third guard is this function's own, and the one thing kama.c has
-        // no equivalent of: the division runs only where sumROC1 is exactly
-        // positive. The clamp above cannot serve as the denominator test,
-        // because it compares against the SIGNED numerator and so is false for
-        // every down move -- and a subtract-then-add sum can reach 0.0, or
-        // below it, on a window that is not flat, when a term absorbed on the
-        // way in is subtracted later at full precision. Without the guard those
-        // bars divide by zero. Where it fires, this function answers 1.0 and
-        // kama.c's inner ratio does not; no window the KAMA differential covers
-        // reaches it.
+        //   - the division runs only where sumROC1 is exactly positive. The
+        //     clamp above cannot serve as the denominator test, because it
+        //     compares against the SIGNED numerator and so is false for every
+        //     down move -- and a subtract-then-add sum can reach 0.0, or below
+        //     it, on a window that is not flat, when a term absorbed on the way
+        //     in is subtracted later at full precision. Without the guard those
+        //     bars divide by zero. kama.c carries the same guard for the same
+        //     reason (#381), which is what keeps the two ratios bit-identical
+        //     on the windows that reach it.
         //
         // The subtract-then-add update order matches TA_SUM's recurrence,
         // which is what makes the composite differential bit-exact. The
@@ -478,7 +476,7 @@ impl Core {
         //
         // This is a lift of TA_KAMA's inner efficiency ratio (kama.c) so the
         // two stay bit-identical -- the KAMA-reconstruction differential in
-        // test_composite2.c exists to keep it that way. Two guards are
+        // test_composite2.c exists to keep it that way. Three guards are
         // load-bearing and shared with kama.c:
         //
         //   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP
@@ -493,17 +491,15 @@ impl Core {
         //     absolute TA_IS_ZERO band it replaced fails the QUOTE-UNIT/SCALE
         //     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
         //     price-carrying sum).
-        //
-        // A third guard is this function's own, and the one thing kama.c has
-        // no equivalent of: the division runs only where sumROC1 is exactly
-        // positive. The clamp above cannot serve as the denominator test,
-        // because it compares against the SIGNED numerator and so is false for
-        // every down move -- and a subtract-then-add sum can reach 0.0, or
-        // below it, on a window that is not flat, when a term absorbed on the
-        // way in is subtracted later at full precision. Without the guard those
-        // bars divide by zero. Where it fires, this function answers 1.0 and
-        // kama.c's inner ratio does not; no window the KAMA differential covers
-        // reaches it.
+        //   - the division runs only where sumROC1 is exactly positive. The
+        //     clamp above cannot serve as the denominator test, because it
+        //     compares against the SIGNED numerator and so is false for every
+        //     down move -- and a subtract-then-add sum can reach 0.0, or below
+        //     it, on a window that is not flat, when a term absorbed on the way
+        //     in is subtracted later at full precision. Without the guard those
+        //     bars divide by zero. kama.c carries the same guard for the same
+        //     reason (#381), which is what keeps the two ratios bit-identical
+        //     on the windows that reach it.
         //
         // The subtract-then-add update order matches TA_SUM's recurrence,
         // which is what makes the composite differential bit-exact. The

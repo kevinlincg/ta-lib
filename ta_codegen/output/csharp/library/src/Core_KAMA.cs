@@ -67,6 +67,9 @@ public partial class Core
     *                the fixed TA_IS_ZERO band beside the efficiency ratio, which
     *                forced the fastest adaptation on any instrument quoted small
     *                enough to fall under it.
+    *  090526 KL     Gate the efficiency ratio on its own denominator (#381). The
+    *                bar count is a proxy for it, and a sliding sum reaches 0.0 on
+    *                windows the count calls live.
     */
    /// <summary>
    /// Number of leading input bars <c>KAMA</c> consumes before it can produce
@@ -218,14 +221,24 @@ public partial class Core
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio.
        *
-       * The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-       * both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-       * sit beside it was not -- it declared the window flat, and forced the
+       * Two thresholds, and they answer different questions.
+       *
+       * `sumROC1 <= periodROC` is the ratio clamp: it pins an up-move to exactly
+       * 1.0 where FP would give 1.0000000000000002. It is scale-consistent (both
+       * sides carry the quote unit), unlike the fixed TA_IS_ZERO band that used
+       * to sit beside it -- that one declared the window flat, and forced the
        * fastest adaptation, for every window of an instrument quoted below it
-       * (issue #253). A genuinely flat window is now recognized by the exact bar
-       * count above instead.
+       * (issue #253). A genuinely flat window is recognized by the exact bar
+       * count instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test, and the clamp cannot serve as
+       * one: it compares against the SIGNED numerator, so it is false for every
+       * down move. Reaching it needs no flat window -- see the sliding sum's
+       * comment below. Unreachable at THIS site, where a priming sum has only
+       * ever had non-negative terms added to it, and written anyway so both
+       * sites read as one rule.
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sumROC1);
@@ -255,9 +268,15 @@ public partial class Core
          sumROC1 += Math.Abs(tempReal - inReal[today - 1]);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
-          * residue can be dropped. That is what lets the efficiency ratio be
-          * decided by `sumROC1 <= periodROC` alone: a window that flat has
-          * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+          * residue can be dropped -- a window that flat has periodROC == 0 too,
+          * so the ratio is decided by 0 <= 0 and is 1.
+          *
+          * The purge does NOT make the sum's own value redundant. It fires on a
+          * flat window, and a subtract-then-add sum reaches 0.0 on windows that
+          * are not flat: a term absorbed on the way in (a 1e16 move parked in the
+          * sum swallows a 1e-300 one) is subtracted later at full precision, and
+          * the sum lands on exactly 0.0 with nullRun far below optInTimePeriod.
+          * Hence the explicit `sumROC1 <= 0.0` at every division below.
           */
          if( tempReal - inReal[today - 1] == 0.0 ) {
             nullRun += 1;
@@ -272,8 +291,8 @@ public partial class Core
           * and outReal can be pointers to the same buffer.
           */
          trailingValue = tempReal2;
-         /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         /* Calculate the efficiency ratio (denominator test first). */
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -303,9 +322,15 @@ public partial class Core
          sumROC1 += Math.Abs(tempReal - inReal[today - 1]);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
-          * residue can be dropped. That is what lets the efficiency ratio be
-          * decided by `sumROC1 <= periodROC` alone: a window that flat has
-          * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+          * residue can be dropped -- a window that flat has periodROC == 0 too,
+          * so the ratio is decided by 0 <= 0 and is 1.
+          *
+          * The purge does NOT make the sum's own value redundant. It fires on a
+          * flat window, and a subtract-then-add sum reaches 0.0 on windows that
+          * are not flat: a term absorbed on the way in (a 1e16 move parked in the
+          * sum swallows a 1e-300 one) is subtracted later at full precision, and
+          * the sum lands on exactly 0.0 with nullRun far below optInTimePeriod.
+          * Hence the explicit `sumROC1 <= 0.0` at every division below.
           */
          if( tempReal - inReal[today - 1] == 0.0 ) {
             nullRun += 1;
@@ -320,8 +345,8 @@ public partial class Core
           * and outReal can be pointers to the same buffer.
           */
          trailingValue = tempReal2;
-         /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         /* Calculate the efficiency ratio (denominator test first). */
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -423,7 +448,7 @@ public partial class Core
       tempReal2 = (double)inReal[trailingIdx++];
       periodROC = tempReal - tempReal2;
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sumROC1);
@@ -447,7 +472,7 @@ public partial class Core
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -475,7 +500,7 @@ public partial class Core
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -771,9 +796,15 @@ public partial class Core
          sumROC1 += Math.Abs(tempReal - sp.lag1_inReal);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
-          * residue can be dropped. That is what lets the efficiency ratio be
-          * decided by `sumROC1 <= periodROC` alone: a window that flat has
-          * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+          * residue can be dropped -- a window that flat has periodROC == 0 too,
+          * so the ratio is decided by 0 <= 0 and is 1.
+          *
+          * The purge does NOT make the sum's own value redundant. It fires on a
+          * flat window, and a subtract-then-add sum reaches 0.0 on windows that
+          * are not flat: a term absorbed on the way in (a 1e16 move parked in the
+          * sum swallows a 1e-300 one) is subtracted later at full precision, and
+          * the sum lands on exactly 0.0 with nullRun far below optInTimePeriod.
+          * Hence the explicit `sumROC1 <= 0.0` at every division below.
           */
          if( tempReal - sp.lag1_inReal == 0.0 ) {
             nullRun += 1;
@@ -788,8 +819,8 @@ public partial class Core
           * and outReal can be pointers to the same buffer.
           */
          trailingValue = tempReal2;
-         /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         /* Calculate the efficiency ratio (denominator test first). */
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -877,9 +908,15 @@ public partial class Core
       sp.sumROC1 += Math.Abs(tempReal - sp.lag1_inReal);
       /* Once a whole window of flat bars has gone by, every 1-day change it
        * spans is exactly zero, so the sum is known to be exactly zero and the
-       * residue can be dropped. That is what lets the efficiency ratio be
-       * decided by `sumROC1 <= periodROC` alone: a window that flat has
-       * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+       * residue can be dropped -- a window that flat has periodROC == 0 too,
+       * so the ratio is decided by 0 <= 0 and is 1.
+       *
+       * The purge does NOT make the sum's own value redundant. It fires on a
+       * flat window, and a subtract-then-add sum reaches 0.0 on windows that
+       * are not flat: a term absorbed on the way in (a 1e16 move parked in the
+       * sum swallows a 1e-300 one) is subtracted later at full precision, and
+       * the sum lands on exactly 0.0 with nullRun far below optInTimePeriod.
+       * Hence the explicit `sumROC1 <= 0.0` at every division below.
        */
       if( tempReal - sp.lag1_inReal == 0.0 ) {
          sp.nullRun += 1;
@@ -894,8 +931,8 @@ public partial class Core
        * and outReal can be pointers to the same buffer.
        */
       sp.trailingValue = tempReal2;
-      /* Calculate the efficiency ratio */
-      if( sp.sumROC1 <= periodROC ) {
+      /* Calculate the efficiency ratio (denominator test first). */
+      if( sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sp.sumROC1);
@@ -1043,14 +1080,24 @@ public partial class Core
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio.
        *
-       * The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-       * both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-       * sit beside it was not -- it declared the window flat, and forced the
+       * Two thresholds, and they answer different questions.
+       *
+       * `sumROC1 <= periodROC` is the ratio clamp: it pins an up-move to exactly
+       * 1.0 where FP would give 1.0000000000000002. It is scale-consistent (both
+       * sides carry the quote unit), unlike the fixed TA_IS_ZERO band that used
+       * to sit beside it -- that one declared the window flat, and forced the
        * fastest adaptation, for every window of an instrument quoted below it
-       * (issue #253). A genuinely flat window is now recognized by the exact bar
-       * count above instead.
+       * (issue #253). A genuinely flat window is recognized by the exact bar
+       * count instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test, and the clamp cannot serve as
+       * one: it compares against the SIGNED numerator, so it is false for every
+       * down move. Reaching it needs no flat window -- see the sliding sum's
+       * comment below. Unreachable at THIS site, where a priming sum has only
+       * ever had non-negative terms added to it, and written anyway so both
+       * sites read as one rule.
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sumROC1);
@@ -1080,9 +1127,15 @@ public partial class Core
          sumROC1 += Math.Abs(tempReal - inReal[today - 1]);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
-          * residue can be dropped. That is what lets the efficiency ratio be
-          * decided by `sumROC1 <= periodROC` alone: a window that flat has
-          * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+          * residue can be dropped -- a window that flat has periodROC == 0 too,
+          * so the ratio is decided by 0 <= 0 and is 1.
+          *
+          * The purge does NOT make the sum's own value redundant. It fires on a
+          * flat window, and a subtract-then-add sum reaches 0.0 on windows that
+          * are not flat: a term absorbed on the way in (a 1e16 move parked in the
+          * sum swallows a 1e-300 one) is subtracted later at full precision, and
+          * the sum lands on exactly 0.0 with nullRun far below optInTimePeriod.
+          * Hence the explicit `sumROC1 <= 0.0` at every division below.
           */
          if( tempReal - inReal[today - 1] == 0.0 ) {
             nullRun += 1;
@@ -1097,8 +1150,8 @@ public partial class Core
           * and outReal can be pointers to the same buffer.
           */
          trailingValue = tempReal2;
-         /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         /* Calculate the efficiency ratio (denominator test first). */
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -1128,9 +1181,15 @@ public partial class Core
          sumROC1 += Math.Abs(tempReal - inReal[today - 1]);
          /* Once a whole window of flat bars has gone by, every 1-day change it
           * spans is exactly zero, so the sum is known to be exactly zero and the
-          * residue can be dropped. That is what lets the efficiency ratio be
-          * decided by `sumROC1 <= periodROC` alone: a window that flat has
-          * periodROC == 0 too, so the test is 0 <= 0 and the ratio is 1.
+          * residue can be dropped -- a window that flat has periodROC == 0 too,
+          * so the ratio is decided by 0 <= 0 and is 1.
+          *
+          * The purge does NOT make the sum's own value redundant. It fires on a
+          * flat window, and a subtract-then-add sum reaches 0.0 on windows that
+          * are not flat: a term absorbed on the way in (a 1e16 move parked in the
+          * sum swallows a 1e-300 one) is subtracted later at full precision, and
+          * the sum lands on exactly 0.0 with nullRun far below optInTimePeriod.
+          * Hence the explicit `sumROC1 <= 0.0` at every division below.
           */
          if( tempReal - inReal[today - 1] == 0.0 ) {
             nullRun += 1;
@@ -1145,8 +1204,8 @@ public partial class Core
           * and outReal can be pointers to the same buffer.
           */
          trailingValue = tempReal2;
-         /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         /* Calculate the efficiency ratio (denominator test first). */
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);

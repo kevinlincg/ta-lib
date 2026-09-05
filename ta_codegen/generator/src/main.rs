@@ -1,4 +1,5 @@
 use ta_codegen_lib::backends;
+use ta_codegen_lib::domain_guard;
 use ta_codegen_lib::emit::{copy_if_changed, write_if_changed};
 use ta_codegen_lib::formatter;
 use ta_codegen_lib::helper_registry::HelperRegistry;
@@ -476,6 +477,18 @@ fn generate(func_filter: Option<&str>, backend_filter: Option<&str>) {
             eprintln!("error: {e}");
         }
         eprintln!("       (a name must be a legal identifier in every backend: see ta_codegen/generator/src/naming.rs)");
+        std::process::exit(1);
+    }
+
+    // Domain-guard gate — a division by a running sum must be gated on that sum.
+    // Up here with naming because the defect is in the source of truth: every
+    // backend transcribes the same body, so all four emit the same NaN and no
+    // cross-language comparison can see it. See `domain_guard.rs`.
+    if let Err(errors) = domain_guard::validate_all(&all_defs) {
+        for e in &errors {
+            eprintln!("error: {e}");
+        }
+        eprintln!("       (a window sum's own value is the only sound zero test: see ta_codegen/generator/src/domain_guard.rs)");
         std::process::exit(1);
     }
 
