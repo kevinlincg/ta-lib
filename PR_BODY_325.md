@@ -11,21 +11,24 @@ already made, blocked only by there being no `update` that takes no sink.
 
 So: a package-private `void update( bars )` on every multi-output handle, the
 commit with nothing to publish. The public sink overload delegates to it, so the
-two cannot drift on which bars they reject or count, and the two composed commit
+two cannot drift on which bars they reject or count, and the composed commit
 paths call it and read `cur_*`:
 
 - MA's MAMA dispatch arm — `MA(MAType.MAMA)` streaming update allocated one
   `MamaOut` per bar.
 - STOCHRSI's composed pipeline — one `StochfOut` per bar.
+- KDJ's composed pipeline — one `StochOut` per bar. KDJ landed on dev after this
+  branch was first written and picks the change up by regeneration; nothing in
+  the emitter is special-cased for it.
 
-Both now allocate nothing on the commit path.
+All three now allocate nothing on the commit path.
 
 ## What this leaves
 
-The per-call sinks still in the generated Java are the two peek frames, which is
-what #325 was filed about before the commit paths joined it: a peek commits
+The per-call sinks still in the generated Java are the three peek frames, which
+is what #325 was filed about before the commit paths joined it: a peek commits
 nothing, so its sink is the only carrier, and only inlining the sub-frame
-removes it. This PR takes the allocation sites from 4 to 2 and does not touch
+removes it. This PR takes the allocation sites from 6 to 3 and does not touch
 that half, so #325 stays open.
 
 ## What the numbers on the issue say this buys — and what they say it does not
@@ -33,23 +36,25 @@ that half, so #325 stays open.
 The issue thread carries the measurement this branch does not, and it is the one
 a reviewer will reach for first: against `389515aa1` with
 `ThreadMXBean.getThreadAllocatedBytes`, min of 7 passes of 2M calls, JDK 21,
-`-XX:+UseSerialGC`, **both composed `update` sites already read 0 B/bar.**
-`StochfStream.update` and `MamaStream.update` are ~94 B of bytecode, under
-`FreqInlineSize`, so C2 opens the call and escape analysis scalar-replaces the
-`<N>Out`. It is only `peek`'s callees that are over the inlining budget.
+`-XX:+UseSerialGC`, **both composed `update` sites measured then already read
+0 B/bar.** `StochfStream.update` and `MamaStream.update` are ~94 B of bytecode,
+under `FreqInlineSize`, so C2 opens the call and escape analysis
+scalar-replaces the `<N>Out`. It is only `peek`'s callees that are over the
+inlining budget. That measurement predates KDJ and was **not** re-run on this
+head — the third site is unmeasured, and I am not claiming a number for it.
 
-Stated plainly, and not special-cased away: **on a warmed C2 this PR removes two
-allocations the JIT was already removing, and buys 0 B/bar.** What it buys instead
-is narrower than "4 sites to 2" sounds:
+Stated plainly, and not special-cased away: **on a warmed C2 this PR removes
+allocations the JIT was already removing, and buys 0 B/bar.** What it buys
+instead is narrower than "6 sites to 3" sounds:
 
 - the generated source stops constructing a carrier for values the handle already
-  holds, so the two sites are free by construction rather than free because escape
+  holds, so the sites are free by construction rather than free because escape
   analysis happens to fire;
 - anything not a warmed C2 — the interpreter, C1, tiered warm-up, or a future
   callee that grows past `FreqInlineSize` — pays the allocation that is written
   down, and stops paying it here.
 
-If a source-level-only improvement is not worth 17 package-private methods, this
+If a source-level-only improvement is not worth 23 package-private methods, this
 is the change to decline, and the issue's own conclusion — that closing #325 reads
 better with the numbers than doing the frame-emitter work — is not contradicted by
 anything in this PR. This PR is deliberately **not** that frame-emitter work.
@@ -59,13 +64,18 @@ the two `update` sites on its own, with no emitter surgery", declined there only
 because it "widens the public surface, and that is your call". The call taken here
 is to add it **package-private**, which is the same primitive without the public
 surface — so the stated objection does not apply, and no caller is offered
-"commit and discard the outputs". One number to reconcile rather than smooth over:
-the thread costs the public variant at 15 methods and this is 18 (counted on the
-merged head as the number of generated Java fragments carrying the sink-less
-overload, all package-private). Two of the three above the thread's count are
-accounted for: `SUPERTREND`, per the note below, and `DONCHIAN`, which landed on
-dev after that comment was written and picks up the pair like any other
-multi-output stream. **I have not accounted for the remaining one.**
+"commit and discard the outputs".
+
+One number to reconcile rather than smooth over: the thread costs the public
+variant at 15 methods. On this head it is **23**, counted as the generated Java
+fragments carrying the sink-less overload — ACCBANDS, AROON, BBANDS, DONCHIAN,
+ERI, FRACTAL, HA, HT_PHASOR, HT_SINE, KC, KDJ, MACD, MACDEXT, MACDFIX, MAMA,
+MINMAX, MINMAXINDEX, SMI, STOCH, STOCHF, STOCHRSI, SUPERTREND, VORTEX. The count
+is one per multi-output stream class, so it tracks the corpus and has grown with
+it (it was 18 when this branch was first written, before DONCHIAN, ERI, FRACTAL,
+HA, KDJ and VORTEX landed). Against the thread's 15 I can account for the ones
+that landed after it was written; **I have not reconstructed the thread's own
+count of 15**, so I cannot say the residual is only corpus growth.
 
 ## The cost, stated rather than special-cased
 
@@ -74,108 +84,81 @@ caller should be offered, and the alternative — a reusable `Out` field on the
 composing handle — is an object per handle that exists only to satisfy a
 signature, since these arms read `cur_*` and never the sink.
 
-The cost is **18 package-private methods**, one per multi-output stream class,
+The cost is **23 package-private methods**, one per multi-output stream class,
 and the two verbs now emit different shapes where the composed emitter had one
 for both. If you would rather keep one shape, this is the change to decline.
 
 ## Gates
 
-- `the_composed_sub_handle_sinks_are_exactly_the_costed_four` becomes
-  `..._costed_two` — one site per composed function, the peek frame's. A second
-  on either is a commit path that started allocating again.
+- `the_composed_sub_handle_sinks_are_exactly_the_costed_six` becomes
+  `..._costed_three` — one site per composed function, the peek frame's. A
+  second on any of them is a commit path that started allocating again.
 - The U3 sweep anchors Java's multi-output `update` on the overload that
-  commits; the public frame carries no finite test to read the rule off.
+  commits; the public frame carries no finite test to read the rule off. That is
+  `entry_sig`'s `multi` arm, and it is the only part of this branch's edit to
+  `out_range_advance_suite.rs` that survives the #382 merge — see below.
 - `test_java_ma_dispatch` pins the new arm and that it takes no sink.
 
 Controls, run and watched to go red:
 
-- Dropping the advance from the new overload turns the U3 sweep red
-  (accbands/java).
-- Making the composed commit path allocate a sink again turns the sink-count
-  gate red at stochrsi 2.
+- On the merged head this round: setting the sink-count pin's expected KDJ entry
+  to 2 turns `the_composed_sub_handle_sinks_are_exactly_the_costed_three` red,
+  reporting `left: {"kdj": 1, "ma": 1, "stochrsi": 1}` against
+  `right: {"kdj": 2, ...}`. The pin is reading the generated Java, not an empty
+  sweep, and 1-per-function is the measured value rather than an assumed one.
+- From the original tree, not re-run on this head: dropping the advance from the
+  new overload turns the U3 sweep red (accbands/java); making the composed commit
+  path allocate a sink again turns the sink-count gate red at stochrsi 2.
+
+## Merged with dev `710765c6` (#382 removed UpdateAndFill)
+
+Dev moved under this branch again, and this time not only around it. `0b36decc`
+(#382) deleted the `UpdateAndFill` tier, which rewrote both suites this branch
+edits, and `43ab73ae`, `8c0fedbc`, `0234625a` and `710765c6` moved the corpus and
+KAMA. The head is now a **merge** of dev into the branch, not a rebase, and the
+two suites were re-pointed rather than textually merged:
+
+- `out_range_advance_suite.rs`: the `UpdateAndFill` legs and the
+  `the_hand_rolled_tiers_advance_at_every_bar_loop` test are **dev's deletions**
+  (both came from dev's `8e908bf8` and went out with #382), and they stay
+  deleted. What survives from this branch is `entry_sig`'s `multi` arm.
+- `java_stream_suite.rs`: dev's pin had grown to six sites over three functions
+  once KDJ landed; this branch takes each to one, so the pin is
+  `..._costed_three` at 1/1/1.
+- `BuildStamp.java` and `TaCodegenServe.java` collided on the Java gencode digest
+  only, and the resolution is one `generate` run rather than a pick from either
+  side. This branch writes `7df91028357daa9e`; dev `710765c6` carries
+  `d27fe1889b396250`.
+
+Nothing else conflicted, and no generator source outside `java_stream.rs`
+changed.
 
 ## Verified
 
-On the original tree, Linux x86-64, JDK 21 through the committed Maven wrapper:
+On the merged head (`8167e571`), Linux x86-64, JDK 21 through the committed
+Maven wrapper:
 
-- `cargo test`: 885 pass, 0 fail. `cargo clippy --all-targets -- -D warnings`:
-  clean. `generate` then `git status`: clean.
-- `ta_codegen build --backend=java`: server, jar, javadoc jar, doc examples and
-  all 7 suites OK (StreamSmokeTest 4132 checks).
-- `regtest.py --language=c,java` against the pinned-tag oracle: C 161 passed /
-  0 failed, Java 161 / 0, 967 acknowledged float comparisons.
+- `regen-check`: green — "ta_codegen output matches the committed source",
+  201 functions, and its Cargo.lock, source-list and stream-retcode legs pass.
+- `cargo test --release` in `ta_codegen/generator`: **935 passed / 0 failed**.
+- `cargo clippy --release --all-targets -- -D warnings`: clean, exit 0.
+- `ta_codegen build --backend=java`: the jar builds and all seven Java suites
+  pass on that jar — StreamSmokeTest 4815 checks (including the U3 advance gate:
+  24 rejections counted once, 66 untouched values, 24 resumed bars, 48 peeks that
+  moved nothing), NoPhantomIoTest 4651, MetadataTest 1966, DivZeroTest 91,
+  BatchApiTest 160, CoreApiTest 66, SMathOverflowTest 4.
 
-On the earlier head, merged with dev `af4cdede`:
+This is the first round in which a JDK leg was actually executed on a merged
+head; the previous two bodies said no JDK leg had been run, and this one no
+longer needs to.
 
-- `generate` then `git status`: clean (`regen-check` exit 0, 179 functions).
-- The generator suite: 902 passed / 0 failed.
-  `cargo clippy --release --all-targets -- -D warnings`: clean.
+**Not run on this head, and not claimed:** `regtest.py` against the pinned-tag
+oracle (`ta_ref_serve` is not built in this environment, so the cross-language
+comparison did not run at all), `--language=rust,csharp` (no .NET SDK), and any
+benchmark. The allocation claim in this PR is an allocation-site count in the
+generated source, not a time and not a re-measured byte count.
 
-Re-verified against dev `af4cdede` only at the two tiers above. The Java jar,
-javadoc and `regtest.py` legs in the previous block were **not** re-run on this
-merge — no JDK leg was executed this round, so those three lines describe the
-earlier tree, not the pushed head.
-
-Not measured: this was not benchmarked. The claim is the allocation count in
-the generated code, 4 sites to 2, not a time. `--language=rust,csharp` was not
-run either — no .NET SDK on the machine — though no C#, Rust or C file is in
-the diff.
-
-`TA_SUPERTREND` is a multi-output stream and picks up the same pair, and so does
-`TA_DONCHIAN` now that it is on dev; the public sink overload keeps
-`requireArgument` ahead of the commit, so the null-sink rejection added in
-`91b76002` is not reopened by the split.
-
-## The generated-Java digest collision is already resolved in this branch
-
-Anything that changes generated Java recomputes the Java gencode digest, so this
-branch collides with dev on exactly the two lines carrying it:
-`BuildStamp.GENCODE_DIGEST` and its spliced copy
-`TaCodegenServe.SPLICED_GENCODE_DIGEST`. Dev landed first — #338 as `67936169`,
-then DONCHIAN through `af4cdede` — so the collision is this branch's to resolve,
-and the branch's own commit does it. (The head is rebased onto dev
-rather than merged — see "Rebased onto dev `ce5f5748`" at the end — so there is
-no merge commit; the digest below is what the single commit carries.)
-
-Neither side's value is correct for the combined tree, so the resolution is one
-`generate` run, not a pick from either side. Measured on the merged head against
-dev `af4cdede`:
-
-- taking dev's digest (`c6beffa2c163b194`) by hand and committing it leaves
-  `regen-check` **red**, exit 1, and the diff it prints is exactly those two
-  files — this is a deliberate control, re-run against `af4cdede` and watched
-  to fail;
-- re-running `generate` writes the combined value `fe336d7433975c86` and the
-  gate is **green**, exit 0, generator suite 902 passed / 0 failed.
-
-DONCHIAN also makes the merge more than a digest pick: it is a multi-output
-stream, so the regeneration gives it the sink-less overload as well — that is
-the 18th method, and the only non-digest content this branch adds beyond the
-`update` split itself. Every other file in the two diffs auto-merged and
-regenerated identically.
-
-## Rebased onto dev `ce5f5748`
-
-Dev moved after the verification above was taken: `46577145` (c_hygiene, the
-post-emission `(void)` sweep), `b128cbf5` (a short `--function` token names a
-whole component) and `ce5f5748` (#344, the Open head that declares only what its
-body uses). This branch is rebased onto `ce5f5748` with no conflicts, and
-`git patch-id` says its net diff against dev is byte-identical to the one this
-body describes — nothing about the change itself moved.
-
-Re-checked on the rebased head, at these tiers only:
-
-- `scripts/build.py regen-check`: green, exit 0, 179 functions.
-- `cargo test --release` in `ta_codegen/generator`: 916 passed / 0 failed.
-- `cargo clippy --release --all-targets -- -D warnings`: clean.
-
-Dev `ce5f5748` itself passes the same three commands, so that is a baseline for
-the rebase and not a control that goes red.
-
-**Not re-run on the rebase:** the Java jar, javadoc and `regtest.py` legs, and
-`--language=rust,csharp` — no JDK and no .NET SDK leg was executed this round
-either. What was checked instead is the one thing the rebase could have moved:
-the Java gencode digest. This branch still writes `fe336d7433975c86` and dev
-`ce5f5748` still carries `c6beffa2c163b194`, so the collision section above
-stands as written — `ce5f5748`, `b128cbf5` and `46577145` change generated C
-and Rust, not generated Java.
+`TA_SUPERTREND`, `TA_DONCHIAN` and the streams that landed since pick up the
+same pair by regeneration; the public sink overload keeps `requireArgument`
+ahead of the commit, so the null-sink rejection added in `91b76002` is not
+reopened by the split.
