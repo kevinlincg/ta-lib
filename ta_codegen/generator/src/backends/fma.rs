@@ -35,10 +35,10 @@
 pub const FUSING_INVENTORY: &[&str] = &[
     "adosc", "atr", "bbands", "cdlabandonedbaby", "cdlmorningdojistar",
     "cdlmorningstar", "cdlpiercing", "cdlthrusting", "cvi", "dema", "efi",
-    "ema", "fosc", "ht_dcperiod", "ht_dcphase", "ht_phasor", "ht_sine",
+    "ema", "eri", "fosc", "ht_dcperiod", "ht_dcphase", "ht_phasor", "ht_sine",
     "ht_trendline", "ht_trendmode", "kama", "linearreg", "macd", "macdfix",
-    "mama", "massi", "natr", "rma", "sar", "sarext", "smi", "supertrend", "t3",
-    "tema", "trix", "tsf", "tsi", "wclprice", "zlema",
+    "mama", "massi", "natr", "rma", "rvi", "sar", "sarext", "smi", "supertrend",
+    "t3", "tema", "trix", "tsf", "tsi", "wclprice", "zlema",
 ];
 
 use std::collections::HashSet;

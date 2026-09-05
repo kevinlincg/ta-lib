@@ -445,14 +445,6 @@ typedef enum
   TA_STREAM_EMPTY_HISTORY_WRONG_CODE = 1607,
   TA_STREAM_EMPTY_HISTORY_VACUOUS    = 1608,
 
-  /* Streaming UpdateAndFill: n bars in one call, and its partial commit. */
-  TA_STREAM_UFILL_ACCEPTED_BAD_BAR   = 1601,
-  TA_STREAM_UFILL_WRONG_COMMIT       = 1602,
-  TA_STREAM_UFILL_VALUE_MISMATCH     = 1603,
-  TA_STREAM_UFILL_WROTE_PAST_COMMIT  = 1604,
-  TA_STREAM_UFILL_SETUP_FAILED       = 1605,
-  TA_STREAM_UFILL_VACUOUS            = 1606,
-
   /* DIV's documented zero-divisor result (issue #249). */
   TA_DIVZERO_BAD_RETCODE             = 1610,
   TA_DIVZERO_BAD_SHAPE               = 1611,
@@ -475,9 +467,10 @@ typedef enum
   /* Rule B6a: declining a nullable output changed what the call produced. */
   TA_BATCH_ARG_NULLABLE_DIVERGED     = 1633,
 
-  /* Rule U3, stated absolutely: what ONE rejected Update costs. The
-   * UpdateAndFill gate above compares the two tiers against each other, so it
-   * is blind to any change that moves both. */
+  /* Rule U3, stated absolutely: what ONE rejected Update costs. Driving two
+   * handles off one feed and comparing them is symmetric, so it is blind to any
+   * change that moves both; these ids belong to the leg that demands the
+   * numbers outright. */
   TA_STREAM_ADVANCE_NOT_REJECTED     = 1640,
   TA_STREAM_ADVANCE_WRONG_COUNT      = 1641,
   TA_STREAM_ADVANCE_VALUE_MOVED      = 1642,
@@ -510,6 +503,9 @@ typedef enum
   TA_RVOL_VACUOUS                    = 1661,
   TA_TSI_VACUOUS                     = 1670,
   TA_KDJ_VACUOUS                     = 1671,
+  TA_FRACTAL_VACUOUS                 = 1675,
+  TA_HA_VACUOUS                      = 1678,
+  TA_RVI_VACUOUS                     = 1676,
 
   /* --function= named something no test group covers, on a run that had
    * nothing else to do. Reported rather than passed silently. */

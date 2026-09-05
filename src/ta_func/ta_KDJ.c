@@ -521,31 +521,6 @@ TA_LIB_API TA_RetCode TA_KDJ_Peek( const TA_KDJ_Stream *stream, double inHigh, d
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_KDJ_UpdateAndFill( TA_KDJ_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outK[], double outD[], double outJ[] )
-{
-   int i;
-   TA_RetCode retCode;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outK || !outD || !outJ ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outK == (const void *)inHigh || (const void *)outK == (const void *)inLow || (const void *)outK == (const void *)inClose || (const void *)outD == (const void *)inHigh || (const void *)outD == (const void *)inLow || (const void *)outD == (const void *)inClose || (const void *)outJ == (const void *)inHigh || (const void *)outJ == (const void *)inLow || (const void *)outJ == (const void *)inClose || (const void *)outK == (const void *)outD || (const void *)outK == (const void *)outJ || (const void *)outD == (const void *)outJ ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      retCode = TA_KDJ_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outK[i], &outD[i], &outJ[i] );
-      if( retCode != TA_SUCCESS ) return retCode;
-      stream->cur_outK = outK[i];
-      stream->cur_outD = outD[i];
-      stream->cur_outJ = outJ[i];
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_KDJ_Close( TA_KDJ_Stream *stream )
 {
    if( !stream ) return TA_SUCCESS;

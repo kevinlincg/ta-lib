@@ -356,6 +356,12 @@ final class Dispatch {
          case "EMA":
             return core.EMA(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "ER":
+            return core.ER(
+               startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "ERI":
+            return core.ERI(
+               startIdx, endIdx, h.price(0, 1), h.price(0, 2), h.price(0, 3), h.intOpt(0), h.realOutput(0), h.realOutput(1));
          case "EXP":
             return core.EXP(
                startIdx, endIdx, h.realInput(0), h.realOutput(0));
@@ -365,6 +371,12 @@ final class Dispatch {
          case "FOSC":
             return core.FOSC(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "FRACTAL":
+            return core.FRACTAL(
+               startIdx, endIdx, h.price(0, 1), h.price(0, 2), h.intOpt(0), h.intOpt(1), h.intOutput(0), h.intOutput(1));
+         case "HA":
+            return core.HA(
+               startIdx, endIdx, h.price(0, 0), h.price(0, 1), h.price(0, 2), h.price(0, 3), h.realOutput(0), h.realOutput(1), h.realOutput(2), h.realOutput(3));
          case "HMA":
             return core.HMA(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
@@ -536,6 +548,9 @@ final class Dispatch {
          case "RSI":
             return core.RSI(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "RVI":
+            return core.RVI(
+               startIdx, endIdx, h.realInput(0), h.intOpt(0), h.intOpt(1), h.realOutput(0));
          case "RVOL":
             return core.RVOL(
                startIdx, endIdx, h.price(0, 4), h.intOpt(0), h.realOutput(0));
@@ -620,6 +635,9 @@ final class Dispatch {
          case "VHF":
             return core.VHF(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "VORTEX":
+            return core.VORTEX(
+               startIdx, endIdx, h.price(0, 1), h.price(0, 2), h.price(0, 3), h.intOpt(0), h.realOutput(0), h.realOutput(1));
          case "VWAP":
             return core.VWAP(
                startIdx, endIdx, h.price(0, 1), h.price(0, 2), h.price(0, 3), h.price(0, 4), h.realOutput(0));
@@ -852,12 +870,20 @@ final class Dispatch {
             return core.EFI_Lookback(h.intOpt(0));
          case "EMA":
             return core.EMA_Lookback(h.intOpt(0));
+         case "ER":
+            return core.ER_Lookback(h.intOpt(0));
+         case "ERI":
+            return core.ERI_Lookback(h.intOpt(0));
          case "EXP":
             return core.EXP_Lookback();
          case "FLOOR":
             return core.FLOOR_Lookback();
          case "FOSC":
             return core.FOSC_Lookback(h.intOpt(0));
+         case "FRACTAL":
+            return core.FRACTAL_Lookback(h.intOpt(0), h.intOpt(1));
+         case "HA":
+            return core.HA_Lookback();
          case "HMA":
             return core.HMA_Lookback(h.intOpt(0));
          case "HT_DCPERIOD":
@@ -972,6 +998,8 @@ final class Dispatch {
             return core.ROCR100_Lookback(h.intOpt(0));
          case "RSI":
             return core.RSI_Lookback(h.intOpt(0));
+         case "RVI":
+            return core.RVI_Lookback(h.intOpt(0), h.intOpt(1));
          case "RVOL":
             return core.RVOL_Lookback(h.intOpt(0));
          case "SAR":
@@ -1028,6 +1056,8 @@ final class Dispatch {
             return core.VAR_Lookback(h.intOpt(0), h.realOpt(1));
          case "VHF":
             return core.VHF_Lookback(h.intOpt(0));
+         case "VORTEX":
+            return core.VORTEX_Lookback(h.intOpt(0));
          case "VWAP":
             return core.VWAP_Lookback();
          case "VWMA":

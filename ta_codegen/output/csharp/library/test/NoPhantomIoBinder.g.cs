@@ -703,6 +703,18 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["ER"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.ER_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["ERI"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.ERI_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.IntOpt(0), out int b, out int n, c.RealOut(0), c.RealOut(1));
+            return new CallOutcome(rc, b, n);
+        },
         ["EXP"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.EXP_Impl(
@@ -719,6 +731,18 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.FOSC_Impl(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["FRACTAL"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.FRACTAL_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.IntOut(0), c.IntOut(1));
+            return new CallOutcome(rc, b, n);
+        },
+        ["HA"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.HA_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.Open), c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), out int b, out int n, c.RealOut(0), c.RealOut(1), c.RealOut(2), c.RealOut(3));
             return new CallOutcome(rc, b, n);
         },
         ["HMA"] = static (core, c, startIdx, endIdx) =>
@@ -1063,6 +1087,12 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["RVI"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.RVI_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["RVOL"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.RVOL_Impl(
@@ -1229,6 +1259,12 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.VHF_Impl(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["VORTEX"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.VORTEX_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.IntOpt(0), out int b, out int n, c.RealOut(0), c.RealOut(1));
             return new CallOutcome(rc, b, n);
         },
         ["VWAP"] = static (core, c, startIdx, endIdx) =>

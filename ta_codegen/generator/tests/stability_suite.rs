@@ -38,7 +38,7 @@ fn load() -> Vec<FuncDef> {
         parser::c_source::wire_parsed_source(&mut f, &parsed);
         funcs.push(f);
     }
-    assert!(funcs.len() > 160, "expected the whole input tree, got {}", funcs.len());
+    assert!(funcs.len() >= 200, "expected the whole input tree, got {}", funcs.len());
     funcs
 }
 
@@ -52,6 +52,7 @@ const INHERITED: &[(&str, &str)] = &[
     ("ADXR", "ADX"),
     ("CVI", "EMA"),
     ("DEMA", "EMA"),
+    ("ERI", "EMA"),
     ("KC", "ATR"),
     ("MACD", "EMA"),
     ("MACDFIX", "EMA"),
@@ -85,7 +86,7 @@ fn classification_matches_the_measured_library() {
         .filter(|f| f.flags.iter().any(|x| x == "unstable_period"))
         .map(|f| f.name.as_str())
         .collect();
-    assert_eq!(declared.len(), 21, "the measured set of self-declaring functions is 21");
+    assert_eq!(declared.len(), 23, "the measured set of self-declaring functions is 23");
     for f in &funcs {
         assert_eq!(
             st[&f.name].intrinsic,

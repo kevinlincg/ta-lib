@@ -624,44 +624,6 @@ public partial class Core
          return new KdjValue(cur_outK, cur_outD, cur_outJ);
       }
 
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inHigh">Closed bars for <c>inHigh</c>, oldest first.</param>
-      /// <param name="inLow">Closed bars for <c>inLow</c>, oldest first.</param>
-      /// <param name="inClose">Closed bars for <c>inClose</c>, oldest first.</param>
-      /// <param name="outK">Receives one <c>outK</c> value per bar committed.</param>
-      /// <param name="outD">Receives one <c>outD</c> value per bar committed.</param>
-      /// <param name="outJ">Receives one <c>outJ</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, ReadOnlySpan<double> inClose, Span<double> outK, Span<double> outD, Span<double> outJ )
-      {
-         int barCount = inHigh.Length;
-         if( inLow.Length != barCount || inClose.Length != barCount || outK.Length < barCount || outD.Length < barCount || outJ.Length < barCount || outK.Overlaps(inHigh) || outK.Overlaps(inLow) || outK.Overlaps(inClose) || outD.Overlaps(inHigh) || outD.Overlaps(inLow) || outD.Overlaps(inClose) || outJ.Overlaps(inHigh) || outJ.Overlaps(inLow) || outJ.Overlaps(inClose) || outK.Overlaps(outD) || outK.Overlaps(outJ) || outD.Overlaps(outJ) ) throw Core.StreamFailure("KDJ", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inHigh[i]) || !double.IsFinite(inLow[i]) || !double.IsFinite(inClose[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("KDJ", "updateAndFill", RetCode.BadParam);
-            }
-            core.KdjStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outK[i] = cur_outK;
-            outD[i] = cur_outD;
-            outJ[i] = cur_outJ;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
-      }
-
       /// <summary>The value at the last bar this stream counted — the bar
       /// <see cref="OutRange"/> ends on. The last history bar right after open,
       /// then whatever the latest accepted <see cref="Update"/> returned.</summary>
