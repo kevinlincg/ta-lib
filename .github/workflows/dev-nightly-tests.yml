@@ -988,7 +988,7 @@ jobs:
 
   # The other half of the musl gate above (#380): on glibc/clang the dispatch must
   # be PRESENT. Nothing else builds this tree with clang on Linux — the only clang
-  # coverage is macOS, where Mach-O has no ifunc and the guard is correctly inert —
+  # coverage is macOS, which __GLIBC__ holds out on its own —
   # so a clang build silently losing the fma clone reads as a normal green nightly
   # and costs the whole fused win (measured 1.74x on the ATR batch tier). Asserting
   # a count rather than a name list keeps it from drifting with the fusing
