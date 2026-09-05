@@ -9971,6 +9971,133 @@ fn legs_FOSC(r: &mut Report) {
     r.legs_done("FOSC", 1);
 }
 
+const V_HA: &[&str] = &[
+    "defaults",
+];
+
+fn sub_HA(r: &mut Report) {
+    let core = Core::new();
+    for &label in V_HA {
+        let Ok(lb) = core.HA_Lookback() else { continue; };
+        r.control("HA", label, run(|| {
+            let inOpen: Vec<f64> = Vec::with_capacity(1);
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAOpen: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAHigh: Vec<f64> = Vec::with_capacity(1);
+            let mut outHALow: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAClose: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(0, lb, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("HA", label); continue; }
+        r.quiet("HA", label, lb, run(|| {
+            let inOpen: Vec<f64> = Vec::with_capacity(1);
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let inClose: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAOpen: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAHigh: Vec<f64> = Vec::with_capacity(1);
+            let mut outHALow: Vec<f64> = Vec::with_capacity(1);
+            let mut outHAClose: Vec<f64> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(0, lb - 1, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_HA(r: &mut Report) {
+    let core = Core::new();
+    let Ok(lb) = core.HA_Lookback() else { r.no_legs("HA"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.legs_control("HA", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = Vec::with_capacity(1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inOpen", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inHigh", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let inClose: Vec<f64> = series("close", endIdx + 1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inLow", 2, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    {
+        let inOpen: Vec<f64> = series("open", endIdx + 1);
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let inClose: Vec<f64> = Vec::with_capacity(1);
+        let mut outHAOpen: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAHigh: Vec<f64> = vec![Default::default(); 5];
+        let mut outHALow: Vec<f64> = vec![Default::default(); 5];
+        let mut outHAClose: Vec<f64> = vec![Default::default(); 5];
+        r.leg("HA", "inClose", 3, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.HA_Impl(startIdx, endIdx, &inOpen, &inHigh, &inLow, &inClose, &mut _b, &mut _n, &mut outHAOpen, &mut outHAHigh, &mut outHALow, &mut outHAClose);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("HA", 4);
+}
+
 const V_HMA: &[(&str, i32)] = &[
     ("defaults", i32::MIN),
     ("minimums", 1i32),
@@ -16649,6 +16776,7 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("EXP", sub_EXP, legs_EXP),
     ("FLOOR", sub_FLOOR, legs_FLOOR),
     ("FOSC", sub_FOSC, legs_FOSC),
+    ("HA", sub_HA, legs_HA),
     ("HMA", sub_HMA, legs_HMA),
     ("HT_DCPERIOD", sub_HT_DCPERIOD, legs_HT_DCPERIOD),
     ("HT_DCPHASE", sub_HT_DCPHASE, legs_HT_DCPHASE),
@@ -16779,7 +16907,7 @@ fn no_phantom_io() {
     // The corpus is the generator's, not a list kept by hand: a probe that
     // stopped being emitted is a shrinking sweep, which is the one way this
     // file can fail open.
-    assert_eq!(PROBES.len(), 195, "probe count");
+    assert_eq!(PROBES.len(), 196, "probe count");
     assert_eq!(
         PROBES.len(),
         crate::abstract_api::funcs().count(),

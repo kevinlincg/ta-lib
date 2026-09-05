@@ -223,6 +223,7 @@ public final class Functions {
       put(m, f_EXP());
       put(m, f_FLOOR());
       put(m, f_FOSC());
+      put(m, f_HA());
       put(m, f_HMA());
       put(m, f_HT_DCPERIOD());
       put(m, f_HT_DCPHASE());
@@ -1836,6 +1837,21 @@ public final class Functions {
          ),
          List.of(
             new OutputInfo(OutputType.REAL, "outReal", 0x00000001)
+         ));
+   }
+
+   private static FunctionInfo f_HA() {
+      return new FunctionInfo(
+         "HA", "Price Transform", "Heikin-Ashi Candles", 0x2B000000,
+         List.of(
+            new InputInfo(InputType.PRICE, "inPriceOHLC", 0x0000000F)
+         ),
+         List.of(),
+         List.of(
+            new OutputInfo(OutputType.REAL, "outHAOpen", 0x00000001),
+            new OutputInfo(OutputType.REAL, "outHAHigh", 0x00000001),
+            new OutputInfo(OutputType.REAL, "outHALow", 0x00000001),
+            new OutputInfo(OutputType.REAL, "outHAClose", 0x00000001)
          ));
    }
 

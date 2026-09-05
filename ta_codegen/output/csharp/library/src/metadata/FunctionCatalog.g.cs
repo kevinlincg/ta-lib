@@ -216,6 +216,7 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
             MakeExp(),
             MakeFloor(),
             MakeFosc(),
+            MakeHa(),
             MakeHma(),
             MakeHtDcperiod(),
             MakeHtDcphase(),
@@ -2537,6 +2538,29 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
         invoke: static (core, c, startIdx, endIdx) =>
             core.FOSC(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOut(0)));
+
+    private static FunctionInfo MakeHa() => new(
+        name: "HA",
+        group: FunctionGroup.PriceTransform,
+        hint: "Heikin-Ashi Candles",
+        flags: FunctionFlags.Overlap | FunctionFlags.Stream | FunctionFlags.UnstablePeriod | FunctionFlags.PathDependent,
+        unstableId: FuncUnstId.HA,
+        inputs:
+        [
+            new InputInfo(InputKind.Price, "inPriceOHLC", PriceComponents.Open | PriceComponents.High | PriceComponents.Low | PriceComponents.Close, [PriceComponents.Open, PriceComponents.High, PriceComponents.Low, PriceComponents.Close]),
+        ],
+        optInputs: [],
+        outputs:
+        [
+            new OutputInfo(OutputKind.Real, "outHAOpen", OutputFlags.Line),
+            new OutputInfo(OutputKind.Real, "outHAHigh", OutputFlags.Line),
+            new OutputInfo(OutputKind.Real, "outHALow", OutputFlags.Line),
+            new OutputInfo(OutputKind.Real, "outHAClose", OutputFlags.Line),
+        ],
+        lookback: static (core, c) => core.HA_Lookback(),
+        invoke: static (core, c, startIdx, endIdx) =>
+            core.HA(
+                startIdx, endIdx, c.Price(0, PriceComponents.Open), c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.RealOut(0), c.RealOut(1), c.RealOut(2), c.RealOut(3)));
 
     private static FunctionInfo MakeHma() => new(
         name: "HMA",

@@ -4372,6 +4372,68 @@
 	</FinancialFunction>
 
 
+	<!-- HA -->
+	<FinancialFunction>
+		<Abbreviation>HA</Abbreviation>
+		<ShortDescription>Heikin-Ashi Candles</ShortDescription>
+		<GroupId>Price Transform</GroupId>
+		<Flags>
+			<Flag>Overlap</Flag>
+			<Flag>Unstable Period</Flag>
+			<Flag>Streaming</Flag>
+			<Flag>Path Dependent</Flag>
+		</Flags>
+		<RequiredInputArguments>
+			<RequiredInputArgument>
+				<Type>Open</Type>
+				<Name>Open</Name>
+			</RequiredInputArgument>
+			<RequiredInputArgument>
+				<Type>High</Type>
+				<Name>High</Name>
+			</RequiredInputArgument>
+			<RequiredInputArgument>
+				<Type>Low</Type>
+				<Name>Low</Name>
+			</RequiredInputArgument>
+			<RequiredInputArgument>
+				<Type>Close</Type>
+				<Name>Close</Name>
+			</RequiredInputArgument>
+		</RequiredInputArguments>
+		<OutputArguments>
+			<OutputArgument>
+				<Type>Double Array</Type>
+				<Name>outHAOpen</Name>
+				<Flags>
+					<Flag>Line</Flag>
+				</Flags>
+			</OutputArgument>
+			<OutputArgument>
+				<Type>Double Array</Type>
+				<Name>outHAHigh</Name>
+				<Flags>
+					<Flag>Line</Flag>
+				</Flags>
+			</OutputArgument>
+			<OutputArgument>
+				<Type>Double Array</Type>
+				<Name>outHALow</Name>
+				<Flags>
+					<Flag>Line</Flag>
+				</Flags>
+			</OutputArgument>
+			<OutputArgument>
+				<Type>Double Array</Type>
+				<Name>outHAClose</Name>
+				<Flags>
+					<Flag>Line</Flag>
+				</Flags>
+			</OutputArgument>
+		</OutputArguments>
+	</FinancialFunction>
+
+
 	<!-- HMA -->
 	<FinancialFunction>
 		<Abbreviation>HMA</Abbreviation>

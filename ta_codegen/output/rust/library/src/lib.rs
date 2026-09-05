@@ -1,6 +1,6 @@
 //! # TA-Lib: Technical Analysis Library
 //!
-//! 195 technical-analysis indicators — moving averages, momentum oscillators,
+//! 196 technical-analysis indicators — moving averages, momentum oscillators,
 //! volatility bands, volume studies, Hilbert Transform cycle analysis, statistics,
 //! price transforms, and 61 candlestick-pattern recognizers — as a pure-Rust crate.
 //!
@@ -308,10 +308,11 @@
 //! * [`CDLUPSIDEGAP2CROWS`](Core::CDLUPSIDEGAP2CROWS) — Upside Gap Two Crows
 //! * [`CDLXSIDEGAP3METHODS`](Core::CDLXSIDEGAP3METHODS) — Upside/Downside Gap Three Methods
 //!
-//! ## Price Transform (5)
+//! ## Price Transform (6)
 //!
 //! * [`AVGDEV`](Core::AVGDEV) — Average Deviation
 //! * [`AVGPRICE`](Core::AVGPRICE) — Average Price
+//! * [`HA`](Core::HA) — Heikin-Ashi Candles
 //! * [`MEDPRICE`](Core::MEDPRICE) — Median Price
 //! * [`TYPPRICE`](Core::TYPPRICE) — Typical Price
 //! * [`WCLPRICE`](Core::WCLPRICE) — Weighted Close Price

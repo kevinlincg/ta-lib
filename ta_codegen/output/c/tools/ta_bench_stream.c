@@ -164,6 +164,7 @@ static void bench_tracked_free(void *p) {
 #include "ta_EXP.c"
 #include "ta_FLOOR.c"
 #include "ta_FOSC.c"
+#include "ta_HA.c"
 #include "ta_HMA.c"
 #include "ta_HT_DCPERIOD.c"
 #include "ta_HT_DCPHASE.c"
@@ -315,6 +316,7 @@ static void generate_price_data(int n) {
 static double g_outBuf0[MAX_POINTS];
 static double g_outBuf1[MAX_POINTS];
 static double g_outBuf2[MAX_POINTS];
+static double g_outBuf3[MAX_POINTS];
 static int g_outIntBuf0[MAX_POINTS];
 static int g_outIntBuf1[MAX_POINTS];
 
@@ -7248,6 +7250,88 @@ static void bench_stream_all(const char *filter, int iters) {
             g_sink += (int)acc + nb;
             if( st ) { g_ta_track = 0; TA_FOSC_Close(st); }
             bench_stream_row("FOSC", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "HA") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_HA_Lookback();
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_open[t] = g_open[it & BENCH_MASK];
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_HA(t, t, g_rt_open, g_rt_high, g_rt_low, g_rt_close, &begIdx, &nb, g_outBuf0, g_outBuf1, g_outBuf2, g_outBuf3);
+                acc += g_outBuf0[0];
+                acc += g_outBuf1[0];
+                acc += g_outBuf2[0];
+                acc += g_outBuf3[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_HA_Stream *st = NULL;
+            double v0 = 0.0;
+            double v1 = 0.0;
+            double v2 = 0.0;
+            double v3 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_HA_Open(&st, g_open, g_high, g_low, g_close, g_nPoints, &v0, &v1, &v2, &v3);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_HA_Update(st, g_open[it & BENCH_MASK], g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2, &v3);
+                    acc += v0;
+                    acc += v1;
+                    acc += v2;
+                    acc += v3;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_HA_Peek(st, g_open[it & BENCH_MASK], g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2, &v3);
+                        acc += v0;
+                        acc += v1;
+                        acc += v2;
+                        acc += v3;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_HA_Update(st, g_open[it & BENCH_MASK], g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2, &v3);
+                        acc += v0;
+                        acc += v1;
+                        acc += v2;
+                        acc += v3;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_HA_Close(st);
+            bench_stream_row("HA", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_HA_Close(st); }
+            bench_stream_row("HA", best_b/(double)iters, -1.0, -1.0, lb, 0);
         }
         fflush(stdout);
     }

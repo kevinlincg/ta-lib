@@ -188,6 +188,7 @@ All technical-analysis functions, grouped by category. Each page documents the f
 
 - [AVGDEV](/functions/avgdev.md) — Average Deviation
 - [AVGPRICE](/functions/avgprice.md) — Average Price
+- [HA](/functions/ha.md) — Heikin-Ashi Candles
 - [MEDPRICE](/functions/medprice.md) — Median Price
 - [TYPPRICE](/functions/typprice.md) — Typical Price
 - [WCLPRICE](/functions/wclprice.md) — Weighted Close Price

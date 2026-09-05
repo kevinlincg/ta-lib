@@ -36,6 +36,7 @@ fn abstract_rows_unstable_period_set_is_exactly_the_declared_ids() {
         ("CMO", 3),
         ("DX", 4),
         ("EMA", 5),
+        ("HA", 25),
         ("HT_DCPERIOD", 6),
         ("HT_DCPHASE", 7),
         ("HT_PHASOR", 8),

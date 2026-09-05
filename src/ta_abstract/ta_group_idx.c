@@ -143,6 +143,7 @@ extern const TA_FuncDef TA_DEF_EMA;
 extern const TA_FuncDef TA_DEF_EXP;
 extern const TA_FuncDef TA_DEF_FLOOR;
 extern const TA_FuncDef TA_DEF_FOSC;
+extern const TA_FuncDef TA_DEF_HA;
 extern const TA_FuncDef TA_DEF_HMA;
 extern const TA_FuncDef TA_DEF_HT_DCPERIOD;
 extern const TA_FuncDef TA_DEF_HT_DCPHASE;
@@ -465,6 +466,7 @@ NULL };
 const TA_FuncDef *TA_PerGroupFunc_9[] = {
 &TA_DEF_AVGDEV,
 &TA_DEF_AVGPRICE,
+&TA_DEF_HA,
 &TA_DEF_MEDPRICE,
 &TA_DEF_TYPPRICE,
 &TA_DEF_WCLPRICE,

@@ -2362,6 +2362,32 @@ unsigned int TA_FOSC_FramePPLB( const TA_ParamHolderPriv *params )
 {
    return TA_FOSC_Lookback(params->optIn[0].data.optInInteger /* optInTimePeriod*/ );
 }
+TA_RetCode TA_HA_FramePP( const TA_ParamHolderPriv *params,
+                           int            startIdx,
+                           int            endIdx,
+                           int           *outBegIdx,
+                           int           *outNBElement )
+{
+   return TA_HA(
+               startIdx,
+               endIdx,
+               params->in[0].data.inPrice.open, /* inOpen */
+               params->in[0].data.inPrice.high, /* inHigh */
+               params->in[0].data.inPrice.low, /* inLow */
+               params->in[0].data.inPrice.close, /* inClose */
+               outBegIdx, 
+               outNBElement, 
+               params->out[0].data.outReal, /*  outHAOpen */
+               params->out[1].data.outReal, /*  outHAHigh */
+               params->out[2].data.outReal, /*  outHALow */
+               params->out[3].data.outReal /*  outHAClose */
+               );
+}
+unsigned int TA_HA_FramePPLB( const TA_ParamHolderPriv *params )
+{
+   (void)params;
+   return TA_HA_Lookback( );
+}
 TA_RetCode TA_HMA_FramePP( const TA_ParamHolderPriv *params,
                            int            startIdx,
                            int            endIdx,

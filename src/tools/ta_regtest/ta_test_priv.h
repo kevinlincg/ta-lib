@@ -52,6 +52,7 @@ typedef struct
    TA_Real *out0;
    TA_Real *out1;
    TA_Real *out2;
+   TA_Real *out3;
 } TestBuffer;
 
 

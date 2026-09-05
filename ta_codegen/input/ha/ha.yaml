@@ -1,0 +1,21 @@
+name: HA
+group: Price Transform
+hint: Heikin-Ashi Candles
+flags: [overlap, unstable_period, stream, path_dependent]
+inputs:
+  - name: inPriceOHLC
+    type: price
+    price_components: [open, high, low, close]
+outputs:
+  - name: outHAOpen
+    type: real
+    flags: [line]
+  - name: outHAHigh
+    type: real
+    flags: [line]
+  - name: outHALow
+    type: real
+    flags: [line]
+  - name: outHAClose
+    type: real
+    flags: [line]

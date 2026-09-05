@@ -57,6 +57,7 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"CMO",          TA_FUNC_UNST_CMO},
     {"DX",           TA_FUNC_UNST_DX},
     {"EMA",          TA_FUNC_UNST_EMA},
+    {"HA",           TA_FUNC_UNST_HA},
     {"HT_DCPERIOD",  TA_FUNC_UNST_HT_DCPERIOD},
     {"HT_DCPHASE",   TA_FUNC_UNST_HT_DCPHASE},
     {"HT_PHASOR",    TA_FUNC_UNST_HT_PHASOR},

@@ -224,6 +224,7 @@ public class TaCodegenServe {
             else if (method == "TA_EXP") return Handle_EXP(p, startIdx, endIdx);
             else if (method == "TA_FLOOR") return Handle_FLOOR(p, startIdx, endIdx);
             else if (method == "TA_FOSC") return Handle_FOSC(p, startIdx, endIdx);
+            else if (method == "TA_HA") return Handle_HA(p, startIdx, endIdx);
             else if (method == "TA_HMA") return Handle_HMA(p, startIdx, endIdx);
             else if (method == "TA_HT_DCPERIOD") return Handle_HT_DCPERIOD(p, startIdx, endIdx);
             else if (method == "TA_HT_DCPHASE") return Handle_HT_DCPHASE(p, startIdx, endIdx);
@@ -523,6 +524,8 @@ public class TaCodegenServe {
                 sb.Append("\"TA_FLOOR\"");
                 sb.Append(",");
                 sb.Append("\"TA_FOSC\"");
+                sb.Append(",");
+                sb.Append("\"TA_HA\"");
                 sb.Append(",");
                 sb.Append("\"TA_HMA\"");
                 sb.Append(",");
@@ -24468,6 +24471,330 @@ public class TaCodegenServe {
         return "{\"retCode\":0,\"beg\":" + beg + ",\"nb\":" + nb + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"step_ok\":" + (allOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"peek_rejects\":" + peekRejects + ",\"benign\":" + zsign + extra + diag + "}";
     }
 
+    static string Sv_HA(JsonElement req) {
+        int svShape = GetInt(req, "gen_shape", 0);
+        int svSeed = GetInt(req, "gen_seed", 0);
+        int svN = GetInt(req, "gen_n", 0);
+        if (svN < 2) svN = 2;
+        if (svN > 256) svN = 256;
+        int svK = GetInt(req, "unstablePeriod", 0);
+        int svCompat = GetInt(req, "compatibility", 0);
+        if (svCompat != 0) {
+            return "{\"error\":\"csharp has no compatibility API (pinned to Default)\"}";
+        }
+        double[] fz_o = new double[svN];
+        double[] fz_h = new double[svN];
+        double[] fz_l = new double[svN];
+        double[] fz_c = new double[svN];
+        double[] fz_v = new double[svN];
+        double[] fz_oi = new double[svN];
+        FuzzData.FuzzGen(svShape, svSeed, svN, fz_o, fz_h, fz_l, fz_c, fz_v, fz_oi);
+        double[] b0 = new double[svN];
+        double[] b1 = new double[svN];
+        double[] b2 = new double[svN];
+        double[] b3 = new double[svN];
+        long legs = 0;
+        bool allOk = true;
+        bool peekAll = true;
+        long peekReps = 0;
+        long peekRejects = 0;
+        bool peekRepAll = true;
+        int fillChecked = 0;
+        bool fillOk = true;
+        int beg = 0, nb = 0;
+        string diag = "";
+        int rangeChecked = 0;
+        bool rangeOk = true;
+        long rangeLegs = 0;
+        int rangeSites = 0;
+        int ufillChecked = 0;
+        bool ufillOk = true;
+        long zsign = 0;
+        long updAlloc = 0;
+        int rounds = 1;
+        for (int rd = 0; rd < rounds; rd++) {
+            CoreBuilder cb = Core.Builder();
+            cb = cb.UnstablePeriod((FuncUnstId)25, svK);
+            Core c2;
+            try { c2 = cb.Build(); }
+            catch (ArgumentOutOfRangeException) {
+                return "{\"error\":\"unstablePeriod out of range\"}";
+            }
+            RetCode rc;
+            try { rc = c2.HA_Impl(0, svN - 1, fz_o, fz_h, fz_l, fz_c, out beg, out nb, b0, b1, b2, b3); }
+            catch (Exception _sve) when (_sve is ITaLibFailure) { rc = ((ITaLibFailure)_sve).RetCode; beg = 0; nb = 0; }
+            int lb = c2.HA_Lookback();
+            if (rc != RetCode.Success || nb == 0) {
+                bool openRejects;
+                try { _ = c2.HaOpen(fz_o, fz_h, fz_l, fz_c); openRejects = false; }
+                catch (ArgumentException) { openRejects = true; }
+                return "{\"retCode\":" + (int)rc + ",\"legs\":0,\"nb\":" + nb + ",\"openRejects\":" + (openRejects ? 1 : 0) + ",\"ok\":" + (openRejects ? 1 : 0) + ",\"peek_ok\":1}";
+            }
+            fillChecked = 1;
+            try {
+                double[] f0 = new double[svN];
+                Array.Fill(f0, (double)-1.2345678901234e300);
+                double[] f1 = new double[svN];
+                Array.Fill(f1, (double)-1.2345678901234e300);
+                double[] f2 = new double[svN];
+                Array.Fill(f2, (double)-1.2345678901234e300);
+                double[] f3 = new double[svN];
+                Array.Fill(f3, (double)-1.2345678901234e300);
+                Core.HaStream _fh = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, f3);
+                OutRange _fr = _fh.OutRange;
+                rangeChecked = 1; rangeLegs++; rangeSites |= 1;
+                if (_fr.BegIdx != beg || _fr.Count != nb) rangeOk = false;
+                if (_fr.BegIdx != beg || _fr.Count != nb) fillOk = false;
+                else {
+                    for (int bi = 0; bi < nb; bi++) if (SvXtierNe(f0[bi], b0[bi], ref zsign)) fillOk = false;
+                    for (int bi = 0; bi < nb; bi++) if (SvXtierNe(f1[bi], b1[bi], ref zsign)) fillOk = false;
+                    for (int bi = 0; bi < nb; bi++) if (SvXtierNe(f2[bi], b2[bi], ref zsign)) fillOk = false;
+                    for (int bi = 0; bi < nb; bi++) if (SvXtierNe(f3[bi], b3[bi], ref zsign)) fillOk = false;
+                    for (int bi = nb; bi < svN; bi++) if (f0[bi] != (double)-1.2345678901234e300) fillOk = false;
+                    for (int bi = nb; bi < svN; bi++) if (f1[bi] != (double)-1.2345678901234e300) fillOk = false;
+                    for (int bi = nb; bi < svN; bi++) if (f2[bi] != (double)-1.2345678901234e300) fillOk = false;
+                    for (int bi = nb; bi < svN; bi++) if (f3[bi] != (double)-1.2345678901234e300) fillOk = false;
+                }
+                /* R2: aliasing cross product -- every real output x every input,
+                   then every same-typed output pair. Each must throw. */
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, fz_o, f1, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 aliases input inOpen */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, fz_h, f1, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 aliases input inHigh */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, fz_l, f1, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 aliases input inLow */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, fz_c, f1, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 aliases input inClose */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, fz_o, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases input inOpen */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, fz_h, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases input inHigh */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, fz_l, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases input inLow */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, fz_c, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases input inClose */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, fz_o, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases input inOpen */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, fz_h, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases input inHigh */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, fz_l, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases input inLow */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, fz_c, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases input inClose */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, fz_o); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 aliases input inOpen */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, fz_h); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 aliases input inHigh */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, fz_l); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 aliases input inLow */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, fz_c); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 aliases input inClose */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f0, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 aliases output 0 */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f0, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases output 0 */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, f0); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 aliases output 0 */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f1, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 aliases output 1 */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, f1); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 aliases output 1 */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, f2, f2); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 aliases output 2 */ }
+                double[] ovD = new double[svN + 1];
+                double[] ovIn = new double[svN + 1];
+                Array.Copy(fz_o, ovIn, svN);
+                /* R2b: PARTIAL overlap -- only spans can express it, and it is
+                   the only shape that separates Overlaps from identity. */
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, ovD.AsSpan(0, svN), ovD.AsSpan(1, svN), f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/1 partially overlap (offset) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, ovD.AsSpan(0, svN), ovD.AsSpan(0, svN + 1), f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/1 partially overlap (same start, longer) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, ovD.AsSpan(0, svN), f1, ovD.AsSpan(1, svN), f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/2 partially overlap (offset) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, ovD.AsSpan(0, svN), f1, ovD.AsSpan(0, svN + 1), f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/2 partially overlap (same start, longer) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, ovD.AsSpan(0, svN), f1, f2, ovD.AsSpan(1, svN)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/3 partially overlap (offset) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, ovD.AsSpan(0, svN), f1, f2, ovD.AsSpan(0, svN + 1)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 0/3 partially overlap (same start, longer) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, ovD.AsSpan(0, svN), ovD.AsSpan(1, svN), f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 1/2 partially overlap (offset) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, ovD.AsSpan(0, svN), ovD.AsSpan(0, svN + 1), f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 1/2 partially overlap (same start, longer) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, ovD.AsSpan(0, svN), f2, ovD.AsSpan(1, svN)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 1/3 partially overlap (offset) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, ovD.AsSpan(0, svN), f2, ovD.AsSpan(0, svN + 1)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 1/3 partially overlap (same start, longer) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, ovD.AsSpan(0, svN), ovD.AsSpan(1, svN)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 2/3 partially overlap (offset) */ }
+                try { _ = c2.HaOpenAndFill(fz_o, fz_h, fz_l, fz_c, f0, f1, ovD.AsSpan(0, svN), ovD.AsSpan(0, svN + 1)); fillOk = false; }
+                catch (ArgumentException) { /* expected: outputs 2/3 partially overlap (same start, longer) */ }
+                try { _ = c2.HaOpenAndFill(ovIn.AsSpan(0, svN), fz_h, fz_l, fz_c, ovIn.AsSpan(1, svN), f1, f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 0 partially overlaps an input */ }
+                try { _ = c2.HaOpenAndFill(ovIn.AsSpan(0, svN), fz_h, fz_l, fz_c, f0, ovIn.AsSpan(1, svN), f2, f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 1 partially overlaps an input */ }
+                try { _ = c2.HaOpenAndFill(ovIn.AsSpan(0, svN), fz_h, fz_l, fz_c, f0, f1, ovIn.AsSpan(1, svN), f3); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 2 partially overlaps an input */ }
+                try { _ = c2.HaOpenAndFill(ovIn.AsSpan(0, svN), fz_h, fz_l, fz_c, f0, f1, f2, ovIn.AsSpan(1, svN)); fillOk = false; }
+                catch (ArgumentException) { /* expected: output 3 partially overlaps an input */ }
+            } catch (ArgumentException) { fillOk = false; }
+            int seedShift = 0;
+            int[] pcs = { lb + 1 + seedShift, lb + 13, svN / 2, svN - 1 };
+            Array.Sort(pcs);
+            int prevP = -1;
+            for (int pi = 0; pi < pcs.Length; pi++) {
+                int p = pcs[pi];
+                if (p < lb + 1 + seedShift || p > svN - 1 || p == prevP) continue;
+                prevP = p;
+                Core.HaStream st;
+                try { st = c2.HaOpen(fz_o[..p], fz_h[..p], fz_l[..p], fz_c[..p]); }
+                catch (ArgumentException) { allOk = false; if (diag.Length == 0) diag = ",\"openRejectP\":" + p; continue; }
+                legs++;
+                Core.HaValue v0 = st.Value;
+                if (SvXtierNe(v0.HAOpen, b0[p - 1 - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":0,\"where\":\"open\""; }
+                if (SvXtierNe(v0.HAHigh, b1[p - 1 - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":1,\"where\":\"open\""; }
+                if (SvXtierNe(v0.HALow, b2[p - 1 - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":2,\"where\":\"open\""; }
+                if (SvXtierNe(v0.HAClose, b3[p - 1 - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":3,\"where\":\"open\""; }
+                for (int t = p; t < svN; t++) {
+                    bool pkTook = true;
+                    Core.HaValue pk = default;
+                    try { pk = st.Peek(fz_o[t], fz_h[t], fz_l[t], fz_c[t]); } catch (ArgumentException) { pkTook = false; peekRejects++; }
+                    if (t % 7 == 0) {
+                        bool rpTook = pkTook;
+                        try { _ = st.Peek(fz_o[t - 1], fz_h[t - 1], fz_l[t - 1], fz_c[t - 1]); } catch (ArgumentException) { peekRejects++; }
+                        Core.HaValue rp = default;
+                        try { rp = st.Peek(fz_o[t], fz_h[t], fz_l[t], fz_c[t]); } catch (ArgumentException) { rpTook = false; }
+                        if (rpTook) {
+                            peekReps++;
+                            if (SvBne(rp.HAOpen, pk.HAOpen)) peekRepAll = false;
+                            if (SvBne(rp.HAHigh, pk.HAHigh)) peekRepAll = false;
+                            if (SvBne(rp.HALow, pk.HALow)) peekRepAll = false;
+                            if (SvBne(rp.HAClose, pk.HAClose)) peekRepAll = false;
+                        } else { peekRejects++; }
+                    }
+                    Core.HaValue up = st.Update(fz_o[t], fz_h[t], fz_l[t], fz_c[t]);
+                    if (pkTook && (SvBne(pk.HAOpen, up.HAOpen))) peekAll = false;
+                    if (pkTook && (SvBne(pk.HAHigh, up.HAHigh))) peekAll = false;
+                    if (pkTook && (SvBne(pk.HALow, up.HALow))) peekAll = false;
+                    if (pkTook && (SvBne(pk.HAClose, up.HAClose))) peekAll = false;
+                    try { _ = st.Peek(fz_o[t - 1], fz_h[t - 1], fz_l[t - 1], fz_c[t - 1]); } catch (ArgumentException) { peekRejects++; }
+                    Core.HaValue vc = st.Value;
+                    if (SvBne(vc.HAOpen, up.HAOpen)) { allOk = false; if (diag.Length == 0) diag = ",\"valueNeUpdate\":" + t; }
+                    if (SvBne(vc.HAHigh, up.HAHigh)) { allOk = false; if (diag.Length == 0) diag = ",\"valueNeUpdate\":" + t; }
+                    if (SvBne(vc.HALow, up.HALow)) { allOk = false; if (diag.Length == 0) diag = ",\"valueNeUpdate\":" + t; }
+                    if (SvBne(vc.HAClose, up.HAClose)) { allOk = false; if (diag.Length == 0) diag = ",\"valueNeUpdate\":" + t; }
+                    if (SvXtierNe(up.HAOpen, b0[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + t + ",\"badOut\":0,\"batchv\":\"" + BitConverter.DoubleToInt64Bits(b0[t - beg]).ToString("x16") + "\",\"streamv\":\"" + BitConverter.DoubleToInt64Bits(up.HAOpen).ToString("x16") + "\""; }
+                    if (SvXtierNe(up.HAHigh, b1[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + t + ",\"badOut\":1,\"batchv\":\"" + BitConverter.DoubleToInt64Bits(b1[t - beg]).ToString("x16") + "\",\"streamv\":\"" + BitConverter.DoubleToInt64Bits(up.HAHigh).ToString("x16") + "\""; }
+                    if (SvXtierNe(up.HALow, b2[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + t + ",\"badOut\":2,\"batchv\":\"" + BitConverter.DoubleToInt64Bits(b2[t - beg]).ToString("x16") + "\",\"streamv\":\"" + BitConverter.DoubleToInt64Bits(up.HALow).ToString("x16") + "\""; }
+                    if (SvXtierNe(up.HAClose, b3[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"badBar\":" + t + ",\"badOut\":3,\"batchv\":\"" + BitConverter.DoubleToInt64Bits(b3[t - beg]).ToString("x16") + "\",\"streamv\":\"" + BitConverter.DoubleToInt64Bits(up.HAClose).ToString("x16") + "\""; }
+                }
+                if (allOk) {
+                    rangeChecked = 1; rangeLegs++; rangeSites |= 2;
+                    if (st.OutRange.BegIdx != beg || st.OutRange.Count != nb) rangeOk = false;
+                }
+            }
+            {
+                int p = lb + 1 + seedShift;
+                if (p <= svN - 1) {
+                    ufillChecked = 1;
+                    try {
+                        Core.HaStream stu = c2.HaOpen(fz_o[..p], fz_h[..p], fz_l[..p], fz_c[..p]);
+                        OutRange ur0 = stu.OutRange;
+                        double[] u0 = new double[svN];
+                        Array.Fill(u0, (double)-1.2345678901234e300);
+                        double[] u1 = new double[svN];
+                        Array.Fill(u1, (double)-1.2345678901234e300);
+                        double[] u2 = new double[svN];
+                        Array.Fill(u2, (double)-1.2345678901234e300);
+                        double[] u3 = new double[svN];
+                        Array.Fill(u3, (double)-1.2345678901234e300);
+                        stu.UpdateAndFill(fz_o.AsSpan(p, 0), fz_h.AsSpan(p, 0), fz_l.AsSpan(p, 0), fz_c.AsSpan(p, 0), u0, u1, u2, u3);
+                        try { stu.UpdateAndFill(fz_o.AsSpan(p), fz_h.AsSpan(p), fz_l.AsSpan(p), fz_c.AsSpan(p), new double[0], u1, u2, u3); ufillOk = false; } catch (ArgumentException) { /* expected: output shorter than the run */ }
+                        try { stu.UpdateAndFill(fz_o.AsSpan(p), fz_h.AsSpan(p), fz_l.AsSpan(p), fz_c.AsSpan(p), fz_o.AsSpan(p), u1, u2, u3); ufillOk = false; } catch (ArgumentException) { /* expected: output overlaps input */ }
+                        if (stu.OutRange.BegIdx != ur0.BegIdx || stu.OutRange.Count != ur0.Count) ufillOk = false;
+                        stu.UpdateAndFill(fz_o.AsSpan(p), fz_h.AsSpan(p), fz_l.AsSpan(p), fz_c.AsSpan(p), u0, u1, u2, u3);
+                        for (int t = p; t < svN; t++) if (SvXtierNe(u0[t - p], b0[t - beg], ref zsign)) ufillOk = false;
+                        for (int t = p; t < svN; t++) if (SvXtierNe(u1[t - p], b1[t - beg], ref zsign)) ufillOk = false;
+                        for (int t = p; t < svN; t++) if (SvXtierNe(u2[t - p], b2[t - beg], ref zsign)) ufillOk = false;
+                        for (int t = p; t < svN; t++) if (SvXtierNe(u3[t - p], b3[t - beg], ref zsign)) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u0[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u1[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u2[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u3[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        rangeChecked = 1; rangeLegs++; rangeSites |= 4;
+                        if (stu.OutRange.BegIdx != beg || stu.OutRange.Count != nb) { ufillOk = false; rangeOk = false; }
+                    } catch (ArgumentException) { ufillOk = false; }
+                }
+            }
+            {
+                int p0 = lb + 1 + seedShift;
+                if (p0 <= svN - 1) {
+                    try {
+                        Core.HaStream sA = c2.HaOpen(fz_o[..p0], fz_h[..p0], fz_l[..p0], fz_c[..p0]);
+                        int mid = (p0 + svN) / 2;
+                        for (int t = p0; t < mid; t++) sA.Update(fz_o[t], fz_h[t], fz_l[t], fz_c[t]);
+                        Core.HaStream sB = sA.Clone();
+                        for (int t = mid; t < svN; t++) {
+                            Core.HaValue uA = sA.Update(fz_o[t], fz_h[t], fz_l[t], fz_c[t]);
+                            Core.HaValue uB = sB.Update(fz_o[t], fz_h[t], fz_l[t], fz_c[t]);
+                            if (SvBne(uA.HAOpen, uB.HAOpen) || SvXtierNe(uA.HAOpen, b0[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"copyDiverged\":" + t; }
+                            if (SvBne(uA.HAHigh, uB.HAHigh) || SvXtierNe(uA.HAHigh, b1[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"copyDiverged\":" + t; }
+                            if (SvBne(uA.HALow, uB.HALow) || SvXtierNe(uA.HALow, b2[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"copyDiverged\":" + t; }
+                            if (SvBne(uA.HAClose, uB.HAClose) || SvXtierNe(uA.HAClose, b3[t - beg], ref zsign)) { allOk = false; if (diag.Length == 0) diag = ",\"copyDiverged\":" + t; }
+                        }
+                        if (allOk) {
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 16;
+                            if (sA.OutRange.BegIdx != beg || sA.OutRange.Count != nb) { rangeOk = false; if (diag.Length == 0) diag = ",\"copyRangeSrc\":1"; }
+                            if (sB.OutRange.BegIdx != beg || sB.OutRange.Count != nb) { rangeOk = false; if (diag.Length == 0) diag = ",\"copyRange\":1"; }
+                        }
+                    } catch (ArgumentException) { allOk = false; if (diag.Length == 0) diag = ",\"copyOpenReject\":1"; }
+                }
+            }
+            {
+                int pa = lb + 1 + seedShift;
+                if (pa <= svN - 1) {
+                    try {
+                        Core.HaStream sQ = c2.HaOpen(fz_o[..pa], fz_h[..pa], fz_l[..pa], fz_c[..pa]);
+                        double sink = 0.0;
+                        long a0 = GC.GetAllocatedBytesForCurrentThread();
+                        for (int t = pa; t < svN; t++) {
+                            Core.HaValue uq = sQ.Update(fz_o[t], fz_h[t], fz_l[t], fz_c[t]);
+                            sink += uq.HAOpen;
+                        }
+                        long ad = GC.GetAllocatedBytesForCurrentThread() - a0;
+                        svUpdSink += sink;
+                        if (ad > updAlloc) updAlloc = ad;
+                        if (ad != 0) { allOk = false; if (diag.Length == 0) diag = ",\"updAllocBytes\":" + ad; }
+                    } catch (ArgumentException) { /* open rejects here -- nothing to measure */ }
+                }
+            }
+            if (lb >= 1 && lb < svN) {
+                try { _ = c2.HaOpen(fz_o[..lb], fz_h[..lb], fz_l[..lb], fz_c[..lb]); allOk = false; if (diag.Length == 0) diag = ",\"shortHistoryAccepted\":1"; }
+                catch (InsufficientHistoryException) { /* expected, typed */ }
+                catch (ArgumentException) { allOk = false; if (diag.Length == 0) diag = ",\"shortHistoryWrongType\":1"; }
+            }
+            {
+                int Sidx = lb + (svN - lb) / 3;
+                if (Sidx > lb && Sidx < svN - 1) {
+                    int begS = 0, nbS = 0;
+                    RetCode rcS;
+                    try { rcS = c2.HA_Impl(Sidx, svN - 1, fz_o, fz_h, fz_l, fz_c, out begS, out nbS, b0, b1, b2, b3); }
+                    catch (Exception _sve) when (_sve is ITaLibFailure) { rcS = ((ITaLibFailure)_sve).RetCode; }
+                    if (rcS == RetCode.Success && nbS > 0) {
+                        try {
+                            Core.HaStream stA = c2.HaOpenInternal(fz_o[..svN], fz_h[..svN], fz_l[..svN], fz_c[..svN], Sidx);
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 8;
+                            if (stA.OutRange.BegIdx != begS || stA.OutRange.Count != nbS) rangeOk = false;
+                        } catch (ArgumentException) { rangeOk = false; if (diag.Length == 0) diag = ",\"anchoredOpenRejected\":1"; }
+                    }
+                }
+            }
+        }
+        string extra = ",\"updAlloc\":" + updAlloc;
+        return "{\"retCode\":0,\"beg\":" + beg + ",\"nb\":" + nb + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"step_ok\":" + (allOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"peek_rejects\":" + peekRejects + ",\"benign\":" + zsign + extra + diag + "}";
+    }
+
     static string Sv_HMA(JsonElement req) {
         int svShape = GetInt(req, "gen_shape", 0);
         int svSeed = GetInt(req, "gen_seed", 0);
@@ -44877,6 +45204,7 @@ public class TaCodegenServe {
         case "TA_EXP": return Sv_EXP(req);
         case "TA_FLOOR": return Sv_FLOOR(req);
         case "TA_FOSC": return Sv_FOSC(req);
+        case "TA_HA": return Sv_HA(req);
         case "TA_HMA": return Sv_HMA(req);
         case "TA_HT_DCPERIOD": return Sv_HT_DCPERIOD(req);
         case "TA_HT_DCPHASE": return Sv_HT_DCPHASE(req);
@@ -45330,6 +45658,9 @@ public class TaCodegenServe {
         case "FOSC": {
             int optInTimePeriod = GetInt(p, "optInTimePeriod", 0);
             return core.FOSC_Lookback(optInTimePeriod);
+        }
+        case "HA": {
+            return core.HA_Lookback();
         }
         case "HMA": {
             int optInTimePeriod = GetInt(p, "optInTimePeriod", 0);
@@ -59691,6 +60022,156 @@ public class TaCodegenServe {
         sb.Append($",\"out_len\":{_outLen}");
         if (GetInt(p, "no_output", 0) == 0) {
             sb.Append(",\"outReal\":"); sb.Append(FormatArray(outArr0, outNBElement));
+        }
+        sb.Append($",\"used_float\":{usedFloat}");
+        sb.Append($",\"timing_ns\":{elapsedNs}");
+        sb.Append("}");
+        return sb.ToString();
+    }
+
+    static string Handle_HA(JsonElement p, int startIdx, int endIdx) {
+        int use_preloaded = GetInt(p, "use_preloaded", 0);
+        int bench_iters = GetInt(p, "iters", 1);
+        if (bench_iters < 1) bench_iters = 1;
+        int bench_mode = GetInt(p, "bench_mode", 0);
+        double[] inOpen;
+        double[] inHigh;
+        double[] inLow;
+        double[] inClose;
+        if (use_preloaded != 0 && refN > 0) {
+            inOpen = new double[refN]; Array.Copy(refOpen, inOpen, refN);
+            inHigh = new double[refN]; Array.Copy(refHigh, inHigh, refN);
+            inLow = new double[refN]; Array.Copy(refLow, inLow, refN);
+            inClose = new double[refN]; Array.Copy(refClose, inClose, refN);
+        } else {
+            inOpen = GetDoubleArray(p, "inOpen");
+            inHigh = GetDoubleArray(p, "inHigh");
+            inLow = GetDoubleArray(p, "inLow");
+            inClose = GetDoubleArray(p, "inClose");
+        }
+        ReadOnlySpan<double> _warm_inOpen = bench_mode == 0 ? default : inOpen.AsSpan(0, endIdx + 1);
+        ReadOnlySpan<double> _warm_inHigh = bench_mode == 0 ? default : inHigh.AsSpan(0, endIdx + 1);
+        ReadOnlySpan<double> _warm_inLow = bench_mode == 0 ? default : inLow.AsSpan(0, endIdx + 1);
+        ReadOnlySpan<double> _warm_inClose = bench_mode == 0 ? default : inClose.AsSpan(0, endIdx + 1);
+        core.unstablePeriod[(int)FunctionCatalog.Default["HA"].UnstableId!.Value] = GetInt(p, "unstablePeriod", 0);
+        // The output buffers are sized to the count the call actually PRODUCES --
+        // endIdx - max(startIdx, lookback) + 1 -- plus `out_pad` from the request, and
+        // never below one. Not to the width of the requested range: that is the bound the
+        // managed backends check and the Rust asserts state, and at the range width it was
+        // slack by exactly the lookback, so no call could ever approach it.
+        // The pad is there because a bound is a MINIMUM, never an equality. A caller
+        // re-using a pre-allocated buffer passes a larger one, and that is not an error --
+        // the reported OutRange is what says which part was written. So the harness sends
+        // both: the startIdx axis sends no pad (the bound is reachable) while the
+        // full-range value comparison sends one (slack is legal). Sizing every call one way
+        // would silently drop the other property.
+        // FLOORED AT ONE, deliberately. Zero is what the formula gives for a rejected call
+        // (the lookback is -1, or usize::MAX in Rust, for an out-of-range parameter) and
+        // for a range shorter than the lookback, where the output bound switches off and
+        // the spec says any length will do, including none. It does not: two EMPTY output
+        // buffers are rejected as aliased by C# (an explicit IsEmpty clause) and by Rust
+        // (the empty Vec the server hands each output shares one dangling as_ptr()), and
+        // accepted by C and Java -- a four-way divergence on a call the specification says
+        // all four accept. Sizing to zero here would reach it on every multi-output
+        // function, which is a semantic question, not a harness one. Recorded as
+        // error-handling-spec, open item 11.
+        // The C server keeps its MAX_ARRAY_SIZE statics: C is handed bare pointers, has no
+        // sizes and cannot make the check, so an exact buffer would test nothing there.
+        int _lb = core.HA_Lookback();
+        int _cs = startIdx > _lb ? startIdx : _lb;
+        int _outLen = ((_lb < 0 || _cs > endIdx) ? 1 : endIdx - _cs + 1) + GetInt(p, "out_pad", 0);
+        double[] outArr0 = new double[_outLen];
+        double[] outArr1 = new double[_outLen];
+        double[] outArr2 = new double[_outLen];
+        double[] outArr3 = new double[_outLen];
+        int outBegIdx = 0, outNBElement = 0;
+        RetCode rc = RetCode.Success;
+        long _t0 = 0;
+        for (int _bi = 0; _bi <= bench_iters; _bi++) {
+            if (_bi == 1) _t0 = GetNanoTime();
+            if (bench_mode == 0) {
+            if (GetInt(p, "timed", 0) != 0) {
+                try {
+                    rc = core.HA_Impl(startIdx, endIdx, inOpen, inHigh, inLow, inClose, out outBegIdx, out outNBElement, outArr0, outArr1, outArr2, outArr3);
+                } catch (Exception _e2) when (_e2 is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e2).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            } else {
+                try {
+                    OutRange _pr = core.HA(startIdx, endIdx, inOpen, inHigh, inLow, inClose, outArr0, outArr1, outArr2, outArr3);
+                    outBegIdx = _pr.BegIdx;
+                    outNBElement = _pr.Count;
+                    rc = RetCode.Success;
+                } catch (Exception _e) when (_e is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            }
+            } else if (bench_mode == 1) {
+                try {
+                    core.HaOpen(_warm_inOpen, _warm_inHigh, _warm_inLow, _warm_inClose);
+                    rc = RetCode.Success;
+                } catch (Exception _e3) when (_e3 is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e3).RetCode;
+                }
+            } else {
+                try {
+                    Core.HaStream _wh = core.HaOpenAndFill(_warm_inOpen, _warm_inHigh, _warm_inLow, _warm_inClose, outArr0, outArr1, outArr2, outArr3);
+                    outBegIdx = _wh.OutRange.BegIdx;
+                    outNBElement = _wh.OutRange.Count;
+                    rc = RetCode.Success;
+                } catch (Exception _e3) when (_e3 is ITaLibFailure) {
+                    rc = ((ITaLibFailure)_e3).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            }
+        }
+        long elapsedNs = (GetNanoTime() - _t0) / bench_iters;
+        int usedFloat = 0;
+        if (GetInt(p, "use_float", 0) != 0) {
+            var f_inOpen = new float[inOpen.Length];
+            for (int _fi = 0; _fi < inOpen.Length; _fi++) f_inOpen[_fi] = (float)inOpen[_fi];
+            var f_inHigh = new float[inHigh.Length];
+            for (int _fi = 0; _fi < inHigh.Length; _fi++) f_inHigh[_fi] = (float)inHigh[_fi];
+            var f_inLow = new float[inLow.Length];
+            for (int _fi = 0; _fi < inLow.Length; _fi++) f_inLow[_fi] = (float)inLow[_fi];
+            var f_inClose = new float[inClose.Length];
+            for (int _fi = 0; _fi < inClose.Length; _fi++) f_inClose[_fi] = (float)inClose[_fi];
+            try {
+                OutRange _fr = core.HA(startIdx, endIdx, f_inOpen, f_inHigh, f_inLow, f_inClose, outArr0, outArr1, outArr2, outArr3);
+                outBegIdx = _fr.BegIdx;
+                outNBElement = _fr.Count;
+                rc = RetCode.Success;
+            } catch (Exception _e) when (_e is ITaLibFailure) {
+                rc = ((ITaLibFailure)_e).RetCode;
+                outBegIdx = 0;
+                outNBElement = 0;
+            }
+            usedFloat = 1;
+        }
+        if (GetInt(p, "want_hash", 0) != 0 && GetInt(p, "full_output", 0) == 0) {
+            ulong _h = SvHashInit();
+            if (rc == RetCode.Success && outNBElement > 0) {
+                _h = SvHashF64(_h, outArr0, outNBElement);
+                _h = SvHashF64(_h, outArr1, outNBElement);
+                _h = SvHashF64(_h, outArr2, outNBElement);
+                _h = SvHashF64(_h, outArr3, outNBElement);
+            }
+            _h = SvHashFin(_h);
+            return $"{{\"retCode\":{(int)rc},\"outBegIdx\":{outBegIdx},\"outNBElement\":{outNBElement},\"out_hash\":\"{_h:x16}\"}}";
+        }
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"{{\"retCode\":{(int)rc},\"outBegIdx\":{outBegIdx},\"outNBElement\":{outNBElement}");
+        sb.Append($",\"out_len\":{_outLen}");
+        if (GetInt(p, "no_output", 0) == 0) {
+            sb.Append(",\"outReal\":"); sb.Append(FormatArray(outArr0, outNBElement));
+            sb.Append(",\"outReal1\":"); sb.Append(FormatArray(outArr1, outNBElement));
+            sb.Append(",\"outReal2\":"); sb.Append(FormatArray(outArr2, outNBElement));
+            sb.Append(",\"outReal3\":"); sb.Append(FormatArray(outArr3, outNBElement));
         }
         sb.Append($",\"used_float\":{usedFloat}");
         sb.Append($",\"timing_ns\":{elapsedNs}");
