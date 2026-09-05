@@ -178,6 +178,7 @@ extern const TA_FuncDef TA_DEF_MULT;
 extern const TA_FuncDef TA_DEF_NATR;
 extern const TA_FuncDef TA_DEF_NVI;
 extern const TA_FuncDef TA_DEF_OBV;
+extern const TA_FuncDef TA_DEF_PERCENTRANK;
 extern const TA_FuncDef TA_DEF_PLUS_DI;
 extern const TA_FuncDef TA_DEF_PLUS_DM;
 extern const TA_FuncDef TA_DEF_PPO;
@@ -432,6 +433,7 @@ const TA_FuncDef *TA_PerGroupFunc_8[] = {
 &TA_DEF_LINEARREG_ANGLE,
 &TA_DEF_LINEARREG_INTERCEPT,
 &TA_DEF_LINEARREG_SLOPE,
+&TA_DEF_PERCENTRANK,
 &TA_DEF_STDDEV,
 &TA_DEF_TSF,
 &TA_DEF_VAR,

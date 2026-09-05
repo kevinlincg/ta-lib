@@ -195,6 +195,7 @@ All technical-analysis functions, grouped by category. Each page documents the f
 - [LINEARREG_ANGLE](/functions/linearreg_angle.md) — Linear Regression Angle
 - [LINEARREG_INTERCEPT](/functions/linearreg_intercept.md) — Linear Regression Intercept
 - [LINEARREG_SLOPE](/functions/linearreg_slope.md) — Linear Regression Slope
+- [PERCENTRANK](/functions/percentrank.md) — Percent Rank
 - [STDDEV](/functions/stddev.md) — Standard Deviation
 - [TSF](/functions/tsf.md) — Time Series Forecast
 - [VAR](/functions/var.md) — Variance

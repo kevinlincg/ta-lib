@@ -24,6 +24,7 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
   - KC: Keltner Channels (#273)
   - MARKETFI: Market Facilitation Index (#230)
   - NVI: Negative Volume Index (#126)
+  - PERCENTRANK: Percent Rank, the share of the preceding window strictly below the current value (#369)
   - PVI: Positive Volume Index (#126)
   - PVO: Percentage Volume Oscillator (#119)
   - QSTICK: Qstick (#226)

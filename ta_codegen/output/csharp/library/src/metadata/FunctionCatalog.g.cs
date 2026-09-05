@@ -251,6 +251,7 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
             MakeNatr(),
             MakeNvi(),
             MakeObv(),
+            MakePercentrank(),
             MakePlusDi(),
             MakePlusDm(),
             MakePpo(),
@@ -3320,6 +3321,29 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
         invoke: static (core, c, startIdx, endIdx) =>
             core.OBV(
                 startIdx, endIdx, c.Series(0), c.Price(1, PriceComponents.Volume), c.RealOut(0)));
+
+    private static FunctionInfo MakePercentrank() => new(
+        name: "PERCENTRANK",
+        group: FunctionGroup.StatisticFunctions,
+        hint: "Percent Rank",
+        flags: FunctionFlags.Stream,
+        unstableId: null,
+        inputs:
+        [
+            new InputInfo(InputKind.Real, "inReal", PriceComponents.None, []),
+        ],
+        optInputs:
+        [
+            new OptInputInfo("optInTimePeriod", "Time Period", "Time period", OptInputFlags.None, new OptInputDomain.IntegerRange(2, 100000, 100, 2, 200, 1)),
+        ],
+        outputs:
+        [
+            new OutputInfo(OutputKind.Real, "outReal", OutputFlags.Line),
+        ],
+        lookback: static (core, c) => core.PERCENTRANK_Lookback(c.IntOpt(0)),
+        invoke: static (core, c, startIdx, endIdx) =>
+            core.PERCENTRANK(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOut(0)));
 
     private static FunctionInfo MakePlusDi() => new(
         name: "PLUS_DI",

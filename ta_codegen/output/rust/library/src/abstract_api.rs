@@ -318,6 +318,8 @@ pub enum FuncId {
     NVI,
     /// On Balance Volume — [`Core::OBV`](crate::Core::OBV).
     OBV,
+    /// Percent Rank — [`Core::PERCENTRANK`](crate::Core::PERCENTRANK).
+    PERCENTRANK,
     /// Plus Directional Indicator — [`Core::PLUS_DI`](crate::Core::PLUS_DI).
     PLUS_DI,
     /// Plus Directional Movement — [`Core::PLUS_DM`](crate::Core::PLUS_DM).
@@ -412,7 +414,7 @@ pub enum FuncId {
 
 impl FuncId {
     /// Number of functions in the registry.
-    pub const COUNT: usize = 183;
+    pub const COUNT: usize = 184;
     /// Metadata for this function (O(1) index into the const table).
     #[inline] pub fn info(self) -> &'static FuncInfo { &FUNC_TABLE[self as usize] }
     /// Upper-case TA name, e.g. "RSI".
@@ -737,7 +739,7 @@ impl FuncInfo {
 
 /// Backing storage for [`FUNCS`], indexed by [`FuncId`]. Link-time const, in
 /// `.rodata`. Private, so its length is nobody's business but this module's.
-static FUNC_TABLE: [FuncInfo; 183] = [
+static FUNC_TABLE: [FuncInfo; 184] = [
     FuncInfo {
         id: FuncId::AC,
         name: "AC",
@@ -2257,6 +2259,17 @@ static FUNC_TABLE: [FuncInfo; 183] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::PERCENTRANK,
+        name: "PERCENTRANK",
+        group: Group::StatisticFunctions,
+        hint: "Percent Rank",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 100, suggested: (2, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::PLUS_DI,
         name: "PLUS_DI",
         group: Group::MomentumIndicators,
@@ -2907,6 +2920,7 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "NATR" => FuncId::NATR,
         "NVI" => FuncId::NVI,
         "OBV" => FuncId::OBV,
+        "PERCENTRANK" => FuncId::PERCENTRANK,
         "PLUS_DI" => FuncId::PLUS_DI,
         "PLUS_DM" => FuncId::PLUS_DM,
         "PPO" => FuncId::PPO,
@@ -3347,6 +3361,7 @@ impl<'a> ParamHolder<'a> {
             FuncId::NATR => self.core.NATR_Lookback(self.int_opt[0]),
             FuncId::NVI => self.core.NVI_Lookback(),
             FuncId::OBV => self.core.OBV_Lookback(),
+            FuncId::PERCENTRANK => self.core.PERCENTRANK_Lookback(self.int_opt[0]),
             FuncId::PLUS_DI => self.core.PLUS_DI_Lookback(self.int_opt[0]),
             FuncId::PLUS_DM => self.core.PLUS_DM_Lookback(self.int_opt[0]),
             FuncId::PPO => self.core.PPO_Lookback(self.int_opt[0], self.int_opt[1], MAType::try_from(self.int_opt[2])?),
@@ -5100,6 +5115,16 @@ impl<'a> ParamHolder<'a> {
                 let i1_4 = self.price[1][4].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.OBV(start_idx, end_idx, i0, i1_4, &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::PERCENTRANK => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.PERCENTRANK(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }

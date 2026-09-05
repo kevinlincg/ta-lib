@@ -258,6 +258,7 @@ public final class Functions {
       put(m, f_NATR());
       put(m, f_NVI());
       put(m, f_OBV());
+      put(m, f_PERCENTRANK());
       put(m, f_PLUS_DI());
       put(m, f_PLUS_DM());
       put(m, f_PPO());
@@ -2446,6 +2447,24 @@ public final class Functions {
             new InputInfo(InputType.PRICE, "inPriceV", 0x00000010)
          ),
          List.of(),
+         List.of(
+            new OutputInfo(OutputType.REAL, "outReal", 0x00000001)
+         ));
+   }
+
+   private static FunctionInfo f_PERCENTRANK() {
+      return new FunctionInfo(
+         "PERCENTRANK", "Statistic Functions", "Percent Rank", 0x02000000,
+         List.of(
+            new InputInfo(InputType.REAL, "inReal", 0x00000000)
+         ),
+         List.of(
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInTimePeriod", 0x00000000,
+               "Time Period", "Time period", 100.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               2, 100000, 2, 200, 1, null)
+         ),
          List.of(
             new OutputInfo(OutputType.REAL, "outReal", 0x00000001)
          ));

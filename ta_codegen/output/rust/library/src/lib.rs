@@ -1,6 +1,6 @@
 //! # TA-Lib: Technical Analysis Library
 //!
-//! 183 technical-analysis indicators — moving averages, momentum oscillators,
+//! 184 technical-analysis indicators — moving averages, momentum oscillators,
 //! volatility bands, volume studies, Hilbert Transform cycle analysis, statistics,
 //! price transforms, and 61 candlestick-pattern recognizers — as a pure-Rust crate.
 //!
@@ -311,7 +311,7 @@
 //! * [`TYPPRICE`](Core::TYPPRICE) — Typical Price
 //! * [`WCLPRICE`](Core::WCLPRICE) — Weighted Close Price
 //!
-//! ## Statistic Functions (9)
+//! ## Statistic Functions (10)
 //!
 //! * [`BETA`](Core::BETA) — Beta
 //! * [`CORREL`](Core::CORREL) — Pearson's Correlation Coefficient (r)
@@ -319,6 +319,7 @@
 //! * [`LINEARREG_ANGLE`](Core::LINEARREG_ANGLE) — Linear Regression Angle
 //! * [`LINEARREG_INTERCEPT`](Core::LINEARREG_INTERCEPT) — Linear Regression Intercept
 //! * [`LINEARREG_SLOPE`](Core::LINEARREG_SLOPE) — Linear Regression Slope
+//! * [`PERCENTRANK`](Core::PERCENTRANK) — Percent Rank
 //! * [`STDDEV`](Core::STDDEV) — Standard Deviation
 //! * [`TSF`](Core::TSF) — Time Series Forecast
 //! * [`VAR`](Core::VAR) — Variance

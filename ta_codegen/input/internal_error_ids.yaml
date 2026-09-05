@@ -18,7 +18,7 @@
 # Written by `ta_codegen generate`. Do not renumber by hand -- the number is
 # the only thing a bug report carries, and it has to mean the same guard in the
 # next release as it did in the last.
-next: 407
+next: 408
 sites:
   AC.cbsize.oscBuffer: 184
   AC.circbuf.oscBuffer: 181
@@ -217,6 +217,7 @@ sites:
   MINUS_DI.dualmode: 373
   MINUS_DM.dualmode: 374
   MOM.ringcap.trailingIdx: 375
+  PERCENTRANK.wincap.i: 407
   PLUS_DI.dualmode: 376
   PLUS_DM.dualmode: 377
   QSTICK.ringcap.trailingIdx: 378

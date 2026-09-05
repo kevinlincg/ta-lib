@@ -128117,6 +128117,676 @@ class Core {
      *
      *  Initial  Name/description
      *  -------------------------------------------------------------------
+     *  KL       Kevin Lin
+     *
+     * Change history:
+     *
+     *  MMDDYY BY     Description
+     *  -------------------------------------------------------------------
+     *  090526 KL     First version (issue #369).
+     */
+
+       /**
+        * Number of leading input bars {@link Core#PERCENTRANK} consumes before it
+        * can produce its first value.
+        * <p>Equivalently, the index of the first bar with a value when the whole
+        * series is requested. Feed at least {@code lookback + 1} bars to get any
+        * output.
+        *
+        * @param optInTimePeriod Number of preceding bars ranked against (default
+        *        100; range 2..100000; {@code Integer.MIN_VALUE} selects the default).
+        * @return The lookback, or {@code -1} if a parameter is out of range.
+        */
+       public int PERCENTRANK_Lookback( int optInTimePeriod )
+       {
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 100;
+          } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
+             return -1;
+          }
+          /* The current bar is excluded from its own window, so the first bar that can
+           * be ranked is bar optInTimePeriod -- not optInTimePeriod-1.
+           */
+          return optInTimePeriod ;
+
+       }
+       RetCode PERCENTRANK_Impl( int startIdx,
+                                 int endIdx,
+                                 double inReal[],
+                                 int optInTimePeriod,
+                                 MInteger outBegIdx,
+                                 MInteger outNBElement,
+                                 double outReal[] )
+       {
+          int today = 0;
+          int outIdx = 0;
+          int i = 0;
+          int count = 0;
+          double current = 0;
+          if( (startIdx < 0) || (startIdx > MAX_INDEX) ) {
+             return RetCode.OutOfRangeStartIndex ;
+          }
+          if( (endIdx < 0) || (endIdx > MAX_INDEX) || (endIdx < startIdx)) {
+             return RetCode.OutOfRangeEndIndex ;
+          }
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 100;
+          } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
+             return RetCode.BadParam;
+          }
+          if( startIdx < optInTimePeriod ) {
+             startIdx = optInTimePeriod;
+          }
+          /* Make sure there is still something to evaluate. */
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.Success ;
+          }
+          outIdx = 0;
+          today = startIdx;
+          while( today <= endIdx ) {
+             current = inReal[today];
+             /* STRICTLY less than: a window value equal to the current one does not
+              * count. Ties are the whole of the divergence from engines that rank with
+              * '<=', so the comparison must not be relaxed to reach one of them.
+              */
+             count = 0;
+             for( i = optInTimePeriod; i >= 1; i -= 1 ) {
+                if( inReal[today - i] < current ) {
+                   count += 1;
+                }
+             }
+             /* Divide, THEN scale. (count/period)*100.0 and 100.0*count/period are
+              * different doubles -- 90 of 249 bars differ on the 252-bar reference
+              * series at period 3 -- and the published values this is gated against
+              * are the divide-first ones.
+              *
+              * #130 in-place aliasing: every window read above happens before this
+              * store. startIdx is clamped to at least optInTimePeriod, so outIdx never
+              * runs ahead of today-optInTimePeriod, the oldest slot this bar reads and
+              * one no later bar reads again.
+              */
+             outReal[outIdx] = (double)count / (double)optInTimePeriod * 100.0;
+             outIdx += 1;
+             today += 1;
+          }
+          outBegIdx.value = startIdx;
+          outNBElement.value = outIdx;
+          return RetCode.Success ;
+       }
+       RetCode PERCENTRANK_Impl( int startIdx,
+                                 int endIdx,
+                                 float inReal[],
+                                 int optInTimePeriod,
+                                 MInteger outBegIdx,
+                                 MInteger outNBElement,
+                                 double outReal[] )
+       {
+          int today = 0;
+          int outIdx = 0;
+          int i = 0;
+          int count = 0;
+          double current = 0;
+          if( (startIdx < 0) || (startIdx > MAX_INDEX) ) {
+             return RetCode.OutOfRangeStartIndex ;
+          }
+          if( (endIdx < 0) || (endIdx > MAX_INDEX) || (endIdx < startIdx)) {
+             return RetCode.OutOfRangeEndIndex ;
+          }
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 100;
+          } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
+             return RetCode.BadParam;
+          }
+          if( startIdx < optInTimePeriod ) {
+             startIdx = optInTimePeriod;
+          }
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.Success ;
+          }
+          outIdx = 0;
+          today = startIdx;
+          while( today <= endIdx ) {
+             current = (double)inReal[today];
+             count = 0;
+             for( i = optInTimePeriod; i >= 1; i -= 1 ) {
+                if( (double)inReal[today - i] < current ) {
+                   count += 1;
+                }
+             }
+             outReal[outIdx] = (double)count / (double)optInTimePeriod * 100.0;
+             outIdx += 1;
+             today += 1;
+          }
+          outBegIdx.value = startIdx;
+          outNBElement.value = outIdx;
+          return RetCode.Success ;
+       }
+       /**
+        * Percent Rank: the percentage of the values in the preceding window that
+        * are strictly below the current value. It answers "where does today sit
+        * within its own recent history" on a 0–100 scale, and is the inverse
+        * question to a percentile: a percentile names the value at a rank, this
+        * names the rank of a value. A reading near 100 says the current value is
+        * above almost everything the window holds, near 0 that it is below almost
+        * everything, and a flat stretch of data reads 0 because nothing in the
+        * window is strictly below. It is the third component of Connors RSI.
+        * <p><b>Formula</b>
+        * <pre>{@code
+        * PERCENTRANK[t] = (count of j in [t-N, t-1] with P[j] < P[t]) / N * 100
+        * The current bar is compared against the N bars before it and is excluded from its own window, so the count is divided by the window width and the ratio is scaled to a percentage.
+        * }</pre>
+        * <p><b>Notes</b>
+        * <ul>
+        * <li>The comparison is **strict**: a window value equal to the current one is not counted. TradingView's Pine {@code ta.percentrank} ranks with "less than or equal" instead, so on data carrying ties it computes a different function — most visibly on a constant series, where this function is 0 and Pine is 100.</li>
+        * <li>Inputs are expected to be finite. A NaN in the window compares false against everything, so it silently fails to count rather than propagating.</li>
+        * </ul>
+        * <p>Values are written only where the indicator is defined. The returned
+        * {@link OutRange} says where they start and how many there are; nothing
+        * outside that range is touched, and the library never pads with NaN. A
+        * valid range shorter than {@link Core#PERCENTRANK_Lookback} is a <b>success
+        * with no values</b> ({@code count() == 0}), not an error.
+        *
+        * @param startIdx First bar of the requested range (inclusive).
+        * @param endIdx Last bar of the requested range (inclusive).
+        * @param inReal Source price/value series.
+        * @param optInTimePeriod Number of preceding bars ranked against (default
+        *        100; range 2..100000; {@code Integer.MIN_VALUE} selects the default).
+        * @param outReal Percentage of the preceding window that is strictly below
+        *        the current value (0–100) Must hold at least {@code endIdx - startIdx + 1}
+        *        values.
+        * @return The range written: {@code begIdx} is the first bar with a value,
+        *        {@code count} how many were written.
+        * @throws IndexOutOfBoundsException if {@code startIdx} or {@code endIdx} is
+        *        negative or above {@link Core#MAX_INDEX}, or {@code endIdx < startIdx}.
+        * @throws IllegalArgumentException if an optional parameter is outside its
+        *        documented range, two outputs share one array, or an array is absent or
+        *        too short for the range requested — any input this function
+        *        <i>declares</i> that does not reach {@code endIdx}, or an output that
+        *        cannot hold the values produced. Declared, not read: a few candlestick
+        *        patterns take an OHLC series they never index, and it is required all the
+        *        same. An output this function documents as declinable is the one
+        *        exception: {@code null} is how you decline it. Checked before anything is
+        *        written, so a rejected call leaves every buffer untouched.
+        *
+        * @see Core#MIN
+        * @see Core#MAX
+        * @see Core#STDDEV
+        */
+       public OutRange PERCENTRANK( int startIdx,
+                                    int endIdx,
+                                    double inReal[],
+                                    int optInTimePeriod,
+                                    double outReal[] )
+       {
+          requireIndexRange("PERCENTRANK", startIdx, endIdx);
+          int guardStart = clampedStart("PERCENTRANK", startIdx, PERCENTRANK_Lookback(optInTimePeriod));
+          int guardInLen = endIdx + 1;
+          int guardOutLen = guardStart > endIdx ? 0 : endIdx - guardStart + 1;
+          requireLength("PERCENTRANK", "inReal", inReal, guardInLen);
+          requireLength("PERCENTRANK", "outReal", outReal, guardOutLen);
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          RetCode retCode = PERCENTRANK_Impl(startIdx, endIdx, inReal, optInTimePeriod, outBegIdx, outNBElement, outReal);
+          if( retCode != RetCode.Success ) {
+             throw failure("PERCENTRANK", retCode);
+          }
+          return new OutRange(outBegIdx.value, outNBElement.value);
+       }
+       /**
+        * Percent Rank: the percentage of the values in the preceding window that
+        * are strictly below the current value. It answers "where does today sit
+        * within its own recent history" on a 0–100 scale, and is the inverse
+        * question to a percentile: a percentile names the value at a rank, this
+        * names the rank of a value. A reading near 100 says the current value is
+        * above almost everything the window holds, near 0 that it is below almost
+        * everything, and a flat stretch of data reads 0 because nothing in the
+        * window is strictly below. It is the third component of Connors RSI.
+        * <p><b>Formula</b>
+        * <pre>{@code
+        * PERCENTRANK[t] = (count of j in [t-N, t-1] with P[j] < P[t]) / N * 100
+        * The current bar is compared against the N bars before it and is excluded from its own window, so the count is divided by the window width and the ratio is scaled to a percentage.
+        * }</pre>
+        * <p><b>Notes</b>
+        * <ul>
+        * <li>The comparison is **strict**: a window value equal to the current one is not counted. TradingView's Pine {@code ta.percentrank} ranks with "less than or equal" instead, so on data carrying ties it computes a different function — most visibly on a constant series, where this function is 0 and Pine is 100.</li>
+        * <li>Inputs are expected to be finite. A NaN in the window compares false against everything, so it silently fails to count rather than propagating.</li>
+        * </ul>
+        * <p>This is the {@code float[]} overload. The arithmetic is performed in
+        * {@code double} before being written to the {@code double[]} output, so a
+        * result beyond {@code float} range is still representable.
+        * <p>Values are written only where the indicator is defined. The returned
+        * {@link OutRange} says where they start and how many there are; nothing
+        * outside that range is touched, and the library never pads with NaN. A
+        * valid range shorter than {@link Core#PERCENTRANK_Lookback} is a <b>success
+        * with no values</b> ({@code count() == 0}), not an error.
+        *
+        * @param startIdx First bar of the requested range (inclusive).
+        * @param endIdx Last bar of the requested range (inclusive).
+        * @param inReal Source price/value series.
+        * @param optInTimePeriod Number of preceding bars ranked against (default
+        *        100; range 2..100000; {@code Integer.MIN_VALUE} selects the default).
+        * @param outReal Percentage of the preceding window that is strictly below
+        *        the current value (0–100) Must hold at least {@code endIdx - startIdx + 1}
+        *        values.
+        * @return The range written: {@code begIdx} is the first bar with a value,
+        *        {@code count} how many were written.
+        * @throws IndexOutOfBoundsException if {@code startIdx} or {@code endIdx} is
+        *        negative or above {@link Core#MAX_INDEX}, or {@code endIdx < startIdx}.
+        * @throws IllegalArgumentException if an optional parameter is outside its
+        *        documented range, two outputs share one array, or an array is absent or
+        *        too short for the range requested — any input this function
+        *        <i>declares</i> that does not reach {@code endIdx}, or an output that
+        *        cannot hold the values produced. Declared, not read: a few candlestick
+        *        patterns take an OHLC series they never index, and it is required all the
+        *        same. An output this function documents as declinable is the one
+        *        exception: {@code null} is how you decline it. Checked before anything is
+        *        written, so a rejected call leaves every buffer untouched.
+        *
+        * @see Core#MIN
+        * @see Core#MAX
+        * @see Core#STDDEV
+        */
+       public OutRange PERCENTRANK( int startIdx,
+                                    int endIdx,
+                                    float inReal[],
+                                    int optInTimePeriod,
+                                    double outReal[] )
+       {
+          requireIndexRange("PERCENTRANK", startIdx, endIdx);
+          int guardStart = clampedStart("PERCENTRANK", startIdx, PERCENTRANK_Lookback(optInTimePeriod));
+          int guardInLen = endIdx + 1;
+          int guardOutLen = guardStart > endIdx ? 0 : endIdx - guardStart + 1;
+          requireLength("PERCENTRANK", "inReal", inReal, guardInLen);
+          requireLength("PERCENTRANK", "outReal", outReal, guardOutLen);
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          RetCode retCode = PERCENTRANK_Impl(startIdx, endIdx, inReal, optInTimePeriod, outBegIdx, outNBElement, outReal);
+          if( retCode != RetCode.Success ) {
+             throw failure("PERCENTRANK", retCode);
+          }
+          return new OutRange(outBegIdx.value, outNBElement.value);
+       }
+    /**** Streaming API *****/
+
+       /**
+        * A live PERCENTRANK stream (unrelated to {@code java.util.stream}): one value per
+        * closed bar, bit-identical to {@link Core#PERCENTRANK} over the same series.
+        * Open with {@link Core#percentrankOpen}; there is no close — the handle is
+        * ordinary heap state, unreferenced handles are simply garbage-collected.
+        * <p>Concurrency: a handle is single-writer — {@code update}, {@code peek},
+        * {@code value} and {@code clone} must not race with an {@code update} on
+        * the same handle. With no concurrent {@code update}, {@code peek}/
+        * {@code value}/{@code clone} never write the stream and may be called
+        * concurrently after safe publication. Independent streams (a
+        * {@code clone()} result included) are fully independent.
+        * <p>Not serializable by design: to checkpoint, retain the history and
+        * re-open — the result is bit-identical by contract.
+        */
+       public static final class PercentrankStream {
+          Core core;
+          int optInTimePeriod;
+          int winPos_i;
+          int winCap_i;
+          double[] win_i_inReal;
+          double cur_outReal;
+          int outRangeBegIdx;
+          int outRangeCount;
+
+          PercentrankStream( Core core ) { this.core = core; }
+
+          /**
+           * The bars this stream has an output for, in the input series'
+           * coordinates: {@code [begIdx, begIdx + count)}.
+           * <p>It is what {@link Core#PERCENTRANK} reports over the same bars: the
+           * opener sets it to {@code (lookback, historyLen - lookback)}, every
+           * {@code update} adds one to the count — a bar rejected for being
+           * non-finite included, because it still happened — {@code peek} leaves
+           * it alone, and {@code clone()} carries it verbatim. A plain
+           * {@code open} hands back only the last value, a subset of this range,
+           * because the caller chose not to take the fill.
+           */
+          public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+          PercentrankStream( PercentrankStream other ) {
+             this.core = other.core;
+             this.optInTimePeriod = other.optInTimePeriod;
+             this.winPos_i = other.winPos_i;
+             this.winCap_i = other.winCap_i;
+             this.win_i_inReal = other.win_i_inReal.clone();
+             this.cur_outReal = other.cur_outReal;
+             this.outRangeBegIdx = other.outRangeBegIdx;
+             this.outRangeCount = other.outRangeCount;
+          }
+
+          /**
+           * Commit one closed bar, returning the new current value.
+           * Never allocates handle state.
+           * <p>Throws {@link IllegalArgumentException} if any bar value is not
+           * finite (NaN or an infinity). That check runs before anything is
+           * written, so the state is left exactly as it was: the rejected bar's
+           * output is the previous value, held, and {@link #value()} answers it.
+           * The stream stays usable, so skip the bar or re-open on a clean
+           * history. {@link #outRange()} does advance: the bar happened and
+           * occupies a position in the series, so the handle counts it, which is
+           * what keeps two handles on one feed aligned when only one rejects.
+           * This is the one place the streaming tier is stricter than
+           * the batch API, which computes on whatever it is given: a handle
+           * retains its state, so a single non-finite bar would poison every
+           * later value it produces.
+           */
+          public double update( double inReal ) {
+             if( !Double.isFinite(inReal) ) {
+                if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+                throw new TaLibArgumentException("PERCENTRANK update: BadParam", RetCode.BadParam);
+             }
+             core.percentrankStepImpl(this, inReal);
+             if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+             return this.cur_outReal;
+          }
+
+          /**
+           * Commit {@code n} closed bars and write their {@code n} values, in one
+           * call — exactly {@code n} back-to-back {@code update} calls, with one
+           * set of argument checks instead of {@code n}. {@code n} is
+           * {@code inReal.length}; the outputs must hold at least that many, and must
+           * not be the same array as an input or as each other.
+           * <p>{@link #outRange()} counts what this call took in, which is what makes a
+           * rejection readable: a non-finite bar {@code k} throws
+           * {@link IllegalArgumentException} exactly as {@code update} would, with
+           * the bars before {@code k} committed and written, bar {@code k} and
+           * everything after it not, and the count advanced by {@code k + 1} —
+           * the committed bars plus the rejected one.
+           */
+          public void updateAndFill( double inReal[], double outReal[] ) {
+             requireArgument("PERCENTRANK updateAndFill", "inReal", inReal);
+             requireArgument("PERCENTRANK updateAndFill", "outReal", outReal);
+             final int barCount = inReal.length;
+             if( outReal.length < barCount || (Object)outReal == (Object)inReal )
+                throw new TaLibArgumentException("PERCENTRANK updateAndFill: BadParam", RetCode.BadParam);
+             for( int i = 0; i < barCount; i++ ) {
+                if( !Double.isFinite(inReal[i]) ) {
+                   if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+                   throw new TaLibArgumentException("PERCENTRANK updateAndFill: BadParam", RetCode.BadParam);
+                }
+                core.percentrankStepImpl(this, inReal[i]);
+                outReal[i] = this.cur_outReal;
+                if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+             }
+          }
+
+          /**
+           * Evaluate a forming bar without committing — bit-identical to what the
+           * next {@code update} with the same bar would return — the same
+           * transition, with every store it would make carried in a local instead.
+           * Never writes this handle, so peeks may
+           * run concurrently with each other. It copies nothing: the frame runs against this handle, reading its
+           * buffers and storing what the step would commit into locals, so the cost
+           * does not grow with the period and {@code peek} never allocates.
+           */
+          public double peek( double inReal ) {
+             if( !Double.isFinite(inReal) )
+                throw new TaLibArgumentException("PERCENTRANK peek: BadParam", RetCode.BadParam);
+             PercentrankStream sp = this;
+             int i = 0;
+             int count = 0;
+             double current = 0.0;
+             double cur_outReal = 0.0;
+             int pkSlot0 = -1;
+             double pkVal0 = 0.0;
+             pkSlot0 = sp.winPos_i;
+             pkVal0 = inReal;
+             current = inReal;
+             /* STRICTLY less than: a window value equal to the current one does not
+              * count. Ties are the whole of the divergence from engines that rank with
+              * '<=', so the comparison must not be relaxed to reach one of them.
+              */
+             count = 0;
+             for( i = sp.optInTimePeriod; i >= 1; i -= 1 ) {
+                if( ((((sp.winPos_i + sp.winCap_i - i >= sp.winCap_i) ? sp.winPos_i + sp.winCap_i - i - sp.winCap_i : sp.winPos_i + sp.winCap_i - i) != pkSlot0) ? sp.win_i_inReal[(sp.winPos_i + sp.winCap_i - i >= sp.winCap_i) ? sp.winPos_i + sp.winCap_i - i - sp.winCap_i : sp.winPos_i + sp.winCap_i - i] : pkVal0) < current ) {
+                   count += 1;
+                }
+             }
+             /* Divide, THEN scale. (count/period)*100.0 and 100.0*count/period are
+              * different doubles -- 90 of 249 bars differ on the 252-bar reference
+              * series at period 3 -- and the published values this is gated against
+              * are the divide-first ones.
+              *
+              * #130 in-place aliasing: every window read above happens before this
+              * store. startIdx is clamped to at least optInTimePeriod, so outIdx never
+              * runs ahead of today-optInTimePeriod, the oldest slot this bar reads and
+              * one no later bar reads again.
+              */
+             cur_outReal = (double)count / (double)sp.optInTimePeriod * 100.0;
+             return cur_outReal;
+          }
+
+          /**
+           * The value at the last bar this stream counted — the bar
+           * {@link #outRange()} ends on. The last history bar right after open,
+           * then whatever the latest accepted {@code update} returned.
+           * A pure field read; {@code peek} does not change it.
+           */
+          public double value() {
+             return this.cur_outReal;
+          }
+
+          /**
+           * An independent fork of this stream: both evolve separately from here
+           * on. Buffers are copied and sub-streams cloned recursively; the
+           * {@link Core} reference is shared, since a {@code Core} is immutable
+           * for a stream's lifetime.
+           *
+           * <p>Not the {@code Cloneable} protocol: this calls a copy constructor,
+           * never {@code super.clone()}, so it throws nothing.
+           *
+           * @return an independent stream at the same bar
+           */
+          @Override
+          public PercentrankStream clone() {
+             return new PercentrankStream(this);
+          }
+       }
+       void percentrankStepImpl( PercentrankStream sp, double inReal )
+       {
+          int i = 0;
+          int count = 0;
+          double current = 0.0;
+          sp.win_i_inReal[sp.winPos_i] = inReal;
+          current = inReal;
+          /* STRICTLY less than: a window value equal to the current one does not
+           * count. Ties are the whole of the divergence from engines that rank with
+           * '<=', so the comparison must not be relaxed to reach one of them.
+           */
+          count = 0;
+          for( i = sp.optInTimePeriod; i >= 1; i -= 1 ) {
+             if( sp.win_i_inReal[(sp.winPos_i + sp.winCap_i - i >= sp.winCap_i) ? sp.winPos_i + sp.winCap_i - i - sp.winCap_i : sp.winPos_i + sp.winCap_i - i] < current ) {
+                count += 1;
+             }
+          }
+          /* Divide, THEN scale. (count/period)*100.0 and 100.0*count/period are
+           * different doubles -- 90 of 249 bars differ on the 252-bar reference
+           * series at period 3 -- and the published values this is gated against
+           * are the divide-first ones.
+           *
+           * #130 in-place aliasing: every window read above happens before this
+           * store. startIdx is clamped to at least optInTimePeriod, so outIdx never
+           * runs ahead of today-optInTimePeriod, the oldest slot this bar reads and
+           * one no later bar reads again.
+           */
+          sp.cur_outReal = (double)count / (double)sp.optInTimePeriod * 100.0;
+          sp.winPos_i = sp.winPos_i + 1;
+          if( sp.winPos_i >= sp.winCap_i ) {
+             sp.winPos_i = 0;
+          }
+       }
+       private RetCode percentrankOpenImpl( PercentrankStream sp, double inReal[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outReal[], int outStride )
+       {
+          int today = 0;
+          int outIdx = 0;
+          int i = 0;
+          int count = 0;
+          double current = 0;
+          int historyLen = inReal.length;
+          int endIdx = historyLen - 1;
+          if( historyLen < 1 ) {
+             return RetCode.OutOfRangeStartIndex;
+          }
+          if( historyLen > MAX_INDEX + 1 ) {
+             return RetCode.OutOfRangeEndIndex;
+          }
+          if( optInTimePeriod == Integer.MIN_VALUE ) {
+             optInTimePeriod = 100;
+          } else if( optInTimePeriod < 2 || optInTimePeriod > 100000 ) {
+             return RetCode.BadParam;
+          }
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.InsufficientHistory;
+          }
+          if( startIdx < optInTimePeriod ) {
+             startIdx = optInTimePeriod;
+          }
+          /* Make sure there is still something to evaluate. */
+          if( startIdx > endIdx ) {
+             outBegIdx.value = 0;
+             outNBElement.value = 0;
+             return RetCode.InsufficientHistory ;
+          }
+          outIdx = 0;
+          today = startIdx;
+          while( today <= endIdx ) {
+             current = inReal[today];
+             /* STRICTLY less than: a window value equal to the current one does not
+              * count. Ties are the whole of the divergence from engines that rank with
+              * '<=', so the comparison must not be relaxed to reach one of them.
+              */
+             count = 0;
+             for( i = optInTimePeriod; i >= 1; i -= 1 ) {
+                if( inReal[today - i] < current ) {
+                   count += 1;
+                }
+             }
+             /* Divide, THEN scale. (count/period)*100.0 and 100.0*count/period are
+              * different doubles -- 90 of 249 bars differ on the 252-bar reference
+              * series at period 3 -- and the published values this is gated against
+              * are the divide-first ones.
+              *
+              * #130 in-place aliasing: every window read above happens before this
+              * store. startIdx is clamped to at least optInTimePeriod, so outIdx never
+              * runs ahead of today-optInTimePeriod, the oldest slot this bar reads and
+              * one no later bar reads again.
+              */
+             outReal[outIdx * outStride] = (double)count / (double)optInTimePeriod * 100.0;
+             outIdx += 1;
+             today += 1;
+          }
+          outBegIdx.value = startIdx;
+          outNBElement.value = outIdx;
+          /* Capture the live batch state into the handle. */
+          int cap_i = (int)(optInTimePeriod + 1);
+          if( cap_i < 1 || cap_i > historyLen ) {
+             return RetCode.InternalError;
+          }
+          double[] capWin_i_inReal = new double[cap_i];
+          System.arraycopy(inReal, historyLen - cap_i, capWin_i_inReal, 0, cap_i);
+          sp.optInTimePeriod = optInTimePeriod;
+          sp.winPos_i = 0;
+          sp.winCap_i = cap_i;
+          sp.win_i_inReal = capWin_i_inReal;
+          sp.cur_outReal = outReal[(outNBElement.value - 1) * outStride];
+          return RetCode.Success;
+       }
+       /* percentrankOpenAndFill anchored at startIdx — the composed-open fusion seam. */
+       PercentrankStream percentrankOpenAndFillInternal( double inReal[], int startIdx, int optInTimePeriod, MInteger outBegIdx, MInteger outNBElement, double outReal[] )
+       {
+          PercentrankStream sp = new PercentrankStream(this);
+          RetCode retCode = percentrankOpenImpl(sp, inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, outReal, 1);
+          sp.outRangeBegIdx = outBegIdx.value;
+          sp.outRangeCount = outNBElement.value;
+          if( retCode == RetCode.Success ) {
+             return sp;
+          }
+          if( retCode == RetCode.InsufficientHistory ) {
+             throw new InsufficientHistoryException("PERCENTRANK openAndFill: history shorter than lookback + 1");
+          }
+          if( retCode == RetCode.InternalError ) {
+             throw new TaLibStateException("PERCENTRANK openAndFill: internal error", retCode);
+          }
+          throw new TaLibArgumentException("PERCENTRANK openAndFill: " + retCode, retCode);
+       }
+       /* Internal startIdx-anchored open behind percentrankOpen (composition seam). */
+       PercentrankStream percentrankOpenInternal( double inReal[], int startIdx, int optInTimePeriod )
+       {
+          PercentrankStream sp = new PercentrankStream(this);
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          double[] sink_outReal = new double[1];
+          RetCode retCode = percentrankOpenImpl(sp, inReal, startIdx, optInTimePeriod, outBegIdx, outNBElement, sink_outReal, 0);
+          sp.outRangeBegIdx = outBegIdx.value;
+          sp.outRangeCount = outNBElement.value;
+          if( retCode == RetCode.Success ) {
+             return sp;
+          }
+          if( retCode == RetCode.InsufficientHistory ) {
+             throw new InsufficientHistoryException("PERCENTRANK open: history shorter than lookback + 1");
+          }
+          if( retCode == RetCode.InternalError ) {
+             throw new TaLibStateException("PERCENTRANK open: internal error", retCode);
+          }
+          throw new TaLibArgumentException("PERCENTRANK open: " + retCode, retCode);
+       }
+       /**
+        * Open a live PERCENTRANK stream over the warm-up history; the handle's
+        * {@code value()} starts at the last history bar's value — bit-identical
+        * to {@link Core#PERCENTRANK} at that bar.
+        * <p>The history must hold at least {@code PERCENTRANK_Lookback(...) + 1} bars
+        * (unstable-period aware), or {@link InsufficientHistoryException} is
+        * thrown. Out-of-range parameters throw {@link IllegalArgumentException}
+        * ({@code Integer.MIN_VALUE} selects an integer parameter's documented
+        * default, as in the batch API). An EMPTY history throws
+        * {@link IndexOutOfBoundsException} — its implied {@code startIdx} of 0
+        * names no bar — and a null argument {@link IllegalArgumentException},
+        * both ahead of everything above.
+        */
+       public PercentrankStream percentrankOpen( double inReal[], int optInTimePeriod )
+       {
+          requireArgument("PERCENTRANK open", "inReal", inReal);
+          requireHistory("PERCENTRANK open", inReal.length);
+          return percentrankOpenInternal(inReal, 0, optInTimePeriod);
+       }
+       /**
+        * {@link Core#percentrankOpen} that also fills the output array(s) bit-identically
+        * to {@link Core#PERCENTRANK} over the whole history in the same single pass
+        * (no separate batch call needed for the warm-up plot). Output arrays must
+        * not alias the inputs or each other, and must hold
+        * {@code historyLen - lookback} values — both checked before anything is
+        * written, so an undersized array is an {@link IllegalArgumentException}
+        * naming it rather than a fault from inside the fill.
+        * <p>The range written is on the returned handle:
+        * {@link PercentrankStream#outRange()}.
+        */
+       public PercentrankStream percentrankOpenAndFill( double inReal[], int optInTimePeriod, double outReal[] )
+       {
+          requireArgument("PERCENTRANK openAndFill", "inReal", inReal);
+          requireHistory("PERCENTRANK openAndFill", inReal.length);
+          int guardOutLen = openFillCount("PERCENTRANK openAndFill", inReal.length, PERCENTRANK_Lookback(optInTimePeriod));
+          requireLength("PERCENTRANK openAndFill", "outReal", outReal, guardOutLen);
+          if( (Object)outReal == (Object)inReal ) {
+             throw new TaLibArgumentException("PERCENTRANK openAndFill: " + RetCode.BadParam, RetCode.BadParam);
+          }
+          MInteger outBegIdx = new MInteger();
+          MInteger outNBElement = new MInteger();
+          return percentrankOpenAndFillInternal(inReal, 0, optInTimePeriod, outBegIdx, outNBElement, outReal);
+       }
+    /* List of contributors:
+     *
+     *  Initial  Name/description
+     *  -------------------------------------------------------------------
      *  MF       Mario Fortier
      *  AM       Adrian Michel
      *  MIF      Mirek Fontan (mira@fontan.cz)
@@ -167893,7 +168563,7 @@ class Core {
 
 public class TaCodegenServe {
     static Core core = new Core();
-    static final String SPLICED_GENCODE_DIGEST = "ceefdd5e12536940";
+    static final String SPLICED_GENCODE_DIGEST = "2be9519677b54758";
     static final int MAX_ARRAY_SIZE = 200000;
     static double[] refOpen = new double[MAX_ARRAY_SIZE];
     static double[] refHigh = new double[MAX_ARRAY_SIZE];
@@ -168609,6 +169279,10 @@ public class TaCodegenServe {
             new AbsIn[]{ new AbsIn(1,"inReal",0), new AbsIn(0,"inPriceV",16) },
             new AbsOpt[]{  },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
+        ABSTRACT.put("PERCENTRANK", new AbsFunc("PERCENTRANK", "Statistic Functions", "Percent Rank", 33554432,
+            new AbsIn[]{ new AbsIn(1,"inReal",0) },
+            new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",100.0, 0,0,0,0,0,0, 2,100000,2,200,1, null) },
+            new AbsOut[]{ new AbsOut(0,"outReal",1) }));
         ABSTRACT.put("PLUS_DI", new AbsFunc("PLUS_DI", "Momentum Indicators", "Plus Directional Indicator", 167772160,
             new AbsIn[]{ new AbsIn(0,"inPriceHLC",14) },
             new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",14.0, 0,0,0,0,0,0, 1,100000,1,200,1, null) },
@@ -169053,6 +169727,7 @@ public class TaCodegenServe {
         else if (json.contains("\"TA_NATR\"")) return handle_NATR(json);
         else if (json.contains("\"TA_NVI\"")) return handle_NVI(json);
         else if (json.contains("\"TA_OBV\"")) return handle_OBV(json);
+        else if (json.contains("\"TA_PERCENTRANK\"")) return handle_PERCENTRANK(json);
         else if (json.contains("\"TA_PLUS_DI\"")) return handle_PLUS_DI(json);
         else if (json.contains("\"TA_PLUS_DM\"")) return handle_PLUS_DM(json);
         else if (json.contains("\"TA_PPO\"")) return handle_PPO(json);
@@ -169380,6 +170055,8 @@ public class TaCodegenServe {
             sb.append("\"TA_NVI\"");
             sb.append(",");
             sb.append("\"TA_OBV\"");
+            sb.append(",");
+            sb.append("\"TA_PERCENTRANK\"");
             sb.append(",");
             sb.append("\"TA_PLUS_DI\"");
             sb.append(",");
@@ -190829,6 +191506,148 @@ public class TaCodegenServe {
             } else {
             try {
                 OutRange _fr = core.OBV(startIdx, endIdx, f_inReal, f_inVolume, outArr0);
+                outBegIdx.value = _fr.begIdx();
+                outNBElement.value = _fr.count();
+                rc = RetCode.Success;
+            } catch (RuntimeException _e) {
+                if (!(_e instanceof TaLibFailure)) throw _e;
+                rc = ((TaLibFailure) _e).retCode();
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            }
+            }
+            usedFloat = 1;
+        }
+        if (jsonInt(json, "want_hash") != 0 && jsonInt(json, "full_output") == 0) {
+            long _h = svHashInit();
+            if (rc == RetCode.Success && outNBElement.value > 0) {
+                _h = svHashF64(_h, outArr0, outNBElement.value);
+            }
+            _h = svHashFin(_h);
+            return "{\"retCode\":" + rc.toInt() + ",\"outBegIdx\":" + outBegIdx.value + ",\"outNBElement\":" + outNBElement.value + ",\"out_hash\":\"" + String.format("%016x", _h) + "\"}";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"retCode\":").append(rc.toInt());
+        sb.append(",\"outBegIdx\":").append(outBegIdx.value);
+        sb.append(",\"outNBElement\":").append(outNBElement.value);
+        sb.append(",\"out_len\":").append(_outLen);
+        sb.append(",\"outReal\":").append(doubleArrayToJson(outArr0, outNBElement.value));
+        sb.append(",\"used_float\":").append(usedFloat);
+        sb.append(",\"timing_ns\":").append(elapsedNs);
+        sb.append("}");
+        return sb.toString();
+    }
+
+    static String handle_PERCENTRANK(String json) {
+        int startIdx = jsonInt(json, "startIdx");
+        int endIdx = jsonInt(json, "endIdx");
+        int use_preloaded = jsonInt(json, "use_preloaded");
+        int bench_iters = jsonInt(json, "iters");
+        if (bench_iters < 1) bench_iters = 1;
+        double[] inReal = new double[MAX_ARRAY_SIZE];
+        if (use_preloaded != 0 && refN > 0) {
+            System.arraycopy(refClose, 0, inReal, 0, refN);
+        } else {
+            double[] _tmp_inReal = jsonDoubleArray(json, "inReal");
+            inReal = _tmp_inReal;
+        }
+        boolean _optRejected = false;
+        int optInTimePeriod = jsonInt(json, "optInTimePeriod");
+        // The output buffers are sized to the count the call actually PRODUCES --
+        // endIdx - max(startIdx, lookback) + 1 -- plus `out_pad` from the request, and
+        // never below one. Not to the width of the requested range: that is the bound the
+        // managed backends check and the Rust asserts state, and at the range width it was
+        // slack by exactly the lookback, so no call could ever approach it.
+        // The pad is there because a bound is a MINIMUM, never an equality. A caller
+        // re-using a pre-allocated buffer passes a larger one, and that is not an error --
+        // the reported OutRange is what says which part was written. So the harness sends
+        // both: the startIdx axis sends no pad (the bound is reachable) while the
+        // full-range value comparison sends one (slack is legal). Sizing every call one way
+        // would silently drop the other property.
+        // FLOORED AT ONE, deliberately. Zero is what the formula gives for a rejected call
+        // (the lookback is -1, or usize::MAX in Rust, for an out-of-range parameter) and
+        // for a range shorter than the lookback, where the output bound switches off and
+        // the spec says any length will do, including none. It does not: two EMPTY output
+        // buffers are rejected as aliased by C# (an explicit IsEmpty clause) and by Rust
+        // (the empty Vec the server hands each output shares one dangling as_ptr()), and
+        // accepted by C and Java -- a four-way divergence on a call the specification says
+        // all four accept. Sizing to zero here would reach it on every multi-output
+        // function, which is a semantic question, not a harness one. Recorded as
+        // error-handling-spec, open item 11.
+        // The C server keeps its MAX_ARRAY_SIZE statics: C is handed bare pointers, has no
+        // sizes and cannot make the check, so an exact buffer would test nothing there.
+        int _lb = core.PERCENTRANK_Lookback(optInTimePeriod);
+        int _cs = startIdx > _lb ? startIdx : _lb;
+        int _outLen = ((_lb < 0 || _cs > endIdx) ? 1 : endIdx - _cs + 1) + jsonInt(json, "out_pad");
+        double[] outArr0 = new double[_outLen];
+        MInteger outBegIdx = new MInteger();
+        MInteger outNBElement = new MInteger();
+        RetCode rc = RetCode.Success;
+        int bench_mode = jsonInt(json, "bench_mode");
+        double[] _warm_inReal = bench_mode == 0 ? null : java.util.Arrays.copyOfRange(inReal, 0, endIdx + 1);
+        long startNs = 0;
+        for (int _bi = 0; _bi <= bench_iters; _bi++) {
+        if (_bi == 1) startNs = System.nanoTime();
+        if (bench_mode == 0) {
+        if (jsonInt(json, "timed") != 0) {
+            if (_optRejected) {
+                rc = RetCode.BadParam;
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            } else {
+            try {
+                rc = core.PERCENTRANK_Impl(startIdx, endIdx, inReal, optInTimePeriod, outBegIdx, outNBElement, outArr0);
+            } catch (RuntimeException _e) {
+                if (!(_e instanceof TaLibFailure)) throw _e;
+                rc = ((TaLibFailure) _e).retCode();
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            }
+            }
+        } else {
+            if (_optRejected) {
+                rc = RetCode.BadParam;
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            } else {
+            try {
+                OutRange _pr = core.PERCENTRANK(startIdx, endIdx, inReal, optInTimePeriod, outArr0);
+                outBegIdx.value = _pr.begIdx();
+                outNBElement.value = _pr.count();
+                rc = RetCode.Success;
+            } catch (RuntimeException _e) {
+                if (!(_e instanceof TaLibFailure)) throw _e;
+                rc = ((TaLibFailure) _e).retCode();
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            }
+            }
+        }
+        }
+        else if (_optRejected) { rc = RetCode.BadParam; }
+        else { try {
+            if (bench_mode == 1) {
+                core.percentrankOpen(_warm_inReal, optInTimePeriod);
+            } else {
+                Core.PercentrankStream _wh = core.percentrankOpenAndFill(_warm_inReal, optInTimePeriod, outArr0);
+                outBegIdx.value = _wh.outRange().begIdx();
+                outNBElement.value = _wh.outRange().count();
+            }
+            rc = RetCode.Success;
+        } catch (RuntimeException _e) { rc = _e instanceof TaLibFailure ? ((TaLibFailure)_e).retCode() : RetCode.BadParam; } }
+        }
+        long elapsedNs = (System.nanoTime() - startNs) / bench_iters;
+        int usedFloat = 0;
+        if (jsonInt(json, "use_float") != 0) {
+            float[] f_inReal = new float[inReal.length];
+            for (int _fi = 0; _fi < inReal.length; _fi++) f_inReal[_fi] = (float)inReal[_fi];
+            if (_optRejected) {
+                rc = RetCode.BadParam;
+                outBegIdx.value = 0;
+                outNBElement.value = 0;
+            } else {
+            try {
+                OutRange _fr = core.PERCENTRANK(startIdx, endIdx, f_inReal, optInTimePeriod, outArr0);
                 outBegIdx.value = _fr.begIdx();
                 outNBElement.value = _fr.count();
                 rc = RetCode.Success;
@@ -222479,6 +223298,183 @@ public class TaCodegenServe {
         return "{\"retCode\":0,\"beg\":" + beg.value + ",\"nb\":" + nb.value + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"step_ok\":" + (allOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"peek_rejects\":" + peekRejects + ",\"benign\":" + zsign[0] + diag + "}";
     }
 
+    static String sv_PERCENTRANK(String json) {
+        int svShape = jsonInt(json, "gen_shape");
+        int svSeed = jsonInt(json, "gen_seed");
+        int svN = jsonInt(json, "gen_n");
+        if (svN < 2) svN = 2;
+        if (svN > 256) svN = 256;
+        int svK = jsonInt(json, "unstablePeriod");
+        int svCompat = jsonInt(json, "compatibility");
+        if (svCompat != 0) {
+            return "{\"error\":\"java has no compatibility API (pinned to Default)\"}";
+        }
+        int optInTimePeriod = json.contains("\"optInTimePeriod\"") ? jsonInt(json, "optInTimePeriod") : 100;
+        double[] fz_o = new double[svN];
+        double[] fz_h = new double[svN];
+        double[] fz_l = new double[svN];
+        double[] fz_c = new double[svN];
+        double[] fz_v = new double[svN];
+        double[] fz_oi = new double[svN];
+        FuzzData.fuzzGen(svShape, svSeed, svN, fz_o, fz_h, fz_l, fz_c, fz_v, fz_oi);
+        double[] b0 = new double[svN];
+        long legs = 0;
+        boolean allOk = true;
+        boolean peekAll = true;
+        long peekReps = 0;
+        long peekRejects = 0;
+        boolean peekRepAll = true;
+        int fillChecked = 0;
+        boolean fillOk = true;
+        MInteger beg = new MInteger();
+        MInteger nb = new MInteger();
+        String diag = "";
+        int rangeChecked = 0;
+        boolean rangeOk = true;
+        long rangeLegs = 0;
+        int rangeSites = 0;
+        int ufillChecked = 0;
+        boolean ufillOk = true;
+        long[] zsign = { 0 };
+        int rounds = 1;
+        for (int rd = 0; rd < rounds; rd++) {
+            Core c2 = new Core();
+            RetCode rc;
+            try { rc = c2.PERCENTRANK_Impl(0, svN - 1, fz_c, optInTimePeriod, beg, nb, b0); }
+            catch (RuntimeException _sve) { if (!(_sve instanceof TaLibFailure)) throw _sve; rc = ((TaLibFailure) _sve).retCode(); beg.value = 0; nb.value = 0; }
+            int lb = c2.PERCENTRANK_Lookback(optInTimePeriod);
+            if (rc != RetCode.Success || nb.value == 0) {
+                boolean openRejects;
+                try { c2.percentrankOpen(fz_c, optInTimePeriod); openRejects = false; } catch (IllegalArgumentException _e) { openRejects = true; }
+                return "{\"retCode\":" + rc.toInt() + ",\"legs\":0,\"nb\":" + nb.value + ",\"openRejects\":" + (openRejects ? 1 : 0) + ",\"ok\":" + (openRejects ? 1 : 0) + ",\"peek_ok\":1}";
+            }
+            fillChecked = 1;
+            try {
+                double[] f0 = new double[svN];
+                java.util.Arrays.fill(f0, (double)-1.2345678901234e300);
+                Core.PercentrankStream _fh = c2.percentrankOpenAndFill(fz_c, optInTimePeriod, f0);
+                OutRange _fr = _fh.outRange();
+                rangeChecked = 1; rangeLegs++; rangeSites |= 1;
+                if (_fr.begIdx() != beg.value || _fr.count() != nb.value) rangeOk = false;
+                if (_fr.begIdx() != beg.value || _fr.count() != nb.value) fillOk = false;
+                else {
+                    for (int i = 0; i < nb.value; i++) if (svXtierNe(f0[i], b0[i], zsign)) fillOk = false;
+                    for (int i = nb.value; i < svN; i++) if (f0[i] != (double)-1.2345678901234e300) fillOk = false;
+                }
+                try { c2.percentrankOpenAndFill(fz_c, optInTimePeriod, fz_c); fillOk = false; } catch (IllegalArgumentException _e) { /* expected: output aliases input */ }
+            } catch (IllegalArgumentException _e) { fillOk = false; }
+            int seedShift = 0;
+            int[] pcs = { lb + 1 + seedShift, lb + 13, svN / 2, svN - 1 };
+            java.util.Arrays.sort(pcs);
+            int prevP = -1;
+            for (int pi = 0; pi < pcs.length; pi++) {
+                int p = pcs[pi];
+                if (p < lb + 1 + seedShift || p > svN - 1 || p == prevP) continue;
+                prevP = p;
+                Core.PercentrankStream st;
+                try { st = c2.percentrankOpen(java.util.Arrays.copyOf(fz_c, p), optInTimePeriod); }
+                catch (IllegalArgumentException _e) { allOk = false; if (diag.isEmpty()) diag = ",\"openRejectP\":" + p; continue; }
+                legs++;
+                if (svXtierNe(st.value(), b0[p - 1 - beg.value], zsign)) { allOk = false; if (diag.isEmpty()) diag = ",\"badBar\":" + (p - 1) + ",\"badOut\":0,\"where\":\"open\""; }
+                for (int t = p; t < svN; t++) {
+                    boolean pkTook = true;
+                    double pk = 0;
+                    try { pk = st.peek(fz_c[t]); } catch (IllegalArgumentException _e) { pkTook = false; peekRejects++; }
+                    if (t % 7 == 0) {
+                        boolean rpTook = pkTook;
+                        try { st.peek(fz_c[t - 1]); } catch (IllegalArgumentException _e) { peekRejects++; }
+                        double rp = 0;
+                        try { rp = st.peek(fz_c[t]); } catch (IllegalArgumentException _e) { rpTook = false; }
+                        if (rpTook) {
+                            peekReps++;
+                            if (svBne(rp, pk)) peekRepAll = false;
+                        } else { peekRejects++; }
+                    }
+                    double up = st.update(fz_c[t]);
+                    if (pkTook && svBne(pk, up)) peekAll = false;
+                    try { st.peek(fz_c[t - 1]); } catch (IllegalArgumentException _e) { peekRejects++; }
+                    if (svBne(st.value(), up)) allOk = false;
+                    if (svXtierNe(up, b0[t - beg.value], zsign)) { allOk = false; if (diag.isEmpty()) diag = ",\"badBar\":" + t + ",\"badOut\":0,\"batchv\":\"" + String.format("%016x", Double.doubleToRawLongBits(b0[t - beg.value])) + "\",\"streamv\":\"" + String.format("%016x", Double.doubleToRawLongBits(up)) + "\""; }
+                }
+                if (allOk) {
+                    rangeChecked = 1; rangeLegs++; rangeSites |= 2;
+                    if (st.outRange().begIdx() != beg.value || st.outRange().count() != nb.value) rangeOk = false;
+                }
+            }
+            {
+                int p = lb + 1 + seedShift;
+                if (p <= svN - 1) {
+                    ufillChecked = 1;
+                    try {
+                        Core.PercentrankStream stu = c2.percentrankOpen(java.util.Arrays.copyOf(fz_c, p), optInTimePeriod);
+                        OutRange ur0 = stu.outRange();
+                        double[] u0 = new double[svN];
+                        java.util.Arrays.fill(u0, (double)-1.2345678901234e300);
+                        double[] tail_fz_c = java.util.Arrays.copyOfRange(fz_c, p, svN);
+                        stu.updateAndFill(new double[0], u0);
+                        try { stu.updateAndFill(tail_fz_c, new double[0]); ufillOk = false; } catch (IllegalArgumentException _e) { /* expected: output shorter than the run */ }
+                        try { stu.updateAndFill(tail_fz_c, tail_fz_c); ufillOk = false; } catch (IllegalArgumentException _e) { /* expected: output aliases input */ }
+                        if (stu.outRange().begIdx() != ur0.begIdx() || stu.outRange().count() != ur0.count()) ufillOk = false;
+                        stu.updateAndFill(tail_fz_c, u0);
+                        for (int t = p; t < svN; t++) if (svXtierNe(u0[t - p], b0[t - beg.value], zsign)) ufillOk = false;
+                        for (int t = svN - p; t < svN; t++) if (u0[t] != (double)-1.2345678901234e300) ufillOk = false;
+                        rangeChecked = 1; rangeLegs++; rangeSites |= 4;
+                        if (stu.outRange().begIdx() != beg.value || stu.outRange().count() != nb.value) { ufillOk = false; rangeOk = false; }
+                    } catch (IllegalArgumentException _e) { ufillOk = false; }
+                }
+            }
+            {
+                int p0 = lb + 1 + seedShift;
+                if (p0 <= svN - 1) {
+                    try {
+                        Core.PercentrankStream sA = c2.percentrankOpen(java.util.Arrays.copyOf(fz_c, p0), optInTimePeriod);
+                        int mid = (p0 + svN) / 2;
+                        for (int t = p0; t < mid; t++) sA.update(fz_c[t]);
+                        Core.PercentrankStream sB = sA.clone();
+                        for (int t = mid; t < svN; t++) {
+                            double uA = sA.update(fz_c[t]);
+                            double uB = sB.update(fz_c[t]);
+                            if (svBne(uA, uB) || svXtierNe(uA, b0[t - beg.value], zsign)) { allOk = false; if (diag.isEmpty()) diag = ",\"copyDiverged\":" + t; }
+                        }
+                        if (allOk) {
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 16;
+                            if (sA.outRange().begIdx() != beg.value || sA.outRange().count() != nb.value) { rangeOk = false; if (diag.isEmpty()) diag = ",\"copyRangeSrc\":1"; }
+                            if (sB.outRange().begIdx() != beg.value || sB.outRange().count() != nb.value) { rangeOk = false; if (diag.isEmpty()) diag = ",\"copyRange\":1"; }
+                        }
+                    } catch (IllegalArgumentException _e) { allOk = false; if (diag.isEmpty()) diag = ",\"copyOpenReject\":1"; }
+                }
+            }
+            if (lb >= 1 && lb < svN) {
+                try { c2.percentrankOpen(java.util.Arrays.copyOf(fz_c, lb), optInTimePeriod); allOk = false; if (diag.isEmpty()) diag = ",\"shortHistoryAccepted\":1"; }
+                catch (InsufficientHistoryException _e) { /* expected, typed */ }
+                catch (IllegalArgumentException _e) { allOk = false; if (diag.isEmpty()) diag = ",\"shortHistoryWrongType\":1"; }
+            }
+            try {
+                Core.PercentrankStream sD = c2.percentrankOpen(fz_c, Integer.MIN_VALUE);
+                Core.PercentrankStream sE = c2.percentrankOpen(fz_c, 100);
+                if (svBne(sD.value(), sE.value())) { allOk = false; if (diag.isEmpty()) diag = ",\"minValueDefault\":1"; }
+            } catch (IllegalArgumentException _e) { /* defaults need more history than svN — skip */ }
+            {
+                int Sidx = lb + (svN - lb) / 3;
+                if (Sidx > lb && Sidx < svN - 1) {
+                    MInteger begS = new MInteger();
+                    MInteger nbS = new MInteger();
+                    RetCode rcS;
+                    try { rcS = c2.PERCENTRANK_Impl(Sidx, svN - 1, fz_c, optInTimePeriod, begS, nbS, b0); }
+                    catch (RuntimeException _sve) { if (!(_sve instanceof TaLibFailure)) throw _sve; rcS = ((TaLibFailure) _sve).retCode(); }
+                    if (rcS == RetCode.Success && nbS.value > 0) {
+                        try {
+                            Core.PercentrankStream stA = c2.percentrankOpenInternal(java.util.Arrays.copyOf(fz_c, svN), Sidx, optInTimePeriod);
+                            rangeChecked = 1; rangeLegs++; rangeSites |= 8;
+                            if (stA.outRange().begIdx() != begS.value || stA.outRange().count() != nbS.value) rangeOk = false;
+                        } catch (IllegalArgumentException _e) { rangeOk = false; if (diag.isEmpty()) diag = ",\"anchoredOpenRejected\":1"; }
+                    }
+                }
+            }
+        }
+        return "{\"retCode\":0,\"beg\":" + beg.value + ",\"nb\":" + nb.value + ",\"legs\":" + legs + ",\"fill_checked\":" + fillChecked + ",\"fill_ok\":" + (fillOk ? 1 : 0) + ",\"ufill_checked\":" + ufillChecked + ",\"ufill_ok\":" + (ufillOk ? 1 : 0) + ",\"range_checked\":" + rangeChecked + ",\"range_legs\":" + rangeLegs + ",\"range_sites\":" + rangeSites + ",\"range_sites_all\":31,\"range_ok\":" + (rangeOk ? 1 : 0) + ",\"step_ok\":" + (allOk ? 1 : 0) + ",\"ok\":" + ((allOk && fillOk && ufillOk && rangeOk) ? 1 : 0) + ",\"peek_ok\":" + (peekAll ? 1 : 0) + ",\"peek_reps\":" + peekReps + ",\"peek_rep_ok\":" + (peekRepAll ? 1 : 0) + ",\"peek_rejects\":" + peekRejects + ",\"benign\":" + zsign[0] + diag + "}";
+    }
+
     static String sv_PLUS_DI(String json) {
         int svShape = jsonInt(json, "gen_shape");
         int svSeed = jsonInt(json, "gen_seed");
@@ -230781,6 +231777,7 @@ public class TaCodegenServe {
         case "TA_NATR": return sv_NATR(json);
         case "TA_NVI": return sv_NVI(json);
         case "TA_OBV": return sv_OBV(json);
+        case "TA_PERCENTRANK": return sv_PERCENTRANK(json);
         case "TA_PLUS_DI": return sv_PLUS_DI(json);
         case "TA_PLUS_DM": return sv_PLUS_DM(json);
         case "TA_PPO": return sv_PPO(json);

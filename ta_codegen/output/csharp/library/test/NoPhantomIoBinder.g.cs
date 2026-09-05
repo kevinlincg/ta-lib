@@ -931,6 +931,12 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Series(0), c.Price(1, PriceComponents.Volume), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["PERCENTRANK"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.PERCENTRANK_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["PLUS_DI"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.PLUS_DI_Impl(

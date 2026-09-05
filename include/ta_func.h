@@ -10823,6 +10823,84 @@ TA_LIB_API TA_RetCode TA_OBV_Value( const TA_OBV_Stream *stream, double *outReal
 TA_LIB_API TA_RetCode TA_OBV_Clone( const TA_OBV_Stream *stream, TA_OBV_Stream **clone );
 
 /*
+ * TA_PERCENTRANK - Percent Rank
+ * 
+ * Input  = double
+ * Output = double
+ * 
+ * Optional Parameters
+ * -------------------
+ * optInTimePeriod:(From 2 to 100000)
+ *    Time period
+ * 
+ * 
+ */
+TA_LIB_API TA_RetCode TA_PERCENTRANK( int    startIdx,
+                                      int    endIdx,
+                                                 const double inReal[],
+                                                 int           optInTimePeriod, /* From 2 to 100000 */
+                                                 int          *outBegIdx,
+                                                 int          *outNBElement,
+                                                 double        outReal[] );
+
+TA_LIB_API TA_RetCode TA_S_PERCENTRANK( int    startIdx,
+                                        int    endIdx,
+                                                   const float  inReal[],
+                                                   int           optInTimePeriod, /* From 2 to 100000 */
+                                                   int          *outBegIdx,
+                                                   int          *outNBElement,
+                                                   double        outReal[] );
+
+TA_LIB_API int TA_PERCENTRANK_Lookback( int           optInTimePeriod );  /* From 2 to 100000 */
+
+
+
+/*
+ * Streaming API for TA_PERCENTRANK — incremental per-bar evaluation.
+ * See docs/streaming-api-design.md.
+ */
+typedef struct TA_PERCENTRANK_Stream TA_PERCENTRANK_Stream;
+
+TA_LIB_API TA_RetCode TA_PERCENTRANK_Open( TA_PERCENTRANK_Stream **stream, const double inReal[], int historyLen, int optInTimePeriod, double *outReal );
+
+TA_LIB_API TA_RetCode TA_PERCENTRANK_Update( TA_PERCENTRANK_Stream *stream, double inReal, double *outReal );
+
+TA_LIB_API TA_RetCode TA_PERCENTRANK_Peek( const TA_PERCENTRANK_Stream *stream, double inReal, double *outReal );
+
+TA_LIB_API TA_RetCode TA_PERCENTRANK_Close( TA_PERCENTRANK_Stream *stream );
+
+/*
+ * OpenAndFill: like Open, but a single pass ALSO fills the caller's arrays
+ * with the whole warm-up history — bit-identical to TA_PERCENTRANK( 0, historyLen-1,
+ * ... ).
+ */
+TA_LIB_API TA_RetCode TA_PERCENTRANK_OpenAndFill( TA_PERCENTRANK_Stream **stream, const double inReal[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] );
+
+/*
+ * UpdateAndFill: commit barCount closed bars and write the barCount values,
+ * in one call — barCount back-to-back TA_PERCENTRANK_Update calls, including the
+ * per-bar rejection. A rejected bar k leaves the bars before it committed and
+ * written, itself uncommitted and its output slot untouched; TA_StreamOutRange
+ * then reports k+1, the rejected bar being the last one counted. Outputs must
+ * not alias the inputs or each other.
+ */
+TA_LIB_API TA_RetCode TA_PERCENTRANK_UpdateAndFill( TA_PERCENTRANK_Stream *stream, const double inReal[], int barCount, double outReal[] );
+
+/*
+ * Value: the value(s) at the last bar the stream counted — the bar
+ * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * every accepted Update and UpdateAndFill, left alone by Peek.
+ */
+TA_LIB_API TA_RetCode TA_PERCENTRANK_Value( const TA_PERCENTRANK_Stream *stream, double *outReal );
+
+/*
+ * Clone: fork the stream — an independent stream at the same bar, owning its
+ * own copy of everything the original owns. Both must be closed. The fork
+ * carries the value and the range verbatim.
+ */
+TA_LIB_API TA_RetCode TA_PERCENTRANK_Clone( const TA_PERCENTRANK_Stream *stream, TA_PERCENTRANK_Stream **clone );
+
+/*
  * TA_PLUS_DI - Plus Directional Indicator
  * 
  * Input  = High, Low, Close

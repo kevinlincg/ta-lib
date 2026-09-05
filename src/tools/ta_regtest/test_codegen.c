@@ -1909,6 +1909,8 @@ static TA_RangeStability stability_class(const TA_FuncInfo *funcInfo)
         "AVGDEV",
         /* fresh sliding window, no accumulator */
         "IMI",
+        /* integer count of strict comparisons, scaled once (no FP accumulation) */
+        "PERCENTRANK",
         /* NOTE: LINEARREG / LINEARREG_ANGLE / LINEARREG_INTERCEPT / LINEARREG_SLOPE
          * / TSF moved OUT of EXACT to the EPSILON default (perf #103): they now
          * carry SumY/SumXY in an O(1) sliding recurrence instead of re-summing the

@@ -5843,6 +5843,45 @@ static TA_RetCode TA_OBV_VFrameS( int startIdx, int endIdx,
 static const TA_VInputKind TA_VIn_OBV[] = { TA_VIN_REAL, TA_VIN_VOLUME };
 static const int TA_VOutIsInt_OBV[] = { 0 };
 
+static TA_RetCode TA_PERCENTRANK_VFrameD( int startIdx, int endIdx,
+                  const double *const in[], const double optIn[],
+                  int *outBegIdx, int *outNBElement,
+                  double *const outReal[], int *const outInteger[] )
+{
+   (void)outInteger;
+   return TA_PERCENTRANK(
+               startIdx,
+               endIdx,
+               in[0] /* inReal */,
+               (int)optIn[0] /* optInTimePeriod */,
+               outBegIdx,
+               outNBElement,
+               outReal[0] /* outReal */
+               );
+}
+static TA_RetCode TA_PERCENTRANK_VFrameS( int startIdx, int endIdx,
+                  const float *const in[], const double optIn[],
+                  int *outBegIdx, int *outNBElement,
+                  double *const outReal[], int *const outInteger[] )
+{
+   (void)outInteger;
+   return TA_S_PERCENTRANK(
+               startIdx,
+               endIdx,
+               in[0] /* inReal */,
+               (int)optIn[0] /* optInTimePeriod */,
+               outBegIdx,
+               outNBElement,
+               outReal[0] /* outReal */
+               );
+}
+
+static const TA_VInputKind TA_VIn_PERCENTRANK[] = { TA_VIN_REAL };
+static const int TA_VOutIsInt_PERCENTRANK[] = { 0 };
+static const TA_VOptSpec TA_VOpt_PERCENTRANK[] = {
+   { "optInTimePeriod", TA_VOPT_INT, 2.0, 100000.0, 100.0 },
+};
+
 static TA_RetCode TA_PLUS_DI_VFrameD( int startIdx, int endIdx,
                   const double *const in[], const double optIn[],
                   int *outBegIdx, int *outNBElement,
@@ -8001,6 +8040,8 @@ static const TA_VariantEntry TA_VariantTable[] = {
      2, TA_VIn_NVI, 0, NULL, 1, TA_VOutIsInt_NVI, 0 },
    { "OBV", TA_OBV_VFrameD, TA_OBV_VFrameS,
      2, TA_VIn_OBV, 0, NULL, 1, TA_VOutIsInt_OBV, 0 },
+   { "PERCENTRANK", TA_PERCENTRANK_VFrameD, TA_PERCENTRANK_VFrameS,
+     1, TA_VIn_PERCENTRANK, 1, TA_VOpt_PERCENTRANK, 1, TA_VOutIsInt_PERCENTRANK, 0 },
    { "PLUS_DI", TA_PLUS_DI_VFrameD, TA_PLUS_DI_VFrameS,
      3, TA_VIn_PLUS_DI, 1, TA_VOpt_PLUS_DI, 1, TA_VOutIsInt_PLUS_DI, 0 },
    { "PLUS_DM", TA_PLUS_DM_VFrameD, TA_PLUS_DM_VFrameS,
@@ -8093,6 +8134,6 @@ static const TA_VariantEntry TA_VariantTable[] = {
      1, TA_VIn_ZLEMA, 1, TA_VOpt_ZLEMA, 1, TA_VOutIsInt_ZLEMA, 0 },
 };
 
-#define TA_VARIANT_TABLE_SIZE 183
+#define TA_VARIANT_TABLE_SIZE 184
 
 #endif /* TA_VARIANT_FRAME_H */

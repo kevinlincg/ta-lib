@@ -38,6 +38,54 @@
 #include "ta_abstract.h"
 #include "ta_def_ui.h"
 
+/* PERCENTRANK BEGIN */
+static const TA_IntegerRange TA_DEF_PERCENTRANK_TimePeriod =
+{
+   2,
+   100000,
+   2,
+   200,
+   1
+};
+
+static const TA_OptInputParameterInfo TA_DEF_UI_D_PERCENTRANK_TimePeriod =
+{
+   TA_OptInput_IntegerRange,
+   "optInTimePeriod",
+   0,
+
+   "Time Period",
+   (const void *)&TA_DEF_PERCENTRANK_TimePeriod,
+   100,
+   "Time period",
+
+   NULL
+};
+
+static const TA_InputParameterInfo    *TA_PERCENTRANK_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Real,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_PERCENTRANK_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_PERCENTRANK_OptInputs[] =
+{ &TA_DEF_UI_D_PERCENTRANK_TimePeriod,
+  NULL
+};
+
+DEF_FUNCTION( PERCENTRANK,
+              TA_GroupId_Statistic,
+              "Percent Rank",
+              TA_FUNC_FLG_STREAM
+             );
+/* PERCENTRANK END */
+
 /* PLUS_DI BEGIN */
 static const TA_InputParameterInfo    *TA_PLUS_DI_Inputs[]    =
 {
@@ -199,6 +247,7 @@ DEF_FUNCTION( PVO,
  ****************************************************************************/
 const TA_FuncDef *TA_DEF_TableP[] =
 {
+   ADD_TO_TABLE(PERCENTRANK),
    ADD_TO_TABLE(PLUS_DI),
    ADD_TO_TABLE(PLUS_DM),
    ADD_TO_TABLE(PPO),

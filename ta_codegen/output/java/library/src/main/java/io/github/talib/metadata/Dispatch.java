@@ -470,6 +470,9 @@ final class Dispatch {
          case "OBV":
             return core.OBV(
                startIdx, endIdx, h.realInput(0), h.price(1, 4), h.realOutput(0));
+         case "PERCENTRANK":
+            return core.PERCENTRANK(
+               startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
          case "PLUS_DI":
             return core.PLUS_DI(
                startIdx, endIdx, h.price(0, 1), h.price(0, 2), h.price(0, 3), h.intOpt(0), h.realOutput(0));
@@ -892,6 +895,8 @@ final class Dispatch {
             return core.NVI_Lookback();
          case "OBV":
             return core.OBV_Lookback();
+         case "PERCENTRANK":
+            return core.PERCENTRANK_Lookback(h.intOpt(0));
          case "PLUS_DI":
             return core.PLUS_DI_Lookback(h.intOpt(0));
          case "PLUS_DM":

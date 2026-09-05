@@ -124,16 +124,22 @@ static ErrorNumber callWithDefaults( const char *funcName,
 									 const char *datasetName );
 
 /**** Local variables definitions.     ****/
-static double inputNegData[100];
-static double inputZeroData[100];
-static double inputRandFltEpsilon[100];
-static double inputRandDblEpsilon[100];
+/* The four short datasets must be LONGER than the largest lookback any function
+ * reaches at its declared defaults, or `callWithDefaults` produces nothing and
+ * the outBegIdx==lookback check below compares two zeros. PERCENTRANK's default
+ * period of 100 is the current binder; everything else is at or under 34. */
+#define ABSTRACT_SHORT_NB 160
+
+static double inputNegData[ABSTRACT_SHORT_NB];
+static double inputZeroData[ABSTRACT_SHORT_NB];
+static double inputRandFltEpsilon[ABSTRACT_SHORT_NB];
+static double inputRandDblEpsilon[ABSTRACT_SHORT_NB];
 static double inputRandomData[2000];
 
-static int    inputNegData_int[100];
-static int    inputZeroData_int[100];
-static int    inputRandFltEpsilon_int[100];
-static int    inputRandDblEpsilon_int[100];
+static int    inputNegData_int[ABSTRACT_SHORT_NB];
+static int    inputZeroData_int[ABSTRACT_SHORT_NB];
+static int    inputRandFltEpsilon_int[ABSTRACT_SHORT_NB];
+static int    inputRandDblEpsilon_int[ABSTRACT_SHORT_NB];
 static int    inputRandomData_int[2000];
 
 static double output[10][2000];
@@ -2482,6 +2488,11 @@ static ErrorNumber callWithDefaults( const char *funcName, const double *input, 
    if( outBegIdx != lookback )
    {
       printf( "TA_GetLookback() != outBegIdx [%d != %d]\n", lookback, outBegIdx );
+      if( lookback >= size )
+         printf( "  (the dataset is %d bars and this function's DEFAULT lookback is %d, "
+                 "so the call produced nothing and zeroed both out-params. Raise "
+                 "ABSTRACT_SHORT_NB above the lookback -- do not relax this check.)\n",
+                 size, lookback );
       TA_ParamHolderFree( paramHolder );
       return TA_ABS_TST_FAIL_CALLFUNC_3;
    }

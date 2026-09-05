@@ -1289,6 +1289,15 @@ TA_RetCode TA_OBV_FramePP( const TA_ParamHolderPriv *params,
 unsigned int TA_OBV_FramePPLB( const TA_ParamHolderPriv *params )
 ;
 
+TA_RetCode TA_PERCENTRANK_FramePP( const TA_ParamHolderPriv *params,
+                           int            startIdx,
+                           int            endIdx,
+                           int           *outBegIdx,
+                           int           *outNBElement )
+;
+unsigned int TA_PERCENTRANK_FramePPLB( const TA_ParamHolderPriv *params )
+;
+
 TA_RetCode TA_PLUS_DI_FramePP( const TA_ParamHolderPriv *params,
                            int            startIdx,
                            int            endIdx,

@@ -434,6 +434,7 @@ set(LIB_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/ta_func/ta_NATR.c"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/ta_func/ta_NVI.c"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/ta_func/ta_OBV.c"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/ta_func/ta_PERCENTRANK.c"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/ta_func/ta_PLUS_DI.c"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/ta_func/ta_PLUS_DM.c"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/ta_func/ta_PPO.c"
@@ -673,6 +674,7 @@ if(_TA_BUILD_TOOLS)
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/tools/ta_regtest/ta_test_func/test_zlema.c"
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/tools/ta_regtest/ta_test_func/test_vhf.c"
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/tools/ta_regtest/ta_test_func/test_fosc.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/tools/ta_regtest/ta_test_func/test_percentrank.c"
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/tools/ta_regtest/ta_test_func/test_variants.c"
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/tools/ta_regtest/ta_test_legacy.c"
 

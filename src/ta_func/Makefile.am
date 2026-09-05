@@ -141,6 +141,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_NATR.c \
 	ta_NVI.c \
 	ta_OBV.c \
+	ta_PERCENTRANK.c \
 	ta_PLUS_DI.c \
 	ta_PLUS_DM.c \
 	ta_PPO.c \

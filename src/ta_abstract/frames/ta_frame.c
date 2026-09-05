@@ -3112,6 +3112,26 @@ unsigned int TA_OBV_FramePPLB( const TA_ParamHolderPriv *params )
    (void)params;
    return TA_OBV_Lookback( );
 }
+TA_RetCode TA_PERCENTRANK_FramePP( const TA_ParamHolderPriv *params,
+                           int            startIdx,
+                           int            endIdx,
+                           int           *outBegIdx,
+                           int           *outNBElement )
+{
+   return TA_PERCENTRANK(
+               startIdx,
+               endIdx,
+               params->in[0].data.inReal, /* inReal */
+               params->optIn[0].data.optInInteger, /* optInTimePeriod*/
+               outBegIdx, 
+               outNBElement, 
+               params->out[0].data.outReal /*  outReal */
+               );
+}
+unsigned int TA_PERCENTRANK_FramePPLB( const TA_ParamHolderPriv *params )
+{
+   return TA_PERCENTRANK_Lookback(params->optIn[0].data.optInInteger /* optInTimePeriod*/ );
+}
 TA_RetCode TA_PLUS_DI_FramePP( const TA_ParamHolderPriv *params,
                            int            startIdx,
                            int            endIdx,
