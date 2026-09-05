@@ -270,6 +270,8 @@ pub enum FuncId {
     KAMA,
     /// Keltner Channels — [`Core::KC`](crate::Core::KC).
     KC,
+    /// KDJ Stochastic — [`Core::KDJ`](crate::Core::KDJ).
+    KDJ,
     /// Linear Regression — [`Core::LINEARREG`](crate::Core::LINEARREG).
     LINEARREG,
     /// Linear Regression Angle — [`Core::LINEARREG_ANGLE`](crate::Core::LINEARREG_ANGLE).
@@ -408,6 +410,8 @@ pub enum FuncId {
     TRIX,
     /// Time Series Forecast — [`Core::TSF`](crate::Core::TSF).
     TSF,
+    /// True Strength Index — [`Core::TSI`](crate::Core::TSI).
+    TSI,
     /// Typical Price — [`Core::TYPPRICE`](crate::Core::TYPPRICE).
     TYPPRICE,
     /// Ultimate Oscillator — [`Core::ULTOSC`](crate::Core::ULTOSC).
@@ -434,7 +438,7 @@ pub enum FuncId {
 
 impl FuncId {
     /// Number of functions in the registry.
-    pub const COUNT: usize = 194;
+    pub const COUNT: usize = 196;
     /// Metadata for this function (O(1) index into the const table).
     #[inline] pub fn info(self) -> &'static FuncInfo { &FUNC_TABLE[self as usize] }
     /// Upper-case TA name, e.g. "RSI".
@@ -759,7 +763,7 @@ impl FuncInfo {
 
 /// Backing storage for [`FUNCS`], indexed by [`FuncId`]. Link-time const, in
 /// `.rodata`. Private, so its length is nobody's business but this module's.
-static FUNC_TABLE: [FuncInfo; 194] = [
+static FUNC_TABLE: [FuncInfo; 196] = [
     FuncInfo {
         id: FuncId::AC,
         name: "AC",
@@ -2015,6 +2019,17 @@ static FUNC_TABLE: [FuncInfo; 194] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::KDJ,
+        name: "KDJ",
+        group: Group::MomentumIndicators,
+        hint: "KDJ Stochastic",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHLC", kind: InputType::Price, flags: InputFlags(0x0000000e) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 9, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_Period", display_name: "Slow-K Period", hint: "Smoothing for making the Slow-K line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_MAType", display_name: "Slow-K MA", hint: "Type of Moving Average for Slow-K", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 13 } }, OptInputInfo { param_name: "optInSlowD_Period", display_name: "Slow-D Period", hint: "Smoothing for making the Slow-D line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowD_MAType", display_name: "Slow-D MA", hint: "Type of Moving Average for Slow-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 13 } }, ],
+        outputs: &[OutputInfo { param_name: "outK", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outD", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outJ", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::LINEARREG,
         name: "LINEARREG",
         group: Group::StatisticFunctions,
@@ -2774,6 +2789,17 @@ static FUNC_TABLE: [FuncInfo; 194] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::TSI,
+        name: "TSI",
+        group: Group::MomentumIndicators,
+        hint: "True Strength Index",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFirstPeriod", display_name: "First Smoothing Period", hint: "Period of the first smoothing, applied to the raw momentum", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 25, suggested: (2, 100, 1) } }, OptInputInfo { param_name: "optInSecondPeriod", display_name: "Second Smoothing Period", hint: "Period of the second smoothing, applied to the first", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 13, suggested: (2, 50, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::TYPPRICE,
         name: "TYPPRICE",
         group: Group::PriceTransform,
@@ -3026,6 +3052,7 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "IMI" => FuncId::IMI,
         "KAMA" => FuncId::KAMA,
         "KC" => FuncId::KC,
+        "KDJ" => FuncId::KDJ,
         "LINEARREG" => FuncId::LINEARREG,
         "LINEARREG_ANGLE" => FuncId::LINEARREG_ANGLE,
         "LINEARREG_INTERCEPT" => FuncId::LINEARREG_INTERCEPT,
@@ -3095,6 +3122,7 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "TRIMA" => FuncId::TRIMA,
         "TRIX" => FuncId::TRIX,
         "TSF" => FuncId::TSF,
+        "TSI" => FuncId::TSI,
         "TYPPRICE" => FuncId::TYPPRICE,
         "ULTOSC" => FuncId::ULTOSC,
         "VAR" => FuncId::VAR,
@@ -3477,6 +3505,7 @@ impl<'a> ParamHolder<'a> {
             FuncId::IMI => self.core.IMI_Lookback(self.int_opt[0]),
             FuncId::KAMA => self.core.KAMA_Lookback(self.int_opt[0]),
             FuncId::KC => self.core.KC_Lookback(self.int_opt[0], self.int_opt[1], self.real_opt[2]),
+            FuncId::KDJ => self.core.KDJ_Lookback(self.int_opt[0], self.int_opt[1], MAType::try_from(self.int_opt[2])?, self.int_opt[3], MAType::try_from(self.int_opt[4])?),
             FuncId::LINEARREG => self.core.LINEARREG_Lookback(self.int_opt[0]),
             FuncId::LINEARREG_ANGLE => self.core.LINEARREG_ANGLE_Lookback(self.int_opt[0]),
             FuncId::LINEARREG_INTERCEPT => self.core.LINEARREG_INTERCEPT_Lookback(self.int_opt[0]),
@@ -3546,6 +3575,7 @@ impl<'a> ParamHolder<'a> {
             FuncId::TRIMA => self.core.TRIMA_Lookback(self.int_opt[0]),
             FuncId::TRIX => self.core.TRIX_Lookback(self.int_opt[0]),
             FuncId::TSF => self.core.TSF_Lookback(self.int_opt[0]),
+            FuncId::TSI => self.core.TSI_Lookback(self.int_opt[0], self.int_opt[1]),
             FuncId::TYPPRICE => self.core.TYPPRICE_Lookback(),
             FuncId::ULTOSC => self.core.ULTOSC_Lookback(self.int_opt[0], self.int_opt[1], self.int_opt[2]),
             FuncId::VAR => self.core.VAR_Lookback(self.int_opt[0], self.real_opt[1]),
@@ -4992,6 +5022,25 @@ impl<'a> ParamHolder<'a> {
                     Err(e) => e,
                 }
             }
+            FuncId::KDJ => {
+                let e2 = MAType::try_from(self.int_opt[2])?;
+                let e4 = MAType::try_from(self.int_opt[4])?;
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let i0_3 = self.price[0][3].ok_or(RetCode::BadParam)?;
+                if self.real_out[0].is_none() || self.real_out[1].is_none() || self.real_out[2].is_none() { return Err(RetCode::BadParam); }
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let mut o1 = self.real_out[1].take().ok_or(RetCode::BadParam)?;
+                let mut o2 = self.real_out[2].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.KDJ(start_idx, end_idx, i0_1, i0_2, i0_3, self.int_opt[0], self.int_opt[1], e2, self.int_opt[3], e4, &mut *o0, &mut *o1, &mut *o2);
+                self.real_out[0] = Some(o0);
+                self.real_out[1] = Some(o1);
+                self.real_out[2] = Some(o2);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
             FuncId::LINEARREG => {
                 let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
@@ -5762,6 +5811,16 @@ impl<'a> ParamHolder<'a> {
                 let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.TSF(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::TSI => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.TSI(start_idx, end_idx, i0, self.int_opt[0], self.int_opt[1], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }

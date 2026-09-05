@@ -117,6 +117,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_IMI.c \
 	ta_KAMA.c \
 	ta_KC.c \
+	ta_KDJ.c \
 	ta_LINEARREG.c \
 	ta_LINEARREG_ANGLE.c \
 	ta_LINEARREG_INTERCEPT.c \
@@ -186,6 +187,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_TRIMA.c \
 	ta_TRIX.c \
 	ta_TSF.c \
+	ta_TSI.c \
 	ta_TYPPRICE.c \
 	ta_ULTOSC.c \
 	ta_VAR.c \
