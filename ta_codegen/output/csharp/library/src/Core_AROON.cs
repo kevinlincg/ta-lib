@@ -575,8 +575,8 @@ public partial class Core
          if( !double.IsFinite(inHigh) || !double.IsFinite(inLow) ) throw Core.StreamFailure("AROON", "peek", RetCode.BadParam);
          AroonStream sp = this;
          double tmp = 0.0;
-         double cur_outAroonDown = sp.cur_outAroonDown;
-         double cur_outAroonUp = sp.cur_outAroonUp;
+         double cur_outAroonDown = 0.0;
+         double cur_outAroonUp = 0.0;
          double highest = sp.highest;
          int highestIdx = sp.highestIdx;
          int i = sp.i;
@@ -640,41 +640,6 @@ public partial class Core
          cur_outAroonUp = sp.factor * (sp.optInTimePeriod - (today - highestIdx));
          cur_outAroonDown = sp.factor * (sp.optInTimePeriod - (today - lowestIdx));
          return new AroonValue(cur_outAroonDown, cur_outAroonUp);
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inHigh">Closed bars for <c>inHigh</c>, oldest first.</param>
-      /// <param name="inLow">Closed bars for <c>inLow</c>, oldest first.</param>
-      /// <param name="outAroonDown">Receives one <c>outAroonDown</c> value per bar committed.</param>
-      /// <param name="outAroonUp">Receives one <c>outAroonUp</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, Span<double> outAroonDown, Span<double> outAroonUp )
-      {
-         int barCount = inHigh.Length;
-         if( inLow.Length != barCount || outAroonDown.Length < barCount || outAroonUp.Length < barCount || outAroonDown.Overlaps(inHigh) || outAroonDown.Overlaps(inLow) || outAroonUp.Overlaps(inHigh) || outAroonUp.Overlaps(inLow) || outAroonDown.Overlaps(outAroonUp) ) throw Core.StreamFailure("AROON", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inHigh[i]) || !double.IsFinite(inLow[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("AROON", "updateAndFill", RetCode.BadParam);
-            }
-            core.AroonStepImpl(this, inHigh[i], inLow[i]);
-            outAroonDown[i] = cur_outAroonDown;
-            outAroonUp[i] = cur_outAroonUp;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

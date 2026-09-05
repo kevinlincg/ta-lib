@@ -18,7 +18,7 @@ Each streamable function adds two constructors on `Core` and a handful of method
 | `stream.update(bar)` | once per **closed** bar | commit one bar, return the new value |
 | `stream.peek(bar)` | any time on the **forming** bar | evaluate a provisional bar **without** committing |
 
-Two more calls, `open_and_fill` and `update_and_fill`, write array output instead of a single value — see [Array-Fill Calls](#array-fill-calls) below.
+One more call, `open_and_fill`, writes array output instead of a single value — see [Array-Fill Open](#array-fill-open) below.
 
 Additional read-only [utility functions](#utility-calls) are available.
 
@@ -67,16 +67,13 @@ let (mut s, _) = core.cdldoji_open(&open, &high, &low, &close)?;
 let pattern: i32 = s.update(o, h, l, c)?;
 ```
 
-## Array-Fill Calls
+## Array-Fill Open
 
-`open` and `update` each write a single value. Two more calls write a full slice instead — the same shape the [batch method](/api/rust/) would produce — while still driving the stream:
+`open` and `update` each write a single value. One more call writes a full slice instead — the same shape the [batch method](/api/rust/) would produce — while still opening the stream:
 
 | Call | When | Does |
 |------|------|------|
 | `core.<name>_open_and_fill(..)` | once, instead of `open` | like `open`, but also fills the output for **every** history bar, returning `(stream, OutRange)` |
-| `stream.update_and_fill(bars, outs)` | instead of a loop of `update` | commit `n` closed bars and write the `n` values |
-
-**`open_and_fill`**
 
 ```rust
 let mut warmup = vec![0.0; history.len()];
@@ -88,26 +85,6 @@ let v = s.update(new_close)?;
 ```
 
 `open_and_fill` takes the [batch method](/api/rust/)'s optional parameters and one slice per output, and returns the range it wrote as the same `OutRange` the batch method returns, beside the live stream.
-
-**`update_and_fill`**
-
-```rust
-let mut out = vec![0.0; gap.len()];
-
-s.update_and_fill(&gap, &mut out)?;    // out[i] is the SMA at gap[i]
-```
-
-`update_and_fill` has no second return value for the range it wrote — call
-`out_range()` afterward (see [Utility Calls](#utility-calls)).
-
-`Err(RetCode::BadParam)` before anything is committed or counted if the input
-slices differ in length or an output is shorter than the bar count; a zero bar
-count is a successful no-op. An invalid bar (NaN or ±Inf) also returns
-`Err(RetCode::BadParam)`, exactly as `update` does, and stops the call there:
-the bars **before** it are committed with their values written, and the invalid
-bar is counted but neither committed nor written to its output slot.
-`s.out_range()` says where it stopped — its last bar is the rejected one, so it
-counts one more than the values written.
 
 ## Utility Calls
 

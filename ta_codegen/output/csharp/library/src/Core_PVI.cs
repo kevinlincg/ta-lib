@@ -435,7 +435,7 @@ public partial class Core
          double tempClose = 0.0;
          double tempVolume = 0.0;
          double tempPVI = 0.0;
-         double cur_outReal = sp.cur_outReal;
+         double cur_outReal = 0.0;
          double prevPVI = sp.prevPVI;
          tempClose = inClose;
          tempVolume = inVolume;
@@ -463,39 +463,6 @@ public partial class Core
          }
          cur_outReal = prevPVI;
          return cur_outReal;
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inClose">Closed bars for <c>inClose</c>, oldest first.</param>
-      /// <param name="inVolume">Closed bars for <c>inVolume</c>, oldest first.</param>
-      /// <param name="outReal">Receives one <c>outReal</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inClose, ReadOnlySpan<double> inVolume, Span<double> outReal )
-      {
-         int barCount = inClose.Length;
-         if( inVolume.Length != barCount || outReal.Length < barCount || outReal.Overlaps(inClose) || outReal.Overlaps(inVolume) ) throw Core.StreamFailure("PVI", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inClose[i]) || !double.IsFinite(inVolume[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("PVI", "updateAndFill", RetCode.BadParam);
-            }
-            core.PviStepImpl(this, inClose[i], inVolume[i]);
-            outReal[i] = cur_outReal;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

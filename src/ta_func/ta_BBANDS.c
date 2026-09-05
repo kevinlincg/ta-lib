@@ -1121,31 +1121,6 @@ TA_LIB_API TA_RetCode TA_BBANDS_Peek( const TA_BBANDS_Stream *stream, double inR
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_BBANDS_UpdateAndFill( TA_BBANDS_Stream *stream, const double inReal[], int barCount, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
-{
-   int i;
-   TA_RetCode retCode;
-
-   if( !stream || !inReal || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outRealUpperBand == (const void *)inReal || (const void *)outRealMiddleBand == (const void *)inReal || (const void *)outRealLowerBand == (const void *)inReal || (const void *)outRealUpperBand == (const void *)outRealMiddleBand || (const void *)outRealUpperBand == (const void *)outRealLowerBand || (const void *)outRealMiddleBand == (const void *)outRealLowerBand ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      retCode = TA_BBANDS_StepImpl( stream, inReal[i], &outRealUpperBand[i], &outRealMiddleBand[i], &outRealLowerBand[i] );
-      if( retCode != TA_SUCCESS ) return retCode;
-      stream->cur_outRealUpperBand = outRealUpperBand[i];
-      stream->cur_outRealMiddleBand = outRealMiddleBand[i];
-      stream->cur_outRealLowerBand = outRealLowerBand[i];
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_BBANDS_Close( TA_BBANDS_Stream *stream )
 {
    if( !stream ) return TA_SUCCESS;

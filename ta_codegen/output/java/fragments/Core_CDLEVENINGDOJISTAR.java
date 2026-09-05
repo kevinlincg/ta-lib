@@ -534,39 +534,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inOpen.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inOpen[], double inHigh[], double inLow[], double inClose[], int outInteger[] ) {
-         requireArgument("CDLEVENINGDOJISTAR updateAndFill", "inOpen", inOpen);
-         requireArgument("CDLEVENINGDOJISTAR updateAndFill", "inHigh", inHigh);
-         requireArgument("CDLEVENINGDOJISTAR updateAndFill", "inLow", inLow);
-         requireArgument("CDLEVENINGDOJISTAR updateAndFill", "inClose", inClose);
-         requireArgument("CDLEVENINGDOJISTAR updateAndFill", "outInteger", outInteger);
-         final int barCount = inOpen.length;
-         if( inHigh.length != barCount || inLow.length != barCount || inClose.length != barCount || outInteger.length < barCount || (Object)outInteger == (Object)inOpen || (Object)outInteger == (Object)inHigh || (Object)outInteger == (Object)inLow || (Object)outInteger == (Object)inClose )
-            throw new TaLibArgumentException("CDLEVENINGDOJISTAR updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inOpen[i]) || !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("CDLEVENINGDOJISTAR updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.cdleveningdojistarStepImpl(this, inOpen[i], inHigh[i], inLow[i], inClose[i]);
-            outInteger[i] = this.cur_outInteger;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would return — the same
        * transition, with every store it would make carried in a local instead.
@@ -579,7 +546,7 @@
          if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLEVENINGDOJISTAR peek: BadParam", RetCode.BadParam);
          CdleveningdojistarStream sp = this;
-         int cur_outInteger = sp.cur_outInteger;
+         int cur_outInteger = 0;
          int BodyDoji_rangeType = sp.cs_BodyDoji_rangeType;
          int BodyDoji_avgPeriod = sp.cs_BodyDoji_avgPeriod;
          double BodyDoji_factor = sp.cs_BodyDoji_factor;

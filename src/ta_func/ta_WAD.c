@@ -58,9 +58,9 @@
 TA_LIB_API int TA_WAD_Lookback( void )
 {
    /* The first bar has no previous close, so it accumulates nothing and the
-    * line starts at 0.0 -- the same convention as the other four cumulative
-    * lines in the tree: OBV, AD, NVI and PVI all return 0 here and emit a
-    * seed value at startIdx. Tulip's ti_wad_start() returns 1 instead, so its
+    * line starts at 0.0 -- the same convention as the other cumulative
+    * lines in the tree: OBV, AD, NVI, PVI and PVT all return 0 here and emit
+    * a seed value at startIdx. Tulip's ti_wad_start() returns 1 instead, so its
     * series is this one without the leading zero.
     */
    return 0;
@@ -466,26 +466,6 @@ TA_LIB_API TA_RetCode TA_WAD_Peek( const TA_WAD_Stream *stream, double inHigh, d
       sum += close - trueExtreme;
    }
    *outReal= sum;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_WAD_UpdateAndFill( TA_WAD_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow || (const void *)outReal == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_WAD_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

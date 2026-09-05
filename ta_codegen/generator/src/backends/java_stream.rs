@@ -817,10 +817,9 @@ fn value_link(func: &FuncDef) -> String {
     }
 }
 
-/// The absent-sink rejection, first in the method body. `updateAndFill` already
-/// guards its output arrays this way; without it here a null sink reaches
-/// `update` AFTER the step has committed the bar, so the caller gets a raw
-/// NullPointerException and a handle that silently advanced.
+/// The absent-sink rejection, first in the method body. Without it a null sink
+/// reaches `update` AFTER the step has committed the bar, so the caller gets a
+/// raw NullPointerException and a handle that silently advanced.
 fn require_sink(func: &FuncDef, indent: &str, verb: &str) -> String {
     if !has_value_class(func) {
         return String::new();
@@ -889,7 +888,6 @@ fn finite_bar_check(func: &FuncDef, indent: &str, what: &str, advance: bool) -> 
 
 fn emit_update_peek_value_copy(o: &mut String, func: &FuncDef, frame: Option<&str>) {
     emit_update_method(o, func);
-    emit_update_and_fill_method(o, func);
     emit_peek_method(o, func, frame);
     emit_value_method(o, func);
     emit_copy_method(o, func);
@@ -951,143 +949,6 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
     } else {
         let _ = writeln!(o, "         return {};", fresh_value_expr(func, "this"));
     }
-    let _ = writeln!(o, "      }}");
-}
-
-// --- updateAndFill ---------------------------------------------------------------
-// One emitter for every tier: each owns a `<base>StepImpl` with the same
-// surface, so the n-bar filler is that step in a loop (issue #246).
-/// `updateAndFill`'s javadoc — hoisted so the emitter itself stays readable.
-fn update_and_fill_doc(func: &FuncDef, count_src: &str) -> String {
-    let mut o = String::new();
-    // Rule U6a reads the same as S6a, and a caller of this tier needs telling in
-    // the same place a caller of the opener is told.
-    let declinable = {
-        let names = super::common::nullable_output_list(func);
-        if names.is_empty() {
-            String::new()
-        } else {
-            let list = names
-                .iter()
-                .map(|n| format!("{{@code {n}}}"))
-                .collect::<Vec<_>>()
-                .join(", ");
-            format!(
-                "\x20      * <p>{list} may be declined with {{@code null}}, per call and\n\
-                 \x20      * independently of what the opener was given: the value is still\n\
-                 \x20      * computed — {} reports it — and nothing is written out.\n",
-                value_link(func)
-            )
-        }
-    };
-    let _ = writeln!(
-        &mut o,
-        "\n      /**\n\
-         \x20      * Commit {{@code n}} closed bars and write their {{@code n}} values, in one\n\
-         \x20      * call — exactly {{@code n}} back-to-back {{@code update}} calls, with one\n\
-         \x20      * set of argument checks instead of {{@code n}}. {{@code n}} is\n\
-         \x20      * {{@code {count_src}}}; the outputs must hold at least that many, and must\n\
-         \x20      * not be the same array as an input or as each other.\n\
-         {declinable}\
-         \x20      * <p>{{@link #outRange()}} counts what this call took in, which is what makes a\n\
-         \x20      * rejection readable: a non-finite bar {{@code k}} throws\n\
-         \x20      * {{@link IllegalArgumentException}} exactly as {{@code update}} would, with\n\
-         \x20      * the bars before {{@code k}} committed and written, bar {{@code k}} and\n\
-         \x20      * everything after it not, and the count advanced by {{@code k + 1}} —\n\
-         \x20      * the committed bars plus the rejected one.\n\
-         \x20      */"
-    );
-    o
-}
-
-fn emit_update_and_fill_method(o: &mut String, func: &FuncDef) {
-    let base = base_name(func);
-    let jbase = method_base(func);
-    let inputs = streaming::input_array_names(func);
-    let mut sig = String::new();
-    for a in &inputs {
-        let _ = write!(sig, "double {a}[], ");
-    }
-    for out in &func.outputs {
-        let _ = write!(sig, "{} {}[], ", out_java_type(func, &out.name), out.name);
-    }
-    let sig = sig.trim_end_matches(", ");
-    let count_src = inputs
-        .first()
-        .map_or_else(|| "0".to_string(), |a| format!("{a}.length"));
-    let reject = format!(
-        "throw new TaLibArgumentException(\"{base} updateAndFill: BadParam\", RetCode.BadParam);"
-    );
-    o.push_str(&update_and_fill_doc(func, &count_src));
-    let _ = writeln!(o, "      public void updateAndFill( {sig} ) {{");
-    // Rule U2, ahead of every length: a required array that is absent has no
-    // length to read, so without this the tier answered a raw
-    // `NullPointerException` naming neither the function nor the argument —
-    // where the contract is `RetCode.BadParam`, which in Java is a
-    // `TaLibArgumentException` that names both. It is `requireArgument`, the
-    // same helper the openers use, so the two tiers reject alike.
-    let nullable = super::common::nullable_output_names(func);
-    for name in inputs
-        .iter()
-        .cloned()
-        .chain(func.outputs.iter().map(|o| o.name.clone()).filter(|n| !nullable.contains(n)))
-    {
-        let _ = writeln!(
-            o,
-            "         requireArgument(\"{base} updateAndFill\", \"{name}\", {name});"
-        );
-    }
-    let _ = writeln!(o, "         final int barCount = {count_src};");
-    let mut checks: Vec<String> = inputs
-        .iter()
-        .skip(1)
-        .map(|a| format!("{a}.length != barCount"))
-        .collect();
-    // A `nullable` output may be declined here exactly as at the opener (rule
-    // U6a), per call: bounded only where it was supplied, and its store guarded.
-    // Nothing recorded at `Open` constrains what this call presents.
-    for out in &func.outputs {
-        if nullable.contains(&out.name) {
-            checks.push(format!("({0} != null && {0}.length < barCount)", out.name));
-        } else {
-            checks.push(format!("{}.length < barCount", out.name));
-        }
-    }
-    if let Some(alias) = alias_condition(func) {
-        checks.push(alias);
-    }
-    if !checks.is_empty() {
-        let _ = writeln!(o, "         if( {} )", checks.join(" || "));
-        let _ = writeln!(o, "            {reject}");
-    }
-    // `value(out)` must name the last COMMITTED bar on every exit, the throwing
-    // ones included. It reads `cur_*`, and a composed step writes those as its
-    // LAST statements — so a sub rejecting a non-finite intermediate mid-bar
-    // (the documented composed hole) leaves them holding bar `i-1`, with
-    // nothing here to publish or keep fresh.
-    let pad = "         ";
-    let _ = writeln!(o, "{pad}for( int i = 0; i < barCount; i++ ) {{");
-    let idx_bars: Vec<String> = inputs.iter().map(|a| format!("{a}[i]")).collect();
-    if !inputs.is_empty() {
-        let conds: Vec<String> = inputs
-            .iter()
-            .map(|b| format!("!Double.isFinite({b}[i])"))
-            .collect();
-        // Rule U3 per bar: the rejected bar is counted, so `outRange()` ends on
-        // the offending bar. Output slot `i` is deliberately left unwritten.
-        let _ = writeln!(o, "{pad}   if( {} ) {{", conds.join(" || "));
-        let _ = writeln!(o, "{pad}      {}", advance_out_range());
-        let _ = writeln!(o, "{pad}      {reject}");
-        let _ = writeln!(o, "{pad}   }}");
-    }
-    let _ = writeln!(o, "{pad}   core.{jbase}StepImpl(this, {});", idx_bars.join(", "));
-    for out in &func.outputs {
-        let name = &out.name;
-        let guard = if nullable.contains(name) { format!("if( {name} != null ) ") } else { String::new() };
-        let _ = writeln!(o, "{pad}   {guard}{name}[i] = this.cur_{name};");
-    }
-    let _ = writeln!(o, "{pad}   {}", advance_out_range());
-    let _ = writeln!(o, "{pad}}}");
     let _ = writeln!(o, "      }}");
 }
 
@@ -1507,6 +1368,14 @@ fn peek_frame_arm_named(
         let (jty, default) = field_type_and_default(ty);
         let _ = writeln!(out, "{pad}{jty} {name} = {default};");
     }
+    // A peek commits nothing, so the previous bar's output is never an input
+    // to the transition (issue #343) and seeding it is a dead field load.
+    let dead_seeds: BTreeSet<String> = func
+        .outputs
+        .iter()
+        .map(|o| format!("cur_{}", o.name))
+        .filter(|n| locals.contains(n) && streaming::peek_seed_is_dead(&body_ir, n))
+        .collect();
     for name in &locals {
         if predeclared.contains(name) {
             continue;
@@ -1514,7 +1383,9 @@ fn peek_frame_arm_named(
         let jty = types.get(name.as_str()).copied()?;
         // A Java array field is a reference: taking it plain would write the
         // handle through it.
-        let init = if jty.ends_with("[]") {
+        let init = if dead_seeds.contains(name) {
+            if jty == "int" { "0".to_string() } else { "0.0".to_string() }
+        } else if jty.ends_with("[]") {
             format!("sp.{name}.clone()")
         } else {
             format!("sp.{name}")

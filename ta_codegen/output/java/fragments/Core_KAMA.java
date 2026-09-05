@@ -174,8 +174,17 @@
        * fastest adaptation, for every window of an instrument quoted below it
        * (issue #253). A genuinely flat window is now recognized by the exact bar
        * count above instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+       * beside it compares against the SIGNED numerator, so it is false whenever
+       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+       * add/subtract of fabs terms, so an addend absorbed on the way in and
+       * subtracted later at full precision drives it to exactly 0.0 on a window
+       * that is not flat; without this clause that bar divides by zero and the
+       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+       * carried until #350).
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
@@ -223,7 +232,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -271,7 +280,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -371,7 +380,7 @@
       tempReal2 = (double)inReal[trailingIdx++];
       periodROC = tempReal - tempReal2;
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
@@ -395,7 +404,7 @@
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -423,7 +432,7 @@
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -666,36 +675,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inReal[], double outReal[] ) {
-         requireArgument("KAMA updateAndFill", "inReal", inReal);
-         requireArgument("KAMA updateAndFill", "outReal", outReal);
-         final int barCount = inReal.length;
-         if( outReal.length < barCount || (Object)outReal == (Object)inReal )
-            throw new TaLibArgumentException("KAMA updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("KAMA updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.kamaStepImpl(this, inReal[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would return — the same
        * transition, with every store it would make carried in a local instead.
@@ -711,7 +690,7 @@
          double tempReal = 0.0;
          double tempReal2 = 0.0;
          double periodROC = 0.0;
-         double cur_outReal = sp.cur_outReal;
+         double cur_outReal = 0.0;
          int nullRun = sp.nullRun;
          double prevKAMA = sp.prevKAMA;
          double sumROC1 = sp.sumROC1;
@@ -755,7 +734,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -838,7 +817,7 @@
        */
       sp.trailingValue = tempReal2;
       /* Calculate the efficiency ratio */
-      if( sp.sumROC1 <= periodROC ) {
+      if( sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sp.sumROC1);
@@ -989,8 +968,17 @@
        * fastest adaptation, for every window of an instrument quoted below it
        * (issue #253). A genuinely flat window is now recognized by the exact bar
        * count above instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+       * beside it compares against the SIGNED numerator, so it is false whenever
+       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+       * add/subtract of fabs terms, so an addend absorbed on the way in and
+       * subtracted later at full precision drives it to exactly 0.0 on a window
+       * that is not flat; without this clause that bar divides by zero and the
+       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+       * carried until #350).
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
@@ -1038,7 +1026,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
@@ -1086,7 +1074,7 @@
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);

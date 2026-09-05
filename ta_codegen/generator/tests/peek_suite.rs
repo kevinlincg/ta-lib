@@ -201,7 +201,7 @@ fn a_peek_frame_stores_into_no_handle_buffer() {
         }
     }
 
-    assert!(peek_frames > 170, "only {peek_frames} peek entry points swept");
+    assert!(peek_frames >= 200, "only {peek_frames} peek entry points swept");
     assert!(
         buffers_seen > 150,
         "only {buffers_seen} handle buffer(s) found across the corpus, so the store scan \
@@ -298,38 +298,66 @@ fn every_return_in_a_peek_answers_a_code() {
 }
 
 
-/// Replace every `sp-><buffer>[...]` with one token, so two bodies that differ
-/// only in which slot they name compare equal.
+/// Replace every subscript of a handle buffer with one token, so two bodies
+/// that differ only in which slot they name compare equal.
+///
+/// BOTH spellings, because a peek binds each buffer's BASE to a local of the
+/// same name (issue #316) and then subscripts that: the same slot reads
+/// `sp->ring[i]` in the update frame and `ring[i]` in the peek. Masking only
+/// the qualified one leaves the two textually different wherever a buffer read
+/// sits inside an expression the frames are compared on, which is what
+/// [`unrewritten`] means when it says the buffers are already masked by there.
 fn mask_buffer_reads(body: &str, buffers: &BTreeSet<String>) -> String {
     let b: Vec<char> = body.chars().collect();
     let mut out = String::with_capacity(body.len());
     let mut i = 0usize;
-    while i < b.len() {
-        if b[i..].starts_with(&['s', 'p', '-', '>']) {
-            let rest: String = b[i + 4..].iter().collect();
-            if let Some(br) = rest.find('[') {
-                let name = &rest[..br];
-                if buffers.contains(name) {
-                    // Skip to the bracket that closes this subscript.
-                    let mut depth = 0usize;
-                    let mut k = i + 4 + br;
-                    while k < b.len() {
-                        match b[k] {
-                            '[' => depth += 1,
-                            ']' => {
-                                depth -= 1;
-                                if depth == 0 {
-                                    break;
-                                }
-                            }
-                            _ => {}
-                        }
-                        k += 1;
+    // The index just past the closing bracket of the buffer subscript starting
+    // at `at`, if that is what is there.
+    let end_of_subscript = |at: usize| -> Option<usize> {
+        let mut n = at;
+        while n < b.len() && (b[n].is_ascii_alphanumeric() || b[n] == '_') {
+            n += 1;
+        }
+        if n == at || n >= b.len() || b[n] != '[' {
+            return None;
+        }
+        if !buffers.contains(&b[at..n].iter().collect::<String>()) {
+            return None;
+        }
+        let mut depth = 0usize;
+        let mut k = n;
+        while k < b.len() {
+            match b[k] {
+                '[' => depth += 1,
+                ']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        break;
                     }
-                    out.push_str("<BUF>");
-                    i = k + 1;
-                    continue;
                 }
+                _ => {}
+            }
+            k += 1;
+        }
+        Some(k + 1)
+    };
+    while i < b.len() {
+        let qualified = b[i..].starts_with(&['s', 'p', '-', '>']);
+        // A bare name counts only where an identifier starts and nothing
+        // dereferences into it: `foo_ring[i]` must not mask as `foo_<BUF>`, and
+        // `stream->bank[i]` must stay whole rather than become `stream-><BUF>`.
+        let bare = !qualified
+            && (i == 0
+                || !(b[i - 1].is_ascii_alphanumeric()
+                    || b[i - 1] == '_'
+                    || b[i - 1] == '>'
+                    || b[i - 1] == '.'));
+        let at = if qualified { i + 4 } else { i };
+        if (qualified || bare) && at <= b.len() {
+            if let Some(k) = end_of_subscript(at) {
+                out.push_str("<BUF>");
+                i = k;
+                continue;
             }
         }
         out.push(b[i]);
@@ -657,7 +685,7 @@ fn no_c_peek_copies_the_handle() {
             }
         }
     }
-    assert!(swept > 170, "only {swept} peek(s) swept");
+    assert!(swept >= 200, "only {swept} peek(s) swept");
     assert_eq!(
         frames + dispatchers + stateless,
         swept,
@@ -762,7 +790,7 @@ fn no_peek_frame_reads_a_field_it_has_bound() {
             reads += l.matches("sp->").count();
         }
     }
-    assert!(swept > 170, "only {swept} peek(s) swept");
+    assert!(swept >= 200, "only {swept} peek(s) swept");
     assert!(
         reads > 700 && binds > 400,
         "{reads} `sp->` read(s) over {binds} that name a bound local — too few for this \
@@ -800,7 +828,7 @@ fn a_fused_peek_carries_the_fma_multiversion_attribute() {
     }
 
     assert!(drifted.is_empty(), "TA_FMA_MULTIVERSION drifted from the fused peeks: {drifted:?}");
-    assert!(peeks > 170, "only {peeks} peek frame(s) rendered -- the signature moved");
+    assert!(peeks >= 200, "only {peeks} peek frame(s) rendered -- the signature moved");
     assert!(fused > 0, "no peek fuses, so this sweep proved nothing");
     assert_eq!(fused, attributed, "{fused} fused peek(s) but {attributed} attributed");
 }
@@ -975,7 +1003,7 @@ fn no_tier_carries_a_peek_mirror_or_a_routing_flag() {
             func.name
         );
     }
-    assert!(swept > 170, "only {swept} function(s) examined");
+    assert!(swept >= 200, "only {swept} function(s) examined");
 }
 
 /// SMA is the whole mechanism in one function: the degenerate `cap == 0` store
@@ -1189,7 +1217,7 @@ fn a_peek_frame_stops_at_its_last_output_store() {
     }
 
     assert!(offenders.is_empty(), "{}", offenders.join("\n"));
-    assert!(swept > 170, "only {swept} peek frame(s) examined");
+    assert!(swept >= 200, "only {swept} peek frame(s) examined");
     assert!(phasor_seen, "HT_PHASOR was not swept, so its pin did not run");
     for (k, (mark, floor)) in tail_marks.iter().enumerate() {
         assert!(

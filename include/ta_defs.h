@@ -178,7 +178,9 @@ typedef enum {
     TA_MAType_T3       =  8,
     TA_MAType_HMA      =  9,
     TA_MAType_DISABLED = 10,
-    TA_MAType_DEFAULT  = 11
+    TA_MAType_DEFAULT  = 11,
+    TA_MAType_ZLEMA    = 12,
+    TA_MAType_RMA      = 13
 } TA_MAType;
 
 /* Inclusive value limits of TA_MAType: the domain an optional parameter of
@@ -186,7 +188,7 @@ typedef enum {
  * appending one widens every generated range check that names them.
  */
 #define TA_MATYPE_MIN 0
-#define TA_MATYPE_MAX 11
+#define TA_MATYPE_MAX 13
 
 typedef enum {
     TA_FUNC_UNST_ADX          =  0,
@@ -213,13 +215,16 @@ typedef enum {
     TA_FUNC_UNST_RSI          = 21,
     TA_FUNC_UNST_UNUSED_22    = 22,
     TA_FUNC_UNST_T3           = 23,
+    TA_FUNC_UNST_RMA          = 24,
+    TA_FUNC_UNST_HA           = 25,
+    TA_FUNC_UNST_RVI          = 26,
     TA_FUNC_UNST_ALL          = 65535
 } TA_FuncUnstId;
 
 /* Number of function ids above (NOT an id, and NOT TA_FUNC_UNST_ALL).
  * Sizes the unstable-period table; grows when an indicator is added.
  */
-#define TA_FUNC_UNST_COUNT 24
+#define TA_FUNC_UNST_COUNT 27
 
 /**** END GENCODE SECTION 1 - DO NOT DELETE THIS LINE ****/
 

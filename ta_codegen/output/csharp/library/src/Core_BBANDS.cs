@@ -93,7 +93,7 @@ public partial class Core
    /// selects the default).</param>
    /// <param name="optInMAType">Moving-average type for the middle band (default 0 = SMA; values: 0=SMA,
    /// 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-   /// 10=DISABLED, 11=DEFAULT; <c>MAType.DEFAULT</c> (or
+   /// 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
    /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <returns>The lookback, or <c>-1</c> if a parameter is out of range.</returns>
    public int BBANDS_Lookback( int optInTimePeriod, double optInNbDevUp, double optInNbDevDn, MAType optInMAType )
@@ -681,7 +681,7 @@ public partial class Core
    /// selects the default).</param>
    /// <param name="optInMAType">Moving-average type for the middle band (default 0 = SMA; values: 0=SMA,
    /// 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-   /// 10=DISABLED, 11=DEFAULT; <c>MAType.DEFAULT</c> (or
+   /// 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
    /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="outRealUpperBand">Middle band plus nbDevUp standard deviations. Must hold at least <c>endIdx
    /// - startIdx + 1</c> values.</param>
@@ -780,7 +780,7 @@ public partial class Core
    /// selects the default).</param>
    /// <param name="optInMAType">Moving-average type for the middle band (default 0 = SMA; values: 0=SMA,
    /// 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-   /// 10=DISABLED, 11=DEFAULT; <c>MAType.DEFAULT</c> (or
+   /// 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
    /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="outRealUpperBand">Middle band plus nbDevUp standard deviations. Must hold at least <c>endIdx
    /// - startIdx + 1</c> values.</param>
@@ -974,42 +974,6 @@ public partial class Core
          }
          cur_outRealMiddleBand = cur_tempBuffer1;
          return new BbandsValue(cur_outRealUpperBand, cur_outRealMiddleBand, cur_outRealLowerBand);
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inReal">Closed bars for <c>inReal</c>, oldest first.</param>
-      /// <param name="outRealUpperBand">Receives one <c>outRealUpperBand</c> value per bar committed.</param>
-      /// <param name="outRealMiddleBand">Receives one <c>outRealMiddleBand</c> value per bar committed.</param>
-      /// <param name="outRealLowerBand">Receives one <c>outRealLowerBand</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inReal, Span<double> outRealUpperBand, Span<double> outRealMiddleBand, Span<double> outRealLowerBand )
-      {
-         int barCount = inReal.Length;
-         if( outRealUpperBand.Length < barCount || outRealMiddleBand.Length < barCount || outRealLowerBand.Length < barCount || outRealUpperBand.Overlaps(inReal) || outRealMiddleBand.Overlaps(inReal) || outRealLowerBand.Overlaps(inReal) || outRealUpperBand.Overlaps(outRealMiddleBand) || outRealUpperBand.Overlaps(outRealLowerBand) || outRealMiddleBand.Overlaps(outRealLowerBand) ) throw Core.StreamFailure("BBANDS", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inReal[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("BBANDS", "updateAndFill", RetCode.BadParam);
-            }
-            core.BbandsStepImpl(this, inReal[i]);
-            outRealUpperBand[i] = cur_outRealUpperBand;
-            outRealMiddleBand[i] = cur_outRealMiddleBand;
-            outRealLowerBand[i] = cur_outRealLowerBand;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

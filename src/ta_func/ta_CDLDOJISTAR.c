@@ -153,7 +153,10 @@ TA_LIB_API TA_RetCode TA_CDLDOJISTAR( int    startIdx,
    {
       if( fabs(inClose[i - 1] - inOpen[i - 1]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 1) && /* 1st: long real body */
           fabs(inClose[i] - inOpen[i]) <= TA_CANDLEAVERAGE(BodyDoji,BodyDojiPeriodTotal,i) && /* 2nd: doji */
-          ((((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 && ((min(inOpen[i],inClose[i]) > max(inOpen[i - 1],inClose[i - 1])) ? 1 : 0)) || (((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen[i],inClose[i]) < min(inOpen[i - 1],inClose[i - 1])) ? 1 : 0))) ) /* that gaps up if 1st is white or down if 1st is black */
+          ((((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 &&
+            ((min(inOpen[i],inClose[i]) > max(inOpen[i - 1],inClose[i - 1])) ? 1 : 0)) || /* that gaps up if 1st is white */
+           (((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 &&
+            ((max(inOpen[i],inClose[i]) < min(inOpen[i - 1],inClose[i - 1])) ? 1 : 0))) ) /* or down if 1st is black */
       {
          outInteger[outIdx++] = (0 - ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1)) * 100;
       } else 
@@ -306,7 +309,10 @@ static void TA_CDLDOJISTAR_StepImpl( struct TA_CDLDOJISTAR_Stream *sp, double in
    }
    if( fabs(sp->lag1_inClose - sp->lag1_inOpen) > TA_STREAM_CANDLEAVERAGE(BodyLong,sp->BodyLongPeriodTotal,sp->lag1_inOpen,sp->lag1_inHigh,sp->lag1_inLow,sp->lag1_inClose) && /* 1st: long real body */
        fabs(inClose - inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyDojiPeriodTotal,inOpen,inHigh,inLow,inClose) && /* 2nd: doji */
-       ((((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 1 && ((min(inOpen,inClose) > max(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0)) || (((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen,inClose) < min(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0))) ) /* that gaps up if 1st is white or down if 1st is black */
+       ((((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 1 &&
+         ((min(inOpen,inClose) > max(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0)) || /* that gaps up if 1st is white */
+        (((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+         ((max(inOpen,inClose) < min(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0))) ) /* or down if 1st is black */
    {
       *outInteger= (0 - ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1)) * 100;
    } else 
@@ -418,7 +424,10 @@ static TA_RetCode TA_CDLDOJISTAR_OpenImpl( struct TA_CDLDOJISTAR_Stream **stream
       {
          if( fabs(inClose[i - 1] - inOpen[i - 1]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 1) && /* 1st: long real body */
              fabs(inClose[i] - inOpen[i]) <= TA_CANDLEAVERAGE(BodyDoji,BodyDojiPeriodTotal,i) && /* 2nd: doji */
-             ((((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 && ((min(inOpen[i],inClose[i]) > max(inOpen[i - 1],inClose[i - 1])) ? 1 : 0)) || (((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen[i],inClose[i]) < min(inOpen[i - 1],inClose[i - 1])) ? 1 : 0))) ) /* that gaps up if 1st is white or down if 1st is black */
+             ((((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 &&
+               ((min(inOpen[i],inClose[i]) > max(inOpen[i - 1],inClose[i - 1])) ? 1 : 0)) || /* that gaps up if 1st is white */
+              (((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 &&
+               ((max(inOpen[i],inClose[i]) < min(inOpen[i - 1],inClose[i - 1])) ? 1 : 0))) ) /* or down if 1st is black */
          {
             outInteger[outIdx++ * outStride] = (0 - ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1)) * 100;
          } else 
@@ -541,32 +550,15 @@ TA_LIB_API TA_RetCode TA_CDLDOJISTAR_Peek( const TA_CDLDOJISTAR_Stream *stream, 
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
    if( fabs(sp->lag1_inClose - sp->lag1_inOpen) > TA_STREAM_CANDLEAVERAGE(BodyLong,sp->BodyLongPeriodTotal,sp->lag1_inOpen,sp->lag1_inHigh,sp->lag1_inLow,sp->lag1_inClose) && /* 1st: long real body */
        fabs(inClose - inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyDojiPeriodTotal,inOpen,inHigh,inLow,inClose) && /* 2nd: doji */
-       ((((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 1 && ((min(inOpen,inClose) > max(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0)) || (((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((max(inOpen,inClose) < min(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0))) ) /* that gaps up if 1st is white or down if 1st is black */
+       ((((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 1 &&
+         ((min(inOpen,inClose) > max(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0)) || /* that gaps up if 1st is white */
+        (((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+         ((max(inOpen,inClose) < min(sp->lag1_inOpen,sp->lag1_inClose)) ? 1 : 0))) ) /* or down if 1st is black */
    {
       *outInteger= (0 - ((sp->lag1_inClose >= sp->lag1_inOpen) ? 1 : 0 - 1)) * 100;
    } else 
    {
       *outInteger= 0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_CDLDOJISTAR_UpdateAndFill( TA_CDLDOJISTAR_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inHigh || !inLow || !inClose || !outInteger ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inOpen || (const void *)outInteger == (const void *)inHigh || (const void *)outInteger == (const void *)inLow || (const void *)outInteger == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_CDLDOJISTAR_StepImpl( stream, inOpen[i], inHigh[i], inLow[i], inClose[i], &outInteger[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }

@@ -304,7 +304,16 @@ impl Core {
             if (inClose[i - 2] - inOpen[i - 2]).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((inClose[i - 2]) - (inOpen[i - 2])).abs(), 1 => (inHigh[i - 2]) - (inLow[i - 2]), 2 => ((inHigh[i - 2]) - (if (inClose[i - 2]) >= (inOpen[i - 2]) { (inClose[i - 2]) } else { (inOpen[i - 2]) })) + ((if (inClose[i - 2]) >= (inOpen[i - 2]) { (inOpen[i - 2]) } else { (inClose[i - 2]) }) - (inLow[i - 2])), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st: long
                (inClose[i - 1] - inOpen[i - 1]).abs() <= ((BodyDoji_factor) * (if (BodyDoji_avgPeriod) != 0 { (BodyDojiPeriodTotal) / (BodyDoji_avgPeriod as f64) } else { match BodyDoji_rangeType { 0 => ((inClose[i - 1]) - (inOpen[i - 1])).abs(), 1 => (inHigh[i - 1]) - (inLow[i - 1]), 2 => ((inHigh[i - 1]) - (if (inClose[i - 1]) >= (inOpen[i - 1]) { (inClose[i - 1]) } else { (inOpen[i - 1]) })) + ((if (inClose[i - 1]) >= (inOpen[i - 1]) { (inOpen[i - 1]) } else { (inClose[i - 1]) }) - (inLow[i - 1])), _ => 0.0 } }) / (if (BodyDoji_rangeType) == 2 { 2.0 } else { 1.0 })) && // 2nd: doji
                (inClose[i] - inOpen[i]).abs() > ((BodyShort_factor) * (if (BodyShort_avgPeriod) != 0 { (BodyShortPeriodTotal) / (BodyShort_avgPeriod as f64) } else { match BodyShort_rangeType { 0 => ((inClose[i]) - (inOpen[i])).abs(), 1 => (inHigh[i]) - (inLow[i]), 2 => ((inHigh[i]) - (if (inClose[i]) >= (inOpen[i]) { (inClose[i]) } else { (inOpen[i]) })) + ((if (inClose[i]) >= (inOpen[i]) { (inOpen[i]) } else { (inClose[i]) }) - (inLow[i])), _ => 0.0 } }) / (if (BodyShort_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd: longer than short
-               ((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && (((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose[i] < inClose[i - 2] - (inClose[i - 2] - inOpen[i - 2]).abs() * optInPenetration && ((if inLow[i - 1] > inHigh[i - 2] { 1 } else { 0 }) != 0) && ((if inHigh[i] < inLow[i - 1] { 1 } else { 0 }) != 0) || (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) == 1 && inClose[i] > ((inClose[i - 2] - inOpen[i - 2]).abs() as f64).mul_add(optInPenetration, inClose[i - 2]) && ((if inHigh[i - 1] < inLow[i - 2] { 1 } else { 0 }) != 0) && ((if inLow[i] > inHigh[i - 1] { 1 } else { 0 }) != 0)) // 1st white 3rd black 3rd closes well within 1st rb upside gap between 1st and 2nd downside gap between 2nd and 3rd 1st black 3rd white 3rd closes well within 1st rb downside gap between 1st and 2nd upside gap between 2nd and 3rd
+               ((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && // 1st white
+                 (((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 3rd black
+                 inClose[i] < inClose[i - 2] - (inClose[i - 2] - inOpen[i - 2]).abs() * optInPenetration && // 3rd closes well within 1st rb
+                 ((if inLow[i - 1] > inHigh[i - 2] { 1 } else { 0 }) != 0) &&     // upside gap between 1st and 2nd
+                 ((if inHigh[i] < inLow[i - 1] { 1 } else { 0 }) != 0) ||         // downside gap between 2nd and 3rd
+                (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 1st black
+                 (if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) == 1 &&        // 3rd white
+                 inClose[i] > ((inClose[i - 2] - inOpen[i - 2]).abs() as f64).mul_add(optInPenetration, inClose[i - 2]) && // 3rd closes well within 1st rb
+                 ((if inHigh[i - 1] < inLow[i - 2] { 1 } else { 0 }) != 0) &&     // downside gap between 1st and 2nd
+                 ((if inLow[i] > inHigh[i - 1] { 1 } else { 0 }) != 0))           // upside gap between 2nd and 3rd
             {
                 outInteger[outIdx] = ((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) * 100) as i32;
                 outIdx += 1;
@@ -681,7 +690,16 @@ impl Core {
         if (sp.lag2_inClose - sp.lag2_inOpen).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (sp.BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((sp.lag2_inClose) - (sp.lag2_inOpen)).abs(), 1 => (sp.lag2_inHigh) - (sp.lag2_inLow), 2 => ((sp.lag2_inHigh) - (if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inClose) } else { (sp.lag2_inOpen) })) + ((if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inOpen) } else { (sp.lag2_inClose) }) - (sp.lag2_inLow)), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st: long
            (sp.lag1_inClose - sp.lag1_inOpen).abs() <= ((BodyDoji_factor) * (if (BodyDoji_avgPeriod) != 0 { (sp.BodyDojiPeriodTotal) / (BodyDoji_avgPeriod as f64) } else { match BodyDoji_rangeType { 0 => ((sp.lag1_inClose) - (sp.lag1_inOpen)).abs(), 1 => (sp.lag1_inHigh) - (sp.lag1_inLow), 2 => ((sp.lag1_inHigh) - (if (sp.lag1_inClose) >= (sp.lag1_inOpen) { (sp.lag1_inClose) } else { (sp.lag1_inOpen) })) + ((if (sp.lag1_inClose) >= (sp.lag1_inOpen) { (sp.lag1_inOpen) } else { (sp.lag1_inClose) }) - (sp.lag1_inLow)), _ => 0.0 } }) / (if (BodyDoji_rangeType) == 2 { 2.0 } else { 1.0 })) && // 2nd: doji
            (inClose - inOpen).abs() > ((BodyShort_factor) * (if (BodyShort_avgPeriod) != 0 { (sp.BodyShortPeriodTotal) / (BodyShort_avgPeriod as f64) } else { match BodyShort_rangeType { 0 => ((inClose) - (inOpen)).abs(), 1 => (inHigh) - (inLow), 2 => ((inHigh) - (if (inClose) >= (inOpen) { (inClose) } else { (inOpen) })) + ((if (inClose) >= (inOpen) { (inOpen) } else { (inClose) }) - (inLow)), _ => 0.0 } }) / (if (BodyShort_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd: longer than short
-           ((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && (((if inClose >= inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose < sp.lag2_inClose - (sp.lag2_inClose - sp.lag2_inOpen).abs() * sp.optInPenetration && ((if sp.lag1_inLow > sp.lag2_inHigh { 1 } else { 0 }) != 0) && ((if inHigh < sp.lag1_inLow { 1 } else { 0 }) != 0) || (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if inClose >= inOpen { 1 } else { 0 - 1 }) == 1 && inClose > ((sp.lag2_inClose - sp.lag2_inOpen).abs() as f64).mul_add(sp.optInPenetration, sp.lag2_inClose) && ((if sp.lag1_inHigh < sp.lag2_inLow { 1 } else { 0 }) != 0) && ((if inLow > sp.lag1_inHigh { 1 } else { 0 }) != 0)) // 1st white 3rd black 3rd closes well within 1st rb upside gap between 1st and 2nd downside gap between 2nd and 3rd 1st black 3rd white 3rd closes well within 1st rb downside gap between 1st and 2nd upside gap between 2nd and 3rd
+           ((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && // 1st white
+             (((if inClose >= inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 3rd black
+             inClose < sp.lag2_inClose - (sp.lag2_inClose - sp.lag2_inOpen).abs() * sp.optInPenetration && // 3rd closes well within 1st rb
+             ((if sp.lag1_inLow > sp.lag2_inHigh { 1 } else { 0 }) != 0) &&     // upside gap between 1st and 2nd
+             ((if inHigh < sp.lag1_inLow { 1 } else { 0 }) != 0) ||             // downside gap between 2nd and 3rd
+            (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 1st black
+             (if inClose >= inOpen { 1 } else { 0 - 1 }) == 1 &&                // 3rd white
+             inClose > ((sp.lag2_inClose - sp.lag2_inOpen).abs() as f64).mul_add(sp.optInPenetration, sp.lag2_inClose) && // 3rd closes well within 1st rb
+             ((if sp.lag1_inHigh < sp.lag2_inLow { 1 } else { 0 }) != 0) &&     // downside gap between 1st and 2nd
+             ((if inLow > sp.lag1_inHigh { 1 } else { 0 }) != 0))               // upside gap between 2nd and 3rd
         {
             (*outInteger) = ((if inClose >= inOpen { 1 } else { 0 - 1 }) * 100) as i32;
         } else {
@@ -966,7 +984,16 @@ impl Core {
             if (inClose[i - 2] - inOpen[i - 2]).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((inClose[i - 2]) - (inOpen[i - 2])).abs(), 1 => (inHigh[i - 2]) - (inLow[i - 2]), 2 => ((inHigh[i - 2]) - (if (inClose[i - 2]) >= (inOpen[i - 2]) { (inClose[i - 2]) } else { (inOpen[i - 2]) })) + ((if (inClose[i - 2]) >= (inOpen[i - 2]) { (inOpen[i - 2]) } else { (inClose[i - 2]) }) - (inLow[i - 2])), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st: long
                (inClose[i - 1] - inOpen[i - 1]).abs() <= ((BodyDoji_factor) * (if (BodyDoji_avgPeriod) != 0 { (BodyDojiPeriodTotal) / (BodyDoji_avgPeriod as f64) } else { match BodyDoji_rangeType { 0 => ((inClose[i - 1]) - (inOpen[i - 1])).abs(), 1 => (inHigh[i - 1]) - (inLow[i - 1]), 2 => ((inHigh[i - 1]) - (if (inClose[i - 1]) >= (inOpen[i - 1]) { (inClose[i - 1]) } else { (inOpen[i - 1]) })) + ((if (inClose[i - 1]) >= (inOpen[i - 1]) { (inOpen[i - 1]) } else { (inClose[i - 1]) }) - (inLow[i - 1])), _ => 0.0 } }) / (if (BodyDoji_rangeType) == 2 { 2.0 } else { 1.0 })) && // 2nd: doji
                (inClose[i] - inOpen[i]).abs() > ((BodyShort_factor) * (if (BodyShort_avgPeriod) != 0 { (BodyShortPeriodTotal) / (BodyShort_avgPeriod as f64) } else { match BodyShort_rangeType { 0 => ((inClose[i]) - (inOpen[i])).abs(), 1 => (inHigh[i]) - (inLow[i]), 2 => ((inHigh[i]) - (if (inClose[i]) >= (inOpen[i]) { (inClose[i]) } else { (inOpen[i]) })) + ((if (inClose[i]) >= (inOpen[i]) { (inOpen[i]) } else { (inClose[i]) }) - (inLow[i])), _ => 0.0 } }) / (if (BodyShort_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd: longer than short
-               ((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && (((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose[i] < inClose[i - 2] - (inClose[i - 2] - inOpen[i - 2]).abs() * optInPenetration && ((if inLow[i - 1] > inHigh[i - 2] { 1 } else { 0 }) != 0) && ((if inHigh[i] < inLow[i - 1] { 1 } else { 0 }) != 0) || (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) == 1 && inClose[i] > ((inClose[i - 2] - inOpen[i - 2]).abs() as f64).mul_add(optInPenetration, inClose[i - 2]) && ((if inHigh[i - 1] < inLow[i - 2] { 1 } else { 0 }) != 0) && ((if inLow[i] > inHigh[i - 1] { 1 } else { 0 }) != 0)) // 1st white 3rd black 3rd closes well within 1st rb upside gap between 1st and 2nd downside gap between 2nd and 3rd 1st black 3rd white 3rd closes well within 1st rb downside gap between 1st and 2nd upside gap between 2nd and 3rd
+               ((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && // 1st white
+                 (((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 3rd black
+                 inClose[i] < inClose[i - 2] - (inClose[i - 2] - inOpen[i - 2]).abs() * optInPenetration && // 3rd closes well within 1st rb
+                 ((if inLow[i - 1] > inHigh[i - 2] { 1 } else { 0 }) != 0) &&     // upside gap between 1st and 2nd
+                 ((if inHigh[i] < inLow[i - 1] { 1 } else { 0 }) != 0) ||         // downside gap between 2nd and 3rd
+                (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 1st black
+                 (if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) == 1 &&        // 3rd white
+                 inClose[i] > ((inClose[i - 2] - inOpen[i - 2]).abs() as f64).mul_add(optInPenetration, inClose[i - 2]) && // 3rd closes well within 1st rb
+                 ((if inHigh[i - 1] < inLow[i - 2] { 1 } else { 0 }) != 0) &&     // downside gap between 1st and 2nd
+                 ((if inLow[i] > inHigh[i - 1] { 1 } else { 0 }) != 0))           // upside gap between 2nd and 3rd
             {
                 outInteger[({ let _v = outIdx; outIdx += 1; _v } * outStride) as usize] = ((if inClose[i] >= inOpen[i] { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
@@ -1299,44 +1326,6 @@ impl CdlabandonedbabyStream {
         Ok(outInteger)
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inOpen.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what this call took in, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k + 1` — the committed bars, plus the rejected one, which is counted
-    /// but never written.
-    #[doc(alias = "TA_CDLABANDONEDBABY_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inOpen: &[f64], inHigh: &[f64], inLow: &[f64], inClose: &[f64], outInteger: &mut [i32]) -> Result<(), RetCode> {
-        let barCount = inOpen.len();
-        if inHigh.len() != inOpen.len() || inLow.len() != inOpen.len() || inClose.len() != inOpen.len() || outInteger.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
-                if self.out.count < Core::MAX_INDEX {
-                    self.out.count += 1;
-                }
-                return Err(RetCode::BadParam);
-            }
-            Core::cdlabandonedbaby_step_impl(&mut self.state, &self.cs_body_doji, &self.cs_body_long, &self.cs_body_short, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -1379,7 +1368,16 @@ impl CdlabandonedbabyStream {
             if (sp.lag2_inClose - sp.lag2_inOpen).abs() > ((BodyLong_factor) * (if (BodyLong_avgPeriod) != 0 { (sp.BodyLongPeriodTotal) / (BodyLong_avgPeriod as f64) } else { match BodyLong_rangeType { 0 => ((sp.lag2_inClose) - (sp.lag2_inOpen)).abs(), 1 => (sp.lag2_inHigh) - (sp.lag2_inLow), 2 => ((sp.lag2_inHigh) - (if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inClose) } else { (sp.lag2_inOpen) })) + ((if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inOpen) } else { (sp.lag2_inClose) }) - (sp.lag2_inLow)), _ => 0.0 } }) / (if (BodyLong_rangeType) == 2 { 2.0 } else { 1.0 })) && // 1st: long
                (sp.lag1_inClose - sp.lag1_inOpen).abs() <= ((BodyDoji_factor) * (if (BodyDoji_avgPeriod) != 0 { (sp.BodyDojiPeriodTotal) / (BodyDoji_avgPeriod as f64) } else { match BodyDoji_rangeType { 0 => ((sp.lag1_inClose) - (sp.lag1_inOpen)).abs(), 1 => (sp.lag1_inHigh) - (sp.lag1_inLow), 2 => ((sp.lag1_inHigh) - (if (sp.lag1_inClose) >= (sp.lag1_inOpen) { (sp.lag1_inClose) } else { (sp.lag1_inOpen) })) + ((if (sp.lag1_inClose) >= (sp.lag1_inOpen) { (sp.lag1_inOpen) } else { (sp.lag1_inClose) }) - (sp.lag1_inLow)), _ => 0.0 } }) / (if (BodyDoji_rangeType) == 2 { 2.0 } else { 1.0 })) && // 2nd: doji
                (inClose - inOpen).abs() > ((BodyShort_factor) * (if (BodyShort_avgPeriod) != 0 { (sp.BodyShortPeriodTotal) / (BodyShort_avgPeriod as f64) } else { match BodyShort_rangeType { 0 => ((inClose) - (inOpen)).abs(), 1 => (inHigh) - (inLow), 2 => ((inHigh) - (if (inClose) >= (inOpen) { (inClose) } else { (inOpen) })) + ((if (inClose) >= (inOpen) { (inOpen) } else { (inClose) }) - (inLow)), _ => 0.0 } }) / (if (BodyShort_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd: longer than short
-               ((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && (((if inClose >= inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose < sp.lag2_inClose - (sp.lag2_inClose - sp.lag2_inOpen).abs() * sp.optInPenetration && ((if sp.lag1_inLow > sp.lag2_inHigh { 1 } else { 0 }) != 0) && ((if inHigh < sp.lag1_inLow { 1 } else { 0 }) != 0) || (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if inClose >= inOpen { 1 } else { 0 - 1 }) == 1 && inClose > ((sp.lag2_inClose - sp.lag2_inOpen).abs() as f64).mul_add(sp.optInPenetration, sp.lag2_inClose) && ((if sp.lag1_inHigh < sp.lag2_inLow { 1 } else { 0 }) != 0) && ((if inLow > sp.lag1_inHigh { 1 } else { 0 }) != 0)) // 1st white 3rd black 3rd closes well within 1st rb upside gap between 1st and 2nd downside gap between 2nd and 3rd 1st black 3rd white 3rd closes well within 1st rb downside gap between 1st and 2nd upside gap between 2nd and 3rd
+               ((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && // 1st white
+                 (((if inClose >= inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 3rd black
+                 inClose < sp.lag2_inClose - (sp.lag2_inClose - sp.lag2_inOpen).abs() * sp.optInPenetration && // 3rd closes well within 1st rb
+                 ((if sp.lag1_inLow > sp.lag2_inHigh { 1 } else { 0 }) != 0) &&     // upside gap between 1st and 2nd
+                 ((if inHigh < sp.lag1_inLow { 1 } else { 0 }) != 0) ||             // downside gap between 2nd and 3rd
+                (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // 1st black
+                 (if inClose >= inOpen { 1 } else { 0 - 1 }) == 1 &&                // 3rd white
+                 inClose > ((sp.lag2_inClose - sp.lag2_inOpen).abs() as f64).mul_add(sp.optInPenetration, sp.lag2_inClose) && // 3rd closes well within 1st rb
+                 ((if sp.lag1_inHigh < sp.lag2_inLow { 1 } else { 0 }) != 0) &&     // downside gap between 1st and 2nd
+                 ((if inLow > sp.lag1_inHigh { 1 } else { 0 }) != 0))               // upside gap between 2nd and 3rd
             {
                 (*outInteger) = ((if inClose >= inOpen { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
@@ -1391,7 +1389,7 @@ impl CdlabandonedbabyStream {
 
     /// The value(s) at the last bar the stream counted — the bar
     /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
-    /// refreshed by every accepted `update` and `update_and_fill`, and left
+    /// refreshed by every accepted `update`, and left
     /// alone by `peek`.
     ///
     /// A clone carries them verbatim, so a forked handle can be asked its

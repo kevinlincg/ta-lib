@@ -278,7 +278,7 @@ fn all_declared_functions_are_streamable() {
         undeclared.join(", ")
     );
     assert_eq!(checked, seen, "declared count must be the whole corpus");
-    assert!(checked >= 136, "expected 136+ declared functions, saw {checked}");
+    assert!(checked >= 200, "expected the whole declared corpus, saw {checked}");
 }
 
 /* ---- CDL tranche: candle helpers, offset rings, array state ---- */
@@ -685,6 +685,8 @@ fn every_matype_is_streamable_except_tracked_blockers() {
         ("MAMA", "mama"),
         ("T3", "t3"),
         ("HMA", "hma"),
+        ("ZLEMA", "zlema"),
+        ("RMA", "rma"),
     ];
     // Not-yet-streamable MAType functions (deep blockers). MUST ONLY SHRINK.
     // NOW EMPTY: MAMA streamed in M7c (it is an ordinary HT function — WMA ring +
@@ -738,16 +740,20 @@ fn ma_derives_dispatch_plan() {
     };
     assert_eq!(dp.param, "optInMAType");
     assert!(dp.identity.is_some(), "period==1 identity path");
-    assert_eq!(dp.arms.len(), 10, "all ten batch arms recognized");
     let supported: Vec<&str> = dp
         .arms
         .iter()
         .filter(|a| a.supported)
         .map(|a| a.callee.as_str())
         .collect();
+    // The set below IS the count, so no separate number is pinned next to it --
+    // one that has to be edited in step with a list it sits beside only ever
+    // goes stale.
+    assert_eq!(dp.arms.len(), supported.len(), "every batch arm is recognized");
     assert_eq!(
         supported,
-        ["sma", "ema", "wma", "dema", "tema", "trima", "kama", "mama", "t3", "hma"],
+        ["sma", "ema", "wma", "dema", "tema", "trima", "kama", "mama", "t3", "hma", "zlema",
+         "rma"],
         "every arm streams: single-output MAs plus MAMA via its nullable FAMA \
          (TRIMA joined in M6c, MAMA via nullable outputs in #125, HMA via the \
          dual-mode buffer union in #141)"
@@ -1664,13 +1670,17 @@ fn composed_sub_call_destination_funcs() {
     // Membership alone would not tell the next author WHICH invariant to keep:
     // no two of these are safe for the same reason. The reason is recorded with
     // each entry and printed on failure. (Reasons proved by kevinlincg, #205.)
-    let expected: [(&str, &str); 9] = [
+    let expected: [(&str, &str); 10] = [
         ("APO", "sub-call uses optInSlowPeriod and the body swaps so slow == max(slow,fast); \
                  the swap is load-bearing -- see apo_family_period_swap_is_a_write_bound_precondition"),
         ("KC", "the moving average is entered at exactly ema_lookback over a typical-price buffer \
                  that begins ema_lookback bars before startIdx, so it clamps nothing: its first \
                  output lands on startIdx and its count is endIdx-startIdx+1, the same expression \
                  KC returns. Equal by construction, not by a lookback identity between two callees"),
+        ("KDJ", "the sub-call is the WHOLE producer: it is handed outBegIdx/outNBElement \
+                 themselves and KDJ returns them unmodified, so the final count IS the \
+                 callee's count rather than a quantity derived from it. kdj_lookback \
+                 delegates to stoch_lookback, so the two anchors agree by construction too"),
         ("MACDEXT", "the body RUNTIME-CHECKS the premise (outNbElement1 == endIdx-startIdx+1+lookbackSignal) \
                  and bails otherwise, so signal count == N_MACDEXT"),
         ("PPO", "as APO -- the slow/fast swap is the precondition"),
@@ -1721,7 +1731,8 @@ impl streaming::CalleeLookup for FlagOneCallee<'_> {
 /// the caller boundary, and the composed step has nowhere to put a sub-stream's
 /// rejection, so the bar's state advance would be dropped silently.
 ///
-/// None of the seven flagged functions (ACOS, ASIN, LN, LOG10, SQRT, DIV, VWMA)
+/// None of the eight flagged functions (ACOS, ASIN, LN, LOG10, SQRT, DIV, VWMA,
+/// RVOL)
 /// is composed by anything today, so the gate is dormant against the shipped
 /// corpus — which is exactly why it needs a test that can see it fire. The
 /// flag is injected rather than written to `ma.yaml`, so the corpus is untouched.

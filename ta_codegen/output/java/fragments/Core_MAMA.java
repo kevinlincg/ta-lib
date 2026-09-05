@@ -1116,40 +1116,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@code outFAMA} may be declined with {@code null}, per call and
-       * independently of what the opener was given: the value is still
-       * computed — {@link #value(MamaOut)} reports it — and nothing is written out.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inReal[], double outMAMA[], double outFAMA[] ) {
-         requireArgument("MAMA updateAndFill", "inReal", inReal);
-         requireArgument("MAMA updateAndFill", "outMAMA", outMAMA);
-         final int barCount = inReal.length;
-         if( outMAMA.length < barCount || (outFAMA != null && outFAMA.length < barCount) || (Object)outMAMA == (Object)inReal || (outFAMA != null && (Object)outFAMA == (Object)inReal) || (outFAMA != null && (Object)outMAMA == (Object)outFAMA) )
-            throw new TaLibArgumentException("MAMA updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("MAMA updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.mamaStepImpl(this, inReal[i]);
-            outMAMA[i] = this.cur_outMAMA;
-            if( outFAMA != null ) outFAMA[i] = this.cur_outFAMA;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.
@@ -1175,8 +1141,8 @@
          double I1ForEvenPrev3 = sp.I1ForEvenPrev3;
          double I1ForOddPrev2 = sp.I1ForOddPrev2;
          double I1ForOddPrev3 = sp.I1ForOddPrev3;
-         double cur_outFAMA = sp.cur_outFAMA;
-         double cur_outMAMA = sp.cur_outMAMA;
+         double cur_outFAMA = 0.0;
+         double cur_outMAMA = 0.0;
          double fama = sp.fama;
          int hilbertIdx = sp.hilbertIdx;
          double mama = sp.mama;
