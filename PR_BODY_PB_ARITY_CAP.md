@@ -7,7 +7,12 @@ in that file size and bind from it: the output binding, the finite/normal scan,
 and the server-verify pointer table.
 
 This points the define at `CODEGEN_MAX_OUTPUTS` and adds the include. One line
-of code; no behavioural change at the current cap of 3.
+of code; no behavioural change today.
+
+**The two numbers have since actually drifted.** HA landed on `dev` at
+`8c0fedbc` with four outputs, which raised `CODEGEN_MAX_OUTPUTS` to 4 and
+`V_MAX_OUTPUT` to 4 — `PB_MAX_OUTPUT` stayed at 3. That is the divergence this
+branch removes, no longer hypothetically.
 
 ## What the cap being separate actually costs
 
@@ -37,6 +42,13 @@ FAIL - ACCBANDS has 3 outputs but CODEGEN_MAX_OUTPUTS is 2.
 ## Verification
 
 - Full `bin/ta_regtest` on this branch: all tests succeeded.
+- **The drift is real but still latent, measured rather than assumed:** on `dev`
+  at `972c5cc9` I instrumented the binding loop to print any function reaching
+  it with `nbOutput > PB_MAX_OUTPUT`, rebuilt and ran the whole suite — **zero
+  hits**, and the suite is green. The sweep enumerates *optional parameters*,
+  and HA, the one 4-output function, has none, so it never enters. Nothing is
+  being silently skipped today; this PR is one number instead of two, not a
+  bug fix.
 - **Control, run here and watched:** with the define collapsed, setting
   `CODEGEN_MAX_OUTPUTS` to 2 fails at startup with 8 `FAIL -` lines (every
   3-output function) and `rc=94`; restoring it to 3 and rebuilding from the same
@@ -50,7 +62,9 @@ FAIL - ACCBANDS has 3 outputs but CODEGEN_MAX_OUTPUTS is 2.
   `ta_ref_serve` worktree and no .NET SDK. The change is one `#define` in a
   hand-written C test and touches no generated file, so nothing in those legs
   can see it — but I did not run them.
-- The next function to raise the cap is HA (#373, four outputs), where this
-  edit removes one of the three hand-written raises. I have not sequenced the
-  two; whichever lands first, the other's raise becomes a no-op or a one-line
-  conflict in this define.
+- Whether a *future* 4-output function with an optional parameter would fail
+  loudly or silently here. I measured the loud path at cap 3 vs a 3-output
+  function (above); I did not construct a 4-output function with a period
+  parameter to watch it, because none exists.
+- No `ta_regtest --codegen` on the instrumented build: the probe was a `printf`
+  in the C sweep, and the C suite is the leg that reaches it.
