@@ -925,11 +925,7 @@ TA_RetCode TA_VORTEX_OpenAndFillInternal( struct TA_VORTEX_Stream **stream, cons
 TA_LIB_API TA_RetCode TA_VORTEX_Update( TA_VORTEX_Stream *stream, double inHigh, double inLow, double inClose, double *outPlusVI, double *outMinusVI )
 {
    if( !stream || !outPlusVI || !outMinusVI ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
    TA_VORTEX_StepImpl( stream, inHigh, inLow, inClose, outPlusVI, outMinusVI );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;

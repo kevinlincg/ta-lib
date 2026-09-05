@@ -903,9 +903,9 @@ fn emit_handle_class_with_members(
     d.open("remarks");
     d.para(&format!(
         "It is what <c>Core.{base}</c> reports over the same bars: the opener sets it to \
-         <c>(lookback, historyLen - lookback)</c>, every <c>Update</c> adds one to the count \
-         — a non-finite bar is rejected but still counted, because the bar happened — \
-         <c>Peek</c> leaves it alone, and <c>Clone</c> carries it verbatim. A plain \
+         <c>(lookback, historyLen - lookback)</c>, every accepted <c>Update</c> adds one to \
+         the count — a rejected one changes nothing, and neither does <c>Peek</c> — and \
+         <c>Clone</c> carries it verbatim. A plain \
          <c>Open</c> hands back only the last value, a subset of this range, because the \
          caller chose not to take the fill."
     ));
@@ -919,6 +919,26 @@ fn emit_handle_class_with_members(
         o,
         "      public OutRange OutRange => new OutRange(outRangeBegIdx, outRangeCount);"
     );
+
+    let mut d = XmlDoc::new();
+    d.summary(
+        "Count one bar this stream was not fed: <see cref=\"OutRange\"/> advances by one \
+         and nothing else moves.",
+    );
+    d.open("remarks");
+    d.para(
+        "<see cref=\"Value\"/> keeps answering the previous output, which is this bar's \
+         output too. For a bar the caller leaves out: one an <c>Update</c> rejected and \
+         that will not be re-fed, or a session with no print. Without it two handles on \
+         one feed drift a bar apart when only one of them skips.",
+    );
+    d.close("remarks");
+    o.push('\n');
+    o.push_str(&d.render(6));
+    let _ = writeln!(o, "      public void Advance()");
+    let _ = writeln!(o, "      {{");
+    o.push_str(&advance_out_range("         "));
+    let _ = writeln!(o, "      }}");
 
     // Deep-copy constructor: scalars assign, arrays are allocated and copied
     // (never `(double[])x.Clone()` — 2.3x slower), sub-handles copy
@@ -1040,14 +1060,12 @@ fn advance_out_range(indent: &str) -> String {
 /// retained: one non-finite bar poisons every recursive accumulator in it for
 /// the rest of its life, long after the feed recovers.
 ///
-/// `advance` is the U3 half of that contract: a committing entry point counts
-/// the rejected bar before it throws, because the bar happened and occupies a
-/// position in the series. Pass `false` only where nothing commits — `Peek`,
-/// whose receiver must stay untouched under every outcome.
+/// The rejection changes nothing at all — the produced-bar count included.
+/// Counting a bar the caller declined to commit is `Advance()`'s job.
 ///
 /// Routed through `Core.StreamFailure` so the message prefix and the exception
 /// type match the open rejections exactly.
-fn finite_bar_check(func: &FuncDef, indent: &str, what: &str, advance: bool) -> String {
+fn finite_bar_check(func: &FuncDef, indent: &str, what: &str) -> String {
     let bars = streaming::input_array_names(func);
     if bars.is_empty() {
         return String::new();
@@ -1056,14 +1074,7 @@ fn finite_bar_check(func: &FuncDef, indent: &str, what: &str, advance: bool) -> 
     let conds: Vec<String> = bars.iter().map(|b| format!("!double.IsFinite({b})")).collect();
     let cond = conds.join(" || ");
     let throw = format!("throw Core.StreamFailure(\"{n}\", \"{what}\", RetCode.BadParam);");
-    if !advance {
-        return format!("{indent}if( {cond} ) {throw}\n");
-    }
-    let inner = format!("{indent}   ");
-    format!(
-        "{indent}if( {cond} )\n{indent}{{\n{}{inner}{throw}\n{indent}}}\n",
-        advance_out_range(&inner)
-    )
+    format!("{indent}if( {cond} ) {throw}\n")
 }
 
 
@@ -1089,11 +1100,11 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
     );
     d.para(
         "Throws <see cref=\"System.ArgumentException\"/> if any bar value is not finite \
-         (NaN or an infinity). That check runs before anything is written, so no state \
-         moves, <see cref=\"Value\"/> still answers the previous value, and the stream \
-         stays usable — just carry on with the next bar. <see cref=\"OutRange\"/> does \
-         advance: the bar happened, so it is counted, which keeps two handles fed the \
-         same series positionally aligned when only one of them rejects a bar. This is \
+         (NaN or an infinity). That check runs before anything is written, so nothing \
+         moves — <see cref=\"OutRange\"/> included — and <see cref=\"Value\"/> still \
+         answers the previous value. Re-feed the bar when a corrected value arrives, or \
+         call <see cref=\"Advance\"/> to count it and carry on; two handles on one feed \
+         drift a bar apart if neither happens. This is \
          the one place the streaming tier is stricter than the batch API, which computes \
          on whatever it is given: a handle retains its state, so a single non-finite bar \
          would poison every later value it produces.",
@@ -1107,10 +1118,9 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
     o.push_str(&d.render(6));
     let _ = writeln!(o, "      public {vt} Update( {sig_bars} )");
     let _ = writeln!(o, "      {{");
-    o.push_str(&finite_bar_check(func, "         ", "update", true));
+    o.push_str(&finite_bar_check(func, "         ", "update"));
     let _ = writeln!(o, "         core.{base}StepImpl(this, {fwd_bars});");
-    // The accepted bar's own bump; the rejected one is counted on the reject
-    // path above. `Peek` runs a frame that commits nothing and reaches neither.
+    // The accepted bar's own bump; a rejected bar is not counted at all.
     o.push_str(&advance_out_range("         "));
     let _ = writeln!(o, "         return {};", fresh_value_expr(func, ""));
     let _ = writeln!(o, "      }}");
@@ -1161,7 +1171,7 @@ fn emit_peek_method(o: &mut String, func: &FuncDef, frame: Option<&str>) {
     let _ = writeln!(o, "      {{");
     // Ahead of the frame, not left to the transition: a rejected bar must not
     // run any of it.
-    o.push_str(&finite_bar_check(func, "         ", "peek", false));
+    o.push_str(&finite_bar_check(func, "         ", "peek"));
     let body = frame.expect("every tier emits a peek frame");
     let _ = writeln!(o, "         {class} sp = this;");
     o.push_str(body);

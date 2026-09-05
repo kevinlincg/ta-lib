@@ -866,7 +866,7 @@ public static class StreamApiTest
               + $"only-emitted: [{string.Join(",", emitted.Except(advertisedAsHandleNames))}])");
 
         // Each handle type must be sealed, expose no public constructor, and
-        // carry the four members the docs promise.
+        // carry every member the docs promise.
         foreach (Type t in typeof(Core).GetNestedTypes(BindingFlags.Public)
                      .Where(t => t.Name.EndsWith("Stream", StringComparison.Ordinal)))
         {
@@ -875,7 +875,7 @@ public static class StreamApiTest
                 Check(false, $"{t.Name} is sealed with no public constructor");
                 return;
             }
-            foreach (string member in new[] { "Update", "Peek", "Clone" })
+            foreach (string member in new[] { "Update", "Peek", "Clone", "Advance" })
             {
                 if (t.GetMethod(member, BindingFlags.Public | BindingFlags.Instance) == null)
                 {
@@ -1099,16 +1099,37 @@ public static class StreamApiTest
     private static int _advResumes;
     private static int _advValues;
     private static int _advPeekStills;
+    private static int _advSkips;
+    private static int _advSkipHolds;
 
     private static void AdvReject(string what, Func<OutRange> range, Action bad)
     {
         OutRange before = range();
         ThrowsBadParam(what + ": Update must reject a non-finite bar", bad);
         OutRange after = range();
-        Check(after.BegIdx == before.BegIdx && after.Count == before.Count + 1,
-              $"{what}: a rejected Update left ({after.BegIdx},{after.Count}), "
-              + $"expected ({before.BegIdx},{before.Count + 1})");
+        Check(after.BegIdx == before.BegIdx && after.Count == before.Count,
+              $"{what}: a rejected Update moved ({before.BegIdx},{before.Count}) -> "
+              + $"({after.BegIdx},{after.Count})");
         _advRejects++;
+    }
+
+    /// <summary><c>Advance()</c> — the one call that moves the range without a bar.</summary>
+    private static void AdvSkip(string what, Func<OutRange> range, Action adv)
+    {
+        OutRange before = range();
+        adv();
+        OutRange after = range();
+        Check(after.BegIdx == before.BegIdx && after.Count == before.Count + 1,
+              $"{what}: Advance() left ({after.BegIdx},{after.Count}), "
+              + $"expected ({before.BegIdx},{before.Count + 1})");
+        _advSkips++;
+    }
+
+    private static void AdvSkipHeld(string what, double before, double after)
+    {
+        Check(Bits(before) == Bits(after),
+              $"{what}: Advance() moved Value ({before} -> {after})");
+        _advSkipHolds++;
     }
 
     private static void AdvHeld(string what, double before, double after)
@@ -1172,28 +1193,31 @@ public static class StreamApiTest
         _advPeekStills++;
     }
 
-    /// <summary>What ONE rejected <c>Update</c> costs, in absolute numbers.</summary>
+    /// <summary>What ONE rejected <c>Update</c> costs, in absolute numbers: nothing (#384).</summary>
     /// <remarks>
     /// <para>The non-finite gate above pins a rejected <c>Update</c> against a
     /// control handle. That is an EQUIVALENCE, and therefore symmetric: it cannot
-    /// see a change that moves both sides equally. Delete the advance from the
+    /// see a change that moves both sides equally — put the advance back on the
     /// emitted reject arm and both handles move at once, so the whole suite —
-    /// here, in C and in Java — stays green, leaving the rule pinned only by the generator's source-text
-    /// gate. This method compares against no control at all: it reads
-    /// <c>OutRange</c>, offers one bad bar, and demands the exact numbers.</para>
-    /// <para>Both halves of U3 are asserted on the SAME call — the count moved by
-    /// exactly one AND <c>Value</c> did not move. A change that stepped the state
-    /// without counting, or counted while stepping, satisfies either half alone;
-    /// only the pair pins "counted, not committed".</para>
-    /// <para>Then a good bar, which must still produce a value and advance by one:
-    /// refusing a bar beats computing on it only if the handle survives the refusal.
-    /// And the mirror — <c>Peek</c> advances NOTHING, rejected or not. That half
-    /// regresses silently, because a counting Peek breaks no value anywhere.</para>
+    /// here, in C and in Java — stays green, leaving the rule pinned only by the
+    /// generator's source-text gate. This method compares against no control at
+    /// all: it reads <c>OutRange</c>, offers one bad bar, and demands the exact
+    /// numbers.</para>
+    /// <para>Both halves are asserted on the SAME call — the count did not move
+    /// AND <c>Value</c> did not move — so a change that stepped the state while
+    /// leaving the count, or the reverse, fails here rather than half-passing.</para>
+    /// <para>Then a good bar, which must produce a value and advance by exactly
+    /// one: that is the retry, and it is the case an always-counting rejection
+    /// could not express, since it charged one real bar twice. Then
+    /// <c>Advance()</c>, the one call that moves the range without a bar: +1, with
+    /// <c>Value</c> still answering the bar before it. And the mirror —
+    /// <c>Peek</c> moves NOTHING, rejected or not. That half regresses silently,
+    /// because a counting Peek breaks no value anywhere.</para>
     /// <para>Coverage is by stream TIER, as everywhere else in this file: the loop
     /// tier, dual-mode, both dispatch arms, the period bank, two composed
     /// multi-output functions, and an integer output over four price inputs.</para>
     /// </remarks>
-    private static void ARejectedUpdateCostsExactlyOneBar()
+    private static void ARejectedUpdateCostsNothingAndAdvanceCostsOneBar()
     {
         var core = new Core();
         const int warm = 60;
@@ -1232,6 +1256,8 @@ public static class StreamApiTest
             double sGot = 0.0;
             AdvResume("SMA", () => s.OutRange, () => sGot = s.Update(closes[warm]));
             AdvProduced("SMA", sGot, s.Value);
+            AdvSkip("SMA", () => s.OutRange, s.Advance);
+            AdvSkipHeld("SMA", sGot, s.Value);
 
             /* --- dual-mode tier, three price inputs -------------------------- */
             var d = core.MinusDiOpen(h, l, c, 14);
@@ -1249,6 +1275,8 @@ public static class StreamApiTest
             AdvResume("MINUS_DI", () => d.OutRange,
                 () => dGot = d.Update(highs[warm], lows[warm], closes[warm]));
             AdvProduced("MINUS_DI", dGot, d.Value);
+            AdvSkip("MINUS_DI", () => d.OutRange, d.Advance);
+            AdvSkipHeld("MINUS_DI", dGot, d.Value);
 
             /* --- dispatch, both arms; period 1 is the identity loop, which never
                reaches a sub-stream and carries its own advance ---------------- */
@@ -1266,6 +1294,8 @@ public static class StreamApiTest
                 double mGot = 0.0;
                 AdvResume($"MA({period})", () => m.OutRange, () => mGot = m.Update(closes[warm]));
                 AdvProduced($"MA({period})", mGot, m.Value);
+                AdvSkip($"MA({period})", () => m.OutRange, m.Advance);
+                AdvSkipHeld($"MA({period})", mGot, m.Value);
             }
 
             /* --- period bank; the poisoned slot is the PERIOD, the input that
@@ -1282,6 +1312,8 @@ public static class StreamApiTest
             double vGot = 0.0;
             AdvResume("MAVP", () => vp.OutRange, () => vGot = vp.Update(closes[warm], p[0]));
             AdvProduced("MAVP", vGot, vp.Value);
+            AdvSkip("MAVP", () => vp.OutRange, vp.Advance);
+            AdvSkipHeld("MAVP", vGot, vp.Value);
 
             /* --- composed, three outputs: all three must be left alone ------- */
             var b = core.BbandsOpen(c, 20, 2.0, 2.0, MAType.SMA);
@@ -1301,6 +1333,10 @@ public static class StreamApiTest
             AdvProduced("BBANDS.upper", bGot.RealUpperBand, b.Value.RealUpperBand);
             AdvProduced("BBANDS.middle", bGot.RealMiddleBand, b.Value.RealMiddleBand);
             AdvProduced("BBANDS.lower", bGot.RealLowerBand, b.Value.RealLowerBand);
+            AdvSkip("BBANDS", () => b.OutRange, b.Advance);
+            AdvSkipHeld("BBANDS.upper", bGot.RealUpperBand, b.Value.RealUpperBand);
+            AdvSkipHeld("BBANDS.middle", bGot.RealMiddleBand, b.Value.RealMiddleBand);
+            AdvSkipHeld("BBANDS.lower", bGot.RealLowerBand, b.Value.RealLowerBand);
 
             /* --- composed, one sub feeding the next -------------------------- */
             var k = core.StochOpen(h, l, c, 5, 3, MAType.SMA, 3, MAType.SMA);
@@ -1320,6 +1356,9 @@ public static class StreamApiTest
                 () => kGot = k.Update(highs[warm], lows[warm], closes[warm]));
             AdvProduced("STOCH.slowK", kGot.SlowK, k.Value.SlowK);
             AdvProduced("STOCH.slowD", kGot.SlowD, k.Value.SlowD);
+            AdvSkip("STOCH", () => k.OutRange, k.Advance);
+            AdvSkipHeld("STOCH.slowK", kGot.SlowK, k.Value.SlowK);
+            AdvSkipHeld("STOCH.slowD", kGot.SlowD, k.Value.SlowD);
 
             /* --- integer output over four price inputs ----------------------- */
             var j = core.CdldojiOpen(o, h, l, c);
@@ -1343,19 +1382,24 @@ public static class StreamApiTest
             Check(jGot == 100 && j.Value == jGot,
                   $"CDLDOJI: the bar after the rejection produced {jGot}");
             _advValues++;
+            AdvSkip("CDLDOJI", () => j.OutRange, j.Advance);
+            AdvSkipHeld("CDLDOJI", jGot, j.Value);
         }
 
         Console.WriteLine($"  Rejected-Update advance gate (U3, absolute): {_advRejects} "
-            + $"rejection(s) counted once, {_advHolds} untouched value(s), {_advResumes} "
+            + $"rejection(s) that cost nothing, {_advHolds} untouched value(s), {_advResumes} "
             + $"resumed bar(s), {_advValues} value(s) produced, {_advPeekStills} "
-            + "Peek(s) that moved nothing");
+            + $"Peek(s) that moved nothing, {_advSkips} Advance(s), {_advSkipHolds} "
+            + "value(s) held across one");
 
         /* Non-vacuity. Literal floors, every counter incremented at its own
            assertion. */
         Check(_advRejects >= 24 && _advHolds >= 66 && _advResumes >= 24
-              && _advValues >= 33 && _advPeekStills >= 48,
+              && _advValues >= 33 && _advPeekStills >= 48
+              && _advSkips >= 24 && _advSkipHolds >= 33,
               "the rejected-Update advance gate ran fewer checks than it was written "
-              + $"with ({_advRejects}/{_advHolds}/{_advResumes}/{_advValues}/{_advPeekStills})");
+              + $"with ({_advRejects}/{_advHolds}/{_advResumes}/{_advValues}/{_advPeekStills}"
+              + $"/{_advSkips}/{_advSkipHolds})");
     }
 
     public static int Run()
@@ -1382,7 +1426,7 @@ public static class StreamApiTest
         MultiOutputValueIsAStruct();
         CatalogueAgreesWithTheEmittedSurface();
         NonFiniteInputsAreRejected();
-        ARejectedUpdateCostsExactlyOneBar();
+        ARejectedUpdateCostsNothingAndAdvanceCostsOneBar();
 
         if (_failures == 0)
         {

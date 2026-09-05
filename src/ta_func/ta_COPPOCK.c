@@ -961,11 +961,7 @@ TA_RetCode TA_COPPOCK_OpenAndFillInternal( struct TA_COPPOCK_Stream **stream, co
 TA_LIB_API TA_RetCode TA_COPPOCK_Update( TA_COPPOCK_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    TA_COPPOCK_StepImpl( stream, inReal, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;

@@ -621,11 +621,7 @@ TA_RetCode TA_ERI_OpenAndFillInternal( struct TA_ERI_Stream **stream, const doub
 TA_LIB_API TA_RetCode TA_ERI_Update( TA_ERI_Stream *stream, double inHigh, double inLow, double inClose, double *outBullPower, double *outBearPower )
 {
    if( !stream || !outBullPower || !outBearPower ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
    TA_ERI_StepImpl( stream, inHigh, inLow, inClose, outBullPower, outBearPower );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;

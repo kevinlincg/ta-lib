@@ -33,8 +33,8 @@
 //!
 //! The corpus-wide form of this lives in `stream_verify`'s range leg, which
 //! runs it for every function in all four language servers. What is here is the
-//! part that leg cannot see: `peek` leaving the count alone, and a clone's
-//! updates extending only the clone.
+//! part that leg cannot see: `peek` leaving the count alone, a clone's updates
+//! extending only the clone, and `advance` counting a bar nothing was fed.
 
 use crate::ta_func::types::{Core, OutRange, RetCode};
 use crate::MAType;
@@ -257,38 +257,85 @@ fn a_clone_carries_the_range_and_then_diverges() {
     );
 }
 
-/// A rejected bar is still a bar: `update` refuses it, the handle's state does
-/// not move, and the count advances anyway (rule U3). That is what keeps two
-/// handles fed the same series positionally aligned when one rejects a bar the
-/// other accepts — the reason a caller can chain them at all.
+/// A rejected bar costs nothing (#384): `update` refuses it, the state does not
+/// move, and neither does the count. The caller then picks — re-feed the bar when
+/// a corrected value arrives, or `advance()` past it — and both are pinned here,
+/// against a control handle that was never offered the bad bars.
 ///
-/// `peek` is the mirror and is asserted here too, because a peek that counted a
-/// bar would be a peek that writes the handle, and `&self` is the whole contract.
+/// The control is what kills the double-count: three rejections followed by the
+/// real bar must leave this handle exactly where a handle fed only the real bar
+/// sits.
+///
+/// `peek` is the mirror and is asserted too, because a peek that counted a bar
+/// would be a peek that writes the handle, and `&self` is the whole contract.
 #[test]
-fn a_rejected_bar_is_counted_by_update_and_never_by_peek() {
+fn a_rejected_bar_costs_nothing_and_the_caller_chooses() {
     let core = Core::new();
     let (_, _, close, _, _) = series(N);
 
     let (mut s, _) = core.sma_open(&close[..WARM], 14).expect("open");
-    let mut expect = s.out_range();
+    let (mut ctl, _) = core.sma_open(&close[..WARM], 14).expect("control open");
+    let before = s.out_range();
     for bad in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
         let held = s.value();
-        let before = s.out_range();
         assert!(matches!(s.peek(bad), Err(RetCode::BadParam)), "a non-finite bar is rejected");
         assert_eq!(s.out_range(), before, "peek counts nothing, rejected or not");
 
         assert!(matches!(s.update(bad), Err(RetCode::BadParam)), "a non-finite bar is rejected");
-        expect.count += 1;
-        assert_eq!(s.out_range(), expect, "a rejected bar is counted");
+        assert_eq!(s.out_range(), before, "a rejected update counts nothing either");
         assert_eq!(
             s.value().to_bits(),
             held.to_bits(),
-            "the rejected bar's output is the previous output, held"
+            "and leaves the value the previous bar produced"
         );
     }
-    s.update(close[WARM]).expect("finite bar");
-    expect.count += 1;
-    assert_eq!(s.out_range(), expect, "and the handle is still usable");
+
+    // The retry: the bad print is re-sent corrected, for the SAME bar.
+    let got = s.update(close[WARM]).expect("finite bar");
+    let want = ctl.update(close[WARM]).expect("finite bar");
+    assert_eq!(got.to_bits(), want.to_bits(), "the rejections left nothing in the state");
+    assert_eq!(
+        s.out_range(),
+        ctl.out_range(),
+        "the re-fed bar is counted once, not once per rejection"
+    );
+
+    // The other answer: count a bar that will never be fed. Only the count
+    // moves, so the skipped bar's output is the previous one, held.
+    let held = s.value();
+    let at = s.out_range();
+    s.advance();
+    assert_eq!(
+        s.out_range(),
+        OutRange { beg_idx: at.beg_idx, count: at.count + 1 },
+        "advance counts exactly one bar"
+    );
+    assert_eq!(s.value().to_bits(), held.to_bits(), "and holds the value across it");
+
+    // A skipped bar is not a poisoned one.
+    s.update(close[WARM + 1]).expect("finite bar");
+    assert_eq!(s.out_range().count, at.count + 2, "and the handle is still usable");
+}
+
+/// The saturation guard, which no feed-driven test can reach: `MAX_INDEX` bars
+/// is 100 million, and `advance` is the only call that moves the count without
+/// also doing O(period) work per bar.
+#[test]
+fn advance_saturates_at_max_index() {
+    let core = Core::new();
+    let (_, _, close, _, _) = series(N);
+    let (mut s, _) = core.sma_open(&close[..WARM], 14).expect("open");
+    // Bounded, so an `advance` that stopped moving the count FAILS here instead
+    // of spinning: a test that hangs on its own regression reports nothing.
+    let mut spins = 0usize;
+    while s.out_range().count < Core::MAX_INDEX {
+        s.advance();
+        spins += 1;
+        assert!(spins <= Core::MAX_INDEX, "advance stopped moving the count short of MAX_INDEX");
+    }
+    assert_eq!(s.out_range().count, Core::MAX_INDEX);
+    s.advance();
+    assert_eq!(s.out_range().count, Core::MAX_INDEX, "the count saturates rather than wrapping");
 }
 
 /// The anchored openers: `<N>_OpenInternal` begins at `max(startIdx, lookback)`,

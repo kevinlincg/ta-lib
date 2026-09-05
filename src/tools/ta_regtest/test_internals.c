@@ -1050,7 +1050,7 @@ static ErrorNumber testBatchArgumentContract( void )
       }
 
       /* Declining the nullable output did not make the REQUIRED one optional --
-       * and that rejection is a presence guard, so it counts no bar. */
+       * and, like every rejection, it counts no bar. */
       if( TA_MAMA_OpenAndFill( &st, bars, 252, 0.5, 0.05, &beg, &nb, outA, outB ) != TA_SUCCESS )
       {
          printf( "\nFailed: the U6a control open did not run\n" );

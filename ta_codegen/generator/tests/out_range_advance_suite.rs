@@ -1,23 +1,30 @@
-//! A rejected bar is still counted (rule U3), in all four backends.
+//! Only an ACCEPTED bar advances the range, in all four backends (#384).
 //!
-//! `Update` refuses a non-finite bar and writes no state — but the bar happened
-//! and occupies a position in the series, so the handle's `OutRange` count moves
-//! anyway. That is what keeps two handles driven off one feed positionally
-//! aligned when only one of them rejects a bar.
+//! `Update` refuses a non-finite bar, writes no state, and moves no count: the
+//! rejection costs the caller nothing but the call. Counting a bar the caller
+//! decided not to feed is `TA_StreamAdvance`'s job — `advance()`, `advance()`,
+//! `Advance()` — which is what leaves the retry expressible.
 //!
 //! `stream_verify` never feeds a non-finite bar, so it cannot see this at all.
 //! The per-backend stream suites in C, Java and C# can. What this suite adds
-//! over them is reach: one check, all four backends, all 176 functions, on the
-//! PR gate — where the Java and C# suites are nightly-only. Two things are
-//! pinned here, and the second is the one most likely to regress silently:
+//! over them is reach: one check, all four backends, every streaming function,
+//! on the PR gate — where the Java and C# suites are nightly-only. Three things
+//! are pinned here, and the last is the one most likely to regress silently:
 //!
-//! 1. Every `Update` advances between its finite test and the rejection.
-//! 2. No `Peek` advances anything, anywhere. A peek that moved the count is a
+//! 1. No advance between a `Update`'s finite test and the rejection it guards —
+//!    the window an advance would be re-added into.
+//! 2. The accepted bar still advances, after the finite test. A "fix" that
+//!    deleted the advance outright, or hoisted it above the presence guards,
+//!    fails here.
+//! 3. No `Peek` advances anything, anywhere. A peek that moved the count is a
 //!    peek that wrote the handle, which is the whole guarantee of the receiver
 //!    being `const`/`&self`.
 //!
-//! And the rejections that must NOT advance stay put: the handle and output
-//! presence guards. Only the per-bar finite test counts a bar it turned down.
+//! The three managed backends' `advance` is emitted per handle and swept here
+//! too. C's is one hand-written function in `ta_utility.c` reached through the
+//! shared range head, so nothing per-function can see it: its gate is
+//! `regen-check` over the emitted prototype, and `test_stream_finite.c` leg (d),
+//! which does not compile without it.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -183,12 +190,14 @@ fn positions(hay: &str, needle: &str) -> Vec<usize> {
     hay.match_indices(needle).map(|(i, _)| i).collect()
 }
 
-/// Between each finite test and the rejection it guards there is exactly one
-/// advance. Searching forward from the test is what places the advance INSIDE
-/// the reject block: an advance hoisted above the `if` would land before the
-/// anchor and read as missing, which is the answer we want — the accepted bar
-/// must not be counted twice.
-fn advance_sits_on_every_reject(
+/// Between each finite test and the rejection it guards there is no advance at
+/// all. Searching forward from the test is what makes the window the reject
+/// block itself — the one place an advance could be re-added and still be
+/// reached only by a refused bar.
+///
+/// Both anchors are asserted present, because a window that matched nothing
+/// would satisfy "no advance in it" for the wrong reason.
+fn no_advance_on_any_reject(
     what: &str,
     body: &str,
     test: &str,
@@ -208,19 +217,34 @@ fn advance_sits_on_every_reject(
         let window = &body[*p..r];
         assert_eq!(
             window.matches(guard).count(),
-            1,
-            "{what}: the rejected bar is not counted exactly once before the rejection \
-             — rule U3 says a bar that happened is counted even when it is refused:\n{body}"
+            0,
+            "{what}: the refused bar is counted. A rejection changes nothing at all \
+             (#384) — counting a bar the caller declined to feed is what \
+             TA_StreamAdvance is for:\n{body}"
         );
     }
     sites.len()
 }
 
+/// The per-handle `advance`, in the three backends that emit one. Matched on its
+/// signature and on the saturating guard in its body, so an accessor that lost
+/// the `MAX_INDEX` bound (#180) does not read as present.
+fn advance_entry_sig(lang: &str) -> Option<&'static str> {
+    match lang {
+        "c" => None, // one hand-written TA_StreamAdvance, not per function
+        "rust" => Some("pub fn advance(&mut self) {"),
+        "java" => Some("public void advance() {"),
+        "csharp" => Some("public void Advance()"),
+        other => panic!("unknown backend {other}"),
+    }
+}
+
 /// The corpus sweep. One test rather than four so the four backends are
 /// generated once, not four times over.
 #[test]
-fn a_rejected_bar_is_counted_by_update_and_never_by_peek() {
+fn only_an_accepted_bar_advances_the_range() {
     let (mut updates, mut peeks, mut guards) = (0usize, 0usize, 0usize);
+    let mut advancers = 0usize;
     let mut no_bars = Vec::new();
     for name in streaming_funcs() {
         let upper = name.to_uppercase();
@@ -238,31 +262,42 @@ fn a_rejected_bar_is_counted_by_update_and_never_by_peek() {
 
             let upd = body_of(&s, entry_sig(lang, &upper, "update"));
             let scalar = finite_test(lang, &bars);
-            updates += advance_sits_on_every_reject(
+            updates += no_advance_on_any_reject(
                 &format!("{name}/{lang} Update"),
                 &upd,
                 &scalar,
                 guard,
                 reject,
             );
-            // The accepted bar is still counted too, so a "fix" that merely
-            // moved the one advance onto the reject path fails here.
+            // The accepted bar IS still counted, so deleting the advance
+            // outright fails here rather than passing the check above.
+            let advances = positions(&upd, guard);
             assert!(
-                positions(&upd, guard).len() >= 2,
-                "{name}: {lang} Update no longer counts BOTH the accepted and the \
-                 rejected bar:\n{upd}"
+                !advances.is_empty(),
+                "{name}: {lang} Update no longer counts the accepted bar:\n{upd}"
             );
             // U1/U2: the presence guards answer before any bar is looked at, and
             // a call that never reached the series must not move its count.
-            let first_advance = positions(&upd, guard)[0];
             let at_test = upd.find(&scalar).expect("the finite test");
             assert!(
-                first_advance > at_test,
+                advances[0] > at_test,
                 "{name}: {lang} Update advances before it has even tested the bar — a \
                  presence guard is counting a bar that was never handed over:\n{upd}"
             );
 
             guards += 1;
+
+            // The call that DOES count a skipped bar, and the only one left that
+            // moves the range without a bar.
+            if let Some(sig) = advance_entry_sig(lang) {
+                let adv = body_of(&s, |l: &str| l.trim_start().starts_with(sig));
+                assert!(
+                    adv.contains(guard),
+                    "{name}: {lang} advance() does not move the count under the \
+                     MAX_INDEX guard:\n{adv}"
+                );
+                advancers += 1;
+            }
 
             let peek = body_of(&s, entry_sig(lang, &upper, "peek"));
             assert!(
@@ -285,8 +320,12 @@ fn a_rejected_bar_is_counted_by_update_and_never_by_peek() {
     assert!(updates >= 700, "only {updates} Update reject sites were checked");
     assert!(peeks >= 700, "only {peeks} Peek bodies were checked");
     assert!(guards >= 700, "only {guards} non-advancing guard checks were made");
+    // Its own counter, not a share of the others: `advance` is emitted by three
+    // backends, so a sweep that stopped reaching it would still saturate theirs.
+    assert!(advancers >= 600, "only {advancers} advance() bodies were checked");
     println!(
-        "checked {updates} Update reject sites, {peeks} peeks, {guards} guards across {} backends",
+        "checked {updates} Update reject sites, {peeks} peeks, {guards} guards, \
+         {advancers} advance() bodies across {} backends",
         LANGS.len()
     );
 }

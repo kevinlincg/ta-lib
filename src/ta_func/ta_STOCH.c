@@ -1161,11 +1161,7 @@ TA_LIB_API TA_RetCode TA_STOCH_Update( TA_STOCH_Stream *stream, double inHigh, d
    TA_RetCode retCode;
 
    if( !stream || !outSlowK || !outSlowD ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
    retCode = TA_STOCH_StepImpl( stream, inHigh, inLow, inClose, outSlowK, outSlowD );
    if( retCode != TA_SUCCESS ) return retCode;
    stream->cur_outSlowK = *outSlowK;

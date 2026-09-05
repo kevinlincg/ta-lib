@@ -37,6 +37,15 @@ it has an output for, in the input series' coordinates: `TA_StreamOutRange` in C
 ints), `out_range()`, `outRange()`, `OutRange`. Which calls move it is
 `docs/error-handling-spec.md` §2.4's business.
 
+**`TA_StreamAdvance` counts a bar the handle was not fed** — `advance()`,
+`advance()`, `Advance()`. C's is one function over any handle, reading the same
+shared range head `TA_StreamOutRange` does; the other three emit it per handle
+class, as they do `out_range`. It moves the count by one and nothing else, so
+the skipped bar's output is the previous one, held. It exists because a rejected
+`update` changes nothing: a caller with a corrected value re-feeds the bar, and
+one without says so here rather than letting two handles on one feed drift a bar
+apart.
+
 Multi-output functions produce one value per output per update: an out-pointer
 each in C, a tuple in Rust, a caller-owned sink in Java, a `readonly record
 struct` in C#.
@@ -144,9 +153,8 @@ period in effect at open.
   series, computes and forgets, so a NaN reaches only the outputs depending on
   that bar; a handle carries recursive accumulators, so one non-finite bar
   poisons every value it will ever produce afterwards. The finite check runs
-  before any STATE is written, so that half of "the handle is unchanged" is
-  unconditional and is what the generated docs say; `OutRange` is the one thing
-  an `Update` rejection does move.
+  before any STATE is written, so "the handle is unchanged" holds whole — a
+  rejected `Update` does not move `OutRange` either.
 
   Composition is where even the state half fails: a sub-stream re-checks an
   intermediate the library itself computed and rejects it after its siblings have
@@ -189,6 +197,7 @@ TA_LIB_API TA_RetCode TA_SMA_Clone( const TA_SMA_Stream *stream, TA_SMA_Stream *
 TA_LIB_API TA_RetCode TA_SMA_Close( TA_SMA_Stream *stream );
 
 TA_LIB_API TA_RetCode TA_StreamOutRange( const void *stream, int *outBegIdx, int *outNBElement );
+TA_LIB_API TA_RetCode TA_StreamAdvance( void *stream );
 ```
 
 Multi-input functions take the price scalars in batch order; multi-output ones

@@ -1086,19 +1086,16 @@ fn build_step_ctx(func: &FuncDef, models: &[&StreamModel], typing: &Typing) -> R
 /// retained: one non-finite bar poisons every recursive accumulator in it for
 /// the rest of its life, long after the feed recovers.
 ///
-/// `advance` belongs to the committing entry points only: the rejected bar is
-/// still a bar and is still counted, but `peek` takes `&self` and must count
-/// nothing — pass `false` there and the borrow checker keeps it honest.
-fn finite_bar_check(func: &FuncDef, indent: &str, advance: bool) -> String {
+/// The rejection changes nothing at all — the produced-bar count included.
+/// Counting a bar the caller declined to commit is `advance`'s job.
+fn finite_bar_check(func: &FuncDef, indent: &str) -> String {
     let bars = streaming::input_array_names(func);
     if bars.is_empty() {
         return String::new();
     }
     let conds: Vec<String> = bars.iter().map(|b| format!("!{b}.is_finite()")).collect();
-    let inner = format!("{indent}    ");
-    let advance = if advance { advance_out_count(&inner) } else { String::new() };
     format!(
-        "{indent}if {} {{\n{advance}{inner}return Err(RetCode::BadParam);\n{indent}}}\n",
+        "{indent}if {} {{\n{indent}    return Err(RetCode::BadParam);\n{indent}}}\n",
         conds.join(" || ")
     )
 }
@@ -2937,16 +2934,17 @@ fn emit_update_and_peek(
          \x20   /// whatever it is given — a handle retains its state, so a single\n\
          \x20   /// non-finite bar would poison every later value it produces.\n\
          \x20   ///\n\
-         \x20   /// [`Self::out_range`] counts the rejected bar all the same: it happened,\n\
-         \x20   /// so two handles fed the same series stay positionally aligned even when\n\
-         \x20   /// one rejects a bar the other accepts."
+         \x20   /// A rejection leaves [`Self::out_range`] alone too. Re-feed the bar when\n\
+         \x20   /// a corrected value arrives, or call [`Self::advance`] to count it and\n\
+         \x20   /// carry on — two handles on one feed drift a bar apart if neither\n\
+         \x20   /// happens."
     );
     let _ = writeln!(o, "    #[doc(alias = \"TA_{n}_Update\")]");
     let _ = writeln!(
         o,
         "    pub fn update(&mut self, {sig_bars}) -> Result<{vt}, RetCode> {{"
     );
-    o.push_str(&finite_bar_check(func, "        ", true));
+    o.push_str(&finite_bar_check(func, "        "));
     // Retain the value(s) this bar produced where the step has no transition
     // tail to ride on — the composed, dispatch and period-bank steps write the
     // caller's slots directly. `step_fallible` is exactly that set. Placed with
@@ -2968,8 +2966,7 @@ fn emit_update_and_peek(
         "        Core::{sn}_step_impl(&mut self.state, {cs_args}{fwd_bars}{out_refs}){step_try};"
     );
     o.push_str(&cur_retain());
-    // After the step: a sub-stream rejecting through `?` must not count the
-    // bar, and the non-finite check above owns the one rejection that does.
+    // After the step: a sub-stream rejecting through `?` must not count the bar.
     o.push_str(&advance_out_count("        "));
     let _ = writeln!(o, "        Ok({ret})");
     let _ = writeln!(o, "    }}\n");
@@ -2985,14 +2982,13 @@ fn emit_update_and_peek(
          \x20   /// # Errors\n\
          \x20   ///\n\
          \x20   /// [`RetCode::BadParam`] if any bar value is not finite, on the same test\n\
-         \x20   /// `update` applies — but a rejected peek changes nothing at all, where a\n\
-         \x20   /// rejected `update` still counts the bar in [`Self::out_range`]."
+         \x20   /// `update` applies, and a rejected peek changes nothing at all."
     );
     let _ = writeln!(o, "    #[doc(alias = \"TA_{n}_Peek\")]");
     let _ = writeln!(o, "    pub fn peek(&self, {sig_bars}) -> Result<{vt}, RetCode> {{");
     // Ahead of the frame, not left to the transition: a rejected bar must not
     // run any of it.
-    o.push_str(&finite_bar_check(func, "        ", false));
+    o.push_str(&finite_bar_check(func, "        "));
     // Not a fallback: every tier emits a frame, and a tier that could not is a
     // generator bug to fail on, not to ship a copying peek for. Java and C#
     // already answer that way, and the three must agree — a silent degradation
@@ -3043,15 +3039,30 @@ fn emit_update_and_peek(
          \x20   /// coordinates: `[beg_idx, beg_idx + count)`.\n\
          \x20   ///\n\
          \x20   /// It is what [`Core::{n}`] reports over the same bars: the opener sets it\n\
-         \x20   /// to `(lookback, historyLen - lookback)`, every `update` adds one to the\n\
-         \x20   /// count — a bar rejected for being non-finite included, because it still\n\
-         \x20   /// happened — `peek` leaves it alone, and a clone carries it verbatim.\n\
-         \x20   /// A plain `Open` hands back only the last value, a subset of this range,\n\
-         \x20   /// because the caller chose not to take the fill.\n\
+         \x20   /// to `(lookback, historyLen - lookback)`, every accepted `update` adds\n\
+         \x20   /// one to the count — a rejected one changes nothing, and neither does\n\
+         \x20   /// `peek` — and a clone carries it verbatim. A plain `Open` hands back\n\
+         \x20   /// only the last value, a subset of this range, because the caller chose\n\
+         \x20   /// not to take the fill.\n\
          \x20   #[doc(alias = \"TA_StreamOutRange\")]\n\
          \x20   pub fn out_range(&self) -> OutRange {{\n\
          \x20       self.out\n\
          \x20   }}"
+    );
+    let _ = writeln!(
+        o,
+        "\n    /// Count one bar this stream was not fed: [`Self::out_range`] advances by\n\
+         \x20   /// one and nothing else moves — [`Self::value`] keeps answering the\n\
+         \x20   /// previous output, which is this bar's output too.\n\
+         \x20   ///\n\
+         \x20   /// For a bar the caller leaves out: one an `update` rejected and that\n\
+         \x20   /// will not be re-fed, or a session with no print. Without it two handles\n\
+         \x20   /// on one feed drift a bar apart when only one of them skips.\n\
+         \x20   #[doc(alias = \"TA_StreamAdvance\")]\n\
+         \x20   pub fn advance(&mut self) {{\n\
+         {}\
+         \x20   }}",
+        advance_out_count("        ")
     );
     let _ = writeln!(o, "}}\n");
 }

@@ -338,33 +338,16 @@ pub fn open_internal_signature(func: &FuncDef) -> String {
 /// that, because its state is retained: one non-finite bar poisons every
 /// recursive accumulator in it for the rest of the handle's life, long after the
 /// feed recovers. So the streaming tier rejects instead, and rejects *before*
-/// mutating any state, leaving the handle's accumulators exactly as they were.
-fn finite_bar_check(func: &FuncDef, indent: &str, fail: &str, advance: Option<&str>) -> String {
+/// mutating any state, leaving the handle — its produced-bar count included —
+/// exactly as it was. Counting a bar the caller declined to commit is
+/// `TA_StreamAdvance`'s job, not this one's.
+fn finite_bar_check(func: &FuncDef, indent: &str, fail: &str) -> String {
     let bars = streaming::input_array_names(func);
     if bars.is_empty() {
         return String::new();
     }
     let conds: Vec<String> = bars.iter().map(|b| format!("!TA_IS_FINITE( {b} )")).collect();
-    reject_on(&conds.join(" || "), indent, fail, advance)
-}
-
-/// The rejection a finite-bar check renders: a bare early return, or — pass the
-/// handle in `advance` — the same return behind one advance of its produced-bar
-/// count.
-///
-/// **Only rule U3 advances.** A non-finite bar still happened and still occupies
-/// a position in the series, so an `Update` counts it and two handles driven off
-/// one feed stay positionally aligned when one rejects a bar the other accepts
-/// (`docs/error-handling-spec.md` §2.4). The presence guards leave the handle
-/// untouched, and `Peek` never advances at all.
-fn reject_on(cond: &str, indent: &str, fail: &str, advance: Option<&str>) -> String {
-    match advance {
-        None => format!("{indent}if( {cond} ) return {fail};\n"),
-        Some(handle) => format!(
-            "{indent}if( {cond} )\n{indent}{{\n{}{indent}   return {fail};\n{indent}}}\n",
-            range_head_advance(&format!("{indent}   "), handle)
-        ),
-    }
+    format!("{indent}if( {} ) return {fail};\n", conds.join(" || "))
 }
 
 /// Rules S1 and S2 — the opener's implied index pair — ahead of every presence
@@ -2692,8 +2675,7 @@ fn emit_dispatch(
         // Checked here rather than left to the sub-stream's own Update/Peek: the
         // identity arm below never reaches a sub-stream at all, it copies the bar
         // straight to the output.
-        let advance = (verb == "Update").then_some("stream");
-        o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM", advance));
+        o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM"));
         if let (Some(cond), Some(idp)) = (&identity_handle_cond, &dp.identity) {
             let _ = writeln!(o, "   if( {cond} )\n   {{");
             for (out, inp) in &idp.pairs {
@@ -3215,18 +3197,13 @@ fn emit_cur_fields(o: &mut String, func: &FuncDef) {
 /// struct leads with cannot come apart.
 pub const RANGE_HEAD_FIELDS: [&str; 2] = ["int outRangeBegIdx;", "int outRangeCount;"];
 
-/// Advance the handle's count by one bar it has an output for (issue #241);
-/// the U3 reject path calls this too, not only the committing steps.
+/// Advance the handle's count by one bar it has an output for (issue #241).
+/// Every caller is a committing step — a bar the caller declined to feed is
+/// `TA_StreamAdvance`'s.
 /// Saturates at `TA_MAX_INDEX`: past that the stream has left the index domain
 /// the batch tier addresses at all, and a signed overflow would be undefined.
 fn emit_range_head_advance(o: &mut String, indent: &str, handle: &str) {
-    o.push_str(&range_head_advance(indent, handle));
-}
-
-/// [`emit_range_head_advance`] as a statement, for the emitters that inline it
-/// into a larger one. One spelling of the saturation guard, two shapes.
-fn range_head_advance(indent: &str, handle: &str) -> String {
-    format!("{indent}if( {handle}->outRangeCount < TA_MAX_INDEX ) {handle}->outRangeCount++;\n")
+    let _ = writeln!(o, "{indent}if( {handle}->outRangeCount < TA_MAX_INDEX ) {handle}->outRangeCount++;");
 }
 
 /// Retain the value(s) this committed bar produced, for `TA_<N>_Value`.
@@ -4589,7 +4566,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "   if( !stream || !{out} ) return TA_BAD_PARAM;");
     // inPeriods is checked here too: a non-finite period would reach `(int)`, and
     // the conversion of NaN or an infinity to int is undefined behaviour.
-    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM", Some("stream")));
+    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM"));
     let _ = writeln!(o, "   for( k = 0; k < stream->nBank; k++ )");
     let _ = writeln!(o, "      {pre}_Update( stream->bank[k], {price}, &stream->scratch[k] );");
     let _ = writeln!(o, "   cpReal = {period};");
@@ -4608,7 +4585,7 @@ fn emit_period_bank(
     let _ = writeln!(o, "   int cp;");
     let _ = writeln!(o, "   double cpReal;");
     let _ = writeln!(o, "   if( !stream || !{out} ) return TA_BAD_PARAM;");
-    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM", None));
+    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM"));
     let _ = writeln!(o, "   cpReal = {period};");
     let _ = writeln!(o, "   if( !(cpReal >= stream->{min}) ) cp = stream->{min};");
     let _ = writeln!(o, "   else if( cpReal > stream->{max} ) cp = stream->{max};");
@@ -5344,7 +5321,7 @@ fn emit_update(o: &mut String, func: &FuncDef, step_ret: bool) {
         let _ = writeln!(o, "   TA_RetCode retCode;\n");
     }
     o.push_str(&presence_guard(func, Frame::Step));
-    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM", Some("stream")));
+    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM"));
     let args: Vec<String> = bars
         .iter()
         .cloned()
@@ -5396,7 +5373,7 @@ fn emit_peek(
         let _ = writeln!(o);
     }
     o.push_str(&presence_guard(func, guard_frame));
-    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM", None));
+    o.push_str(&finite_bar_check(func, "   ", "TA_BAD_PARAM"));
     o.push_str(frame_body);
     if !fallible {
         let _ = writeln!(o, "   return TA_SUCCESS;");

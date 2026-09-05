@@ -2963,10 +2963,10 @@ fn gen_ta_func_h(funcs: &[&FuncDef]) -> String {
          \x20*\n\
          \x20* It is what the batch call over the same bars reports. A handle opened\n\
          \x20* over `historyLen` bars starts at (lookback, historyLen - lookback) and\n\
-         \x20* each Update adds one — a bar rejected for being non-finite included,\n\
-         \x20* because it still happened; Peek changes nothing. So after a handle\n\
-         \x20* has been fed nbBar bars, by any mix of Open and Update, this reports\n\
-         \x20* what the batch call over ( 0, nbBar-1 ) does. The count saturates at\n\
+         \x20* each accepted Update adds one; a rejected Update changes nothing, and\n\
+         \x20* neither does Peek. So after a handle has been carried over nbBar bars,\n\
+         \x20* by any mix of Open, Update and TA_StreamAdvance, this reports what the\n\
+         \x20* batch call over ( 0, nbBar-1 ) does. The count saturates at\n\
          \x20* TA_MAX_INDEX.\n\
          \x20*\n\
          \x20* Takes any TA_<N>_Stream *; there is one accessor, not one per\n\
@@ -2975,6 +2975,19 @@ fn gen_ta_func_h(funcs: &[&FuncDef]) -> String {
          TA_LIB_API TA_RetCode TA_StreamOutRange( const void *stream,\n\
          \x20                                int *outBegIdx,\n\
          \x20                                int *outNBElement );\n\
+         \n\
+         /* Count one bar the handle was not fed: the range advances by one and\n\
+         \x20* nothing else moves — TA_<N>_Value keeps answering the previous\n\
+         \x20* output, which is this bar's output too.\n\
+         \x20*\n\
+         \x20* For a bar the caller leaves out: one an Update rejected and that will\n\
+         \x20* not be re-fed, or a session with no print. Without it two handles on\n\
+         \x20* one feed drift a bar apart when only one of them skips.\n\
+         \x20*\n\
+         \x20* Takes any TA_<N>_Stream *; there is one call, not one per function.\n\
+         \x20* Returns TA_BAD_PARAM on a NULL argument.\n\
+         \x20*/\n\
+         TA_LIB_API TA_RetCode TA_StreamAdvance( void *stream );\n\
          \n",
     );
 

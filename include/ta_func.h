@@ -13975,10 +13975,10 @@ TA_LIB_API TA_RetCode TA_ZLEMA_Clone( const TA_ZLEMA_Stream *stream, TA_ZLEMA_St
  *
  * It is what the batch call over the same bars reports. A handle opened
  * over `historyLen` bars starts at (lookback, historyLen - lookback) and
- * each Update adds one — a bar rejected for being non-finite included,
- * because it still happened; Peek changes nothing. So after a handle
- * has been fed nbBar bars, by any mix of Open and Update, this reports
- * what the batch call over ( 0, nbBar-1 ) does. The count saturates at
+ * each accepted Update adds one; a rejected Update changes nothing, and
+ * neither does Peek. So after a handle has been carried over nbBar bars,
+ * by any mix of Open, Update and TA_StreamAdvance, this reports what the
+ * batch call over ( 0, nbBar-1 ) does. The count saturates at
  * TA_MAX_INDEX.
  *
  * Takes any TA_<N>_Stream *; there is one accessor, not one per
@@ -13987,6 +13987,19 @@ TA_LIB_API TA_RetCode TA_ZLEMA_Clone( const TA_ZLEMA_Stream *stream, TA_ZLEMA_St
 TA_LIB_API TA_RetCode TA_StreamOutRange( const void *stream,
                                  int *outBegIdx,
                                  int *outNBElement );
+
+/* Count one bar the handle was not fed: the range advances by one and
+ * nothing else moves — TA_<N>_Value keeps answering the previous
+ * output, which is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will
+ * not be re-fed, or a session with no print. Without it two handles on
+ * one feed drift a bar apart when only one of them skips.
+ *
+ * Takes any TA_<N>_Stream *; there is one call, not one per function.
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_StreamAdvance( void *stream );
 
 /* Some TA functions takes a certain amount of input data
  * before stabilizing and outputing meaningful data. This is

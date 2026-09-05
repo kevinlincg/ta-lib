@@ -1686,9 +1686,13 @@ enum SvRangeSite {
     /// whose server is a separate crate and cannot reach a `pub(crate)` seam.
     Anchored = 2,
     /// The handle forked mid-stream by `copy()` / `Clone()` / `.clone()` and
-    /// driven to the end (#287). Every server but C, which exposes no way to
-    /// fork a live `TA__Stream *`.
+    /// driven to the end (#287). Every server, C included since it gained
+    /// `TA_<N>_Clone`.
     Copy = 3,
+    /// The prefix handle after one `TA_StreamAdvance` (#384) — the only call
+    /// that moves the range without a bar, and the one place its cross-language
+    /// contract is stated: exactly +1, in every backend. Runs everywhere.
+    Advance = 4,
 }
 
 /// The bit `site` sets, checked against the set the server will declare.
@@ -1722,16 +1726,18 @@ const SV_RANGE_MASK_C: u32 = sv_range_mask(&[
     SvRangeSite::Prefix,
     SvRangeSite::Anchored,
     SvRangeSite::Copy,
+    SvRangeSite::Advance,
 ]);
 const SV_RANGE_MASK_JAVA: u32 = sv_range_mask(&[
     SvRangeSite::Fill,
     SvRangeSite::Prefix,
     SvRangeSite::Anchored,
     SvRangeSite::Copy,
+    SvRangeSite::Advance,
 ]);
 const SV_RANGE_MASK_CSHARP: u32 = SV_RANGE_MASK_JAVA;
 const SV_RANGE_MASK_RUST: u32 =
-    sv_range_mask(&[SvRangeSite::Fill, SvRangeSite::Prefix, SvRangeSite::Copy]);
+    sv_range_mask(&[SvRangeSite::Fill, SvRangeSite::Prefix, SvRangeSite::Copy, SvRangeSite::Advance]);
 
 /// One comparison: `handle`'s range against the `(beg, nb)` the batch reported
 /// for the same bars. `guard` is the leg's own success condition — a leg that
@@ -2680,6 +2686,11 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
         // Open(P) + (svN - P) updates: whatever P was, the handle has consumed
         // svN bars and must report exactly what batch(0, svN-1) did.
         emit_sv_range_check(&mut s, "            ", "st", "ok && st", "svBeg", "svNb", SvRangeSite::Prefix);
+        // One TA_StreamAdvance, LAST on this handle: it deliberately leaves the
+        // batch range behind, so anything reading `st` after this reads a range
+        // that is one ahead on purpose.
+        s.push_str("            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;\n");
+        emit_sv_range_check(&mut s, "            ", "st", "ok && st", "svBeg", "svNb + 1", SvRangeSite::Advance);
         s.push_str(&format!("            if( st ) TA_{name}_Close(st);\n"));
         if candle {
             s.push_str("            pos = json_appendf(resp, resp_size, pos, \",\\\"p%d\\\":%d,\\\"match%d\\\":%d,\\\"peek%d\\\":%d\", lgi, P, lgi, ok, lgi, pkOk);\n");
@@ -6972,6 +6983,12 @@ fn emit_rust_sv_prefix_sweep(
     s.push_str(&sv_range_bit(SvRangeSite::Prefix, SV_RANGE_MASK_RUST).to_string());
     s.push_str(";\n");
     s.push_str("                        if st.out_range().beg_idx != beg || st.out_range().count != nb { range_ok = false; }\n");
+    // One `advance`, last on this handle -- see the C server for why.
+    s.push_str("                        range_legs += 1; range_sites |= ");
+    s.push_str(&sv_range_bit(SvRangeSite::Advance, SV_RANGE_MASK_RUST).to_string());
+    s.push_str(";\n");
+    s.push_str("                        st.advance();\n");
+    s.push_str("                        if st.out_range().beg_idx != beg || st.out_range().count != nb + 1 { range_ok = false; }\n");
     s.push_str("                    }\n");
     s.push_str("                }\n            }\n        }\n");
 }
@@ -7628,6 +7645,10 @@ fn emit_java_sv_func(func: &FuncDef, funcs: &[FuncDef], enums: &HashMap<String, 
     s.push_str("                if (allOk) {\n");
     let _ = writeln!(s, "                    rangeChecked = 1; rangeLegs++; rangeSites |= {};", sv_range_bit(SvRangeSite::Prefix, SV_RANGE_MASK_JAVA));
     s.push_str("                    if (st.outRange().begIdx() != beg.value || st.outRange().count() != nb.value) rangeOk = false;\n");
+    // One advance(), last on this handle -- see the C server for why.
+    let _ = writeln!(s, "                    rangeLegs++; rangeSites |= {};", sv_range_bit(SvRangeSite::Advance, SV_RANGE_MASK_JAVA));
+    s.push_str("                    st.advance();\n");
+    s.push_str("                    if (st.outRange().begIdx() != beg.value || st.outRange().count() != nb.value + 1) rangeOk = false;\n");
     s.push_str("                }\n");
     s.push_str("            }\n");
 
@@ -8956,6 +8977,10 @@ fn emit_csharp_sv_func(
     s.push_str("                if (allOk) {\n");
     let _ = writeln!(s, "                    rangeChecked = 1; rangeLegs++; rangeSites |= {};", sv_range_bit(SvRangeSite::Prefix, SV_RANGE_MASK_CSHARP));
     s.push_str("                    if (st.OutRange.BegIdx != beg || st.OutRange.Count != nb) rangeOk = false;\n");
+    // One Advance(), last on this handle -- see the C server for why.
+    let _ = writeln!(s, "                    rangeLegs++; rangeSites |= {};", sv_range_bit(SvRangeSite::Advance, SV_RANGE_MASK_CSHARP));
+    s.push_str("                    st.Advance();\n");
+    s.push_str("                    if (st.OutRange.BegIdx != beg || st.OutRange.Count != nb + 1) rangeOk = false;\n");
     s.push_str("                }\n");
     s.push_str("            }\n");
 
