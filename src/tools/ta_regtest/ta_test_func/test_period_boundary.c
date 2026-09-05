@@ -108,6 +108,7 @@
 #include "ta_test_func.h"
 #include "ta_utility.h"
 #include "server_verify.h"
+#include "test_codegen.h"   /* CODEGEN_MAX_OUTPUTS -- the one output-arity cap */
 
 /**** External functions declarations. ****/
 /* None */
@@ -121,8 +122,16 @@
 /**** Local declarations.              ****/
 #define PB_DATA_SIZE 252   /* Daily reference data size. */
 
-/* Buffers for the abstract-driven sweep (max 3 outputs per function). */
-#define PB_MAX_OUTPUT 3
+/* Buffers for the abstract-driven sweep. The widest arity the harness sizes for
+ * is one number, `CODEGEN_MAX_OUTPUTS`, and it is enforced at startup (#352) --
+ * so raising the cap for a wider function is one edit, and a function that
+ * outgrows it is named by that guard rather than surfacing here. Left as its own
+ * literal, the three loops below bind and scan only the first PB_MAX_OUTPUT
+ * outputs, and a wider function reaches the call with its last output unbound:
+ * every strict case then reports `retCode 11, expected TA_SUCCESS` against a
+ * parameter value that is perfectly valid, which names neither the cap nor the
+ * file holding it. */
+#define PB_MAX_OUTPUT CODEGEN_MAX_OUTPUTS
 /* Server-verify scratch bounds: a Price input expands to at most OHLCV+OI (6)
  * pointers, and MACDEXT carries the most optional params (6). Sized with slack;
  * pbBuildServerInputs guards the input bound, the opt loop the param bound. */
