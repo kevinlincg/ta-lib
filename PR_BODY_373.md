@@ -20,7 +20,7 @@ So the pair trades a live four-output value gate for a leg asserting the flag is
 `CODEGEN_MAX_OUTPUTS` goes 3 → 4. Every reference to it is symbolic, so the clamped loops and sized buffers scale with the define. What needed editing is the other places the number 3 is written by hand:
 
 - `V_MAX_OUTPUT` (`test_variants.c`) — this one announced itself: the `TA_S_`/VARIANT gate **failed loudly** on HA rather than clamping.
-- `PB_MAX_OUTPUT` (`test_period_boundary.c`) — this one **clamps silently** (`o < PB_MAX_OUTPUT`), so a wider function loses its extra outputs there with nothing to say so. Raised and commented. Whether that loop should fail like the other two rather than clamp is a separate call, and I have not made it here.
+- `PB_MAX_OUTPUT` (`test_period_boundary.c`) — raised and commented. An earlier revision of this body called this one a *silent* clamp; **that was wrong, and I measured it rather than leaving it asserted**. A function wider than the cap never gets its last output bound, so `TA_CallFunc` answers `TA_BAD_PARAM` and every strict sweep case fails: lowering the define to 2 on dev gives `Fail: sweep ACCBANDS.optInTimePeriod=2: retCode 11, expected TA_SUCCESS`. Loud, but the message names a valid parameter value rather than the cap, and it lands deep inside the sweep instead of at startup. Nothing goes unverified.
 
 Neither the raise nor the guard is taken on trust:
 
