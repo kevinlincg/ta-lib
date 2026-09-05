@@ -125,3 +125,19 @@ machine has no .NET SDK.
 One rationale comment in `rust_doc.rs` appeared **twice, verbatim** (the
 eight-line SUPERTREND note explaining why the trend flag gets a domain and not a
 relation). Dropped the copy, since it is in the function this change edits.
+
+## Re-verified on dev `710765c6`
+
+Dev moved under this branch — #382 removed the `UpdateAndFill` tier and the
+September indicator batch took the corpus to 201 — so the head is merged with
+`710765c6` and re-checked:
+
+- `regen-check`: green, exit 0, 201 functions. The merge needed no regeneration
+  of this branch's own output, which is what says the new indicators are not
+  candlesticks and the E8d treatment does not reach them.
+- generator suite: 936 passed / 0 failed.
+- `cargo test --doc -p ta-lib` on the generated crate: **613 passed / 0 failed**
+  — the doctests this PR is about, run on the merged head.
+
+Still not run, for the same reasons as above: the C reference suite, the
+cross-language sweeps and the C# build.
