@@ -22,8 +22,17 @@
  * musl/macOS/MSVC fall through to plain software fma(). Do NOT relax to __linux__
  * (breaks the musllinux build; guarded by the nightly `musl-build` job).
  * -ffp-contract=off keeps the clones bit-exact with each other and the
- * Rust/Java backends. */
-#if defined( __x86_64__ ) && defined( __GLIBC__ ) && defined( __GNUC__ ) && !defined( __clang__ )
+ * Rust/Java backends.
+ *
+ * Clang is admitted from 14, the release that implements target_clones on x86;
+ * an older clang rejects the attribute outright, so the floor is a compile
+ * gate, not a tuning choice. Apple clang numbers itself on its own scale and
+ * would misread that floor — it never reaches the test, because Mach-O has no
+ * ifunc and macOS has no __GLIBC__. Where the attribute expands to nothing the
+ * fused site is a libm call, and on a single-bar Peek there is no loop to
+ * amortise it (issue #380). */
+#if defined( __x86_64__ ) && defined( __GLIBC__ ) && defined( __GNUC__ ) \
+    && ( !defined( __clang__ ) || __clang_major__ >= 14 )
    #define TA_FMA_MULTIVERSION __attribute__((target_clones("default","fma")))
 #else
    #define TA_FMA_MULTIVERSION

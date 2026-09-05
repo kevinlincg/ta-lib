@@ -986,6 +986,42 @@ jobs:
             echo "== running C reference suite (software fma on musl) =="
             LD_LIBRARY_PATH="$(dirname "$SO")" "$REG"'
 
+  # The other half of the musl gate above (#380): on glibc/clang the dispatch must
+  # be PRESENT. Nothing else builds this tree with clang on Linux — the only clang
+  # coverage is macOS, where Mach-O has no ifunc and the guard is correctly inert —
+  # so a clang build silently losing the fma clone reads as a normal green nightly
+  # and costs the whole fused win (measured 1.74x on the ATR batch tier). Asserting
+  # a count rather than a name list keeps it from drifting with the fusing
+  # inventory; zero is the only value that means the guard went dark.
+  clang-glibc-build:
+    name: glibc/clang build (FMA dispatch correctly included)
+    needs: test
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout dev Branch
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+
+      - name: Build with clang — must dispatch, and compute correctly
+        shell: bash
+        run: |
+          set -e
+          clang --version
+          cmake -S . -B /tmp/bc -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang >/dev/null
+          cmake --build /tmp/bc -j"$(nproc)" >/dev/null
+          SO=$(find /tmp/bc -name "libta-lib.so.*" -type f | head -1)
+          echo "DSO: $SO"
+          n=$(readelf -sW "$SO" | awk '$4 == "IFUNC" && $8 ~ /^TA_/' | wc -l)
+          echo "TA_* IFUNC dispatch symbols (must be > 0 on glibc/clang): $n"
+          test "$n" -gt 0
+          REG=$(find /tmp/bc -name ta_regtest -type f | head -1)
+          echo "== running C reference suite (hardware-dispatched fma on glibc/clang) =="
+          LD_LIBRARY_PATH="$(dirname "$SO")" "$REG"
+
   # Memory-safety gate (#94): build the library + ta_regtest with
   # AddressSanitizer + UBSan and run the full C reference suite, including the
   # parameter-boundary sweep (every optional parameter at min/min+1/default+-1/
