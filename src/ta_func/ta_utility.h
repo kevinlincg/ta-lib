@@ -18,19 +18,22 @@
 /* FMA runtime CPU dispatch (PR #96): mark fused indicators with target_clones so
  * a portable baseline build (e.g. a manylinux wheel) dispatches to a hardware-fma
  * clone at load — no -mfma, no SIGILL on pre-2013 CPUs. glibc-only: target_clones
- * needs GNU ifunc, which musl has in NO version (Alpine gcc hard-errors), so
- * musl/macOS/MSVC fall through to plain software fma(). Do NOT relax to __linux__
- * (breaks the musllinux build; guarded by the nightly `musl-build` job).
- * -ffp-contract=off keeps the clones bit-exact with each other and the
- * Rust/Java backends.
+ * needs ifunc, which musl has in NO version (Alpine gcc hard-errors). Do NOT
+ * relax to __linux__ (breaks the musllinux build; guarded by the nightly
+ * `musl-build` job). -ffp-contract=off keeps the clones bit-exact with each
+ * other and the Rust/Java backends.
  *
  * Clang is admitted from 14, the release that implements target_clones on x86;
  * an older clang rejects the attribute outright, so the floor is a compile
- * gate, not a tuning choice. Apple clang numbers itself on its own scale and
- * would misread that floor — it never reaches the test, because Mach-O has no
- * ifunc and macOS has no __GLIBC__. Where the attribute expands to nothing the
- * fused site is a libm call, and on a single-bar Peek there is no loop to
- * amortise it (issue #380). */
+ * gate, not a tuning choice. Keep __GLIBC__ ahead of that floor: Apple clang
+ * numbers itself on its own scale and would misread a version test written for
+ * upstream releases.
+ *
+ * macOS and MSVC are held out by __GLIBC__ alone, not by any ifunc limit of the
+ * object format — clang answers supportsIFunc() true for Mach-O from 18 on — so
+ * admitting either is a separate, open question (issue #380). Where the
+ * attribute expands to nothing the fused site is a libm call, and on a
+ * single-bar Peek there is no loop to amortise it. */
 #if defined( __x86_64__ ) && defined( __GLIBC__ ) && defined( __GNUC__ ) \
     && ( !defined( __clang__ ) || __clang_major__ >= 14 )
    #define TA_FMA_MULTIVERSION __attribute__((target_clones("default","fma")))
