@@ -57,3 +57,20 @@ Two more things verified by breaking them and watching them fail: swapping the s
 ## Note on this branch's history
 
 The branch carries two commits by design. The first is a complete earlier implementation; the second supersedes its flag choice with the measurement above, keeps its two strongest legs (the asserted AVGPRICE difference and the four-way aliasing), and adds the seed-discriminating corpus. One leg of the first commit is **not** carried over and is worth a look if you want it: a malformed-bar corpus reaching the `HA_high`/`HA_low` clamp arms that ordinary bars cannot — on a well-formed bar the average is already inside `[low, high]`, so two clamp arms are unreachable without it.
+
+## Refreshed onto dev (dev at aebff428, ERI #361)
+
+The branch was cut before VORTEX (#349) and ERI (#361) landed and has been merged
+forward onto both. Every conflict either merge raised was in a generated tier —
+`ta_func_api.c`, `BuildStamp.java`, `FunctionDescription.java`, the Java server —
+so all were resolved by taking dev's side and regenerating; no hand-edited
+artifact, and no number in this body moved. HA allocates no
+`internal_error_ids.yaml` site, so it is clear of the id collisions the other
+in-flight indicator branches have been hitting.
+
+Re-run after the ERI merge: `build.py regen-check` green (regeneration is
+idempotent over the merged tree), and the full C reference suite over a fresh
+CMake build — all tests succeeded. **Not** re-run after this merge: `--codegen`,
+`--xlang-hash`, `clippy`, the Rust doctests, or the Java and C# builds.
+
+The function corpus goes 197 -> 198 against dev, adding exactly `HA`.
