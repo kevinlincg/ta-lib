@@ -1097,15 +1097,15 @@ pub fn generate(
 ///
 /// Do not extend this to the delegating tiers on the argument that their clone
 /// would come out empty — it usually does not. Measured on gcc 13.3 / x86-64
-/// Release: 30 `_Update` and 30 `_UpdateAndFill` bodies already carry the step
-/// inlined, and marking all of them yields 57 clones out of 80 that really do
-/// contain a `vfmadd`. Extend it anyway and the per-bar cost moves 1.20x on ATR,
-/// 0.87x on TRIX and 0.96x on T3 for +2.2% of the static library — TRIX
-/// regresses with three `vfmadd` and no call left in the clone that actually
-/// runs, so a clone holding the hardware instruction is not by itself a win, and
-/// nothing available here separates the winners from the losers. T3 shows the
-/// second cost: gcc stops inlining the step into a versioned body, so the tier
-/// loses inlining it already had.
+/// Release: 40 of 201 `_Update` bodies already carry the step inlined with the
+/// fused site in it, and marking those 40 gives 27 of them a `.fma` clone
+/// holding a real `vfmadd`. Extend it anyway and the per-bar cost splits — 1.40x
+/// on KAMA against 0.88x on TRIX in the same runs — for +1.0% of the static
+/// library, and nothing available here separates the winners from the losers:
+/// TRIX's `.fma` clone is the one the ifunc resolves to, carries its three
+/// `vfmadd` and no call at all, and is still slower. The other 13 show the
+/// second cost: gcc answers the attribute by pushing the step back out of line,
+/// so the tier loses the inlining it already had.
 fn mark_fma_multiversion(o: &mut String, func: &FuncDef) {
     if !fma::EMIT_FMA {
         return;
