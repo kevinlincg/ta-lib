@@ -7912,6 +7912,94 @@ TA_LIB_API TA_RetCode TA_FOSC_Value( const TA_FOSC_Stream *stream, double *outRe
 TA_LIB_API TA_RetCode TA_FOSC_Clone( const TA_FOSC_Stream *stream, TA_FOSC_Stream **clone );
 
 /*
+ * TA_FRACTAL - Williams Fractal (swing pivot detector)
+ * 
+ * Input  = High, Low
+ * Output = int, int
+ * 
+ * Optional Parameters
+ * -------------------
+ * optInLeftBars:(From 1 to 100000)
+ *    Bars required to the left of the pivot
+ * 
+ * optInRightBars:(From 1 to 100000)
+ *    Bars required to the right of the pivot
+ * 
+ * 
+ */
+TA_LIB_API TA_RetCode TA_FRACTAL( int    startIdx,
+                                  int    endIdx,
+                                             const double inHigh[],
+                                             const double inLow[],
+                                             int           optInLeftBars, /* From 1 to 100000 */
+                                             int           optInRightBars, /* From 1 to 100000 */
+                                             int          *outBegIdx,
+                                             int          *outNBElement,
+                                             int           outSwingHigh[],
+                                             int           outSwingLow[] );
+
+TA_LIB_API TA_RetCode TA_S_FRACTAL( int    startIdx,
+                                    int    endIdx,
+                                               const float  inHigh[],
+                                               const float  inLow[],
+                                               int           optInLeftBars, /* From 1 to 100000 */
+                                               int           optInRightBars, /* From 1 to 100000 */
+                                               int          *outBegIdx,
+                                               int          *outNBElement,
+                                               int           outSwingHigh[],
+                                               int           outSwingLow[] );
+
+TA_LIB_API int TA_FRACTAL_Lookback( int           optInLeftBars, /* From 1 to 100000 */
+                                             int           optInRightBars );  /* From 1 to 100000 */
+
+
+
+/*
+ * Streaming API for TA_FRACTAL — incremental per-bar evaluation.
+ * See docs/streaming-api-design.md.
+ */
+typedef struct TA_FRACTAL_Stream TA_FRACTAL_Stream;
+
+TA_LIB_API TA_RetCode TA_FRACTAL_Open( TA_FRACTAL_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInLeftBars, int optInRightBars, int *outSwingHigh, int *outSwingLow );
+
+TA_LIB_API TA_RetCode TA_FRACTAL_Update( TA_FRACTAL_Stream *stream, double inHigh, double inLow, int *outSwingHigh, int *outSwingLow );
+
+TA_LIB_API TA_RetCode TA_FRACTAL_Peek( const TA_FRACTAL_Stream *stream, double inHigh, double inLow, int *outSwingHigh, int *outSwingLow );
+
+TA_LIB_API TA_RetCode TA_FRACTAL_Close( TA_FRACTAL_Stream *stream );
+
+/*
+ * OpenAndFill: like Open, but a single pass ALSO fills the caller's arrays
+ * with the whole warm-up history — bit-identical to TA_FRACTAL( 0, historyLen-1,
+ * ... ).
+ */
+TA_LIB_API TA_RetCode TA_FRACTAL_OpenAndFill( TA_FRACTAL_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInLeftBars, int optInRightBars, int *outBegIdx, int *outNBElement, int outSwingHigh[], int outSwingLow[] );
+
+/*
+ * UpdateAndFill: commit barCount closed bars and write the barCount values,
+ * in one call — barCount back-to-back TA_FRACTAL_Update calls, including the
+ * per-bar rejection. A rejected bar k leaves the bars before it committed and
+ * written, itself uncommitted and its output slot untouched; TA_StreamOutRange
+ * then reports k+1, the rejected bar being the last one counted. Outputs must
+ * not alias the inputs or each other.
+ */
+TA_LIB_API TA_RetCode TA_FRACTAL_UpdateAndFill( TA_FRACTAL_Stream *stream, const double inHigh[], const double inLow[], int barCount, int outSwingHigh[], int outSwingLow[] );
+
+/*
+ * Value: the value(s) at the last bar the stream counted — the bar
+ * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * every accepted Update and UpdateAndFill, left alone by Peek.
+ */
+TA_LIB_API TA_RetCode TA_FRACTAL_Value( const TA_FRACTAL_Stream *stream, int *outSwingHigh, int *outSwingLow );
+
+/*
+ * Clone: fork the stream — an independent stream at the same bar, owning its
+ * own copy of everything the original owns. Both must be closed. The fork
+ * carries the value and the range verbatim.
+ */
+TA_LIB_API TA_RetCode TA_FRACTAL_Clone( const TA_FRACTAL_Stream *stream, TA_FRACTAL_Stream **clone );
+
+/*
  * TA_HMA - Hull Moving Average
  * 
  * Input  = double

@@ -221,6 +221,7 @@ public final class Functions {
       put(m, f_EXP());
       put(m, f_FLOOR());
       put(m, f_FOSC());
+      put(m, f_FRACTAL());
       put(m, f_HMA());
       put(m, f_HT_DCPERIOD());
       put(m, f_HT_DCPHASE());
@@ -1792,6 +1793,30 @@ public final class Functions {
          ),
          List.of(
             new OutputInfo(OutputType.REAL, "outReal", 0x00000001)
+         ));
+   }
+
+   private static FunctionInfo f_FRACTAL() {
+      return new FunctionInfo(
+         "FRACTAL", "Momentum Indicators", "Williams Fractal (swing pivot detector)", 0x02000000,
+         List.of(
+            new InputInfo(InputType.PRICE, "inPriceHL", 0x00000006)
+         ),
+         List.of(
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInLeftBars", 0x00000000,
+               "Left Bars", "Bars required to the left of the pivot", 2.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               1, 100000, 1, 10, 1, null),
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInRightBars", 0x00000000,
+               "Right Bars", "Bars required to the right of the pivot", 2.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               1, 100000, 1, 10, 1, null)
+         ),
+         List.of(
+            new OutputInfo(OutputType.INTEGER, "outSwingHigh", 0x00000001),
+            new OutputInfo(OutputType.INTEGER, "outSwingLow", 0x00000001)
          ));
    }
 

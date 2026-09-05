@@ -214,6 +214,7 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
             MakeExp(),
             MakeFloor(),
             MakeFosc(),
+            MakeFractal(),
             MakeHma(),
             MakeHtDcperiod(),
             MakeHtDcphase(),
@@ -2488,6 +2489,31 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
         invoke: static (core, c, startIdx, endIdx) =>
             core.FOSC(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOut(0)));
+
+    private static FunctionInfo MakeFractal() => new(
+        name: "FRACTAL",
+        group: FunctionGroup.MomentumIndicators,
+        hint: "Williams Fractal (swing pivot detector)",
+        flags: FunctionFlags.Stream,
+        unstableId: null,
+        inputs:
+        [
+            new InputInfo(InputKind.Price, "inPriceHL", PriceComponents.High | PriceComponents.Low, [PriceComponents.High, PriceComponents.Low]),
+        ],
+        optInputs:
+        [
+            new OptInputInfo("optInLeftBars", "Left Bars", "Bars required to the left of the pivot", OptInputFlags.None, new OptInputDomain.IntegerRange(1, 100000, 2, 1, 10, 1)),
+            new OptInputInfo("optInRightBars", "Right Bars", "Bars required to the right of the pivot", OptInputFlags.None, new OptInputDomain.IntegerRange(1, 100000, 2, 1, 10, 1)),
+        ],
+        outputs:
+        [
+            new OutputInfo(OutputKind.Integer, "outSwingHigh", OutputFlags.Line),
+            new OutputInfo(OutputKind.Integer, "outSwingLow", OutputFlags.Line),
+        ],
+        lookback: static (core, c) => core.FRACTAL_Lookback(c.IntOpt(0), c.IntOpt(1)),
+        invoke: static (core, c, startIdx, endIdx) =>
+            core.FRACTAL(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), c.IntOpt(1), c.IntOut(0), c.IntOut(1)));
 
     private static FunctionInfo MakeHma() => new(
         name: "HMA",

@@ -244,6 +244,8 @@ pub enum FuncId {
     FLOOR,
     /// Forecast Oscillator — [`Core::FOSC`](crate::Core::FOSC).
     FOSC,
+    /// Williams Fractal (swing pivot detector) — [`Core::FRACTAL`](crate::Core::FRACTAL).
+    FRACTAL,
     /// Hull Moving Average — [`Core::HMA`](crate::Core::HMA).
     HMA,
     /// Hilbert Transform - Dominant Cycle Period — [`Core::HT_DCPERIOD`](crate::Core::HT_DCPERIOD).
@@ -428,7 +430,7 @@ pub enum FuncId {
 
 impl FuncId {
     /// Number of functions in the registry.
-    pub const COUNT: usize = 191;
+    pub const COUNT: usize = 192;
     /// Metadata for this function (O(1) index into the const table).
     #[inline] pub fn info(self) -> &'static FuncInfo { &FUNC_TABLE[self as usize] }
     /// Upper-case TA name, e.g. "RSI".
@@ -753,7 +755,7 @@ impl FuncInfo {
 
 /// Backing storage for [`FUNCS`], indexed by [`FuncId`]. Link-time const, in
 /// `.rodata`. Private, so its length is nobody's business but this module's.
-static FUNC_TABLE: [FuncInfo; 191] = [
+static FUNC_TABLE: [FuncInfo; 192] = [
     FuncInfo {
         id: FuncId::AC,
         name: "AC",
@@ -1866,6 +1868,17 @@ static FUNC_TABLE: [FuncInfo; 191] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::FRACTAL,
+        name: "FRACTAL",
+        group: Group::MomentumIndicators,
+        hint: "Williams Fractal (swing pivot detector)",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHL", kind: InputType::Price, flags: InputFlags(0x00000006) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInLeftBars", display_name: "Left Bars", hint: "Bars required to the left of the pivot", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 2, suggested: (1, 10, 1) } }, OptInputInfo { param_name: "optInRightBars", display_name: "Right Bars", hint: "Bars required to the right of the pivot", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 2, suggested: (1, 10, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outSwingHigh", kind: OutputType::Integer, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outSwingLow", kind: OutputType::Integer, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::HMA,
         name: "HMA",
         group: Group::OverlapStudies,
@@ -2974,6 +2987,7 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "EXP" => FuncId::EXP,
         "FLOOR" => FuncId::FLOOR,
         "FOSC" => FuncId::FOSC,
+        "FRACTAL" => FuncId::FRACTAL,
         "HMA" => FuncId::HMA,
         "HT_DCPERIOD" => FuncId::HT_DCPERIOD,
         "HT_DCPHASE" => FuncId::HT_DCPHASE,
@@ -3422,6 +3436,7 @@ impl<'a> ParamHolder<'a> {
             FuncId::EXP => self.core.EXP_Lookback(),
             FuncId::FLOOR => self.core.FLOOR_Lookback(),
             FuncId::FOSC => self.core.FOSC_Lookback(self.int_opt[0]),
+            FuncId::FRACTAL => self.core.FRACTAL_Lookback(self.int_opt[0], self.int_opt[1]),
             FuncId::HMA => self.core.HMA_Lookback(self.int_opt[0]),
             FuncId::HT_DCPERIOD => self.core.HT_DCPERIOD_Lookback(),
             FuncId::HT_DCPHASE => self.core.HT_DCPHASE_Lookback(),
@@ -4794,6 +4809,20 @@ impl<'a> ParamHolder<'a> {
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.FOSC(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
                 self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::FRACTAL => {
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                if self.int_out[0].is_none() || self.int_out[1].is_none() { return Err(RetCode::BadParam); }
+                let mut o0 = self.int_out[0].take().ok_or(RetCode::BadParam)?;
+                let mut o1 = self.int_out[1].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.FRACTAL(start_idx, end_idx, i0_1, i0_2, self.int_opt[0], self.int_opt[1], &mut *o0, &mut *o1);
+                self.int_out[0] = Some(o0);
+                self.int_out[1] = Some(o1);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
                     Err(e) => e,

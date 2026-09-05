@@ -508,6 +508,7 @@ typedef enum
   TA_ADR_VACUOUS                     = 1659,
   TA_PVT_VACUOUS                     = 1660,
   TA_RVOL_VACUOUS                    = 1661,
+  TA_FRACTAL_ORACLE_VACUOUS          = 1667,
 
   /* --function= named something no test group covers, on a run that had
    * nothing else to do. Reported rather than passed silently. */

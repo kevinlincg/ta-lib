@@ -61,6 +61,7 @@ All technical-analysis functions, grouped by category. Each page documents the f
 - [DPO](/functions/dpo.md) — Detrended Price Oscillator
 - [DX](/functions/dx.md) — Directional Movement Index
 - [FOSC](/functions/fosc.md) — Forecast Oscillator
+- [FRACTAL](/functions/fractal.md) — Williams Fractal (swing pivot detector)
 - [IMI](/functions/imi.md) — Intraday Momentum Index
 - [MACD](/functions/macd.md) — Moving Average Convergence/Divergence
 - [MACDEXT](/functions/macdext.md) — MACD with controllable MA type

@@ -359,6 +359,9 @@ final class Dispatch {
          case "FOSC":
             return core.FOSC(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
+         case "FRACTAL":
+            return core.FRACTAL(
+               startIdx, endIdx, h.price(0, 1), h.price(0, 2), h.intOpt(0), h.intOpt(1), h.intOutput(0), h.intOutput(1));
          case "HMA":
             return core.HMA(
                startIdx, endIdx, h.realInput(0), h.intOpt(0), h.realOutput(0));
@@ -842,6 +845,8 @@ final class Dispatch {
             return core.FLOOR_Lookback();
          case "FOSC":
             return core.FOSC_Lookback(h.intOpt(0));
+         case "FRACTAL":
+            return core.FRACTAL_Lookback(h.intOpt(0), h.intOpt(1));
          case "HMA":
             return core.HMA_Lookback(h.intOpt(0));
          case "HT_DCPERIOD":

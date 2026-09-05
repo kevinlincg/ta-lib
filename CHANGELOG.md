@@ -23,6 +23,7 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
   - DPO: Detrended Price Oscillator, price displaced back a half cycle less its moving average (#363)
   - EFI: Elder's Force Index (#206)
   - FOSC: Forecast Oscillator, the close against the previous bar's time series forecast (#345)
+  - FRACTAL: Williams Fractal, a bounded strict swing-pivot detector (#371)
   - HMA: Hull Moving Average (#139)
   - KC: Keltner Channels (#273)
   - MARKETFI: Market Facilitation Index (#230)

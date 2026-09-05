@@ -4197,6 +4197,48 @@ static TA_RetCode TA_FOSC_SFrameClose( void *stream )
    return TA_FOSC_Close( (TA_FOSC_Stream *)stream );
 }
 
+static TA_RetCode TA_FRACTAL_SFrameOpen( void **stream,
+                  const double *const in[], int historyLen,
+                  const double optIn[],
+                  double *const outReal[], int *const outInteger[] )
+{
+   (void)outReal;
+   return TA_FRACTAL_Open(
+               (TA_FRACTAL_Stream **)stream,
+               in[0] /* inHigh */,
+               in[1] /* inLow */,
+               historyLen,
+               (int)optIn[0] /* optInLeftBars */,
+               (int)optIn[1] /* optInRightBars */,
+               outInteger[0] /* outSwingHigh */,
+               outInteger[1] /* outSwingLow */
+               );
+}
+static TA_RetCode TA_FRACTAL_SFrameFill( void **stream,
+                  const double *const in[], int historyLen,
+                  const double optIn[],
+                  int *outBegIdx, int *outNBElement,
+                  double *const outReal[], int *const outInteger[] )
+{
+   (void)outReal;
+   return TA_FRACTAL_OpenAndFill(
+               (TA_FRACTAL_Stream **)stream,
+               in[0] /* inHigh */,
+               in[1] /* inLow */,
+               historyLen,
+               (int)optIn[0] /* optInLeftBars */,
+               (int)optIn[1] /* optInRightBars */,
+               outBegIdx,
+               outNBElement,
+               outInteger[0] /* outSwingHigh */,
+               outInteger[1] /* outSwingLow */
+               );
+}
+static TA_RetCode TA_FRACTAL_SFrameClose( void *stream )
+{
+   return TA_FRACTAL_Close( (TA_FRACTAL_Stream *)stream );
+}
+
 static TA_RetCode TA_HMA_SFrameOpen( void **stream,
                   const double *const in[], int historyLen,
                   const double optIn[],
@@ -7870,6 +7912,8 @@ static const TA_StreamEntry TA_StreamTable[] = {
      1, TA_VIn_FLOOR, 0, NULL, 1, TA_VOutIsInt_FLOOR },
    { "FOSC", TA_FOSC_SFrameOpen, TA_FOSC_SFrameFill, TA_FOSC_SFrameClose,
      1, TA_VIn_FOSC, 1, TA_VOpt_FOSC, 1, TA_VOutIsInt_FOSC },
+   { "FRACTAL", TA_FRACTAL_SFrameOpen, TA_FRACTAL_SFrameFill, TA_FRACTAL_SFrameClose,
+     2, TA_VIn_FRACTAL, 2, TA_VOpt_FRACTAL, 2, TA_VOutIsInt_FRACTAL },
    { "HMA", TA_HMA_SFrameOpen, TA_HMA_SFrameFill, TA_HMA_SFrameClose,
      1, TA_VIn_HMA, 1, TA_VOpt_HMA, 1, TA_VOutIsInt_HMA },
    { "HT_DCPERIOD", TA_HT_DCPERIOD_SFrameOpen, TA_HT_DCPERIOD_SFrameFill, TA_HT_DCPERIOD_SFrameClose,
@@ -8052,6 +8096,6 @@ static const TA_StreamEntry TA_StreamTable[] = {
      1, TA_VIn_ZLEMA, 1, TA_VOpt_ZLEMA, 1, TA_VOutIsInt_ZLEMA },
 };
 
-#define TA_STREAM_TABLE_SIZE 191
+#define TA_STREAM_TABLE_SIZE 192
 
 #endif /* TA_STREAM_FRAME_H */

@@ -9857,6 +9857,84 @@ fn legs_FOSC(r: &mut Report) {
     r.legs_done("FOSC", 1);
 }
 
+const V_FRACTAL: &[(&str, i32, i32)] = &[
+    ("defaults", i32::MIN, i32::MIN),
+    ("minimums", 1i32, 1i32),
+];
+
+fn sub_FRACTAL(r: &mut Report) {
+    let core = Core::new();
+    for &(label, optInLeftBars, optInRightBars) in V_FRACTAL {
+        let Ok(lb) = core.FRACTAL_Lookback(optInLeftBars, optInRightBars) else { continue; };
+        r.control("FRACTAL", label, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outSwingHigh: Vec<i32> = Vec::with_capacity(1);
+            let mut outSwingLow: Vec<i32> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(0, lb, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+        if lb < 1 { r.no_quiet_range("FRACTAL", label); continue; }
+        r.quiet("FRACTAL", label, lb, run(|| {
+            let inHigh: Vec<f64> = Vec::with_capacity(1);
+            let inLow: Vec<f64> = Vec::with_capacity(1);
+            let mut outSwingHigh: Vec<i32> = Vec::with_capacity(1);
+            let mut outSwingLow: Vec<i32> = Vec::with_capacity(1);
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(0, lb - 1, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+}
+
+fn legs_FRACTAL(r: &mut Report) {
+    let core = Core::new();
+    let optInLeftBars = i32::MIN;
+    let optInRightBars = i32::MIN;
+    let Ok(lb) = core.FRACTAL_Lookback(optInLeftBars, optInRightBars) else { r.no_legs("FRACTAL"); return; };
+    let (startIdx, endIdx) = (lb, lb + 4);
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outSwingHigh: Vec<i32> = vec![Default::default(); 5];
+        let mut outSwingLow: Vec<i32> = vec![Default::default(); 5];
+        r.legs_control("FRACTAL", run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(startIdx, endIdx, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = Vec::with_capacity(1);
+        let inLow: Vec<f64> = series("low", endIdx + 1);
+        let mut outSwingHigh: Vec<i32> = vec![Default::default(); 5];
+        let mut outSwingLow: Vec<i32> = vec![Default::default(); 5];
+        r.leg("FRACTAL", "inHigh", 0, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(startIdx, endIdx, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+    {
+        let inHigh: Vec<f64> = series("high", endIdx + 1);
+        let inLow: Vec<f64> = Vec::with_capacity(1);
+        let mut outSwingHigh: Vec<i32> = vec![Default::default(); 5];
+        let mut outSwingLow: Vec<i32> = vec![Default::default(); 5];
+        r.leg("FRACTAL", "inLow", 1, run(|| {
+            let mut _b: usize = 0;
+            let mut _n: usize = 0;
+            let rc = core.FRACTAL_Impl(startIdx, endIdx, &inHigh, &inLow, optInLeftBars, optInRightBars, &mut _b, &mut _n, &mut outSwingHigh, &mut outSwingLow);
+            (rc, _n)
+        }));
+    }
+    r.legs_done("FRACTAL", 2);
+}
+
 const V_HMA: &[(&str, i32)] = &[
     ("defaults", i32::MIN),
     ("minimums", 1i32),
@@ -16314,6 +16392,7 @@ const PROBES: &[(&str, Probe, Probe)] = &[
     ("EXP", sub_EXP, legs_EXP),
     ("FLOOR", sub_FLOOR, legs_FLOOR),
     ("FOSC", sub_FOSC, legs_FOSC),
+    ("FRACTAL", sub_FRACTAL, legs_FRACTAL),
     ("HMA", sub_HMA, legs_HMA),
     ("HT_DCPERIOD", sub_HT_DCPERIOD, legs_HT_DCPERIOD),
     ("HT_DCPHASE", sub_HT_DCPHASE, legs_HT_DCPHASE),
@@ -16442,7 +16521,7 @@ fn no_phantom_io() {
     // The corpus is the generator's, not a list kept by hand: a probe that
     // stopped being emitted is a shrinking sweep, which is the one way this
     // file can fail open.
-    assert_eq!(PROBES.len(), 191, "probe count");
+    assert_eq!(PROBES.len(), 192, "probe count");
     assert_eq!(
         PROBES.len(),
         crate::abstract_api::funcs().count(),
