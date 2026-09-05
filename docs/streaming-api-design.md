@@ -247,12 +247,17 @@ Shape rules that are not visible in those lines:
   carries .NET's `double` equality, where `NaN` equals `NaN` and `+0.0` equals
   `-0.0`. Compare per component when bit identity is what you mean.
 - `clone()` is the universal deep copy — arrays cloned, sub-handles copied
-  recursively, the `Core` reference shared — spelled the same in all four
-  backends (`TA_<N>_Clone`, `.clone()`, `clone()`, `Clone()`), and it is the only
-  path left that copies a handle. Java's spelling needs no `Cloneable` and never
-  calls `super.clone()`, which is what the standard objection to Java `clone()`
-  actually attaches to; the remedy that objection prescribes is a copy
-  constructor, which is what every backend already emits.
+  recursively, the `Core` reference shared — and it is the only path left that
+  copies a handle. The four backends agree on the word because their languages
+  do (`TA_<N>_Clone`, Rust's derived `Clone`, Java `clone()`, C# `Clone()`); a
+  binding whose language names the concept otherwise uses its own word, the way
+  every other verb here recases. In Python that is `copy()` plus `__copy__` —
+  `clone` there reads as scikit-learn's, which returns the parameters WITHOUT
+  the fitted state, the opposite of what a handle copy owes. Java's spelling
+  needs no `Cloneable` and never calls `super.clone()`, which is what the
+  standard objection to Java `clone()` actually attaches to; the remedy that
+  objection prescribes is a copy constructor, which is what every backend
+  already emits.
 - `OpenAndFill` rejects output↔input and output↔output aliasing by reference
   equality in Java (arrays are identical or disjoint, so that is complete) and by
   `ReferenceEquals` in C#, which additionally compiles for cross-typed
