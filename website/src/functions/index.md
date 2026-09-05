@@ -16,6 +16,7 @@ All technical-analysis functions, grouped by category. Each page documents the f
 ## Math Operators
 
 - [ADD](/functions/add.md) — Vector Arithmetic Add
+- [CUMSUM](/functions/cumsum.md) — Cumulative Sum
 - [DIV](/functions/div.md) — Vector Arithmetic Div
 - [MAX](/functions/max.md) — Highest value over a specified period
 - [MAXINDEX](/functions/maxindex.md) — Index of highest value over a specified period
@@ -58,8 +59,15 @@ All technical-analysis functions, grouped by category. Each page documents the f
 - [CCI](/functions/cci.md) — Commodity Channel Index
 - [CMO](/functions/cmo.md) — Chande Momentum Oscillator
 - [CMOU](/functions/cmou.md) — Chande Momentum Oscillator (Unsmoothed)
+- [COPPOCK](/functions/coppock.md) — Coppock Curve
+- [DPO](/functions/dpo.md) — Detrended Price Oscillator
 - [DX](/functions/dx.md) — Directional Movement Index
+- [ER](/functions/er.md) — Kaufman Efficiency Ratio
+- [ERI](/functions/eri.md) — Elder Ray Index (Bull Power / Bear Power)
+- [FOSC](/functions/fosc.md) — Forecast Oscillator
+- [FRACTAL](/functions/fractal.md) — Williams Fractal
 - [IMI](/functions/imi.md) — Intraday Momentum Index
+- [KDJ](/functions/kdj.md) — KDJ Stochastic
 - [MACD](/functions/macd.md) — Moving Average Convergence/Divergence
 - [MACDEXT](/functions/macdext.md) — MACD with controllable MA type
 - [MACDFIX](/functions/macdfix.md) — Moving Average Convergence/Divergence Fix 12/26
@@ -81,7 +89,10 @@ All technical-analysis functions, grouped by category. Each page documents the f
 - [STOCHF](/functions/stochf.md) — Stochastic Fast
 - [STOCHRSI](/functions/stochrsi.md) — Stochastic Relative Strength Index
 - [TRIX](/functions/trix.md) — 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
+- [TSI](/functions/tsi.md) — True Strength Index
 - [ULTOSC](/functions/ultosc.md) — Ultimate Oscillator
+- [VHF](/functions/vhf.md) — Vertical Horizontal Filter
+- [VORTEX](/functions/vortex.md) — Vortex Indicator
 - [WAD](/functions/wad.md) — Williams' Accumulation/Distribution
 - [WILLR](/functions/willr.md) — Williams' %R
 
@@ -181,6 +192,7 @@ All technical-analysis functions, grouped by category. Each page documents the f
 
 - [AVGDEV](/functions/avgdev.md) — Average Deviation
 - [AVGPRICE](/functions/avgprice.md) — Average Price
+- [HA](/functions/ha.md) — Heikin-Ashi Candles
 - [MEDPRICE](/functions/medprice.md) — Median Price
 - [TYPPRICE](/functions/typprice.md) — Typical Price
 - [WCLPRICE](/functions/wclprice.md) — Weighted Close Price
@@ -193,14 +205,20 @@ All technical-analysis functions, grouped by category. Each page documents the f
 - [LINEARREG_ANGLE](/functions/linearreg_angle.md) — Linear Regression Angle
 - [LINEARREG_INTERCEPT](/functions/linearreg_intercept.md) — Linear Regression Intercept
 - [LINEARREG_SLOPE](/functions/linearreg_slope.md) — Linear Regression Slope
+- [PERCENTILE](/functions/percentile.md) — Percentile (nearest rank)
+- [PERCENTRANK](/functions/percentrank.md) — Percent Rank
 - [STDDEV](/functions/stddev.md) — Standard Deviation
 - [TSF](/functions/tsf.md) — Time Series Forecast
 - [VAR](/functions/var.md) — Variance
 
 ## Volatility Indicators
 
+- [ADR](/functions/adr.md) — Average Day Range
 - [ATR](/functions/atr.md) — Average True Range
+- [CVI](/functions/cvi.md) — Chaikin's Volatility
+- [MASSI](/functions/massi.md) — Mass Index
 - [NATR](/functions/natr.md) — Normalized Average True Range
+- [RVI](/functions/rvi.md) — Relative Volatility Index
 - [TRANGE](/functions/trange.md) — True Range
 
 ## Volume Indicators
@@ -214,4 +232,6 @@ All technical-analysis functions, grouped by category. Each page documents the f
 - [OBV](/functions/obv.md) — On Balance Volume
 - [PVI](/functions/pvi.md) — Positive Volume Index
 - [PVO](/functions/pvo.md) — Percentage Volume Oscillator
+- [PVT](/functions/pvt.md) — Price Volume Trend
+- [RVOL](/functions/rvol.md) — Relative Volume
 - [VWAP](/functions/vwap.md) — Volume Weighted Average Price

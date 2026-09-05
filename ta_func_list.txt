@@ -4,6 +4,7 @@ ACOS                Vector Trigonometric ACos
 AD                  Chaikin A/D Line
 ADD                 Vector Arithmetic Add
 ADOSC               Chaikin A/D Oscillator
+ADR                 Average Day Range
 ADX                 Average Directional Movement Index
 ADXR                Average Directional Movement Index Rating
 AO                  Awesome Oscillator
@@ -84,17 +85,26 @@ CEIL                Vector Ceil
 CMF                 Chaikin Money Flow
 CMO                 Chande Momentum Oscillator
 CMOU                Chande Momentum Oscillator (Unsmoothed)
+COPPOCK             Coppock Curve
 CORREL              Pearson's Correlation Coefficient (r)
 COS                 Vector Trigonometric Cos
 COSH                Vector Trigonometric Cosh
+CUMSUM              Cumulative Sum
+CVI                 Chaikin's Volatility
 DEMA                Double Exponential Moving Average
 DIV                 Vector Arithmetic Div
 DONCHIAN            Donchian Channels
+DPO                 Detrended Price Oscillator
 DX                  Directional Movement Index
 EFI                 Elder's Force Index
 EMA                 Exponential Moving Average
+ER                  Kaufman Efficiency Ratio
+ERI                 Elder Ray Index (Bull Power / Bear Power)
 EXP                 Vector Arithmetic Exp
 FLOOR               Vector Floor
+FOSC                Forecast Oscillator
+FRACTAL             Williams Fractal
+HA                  Heikin-Ashi Candles
 HMA                 Hull Moving Average
 HT_DCPERIOD         Hilbert Transform - Dominant Cycle Period
 HT_DCPHASE          Hilbert Transform - Dominant Cycle Phase
@@ -105,6 +115,7 @@ HT_TRENDMODE        Hilbert Transform - Trend vs Cycle Mode
 IMI                 Intraday Momentum Index
 KAMA                Kaufman Adaptive Moving Average
 KC                  Keltner Channels
+KDJ                 KDJ Stochastic
 LINEARREG           Linear Regression
 LINEARREG_ANGLE     Linear Regression Angle
 LINEARREG_INTERCEPT Linear Regression Intercept
@@ -117,6 +128,7 @@ MACDEXT             MACD with controllable MA type
 MACDFIX             Moving Average Convergence/Divergence Fix 12/26
 MAMA                MESA Adaptive Moving Average
 MARKETFI            Market Facilitation Index
+MASSI               Mass Index
 MAVP                Moving average with variable period
 MAX                 Highest value over a specified period
 MAXINDEX            Index of highest value over a specified period
@@ -135,11 +147,14 @@ MULT                Vector Arithmetic Mult
 NATR                Normalized Average True Range
 NVI                 Negative Volume Index
 OBV                 On Balance Volume
+PERCENTILE          Percentile (nearest rank)
+PERCENTRANK         Percent Rank
 PLUS_DI             Plus Directional Indicator
 PLUS_DM             Plus Directional Movement
 PPO                 Percentage Price Oscillator
 PVI                 Positive Volume Index
 PVO                 Percentage Volume Oscillator
+PVT                 Price Volume Trend
 QSTICK              Qstick
 RMA                 Wilder's Smoothed Moving Average
 ROC                 Rate of change : ((price/prevPrice)-1)*100
@@ -147,6 +162,8 @@ ROCP                Rate of change Percentage: (price-prevPrice)/prevPrice
 ROCR                Rate of change ratio: (price/prevPrice)
 ROCR100             Rate of change ratio 100 scale: (price/prevPrice)*100
 RSI                 Relative Strength Index
+RVI                 Relative Volatility Index
+RVOL                Relative Volume
 SAR                 Parabolic SAR
 SAREXT              Parabolic SAR - Extended
 SIN                 Vector Trigonometric Sin
@@ -169,9 +186,12 @@ TRANGE              True Range
 TRIMA               Triangular Moving Average
 TRIX                1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
 TSF                 Time Series Forecast
+TSI                 True Strength Index
 TYPPRICE            Typical Price
 ULTOSC              Ultimate Oscillator
 VAR                 Variance
+VHF                 Vertical Horizontal Filter
+VORTEX              Vortex Indicator
 VWAP                Volume Weighted Average Price
 VWMA                Volume Weighted Moving Average
 WAD                 Williams' Accumulation/Distribution

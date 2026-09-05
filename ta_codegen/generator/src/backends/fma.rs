@@ -34,11 +34,11 @@
 /// that grows is a comment that goes stale on the next indicator.
 pub const FUSING_INVENTORY: &[&str] = &[
     "adosc", "atr", "bbands", "cdlabandonedbaby", "cdlmorningdojistar",
-    "cdlmorningstar", "cdlpiercing", "cdlthrusting", "dema", "efi", "ema",
-    "ht_dcperiod", "ht_dcphase", "ht_phasor", "ht_sine", "ht_trendline",
-    "ht_trendmode", "kama", "linearreg", "macd", "macdfix", "mama", "natr",
-    "rma", "sar", "sarext", "smi", "supertrend", "t3", "tema", "trix", "tsf",
-    "wclprice", "zlema",
+    "cdlmorningstar", "cdlpiercing", "cdlthrusting", "cvi", "dema", "efi",
+    "ema", "eri", "fosc", "ht_dcperiod", "ht_dcphase", "ht_phasor", "ht_sine",
+    "ht_trendline", "ht_trendmode", "kama", "linearreg", "macd", "macdfix",
+    "mama", "massi", "natr", "rma", "rvi", "sar", "sarext", "smi", "supertrend",
+    "t3", "tema", "trix", "tsf", "tsi", "wclprice", "zlema",
 ];
 
 use std::collections::HashSet;

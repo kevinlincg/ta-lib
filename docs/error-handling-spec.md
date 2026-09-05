@@ -54,9 +54,8 @@ Two consequences worth stating outright:
 - **One error per call.** A call reports one condition and stops; it never
   accumulates.
 - **Checks precede writes**, except where a bar was accepted as data: a U3
-  rejection still counts its bar, and `UpdateAndFill` leaves the bars before the
-  rejected one committed (§2.4). Every other rejection leaves each caller-owned
-  buffer, and `OutRange`, exactly as it found them.
+  rejection still counts its bar (§2.4). Every other rejection leaves each
+  caller-owned buffer, and `OutRange`, exactly as it found them.
 - **Order matters where the codes differ — and where the count does.** Rules
   answering the same code are otherwise mutually unordered in practice: a caller
   cannot tell which of them fired, so swapping two is invisible. U3 is the
@@ -212,7 +211,7 @@ answer — measured, it does not: the fill's writes stop where the handle's
 warm-up seeds begin, or overlap them by the single slot the next `Update`
 rewrites first. The ban is there because that margin is an accident of every
 body's arithmetic that nothing states or asserts, and supporting in-place would
-promise it for 176 functions in four backends, permanently.
+promise it for every function in four backends, permanently.
 
 **Test Coverage** (S1, S2, S4, S5, S6a and S7; the rest of this tier is not yet mapped):
 `testStreamShortHistory` drives S1, S2's rejecting side and S7 in C — 9, 3 and 8
@@ -323,31 +322,17 @@ exception rather than a rule. What the scan cost, and why folding it into the
 fill loop was not the alternative, are in `docs/streaming-api-design.md`. U3 is
 untouched: a bar handed to `Update` or `Peek` is a single value.
 
-[10] Only C has a bar count: the other three take slices or arrays, which carry
-their own lengths, so "negative" is unrepresentable.
-
-[11] C is handed bare pointers and has no sizes — the same blind spot as B5 and
-S5, and ⚠️ for the same reason they are: a property of the ABI rather than a
-defect, so there is nothing here for Appendix D to track. The other three answer
-both before committing anything. `OpenAndFill`'s output capacity (S5) is now
-validated outside C as well, so the two filling entry points agree; until #268's
-follow-up `UpdateAndFill` was the only one that checked.
-
-[12] Rust cannot express it: `&[f64]` and `&mut [f64]` cannot alias, so the
-borrow checker rejects the call at compile time.
-
-### 2.4 Streaming tier — advancing (`Update`, `Peek`, `UpdateAndFill`)
+### 2.4 Streaming tier — advancing (`Update`, `Peek`)
 
 | Rule | Condition (in order) | RetCode | C | Rust | Java | C# |
 |---|---|---|:---:|:---:|:---:|:---:|
 | U1 | The handle was not supplied | `TA_BAD_PARAM` | ✅<br>&nbsp; | —<br>&nbsp; | —<br>&nbsp; | —<br>&nbsp; |
-| U2 | The output — or, for `UpdateAndFill`, an input series — was not supplied | `TA_BAD_PARAM` | ✅<br>&nbsp; | —<br>&nbsp; | ✅<br>&nbsp; | —<br>&nbsp; |
-| U4 | (`UpdateAndFill`) the bar count is negative | `TA_BAD_PARAM` | ✅<br>&nbsp; | n/a<br>[10] | n/a<br>[10] | n/a<br>[10] |
-| U5 | (`UpdateAndFill`) the input series have different lengths | `TA_BAD_PARAM` | ⚠️<br>[11] | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
-| U6 | (`UpdateAndFill`) an output is shorter than the bar count | `TA_BAD_PARAM` | ⚠️<br>[11] | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
-| U6a | (`UpdateAndFill`) an output is **declined** — null, or zero-length where the language cannot spell null. Accepted only where the .yaml marks that output `nullable` (Appendix F) | `TA_BAD_PARAM` | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
-| U7 | (`UpdateAndFill`) an output aliases an input, or another output | `TA_BAD_PARAM` | ✅<br>&nbsp; | n/a<br>[12] | ✅<br>&nbsp; | ✅<br>&nbsp; |
-| U3 | **Per bar**, after the rules above: the bar is non-finite. `UpdateAndFill` tests each of its `n` bars as the loop reaches it | `TA_BAD_PARAM` | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
+| U2 | The output was not supplied | `TA_BAD_PARAM` | ✅<br>&nbsp; | —<br>&nbsp; | ✅<br>&nbsp; | —<br>&nbsp; |
+| U6a | An output is **declined** — null, or zero-length where the language cannot spell null. Accepted only where the .yaml marks that output `nullable` (Appendix F) | `TA_BAD_PARAM` | ✅<br>&nbsp; | n/a<br>[10] | n/a<br>[10] | n/a<br>[10] |
+| U3 | **Per bar**, after the rules above: the bar is non-finite | `TA_BAD_PARAM` | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
+
+[10] The other three have no component to decline at this tier: Rust and C#
+return the value, and Java writes every field of a caller-owned sink.
 
 **A bar the call accepts as data advances the count, whether the step computes on
 it or U3 turns it down.** `OutRange` counts the bars this handle has an output
@@ -364,11 +349,11 @@ backends could honour and one could not would be worse than the accessor. `Value
 is how a caller reaches the hold, and whether to accept it or override it is the
 caller's business, at the caller's layer — never the stream's internal state.
 
-**U3 is the one rejection that advances `OutRange`.** The others do not: U1/U2 and
-U4–U7 are faults in the *call* rather than in the data — no bar was ever handed
-over — and they leave the handle exactly as it was.
+**U3 is the one rejection that advances `OutRange`.** U1 and U2 do not: they are
+faults in the *call* rather than in the data — no bar was ever handed over — and
+they leave the handle exactly as it was.
 
-The mirror case is a function whose *output* is legitimately non-finite: the seven
+The mirror case is a function whose *output* is legitimately non-finite: the eight
 carrying `TA_FUNC_FLG_NAN_INF_OUT` succeed, so the state **is** touched, `Value`
 answers that non-finite value, and `OutRange` advances by one exactly as above.
 Both directions leave the caller the same job — override the output at their own
@@ -385,53 +370,33 @@ tier deliberately does not decide it: the bar is counted, the error is reported,
 and the state is intact and usable for the next bar — so a transient bad print
 clears itself.
 
-`UpdateAndFill` is `n` back-to-back `Update`s **stopping at the first error**, the
-way a hand-written loop that acts on every failure would. U3 is the one rule in
-this document whose rejection leaves output behind: bar `k` being non-finite
-commits bars `[0, k)` with their values written, leaves bar `k` and everything
-after it uncommitted, and advances the handle's `OutRange` by `k + 1` — `k`
-committed bars plus the rejected one. The caller reads the range to
-learn where it stopped (the rejected bar is the last one counted), decides what to
-do about it, and resumes with the remainder of the series. **Output slot `k` is not
-written**, exactly as the loop's final `update` would have written nothing before
-breaking; it holds whatever the caller put there. A zero bar count is a success
-that does nothing.
-Reading the `n` bars as an input array instead — never scanned, `count += n`
-unconditionally — was considered and rejected; `docs/streaming-api-design.md`,
-"Catching up n bars at once", says why.
-
 **A declination is a property of the call.** U6a is S6a at this tier, and the two
-are independent: the set an `UpdateAndFill` declines may differ from the set the
-opener was given, in either direction, and may differ again on the next call.
-Nothing on the handle records it, and no call is rejected for presenting a set
-that differs from the one before it. What declining suppresses is the *write*,
-never the *computation* — a declined output is still computed and still reported
-by the handle, which is what `MAMA` needs: FAMA feeds the next bar. So
-`UpdateAndFill` with every `nullable` output declined is an `Update`.
+are independent: the set an `Update` declines may differ from the set the opener
+was given, in either direction, and may differ again on the next call. Nothing on
+the handle records it, and no call is rejected for presenting a set that differs
+from the one before it. What declining suppresses is the *write*, never the
+*computation* — a declined output is still computed and still reported by the
+handle, which is what `MAMA` needs: FAMA feeds the next bar.
 
 **A declined output is not an absent one**, and U6a only means anything where the
-tier can tell them apart. `UpdateAndFill` is the only place U2 has arguments to
-check in Java, and it now checks them — the same `requireArgument` the openers
-use, ahead of every length, so an absent array is a `BadParam` naming it rather
-than a length read off `null`. Rust and C# still answer `—`: a slice cannot be
-absent, and in C# a null array is an empty span, which the length bound rejects.
+tier can tell them apart. C is the only backend it reaches here: `Update` and
+`Peek` take an out-parameter per output, where Rust and C# return the value and
+Java writes every field of a caller-owned sink, so none of the three has a
+component to decline. It holds wherever the step's write to that output
+is guarded, which is every transcribed body; the two hand-rolled tiers
+(`Dispatch`, `PeriodBank`) copy the bar through an unguarded assignment and so
+require every output, declared `nullable` or not. Nothing shipped combines the
+two, and marking an output `nullable` on one of those tiers is the thing that
+would.
 
-C alone can decline at the **scalar** entry points as well — `Update` and `Peek`
-take an out-parameter per output, where the other three return the value and so
-have nothing to decline. It holds wherever the step's write to that output is
-guarded, which is every transcribed body; the two hand-rolled tiers (`Dispatch`,
-`PeriodBank`) copy the bar through an unguarded assignment and so require every
-output, declared `nullable` or not. Nothing shipped combines the two, and marking
-an output `nullable` on one of those tiers is the thing that would.
-
-No cross-language gate reaches U6a — every server binds every output — so each
-backend carries its own probe beside S6a's (`testBatchArgumentContract` in C,
+No cross-language gate reaches a declination — every server binds every output —
+so each backend carries its own S6a probe (`testBatchArgumentContract` in C,
 `tests/stream_open_contract.rs` in Rust, `BatchApiTest` in Java, `StreamApiTest`
-in C#), and the four are held to the same emitted shape on the PR gate by
-`test_mama_nullable_fama_is_declinable_at_update_and_fill_in_every_backend`. Each
-probe drives all four open/fill combinations and reads the declined value back
-through the handle, which is what a backend that "supported" declining by not
-computing would fail.
+in C#), and each reads the declined value back through the handle, which is what
+a backend that "supported" declining by not computing would fail. U6a itself is
+C's alone: `testBatchArgumentContract` drives all four open/update combinations,
+and the emitted shape is held on the PR gate by
+`test_a_nullable_output_is_declinable_at_update_in_c`.
 
 **All four backends have a value accessor** since #287: `TA_<N>_Value`,
 `value()`, `value()` and `Value`. Each reports the value(s) at the last bar the
@@ -452,8 +417,7 @@ short of the runtime's own allocation failure, which is not a `RetCode`.
 
 U3 is checked with an explicit finite test, so it rejects NaN and both
 infinities alike. Verified: 176 of 176 `Update` and `Peek` entry points check
-their bar, and every `UpdateAndFill` applies the same test to every bar it is
-handed.
+their bar.
 
 **Reading the range** has an error surface in C alone, where it is a function
 rather than a field: `TA_StreamOutRange` answers `TA_BAD_PARAM` for a NULL
@@ -546,7 +510,7 @@ not on which function was called.
 | Where a non-finite value arrives | What the library does | Rule |
 |---|---|:---:|
 | Inside an **input array**: a batch input series, or the warm-up history handed to `Open` / `OpenAndFill` | Nothing. **Undefined behaviour** — not detected, not rejected, nothing promised about the output or about a handle opened from it. Do not do it. | — |
-| As a **bar** handed to `Update` / `Peek`, or as one of the `n` bars handed to `UpdateAndFill` | **An error**: the bar is non-finite. It is still counted, its output being the previous one held; in `UpdateAndFill` the bars before it stay committed. | U3 |
+| As a **bar** handed to `Update` / `Peek` | **An error**: the bar is non-finite. It is still counted, its output being the previous one held. | U3 |
 | As a **real optional parameter** | **An error**: outside the parameter's range. | B3, S3 |
 | As a candlestick **`factor`** — a global setting rather than a call parameter | **An error for NaN.** An infinity is accepted, and G6 says why. | G6 |
 
@@ -801,8 +765,8 @@ rather than renumbering the rest. Each was measured, not inferred.
 
 A `⚠️` is not tracked here. It marks a deviation that is deliberate, or a rule
 implemented but not covered by a CI probe; the rule's own footnote says which.
-The four places C carries one for a buffer size (B5, S5, U5, U6) are the same
-fact each time: C is handed bare pointers and has no sizes to check against.
+The two places C carries one for a buffer size (B5, S5) are the same fact each
+time: C is handed bare pointers and has no sizes to check against.
 
 | # | Backend | Rule | Defect |
 |---|---|---|---|
@@ -931,10 +895,10 @@ handle caches what the guarded store would have written, so `value()` is the
 same whether the output was supplied or not. `MA`'s `MAMA` arm is the caller
 that proves it: it declines `outFAMA` outright in all four backends, where three
 of them used to allocate a `historyLen`-sized buffer per open and throw it away.
-**`UpdateAndFill` honours it on the same terms** (rule U6a): U6's capacity bound
-is skipped for a declined output, the fill's store to it is guarded, and the
-value is still computed and still on the handle. The choice is the call's — see
-2.4 — so the four open/fill combinations are all ordinary calls.
+**C's `Update` and `Peek` honour it on the same terms** (rule U6a): the store to
+a declined output is guarded, and the value is still computed and still on the
+handle. The choice is the call's — see 2.4 — so the four open/update
+combinations are all ordinary calls.
 
 **How a caller spells "omitted" is not the same in every language.** Three of the
 four can say it outright; C# cannot, and does not need to:

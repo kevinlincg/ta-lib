@@ -374,7 +374,7 @@ static void note_compat_skip(const char *lang, const char *what)
 
 /* ---- Global timing results store (Task 12) ---- */
 
-#define MAX_FUNCTIONS 200
+#define MAX_FUNCTIONS 512
 
 typedef struct {
     char   funcName[64];
@@ -706,6 +706,7 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"CMO",          TA_FUNC_UNST_CMO},
     {"DX",           TA_FUNC_UNST_DX},
     {"EMA",          TA_FUNC_UNST_EMA},
+    {"HA",           TA_FUNC_UNST_HA},
     {"HT_DCPERIOD",  TA_FUNC_UNST_HT_DCPERIOD},
     {"HT_DCPHASE",   TA_FUNC_UNST_HT_DCPHASE},
     {"HT_PHASOR",    TA_FUNC_UNST_HT_PHASOR},
@@ -720,6 +721,7 @@ static const UnstableLookup UNSTABLE_MAP[] = {
      * enum entries are retained for ABI but no longer advertise instability.
      */
     {"KAMA",         TA_FUNC_UNST_KAMA},
+    {"ERI",          TA_FUNC_UNST_EMA},
     {"MAMA",         TA_FUNC_UNST_MAMA},
     {"MINUS_DI",     TA_FUNC_UNST_MINUS_DI},
     {"MINUS_DM",     TA_FUNC_UNST_MINUS_DM},
@@ -728,6 +730,7 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"PLUS_DM",      TA_FUNC_UNST_PLUS_DM},
     {"RMA",          TA_FUNC_UNST_RMA},
     {"RSI",          TA_FUNC_UNST_RSI},
+    {"RVI",          TA_FUNC_UNST_RVI},
     {"T3",           TA_FUNC_UNST_T3},
     /* EMA-derived: doRangeTest sweeps UNST_EMA, as the hand MA tests do. */
     {"DEMA",         TA_FUNC_UNST_EMA},
@@ -750,6 +753,14 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     /* ZLEMA de-lags the input and hands it to the same EMA recurrence, seeded
      * the same way, so its whole trajectory shifts with UNST_EMA. */
     {"ZLEMA",        TA_FUNC_UNST_EMA},
+    /* CVI smooths the high-low spread with the same EMA and takes a percent
+     * rate of change of it, so both the anchor and the whole line move with
+     * UNST_EMA. */
+    {"CVI",          TA_FUNC_UNST_EMA},
+    /* MASSI stacks two EMA of the high-low range and sums their ratio, so both
+     * of its stage anchors -- and therefore the whole line -- move with
+     * UNST_EMA. Its lookback carries the unstable period TWICE. */
+    {"MASSI",        TA_FUNC_UNST_EMA},
     /* KC is recursive through BOTH of its callees -- EMA of the typical price
      * and the Wilder ATR -- so it is converging, not finite-window, and it is
      * the first function here whose legs carry DIFFERENT ids. BOTH rows are
@@ -765,6 +776,10 @@ static const UnstableLookup UNSTABLE_MAP[] = {
      * pipeline shifts with UNST_EMA. Measured: outBegIdx 45 -> 54 at the
      * defaults when the unstable period is set to 3. */
     {"SMI",          TA_FUNC_UNST_EMA},
+    /* TSI carries the raw momentum and its magnitude through two EMA stages
+     * seeded exactly as ema.c seeds, and its lookback sums two ema_lookback()
+     * terms, so both stage anchors and the whole line shift with UNST_EMA. */
+    {"TSI",          TA_FUNC_UNST_EMA},
     /* ADXR/STOCHRSI own knobs were inert and retired (#129); they converge
      * via their internal ADX/RSI, like the EMA-derived set above. */
     {"ADXR",         TA_FUNC_UNST_ADX},
@@ -778,6 +793,13 @@ static const UnstableLookup UNSTABLE_MAP[] = {
      * warm-up loop the body carries for exactly that setting is never entered on
      * the streaming path in any of the four. */
     {"SUPERTREND",   TA_FUNC_UNST_ATR},
+    /* KDJ declares no unstable flag of its own -- its instability arrives
+     * through the MA type its two smoothing hops select, and the default is
+     * the recursive RMA. Without a row here stability_class() falls to the
+     * EPSILON default and the range sweep compares a converging function at
+     * ~1e-13; the second consumer is the stream K-leg, whose v == 0 defaults
+     * vector runs only for a function this map calls unstable. */
+    {"KDJ",          TA_FUNC_UNST_RMA},
 };
 #define NUM_UNSTABLE_MAP (sizeof(UNSTABLE_MAP) / sizeof(UNSTABLE_MAP[0]))
 
@@ -1907,6 +1929,11 @@ static TA_RangeStability stability_class(const TA_FuncInfo *funcInfo)
         "MIN", "MAX", "MINMAX", "MIDPOINT", "MIDPRICE", "WILLR", "AROON", "AROONOSC",
         /* fresh per-bar rescan (window re-summed in bar-absolute order each output) */
         "AVGDEV",
+        /* fresh per-bar rescan, integer count -- no FP total carried across bars */
+        "PERCENTRANK",
+        /* incrementally maintained sorted window -- the state is exact copies
+         * of input values, so the output is an input element verbatim */
+        "PERCENTILE",
         /* fresh sliding window, no accumulator */
         "IMI",
         /* NOTE: LINEARREG / LINEARREG_ANGLE / LINEARREG_INTERCEPT / LINEARREG_SLOPE
@@ -2072,7 +2099,7 @@ typedef struct {
     /* Of those, the ones whose class actually compared VALUES across ranges.
      * TA_STABLE_SKIP reaches the leg and checks coherency only, so counting it
      * as "verified" overstates the ratchet below -- and the inert set grows
-     * with every new path-dependent indicator (NVI, PVI, WAD today). */
+     * with every new post-cutover path-dependent indicator. */
     int               postCutRangeValueCompared;
     int               langIndex;   /* index into ALL_LANGUAGES */
     const CodegenLanguage *lang;
@@ -2089,9 +2116,7 @@ typedef struct {
     long long         streamPeekProbes;    /* peeks run by that leg */
     int               streamPeekRepFunctions; /* funcs that ran the repeat probe */
     long long         streamPeekRepProbes;    /* triples run (peek t, peek t-1, peek t) */
-    int               streamUFillFunctions;/* funcs whose UpdateAndFill == batch over the same bars (#246) */
     int               streamFillBars;      /* bars the OpenAndFill leg actually value-compared */
-    int               streamUFillBars;     /* bars the UpdateAndFill leg actually value-compared */
     int               streamStateFunctions; /* funcs whose handle state matched Open(n) (#240) */
     int               streamStateLegs;      /* legs that compared handle state (#240) */
     int               streamRangeFunctions; /* funcs whose handle OutRange matched batch (#241) */
@@ -3611,7 +3636,6 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
     int vecIsMin[STREAM_MAX_VEC];
     int nvec, v, variant, legs = 0, rejArms = 0, vecOverflow = 0;
     int fillChecked = 0;   /* set once any leg reports OpenAndFill was verified */
-    int ufillChecked = 0;  /* set once any leg reports UpdateAndFill was verified (#246) */
     int stateChecked = 0;  /* set once any leg reports the state-equivalence compare */
     int stateLegs = 0;     /* how many legs actually compared handle state */
     int stateOfLegs = 0;   /* value legs in the requests that reported it */
@@ -3784,30 +3808,6 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
                 {
                     printf("STREAM FILL MISMATCH [TA_%s] vector=%d K=%d compat=%d "
                            "(OpenAndFill array != batch(0,n-1))\n"
-                           "  request:  %s\n  response: %s\n",
-                           funcInfo->name, v, K, compat,
-                           ctx->requestBuf, ctx->responseBuf);
-                    ctx->failed++;
-                    ctx->error = TA_CODEGEN_STREAM_MISMATCH;
-                    return;
-                }
-            }
-            /* UpdateAndFill leg (#246): Open(P) plus ONE UpdateAndFill over the
-             * remaining bars must write exactly what batch(0,n-1) reports for
-             * those bars, reject an aliased output, and treat a zero count as a
-             * no-op. Reported apart from fill_ok so a regression names which of
-             * the two filling entry points broke; folded into ok server-side
-             * too, so it fails even if this check regresses. */
-            if( stream_flag(ctx->responseBuf, "\"ufill_checked\":") == 1 )
-            {
-                int ubars = stream_flag(ctx->responseBuf, "\"ufill_bars\":");
-                ufillChecked = 1;
-                if( ubars >= 0 )
-                    ctx->streamUFillBars = (ctx->streamUFillBars < 0 ? 0 : ctx->streamUFillBars) + ubars;
-                if( stream_flag(ctx->responseBuf, "\"ufill_ok\":") != 1 )
-                {
-                    printf("STREAM UPDATEFILL MISMATCH [TA_%s] vector=%d K=%d compat=%d "
-                           "(UpdateAndFill over the tail != batch over the same bars)\n"
                            "  request:  %s\n  response: %s\n",
                            funcInfo->name, v, K, compat,
                            ctx->requestBuf, ctx->responseBuf);
@@ -4006,7 +4006,6 @@ static void stream_one_function(const TA_FuncInfo *funcInfo, void *opaqueData)
      * the run — see FuncStreamCounters. */
     record_stream_counters(funcInfo->name, ctx->langIndex, legs, benign);
     if( fillChecked ) ctx->streamFillFunctions++;
-    if( ufillChecked ) ctx->streamUFillFunctions++;
     if( stateChecked ) ctx->streamStateFunctions++;
     if( rangeChecked ) ctx->streamRangeFunctions++;
     if( peekProbes > 0 ) ctx->streamPeekFunctions++;
@@ -4851,9 +4850,7 @@ static ErrorNumber test_codegen_for_language(
             ctx.streamPeekProbes = 0;
             ctx.streamPeekRepFunctions = 0;
             ctx.streamPeekRepProbes = 0;
-            ctx.streamUFillFunctions = 0;
             ctx.streamFillBars = -1;
-            ctx.streamUFillBars = -1;
             ctx.streamStateFunctions = 0;
             ctx.streamStateLegs     = 0;
             ctx.streamRangeFunctions = 0;
@@ -4903,29 +4900,6 @@ static ErrorNumber test_codegen_for_language(
                        "but value-compared only %d bar(s) -- a leg that reports checked "
                        "while comparing nothing\n",
                        ctx.streamFunctions, ctx.streamFillBars);
-                ctx.error = TA_CODEGEN_STREAM_MISMATCH;
-            }
-            if( ctx.error == TA_TEST_PASS && ctx.streamUFillBars >= 0 &&
-                ctx.streamUFillBars < ctx.streamFunctions )
-            {
-                printf("STREAM UPDATEFILL VACUOUS: the UpdateAndFill leg ran for %d "
-                       "function(s) but value-compared only %d bar(s)\n",
-                       ctx.streamFunctions, ctx.streamUFillBars);
-                ctx.error = TA_CODEGEN_STREAM_MISMATCH;
-            }
-            /* The same ratchet for UpdateAndFill (#246). It has the same shape
-             * as the fill floor above and exists for the same reason: the leg
-             * is unconditional in every server, so a function that streams and
-             * reports no UpdateAndFill leg is a tier whose emitter was missed —
-             * which the legs floor and the value legs both read as full
-             * coverage. */
-            if( ctx.error == TA_TEST_PASS &&
-                ctx.streamUFillFunctions != ctx.streamFunctions )
-            {
-                printf("STREAM UPDATEFILL VACUOUS: only %d of %d streaming functions "
-                       "verified UpdateAndFill — every streamable function must also "
-                       "gate-verify its n-bar filler\n",
-                       ctx.streamUFillFunctions, ctx.streamFunctions);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
             /* The same ratchet for the state-equivalence leg (#240). The
