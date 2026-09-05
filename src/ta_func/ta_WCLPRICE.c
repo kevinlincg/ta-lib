@@ -157,7 +157,6 @@ struct TA_WCLPRICE_Stream {
 /* Private function, not in public API. */
 static void TA_WCLPRICE_StepImpl( struct TA_WCLPRICE_Stream *sp, double inHigh, double inLow, double inClose, double *outReal )
 {
-   (void)sp;
    *outReal= (fma(inClose, 2.0, inHigh + inLow)) / 4.0;
    sp->cur_outReal = *outReal;
 }
@@ -166,8 +165,6 @@ static TA_RetCode TA_WCLPRICE_OpenImpl( struct TA_WCLPRICE_Stream **stream, cons
 {
    struct TA_WCLPRICE_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -182,9 +179,6 @@ static TA_RetCode TA_WCLPRICE_OpenImpl( struct TA_WCLPRICE_Stream **stream, cons
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -268,32 +262,9 @@ TA_LIB_API TA_RetCode TA_WCLPRICE_Update( TA_WCLPRICE_Stream *stream, double inH
 TA_FMA_MULTIVERSION
 TA_LIB_API TA_RetCode TA_WCLPRICE_Peek( const TA_WCLPRICE_Stream *stream, double inHigh, double inLow, double inClose, double *outReal )
 {
-   const struct TA_WCLPRICE_Stream *sp = stream;
-
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
-   (void)sp;
    *outReal= (fma(inClose, 2.0, inHigh + inLow)) / 4.0;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_WCLPRICE_UpdateAndFill( TA_WCLPRICE_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow || (const void *)outReal == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_WCLPRICE_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

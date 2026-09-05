@@ -1102,38 +1102,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inReal[], double outSine[], double outLeadSine[] ) {
-         requireArgument("HT_SINE updateAndFill", "inReal", inReal);
-         requireArgument("HT_SINE updateAndFill", "outSine", outSine);
-         requireArgument("HT_SINE updateAndFill", "outLeadSine", outLeadSine);
-         final int barCount = inReal.length;
-         if( outSine.length < barCount || outLeadSine.length < barCount || (Object)outSine == (Object)inReal || (Object)outLeadSine == (Object)inReal || (Object)outSine == (Object)outLeadSine )
-            throw new TaLibArgumentException("HT_SINE updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("HT_SINE updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.htSineStepImpl(this, inReal[i]);
-            outSine[i] = this.cur_outSine;
-            outLeadSine[i] = this.cur_outLeadSine;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.
@@ -1172,8 +1140,8 @@
          double I1ForOddPrev3 = sp.I1ForOddPrev3;
          double Im = sp.Im;
          double Re = sp.Re;
-         double cur_outLeadSine = sp.cur_outLeadSine;
-         double cur_outSine = sp.cur_outSine;
+         double cur_outLeadSine = 0.0;
+         double cur_outSine = 0.0;
          int hilbertIdx = sp.hilbertIdx;
          double period = sp.period;
          double periodWMASub = sp.periodWMASub;

@@ -687,8 +687,8 @@ public partial class Core
          MinmaxStream sp = this;
          double tmpHigh = 0.0;
          double tmpLow = 0.0;
-         double cur_outMax = sp.cur_outMax;
-         double cur_outMin = sp.cur_outMin;
+         double cur_outMax = 0.0;
+         double cur_outMin = 0.0;
          double highest = sp.highest;
          int highestIdx = sp.highestIdx;
          int i = sp.i;
@@ -743,40 +743,6 @@ public partial class Core
          cur_outMax = highest;
          cur_outMin = lowest;
          return new MinmaxValue(cur_outMin, cur_outMax);
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inReal">Closed bars for <c>inReal</c>, oldest first.</param>
-      /// <param name="outMin">Receives one <c>outMin</c> value per bar committed.</param>
-      /// <param name="outMax">Receives one <c>outMax</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inReal, Span<double> outMin, Span<double> outMax )
-      {
-         int barCount = inReal.Length;
-         if( outMin.Length < barCount || outMax.Length < barCount || outMin.Overlaps(inReal) || outMax.Overlaps(inReal) || outMin.Overlaps(outMax) ) throw Core.StreamFailure("MINMAX", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inReal[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("MINMAX", "updateAndFill", RetCode.BadParam);
-            }
-            core.MinmaxStepImpl(this, inReal[i]);
-            outMin[i] = cur_outMin;
-            outMax[i] = cur_outMax;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

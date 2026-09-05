@@ -64,6 +64,100 @@ DEF_FUNCTION( VAR,
              );
 /* VAR END */
 
+/* VHF BEGIN */
+static const TA_IntegerRange TA_DEF_VHF_TimePeriod =
+{
+   2,
+   100000,
+   14,
+   56,
+   7
+};
+
+static const TA_OptInputParameterInfo TA_DEF_UI_D_VHF_TimePeriod =
+{
+   TA_OptInput_IntegerRange,
+   "optInTimePeriod",
+   0,
+
+   "Time Period",
+   (const void *)&TA_DEF_VHF_TimePeriod,
+   28,
+   "Time period",
+
+   NULL
+};
+
+static const TA_InputParameterInfo    *TA_VHF_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Real,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_VHF_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_VHF_OptInputs[] =
+{ &TA_DEF_UI_D_VHF_TimePeriod,
+  NULL
+};
+
+DEF_FUNCTION( VHF,
+              TA_GroupId_MomentumIndicators,
+              "Vertical Horizontal Filter",
+              TA_FUNC_FLG_STREAM
+             );
+/* VHF END */
+
+/* VORTEX BEGIN */
+static const TA_OptInputParameterInfo TA_DEF_UI_D_VORTEX_TimePeriod =
+{
+   TA_OptInput_IntegerRange,
+   "optInTimePeriod",
+   0,
+
+   "Time Period",
+   (const void *)&TA_DEF_TimePeriod_Positive,
+   14,
+   "Number of bars in the rolling sums",
+
+   NULL
+};
+
+const TA_OutputParameterInfo TA_DEF_UI_Output_Real_VORTEX_outPlusVI =
+                               { TA_Output_Real, "outPlusVI", TA_OUT_LINE };
+
+const TA_OutputParameterInfo TA_DEF_UI_Output_Real_VORTEX_outMinusVI =
+                               { TA_Output_Real, "outMinusVI", TA_OUT_LINE };
+
+static const TA_InputParameterInfo    *TA_VORTEX_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Price_HLC,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_VORTEX_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real_VORTEX_outPlusVI,
+  &TA_DEF_UI_Output_Real_VORTEX_outMinusVI,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_VORTEX_OptInputs[] =
+{ &TA_DEF_UI_D_VORTEX_TimePeriod,
+  NULL
+};
+
+DEF_FUNCTION( VORTEX,
+              TA_GroupId_MomentumIndicators,
+              "Vortex Indicator",
+              TA_FUNC_FLG_STREAM
+             );
+/* VORTEX END */
+
 /* VWAP BEGIN */
 static const TA_InputParameterInfo    *TA_VWAP_Inputs[]    =
 {
@@ -120,6 +214,8 @@ DEF_FUNCTION( VWMA,
 const TA_FuncDef *TA_DEF_TableV[] =
 {
    ADD_TO_TABLE(VAR),
+   ADD_TO_TABLE(VHF),
+   ADD_TO_TABLE(VORTEX),
    ADD_TO_TABLE(VWAP),
    ADD_TO_TABLE(VWMA),
    NULL

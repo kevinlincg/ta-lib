@@ -68,6 +68,7 @@
 #include <ctype.h>
 #include <math.h>
 #include "ta_test_priv.h"
+#include "test_codegen.h"
 
 /**** External functions declarations. ****/
 /* None */
@@ -123,16 +124,16 @@ static ErrorNumber callWithDefaults( const char *funcName,
 									 const char *datasetName );
 
 /**** Local variables definitions.     ****/
-static double inputNegData[100];
-static double inputZeroData[100];
-static double inputRandFltEpsilon[100];
-static double inputRandDblEpsilon[100];
+static double inputNegData[200];
+static double inputZeroData[200];
+static double inputRandFltEpsilon[200];
+static double inputRandDblEpsilon[200];
 static double inputRandomData[2000];
 
-static int    inputNegData_int[100];
-static int    inputZeroData_int[100];
-static int    inputRandFltEpsilon_int[100];
-static int    inputRandDblEpsilon_int[100];
+static int    inputNegData_int[200];
+static int    inputZeroData_int[200];
+static int    inputRandFltEpsilon_int[200];
+static int    inputRandDblEpsilon_int[200];
 static int    inputRandomData_int[2000];
 
 static double output[10][2000];
@@ -767,8 +768,8 @@ static ErrorNumber abstract_verify_func_metadata(
  * --------------------------------------------------------------------------- */
 typedef struct { ErrorNumber firstErr; int checked; int failed; const char *filter; } MetaParityCtx;
 
-/* Comma-separated substring match against the function name (matches the
- * --function filter semantics used by test_codegen). NULL filter = match all. */
+/* The --function filter semantics of test_codegen, short-token rule included.
+ * NULL filter = match all. */
 static int metaMatchesFilter( const char *filter, const char *name )
 {
     char filterCopy[1024];
@@ -779,7 +780,11 @@ static int metaMatchesFilter( const char *filter, const char *name )
     token = strtok(filterCopy, ",");
     while( token != NULL )
     {
-        if( strstr(name, token) != NULL ) return 1;
+        if( strlen(token) <= 2 )
+        {
+            if( codegen_short_filter_token_matches(name, token) ) return 1;
+        }
+        else if( strstr(name, token) != NULL ) return 1;
         token = strtok(NULL, ",");
     }
     return 0;
@@ -2482,11 +2487,12 @@ static ErrorNumber callWithDefaults( const char *funcName, const double *input, 
    }
 
    /* A successful call writes finite values -- unless the function declares
-    * TA_FUNC_FLG_NAN_INF_OUT, the seven whose own domain has holes (ACOS/ASIN
+    * TA_FUNC_FLG_NAN_INF_OUT, the eight whose own domain has holes (ACOS/ASIN
     * outside [-1,1], LN/LOG10/SQRT on a negative, DIV on 0/0 or x/0, VWMA on a
-    * volume-less window). Those are exempt; every other function is held to
-    * finite output on all five datasets, which is what makes the flag a
-    * contract rather than a docs annotation (issue #191).
+    * volume-less window, RVOL on a dead trailing window). Those are exempt;
+    * every other function is held to finite output on all five datasets, which
+    * is what makes the flag a contract rather than a docs annotation
+    * (issue #191).
     *
     * Placed HERE, against the call above, and not further down: the server
     * verification and d2_param_vectors both re-issue TA_CallFunc into these
@@ -3709,7 +3715,7 @@ static ErrorNumber test_default_calls(void)
        * A single "at least N cases" floor would not: the six rejection rows
        * alone satisfy it, and the boundary-accept half could vanish unnoticed.
        * That half is precisely what catches a `>=` off-by-one. */
-      if( errNumber == TA_TEST_PASS && indexRangeNbFuncs < 150 )
+      if( errNumber == TA_TEST_PASS && indexRangeNbFuncs < 200 )
       {
          printf( "Failed: index-range gate saw only %d function(s)\n",
                  indexRangeNbFuncs );

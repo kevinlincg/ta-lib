@@ -14,27 +14,51 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
 - (#75) More docs for DEMA, TEMA, T3, MFI, ULTOSC, KAMA and TRIX. Thanks @nehemiah888 !
 - New TA Functions:
   - AC: Accelerator/Decelerator Oscillator (#228)
+  - ADR: Average Day Range, the mean of the last n bar ranges (#367)
   - AO: Awesome Oscillator (#227)
   - CMF: Chaikin Money Flow (#134)
   - CMOU: Chande Momentum Oscillator, Unsmoothed (#124)
-  - DONCHIAN: Donchian Channels, the rolling extrema bands (#342)
+  - CVI: Chaikin's Volatility, the percent change of a smoothed high-low spread (#358)
+  - COPPOCK: Coppock Curve (#362)
+  - CUMSUM: Cumulative Sum (#372)
+  - DONCHIAN: Donchian Channels (#342)
+  - DPO: Detrended Price Oscillator (#363)
+  - ER: Kaufman Efficiency Ratio (#350)
+  - ERI: Elder Ray Index, Bull Power / Bear Power (#361)
   - EFI: Elder's Force Index (#206)
+  - FOSC: Forecast Oscillator (#345)
+  - FRACTAL: Williams Fractal (#371)
+  - HA: Heikin-Ashi Candles, an OHLC-to-OHLC smoothing transform (#373)
   - HMA: Hull Moving Average (#139)
   - KC: Keltner Channels (#273)
+  - KDJ: KDJ Stochastic (#365)
   - MARKETFI: Market Facilitation Index (#230)
+  - MASSI: Mass Index, a range-expansion reversal-bulge detector (#359)
   - NVI: Negative Volume Index (#126)
+  - PERCENTILE: Percentile, statistic of the trailing window (#368)
+  - PERCENTRANK: Percent Rank, share of the previous window a value ranks above (#369)
   - PVI: Positive Volume Index (#126)
   - PVO: Percentage Volume Oscillator (#119)
+  - PVT: Price Volume Trend (#364)
   - QSTICK: Qstick (#226)
+  - RMA: Wilder's Smoothed Moving Average (#348)
+  - RVI: Relative Volatility Index (#366)
+  - RVOL: Relative Volume (#370)
   - SMI: Stochastic Momentum Index (#238)
   - SUPERTREND: SuperTrend, an ATR-scaled trailing band with a trend flag (#272)
+  - TSI: True Strength Index (#360)
+  - VHF: Vertical Horizontal Filter (#346)
+  - VORTEX: Vortex Indicator (#349)
   - VWAP: Volume Weighted Average Price (#237)
   - VWMA: Volume Weighted Moving Average (#131)
   - WAD: Williams' Accumulation/Distribution (#200)
+  - ZLEMA: Zero-Lag Exponential Moving Average (#347)
 - New MAType (for MA, BBANDS, STOCH etc...):
   - TA_MAType_HMA (#139)
-  - TA_MAType_DISABLED — no smoothing at any period; the output is a copy of the input (#93)
+  - TA_MAType_DISABLED — no smoothing at any period; output copy the input (#93)
   - TA_MAType_DEFAULT — selects that parameter's documented MA type (#182)
+  - TA_MAType_ZLEMA (#347)
+  - TA_MAType_RMA (#348)
 
 ### Faster
 - ~8x: MACD, MACDFIX and MACDEXT (when MA type is EMA).
@@ -71,6 +95,7 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
 - `TA_SetCompatibility()` and `TA_GetCompatibility()`. The notion of variant (e.g. MetaStock compatibility) is not actively maintained and will be removed in a future release. Default behavior is unaffected. Moving forward TA-Lib will create separate TA functions for distinct behaviors.
 
 ### Fixed
+- (#385) KAMA could divide by zero and return `-Inf`, after which every remaining bar of the call was NaN. It needs a window whose one-bar changes sum to exactly zero through floating-point absorption while the net change over that window is negative.
 - (#130) In-place calls (same buffer as input and output) returned wrong values for STOCH, STOCHF and MAVP. Regular (separate-buffer) calls were always correct.
 - (#118,#242) VAR, CORREL, STDDEV and BBANDS more precise and faster.
 - (#33) Float overflow in the single-precision (`TA_S_*`) functions. Thanks @iglesias !

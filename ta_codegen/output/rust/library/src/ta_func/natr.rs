@@ -221,7 +221,8 @@ impl Core {
         // wAlpha is derived FROM wBeta, never the reverse: only that order makes
         // wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
         // measures closer to the exact recursion than the 1/period-first spelling
-        // at nearly every period. Swapping them reddens nothing.
+        // at nearly every period. The order is a gated contract, not a preference:
+        // swapping it reddens the frozen v0.6.4 comparison.
         wBeta = ((optInTimePeriod - 1) as f64) / (optInTimePeriod as f64);
         wAlpha = 1.0 - wBeta;
         // The True Range of each bar is computed inline in a single
@@ -615,7 +616,8 @@ impl Core {
         // wAlpha is derived FROM wBeta, never the reverse: only that order makes
         // wAlpha + wBeta exactly 1 (Sterbenz -- wBeta lands in [0.5, 1)), and it
         // measures closer to the exact recursion than the 1/period-first spelling
-        // at nearly every period. Swapping them reddens nothing.
+        // at nearly every period. The order is a gated contract, not a preference:
+        // swapping it reddens the frozen v0.6.4 comparison.
         wBeta = ((optInTimePeriod - 1) as f64) / (optInTimePeriod as f64);
         wAlpha = 1.0 - wBeta;
         // The True Range of each bar is computed inline in a single
@@ -901,44 +903,6 @@ impl NatrStream {
         Ok(outReal)
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inHigh.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what this call took in, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k + 1` — the committed bars, plus the rejected one, which is counted
-    /// but never written.
-    #[doc(alias = "TA_NATR_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inHigh: &[f64], inLow: &[f64], inClose: &[f64], outReal: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inHigh.len();
-        if inLow.len() != inHigh.len() || inClose.len() != inHigh.len() || outReal.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
-                if self.out.count < Core::MAX_INDEX {
-                    self.out.count += 1;
-                }
-                return Err(RetCode::BadParam);
-            }
-            Core::natr_step_impl(&mut self.state, inHigh[i], inLow[i], inClose[i], &mut outReal[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -999,7 +963,7 @@ impl NatrStream {
 
     /// The value(s) at the last bar the stream counted — the bar
     /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
-    /// refreshed by every accepted `update` and `update_and_fill`, and left
+    /// refreshed by every accepted `update`, and left
     /// alone by `peek`.
     ///
     /// A clone carries them verbatim, so a forked handle can be asked its

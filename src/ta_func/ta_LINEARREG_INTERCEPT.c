@@ -532,8 +532,6 @@ static TA_RetCode TA_LINEARREG_INTERCEPT_OpenImpl( struct TA_LINEARREG_INTERCEPT
 {
    struct TA_LINEARREG_INTERCEPT_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -552,9 +550,6 @@ static TA_RetCode TA_LINEARREG_INTERCEPT_OpenImpl( struct TA_LINEARREG_INTERCEPT
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -951,26 +946,6 @@ TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Peek( const TA_LINEARREG_INTERCEPT_
    trailingValue = ((trailingIdx & sp->xMask) != pkSlot0) ? x_inReal[trailingIdx & sp->xMask] : pkVal0;
    trailingIdx += 1;
    *outReal= (SumY - m * sp->SumX) / (double)sp->optInTimePeriod;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_UpdateAndFill( TA_LINEARREG_INTERCEPT_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_LINEARREG_INTERCEPT_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 
