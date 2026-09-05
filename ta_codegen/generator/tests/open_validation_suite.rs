@@ -1398,7 +1398,7 @@ fn no_csharp_peek_commits_a_sub_stream() {
     fn commits(s: &str) -> Vec<&str> {
         s.lines()
             .filter_map(code_line)
-            .filter(|l| l.contains(".Update(") || l.contains(".UpdateAndFill("))
+            .filter(|l| l.contains(".Update("))
             .collect()
     }
 

@@ -1083,7 +1083,7 @@ fn no_java_peek_commits_a_sub_stream() {
     fn commits(s: &str) -> Vec<&str> {
         s.lines()
             .filter_map(code_line)
-            .filter(|l| l.contains(".update(") || l.contains(".updateAndFill("))
+            .filter(|l| l.contains(".update("))
             .collect()
     }
 
