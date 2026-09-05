@@ -72,7 +72,7 @@ static const TA_OptInputParameterInfo *TA_HA_OptInputs[] =
 DEF_FUNCTION( HA,
               TA_GroupId_PriceTransform,
               "Heikin-Ashi Candles",
-              TA_FUNC_FLG_OVERLAP | TA_FUNC_FLG_UNST_PER | TA_FUNC_FLG_STREAM | TA_FUNC_FLG_PATH_DEP
+              TA_FUNC_FLG_OVERLAP | TA_FUNC_FLG_UNST_PER | TA_FUNC_FLG_STREAM
              );
 /* HA END */
 

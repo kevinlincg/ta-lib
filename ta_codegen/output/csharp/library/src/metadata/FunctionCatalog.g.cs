@@ -2543,7 +2543,7 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
         name: "HA",
         group: FunctionGroup.PriceTransform,
         hint: "Heikin-Ashi Candles",
-        flags: FunctionFlags.Overlap | FunctionFlags.Stream | FunctionFlags.UnstablePeriod | FunctionFlags.PathDependent,
+        flags: FunctionFlags.Overlap | FunctionFlags.Stream | FunctionFlags.UnstablePeriod,
         unstableId: FuncUnstId.HA,
         inputs:
         [

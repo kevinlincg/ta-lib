@@ -4436,7 +4436,6 @@ public static class FunctionDescription
 			<Flag>Overlap</Flag>
 			<Flag>Unstable Period</Flag>
 			<Flag>Streaming</Flag>
-			<Flag>Path Dependent</Flag>
 		</Flags>
 		<RequiredInputArguments>
 			<RequiredInputArgument>

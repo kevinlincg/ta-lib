@@ -1,7 +1,7 @@
 name: HA
 group: Price Transform
 hint: Heikin-Ashi Candles
-flags: [overlap, unstable_period, stream, path_dependent]
+flags: [overlap, unstable_period, stream]
 inputs:
   - name: inPriceOHLC
     type: price

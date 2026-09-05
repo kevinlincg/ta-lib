@@ -1842,7 +1842,7 @@ public final class Functions {
 
    private static FunctionInfo f_HA() {
       return new FunctionInfo(
-         "HA", "Price Transform", "Heikin-Ashi Candles", 0x2B000000,
+         "HA", "Price Transform", "Heikin-Ashi Candles", 0x0B000000,
          List.of(
             new InputInfo(InputType.PRICE, "inPriceOHLC", 0x0000000F)
          ),

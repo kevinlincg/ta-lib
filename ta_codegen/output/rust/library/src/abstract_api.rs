@@ -1902,7 +1902,7 @@ static FUNC_TABLE: [FuncInfo; 196] = [
         name: "HA",
         group: Group::PriceTransform,
         hint: "Heikin-Ashi Candles",
-        flags: FuncFlags(0x2b000000),
+        flags: FuncFlags(0x0b000000),
         inputs: &[InputInfo { param_name: "inPriceOHLC", kind: InputType::Price, flags: InputFlags(0x0000000f) }, ],
         opt_inputs: &[],
         outputs: &[OutputInfo { param_name: "outHAOpen", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outHAHigh", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outHALow", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outHAClose", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],

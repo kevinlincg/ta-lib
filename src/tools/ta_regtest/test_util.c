@@ -89,7 +89,7 @@
 #define TA_BUF_SUFFIX 100
 #define TA_BUF_SIZE   (TA_BUF_PREFIX+MAX_NB_TEST_ELEMENT+TA_BUF_SUFFIX)
 
-#define TA_NB_OUT 4
+#define TA_NB_OUT 3
 #define TA_NB_IN  1
 #define TA_NB_OUT_IN (TA_NB_OUT+TA_NB_IN)
 
@@ -214,31 +214,26 @@ void initGlobalBuffer( void )
    gBuffer[0].out0 = &buf[0][1][TA_BUF_PREFIX];
    gBuffer[0].out1 = &buf[0][2][TA_BUF_PREFIX];
    gBuffer[0].out2 = &buf[0][3][TA_BUF_PREFIX];
-   gBuffer[0].out3 = &buf[0][4][TA_BUF_PREFIX];
 
    gBuffer[1].in   = &buf[1][0][TA_BUF_PREFIX];
    gBuffer[1].out0 = &buf[1][1][TA_BUF_PREFIX];
    gBuffer[1].out1 = &buf[1][2][TA_BUF_PREFIX];
    gBuffer[1].out2 = &buf[1][3][TA_BUF_PREFIX];
-   gBuffer[1].out3 = &buf[1][4][TA_BUF_PREFIX];
 
    gBuffer[2].in   = &buf[2][0][TA_BUF_PREFIX];
    gBuffer[2].out0 = &buf[2][1][TA_BUF_PREFIX];
    gBuffer[2].out1 = &buf[2][2][TA_BUF_PREFIX];
    gBuffer[2].out2 = &buf[2][3][TA_BUF_PREFIX];
-   gBuffer[2].out3 = &buf[2][4][TA_BUF_PREFIX];
 
    gBuffer[3].in   = &buf[3][0][TA_BUF_PREFIX];
    gBuffer[3].out0 = &buf[3][1][TA_BUF_PREFIX];
    gBuffer[3].out1 = &buf[3][2][TA_BUF_PREFIX];
    gBuffer[3].out2 = &buf[3][3][TA_BUF_PREFIX];
-   gBuffer[3].out3 = &buf[3][4][TA_BUF_PREFIX];
 
    gBuffer[4].in   = &buf[4][0][TA_BUF_PREFIX];
    gBuffer[4].out0 = &buf[4][1][TA_BUF_PREFIX];
    gBuffer[4].out1 = &buf[4][2][TA_BUF_PREFIX];
    gBuffer[4].out2 = &buf[4][3][TA_BUF_PREFIX];
-   gBuffer[4].out3 = &buf[4][4][TA_BUF_PREFIX];
 }
 
 /* Will set some values in the buffers allowing

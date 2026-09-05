@@ -3642,8 +3642,8 @@ static int sv_steq_TA_HA( const struct TA_HA_Stream *a, const struct TA_HA_Strea
    if( sv_xtier_ne(a->cur_outHAHigh, b->cur_outHAHigh, z) ) { *w = "cur_outHAHigh"; return 1; }
    if( sv_xtier_ne(a->cur_outHALow, b->cur_outHALow, z) ) { *w = "cur_outHALow"; return 1; }
    if( sv_xtier_ne(a->cur_outHAClose, b->cur_outHAClose, z) ) { *w = "cur_outHAClose"; return 1; }
-   if( sv_xtier_ne(a->prevHAOpen, b->prevHAOpen, z) ) { *w = "prevHAOpen"; return 1; }
-   if( sv_xtier_ne(a->prevHAClose, b->prevHAClose, z) ) { *w = "prevHAClose"; return 1; }
+   if( sv_xtier_ne(a->haOpen, b->haOpen, z) ) { *w = "haOpen"; return 1; }
+   if( sv_xtier_ne(a->haClose, b->haClose, z) ) { *w = "haClose"; return 1; }
    return 0;
 }
 

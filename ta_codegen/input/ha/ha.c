@@ -13,10 +13,6 @@
 
 int ha_lookback(void)
 {
-   /* The unstable period is the ONLY lookback: bar 0 is computable on its
-    * own, so with the knob at its default 0 every input bar produces an
-    * output bar.
-    */
    return TA_GetUnstablePeriod(TA_FUNC_UNST_HA);
 }
 
@@ -25,129 +21,79 @@ TA_RetCode ha(int startIdx, int endIdx,
    const double inHigh[],
    const double inLow[],
    const double inClose[],
-   int *outBegIdx,
-   int *outNBElement,
+   int *outBegIdx, int *outNBElement,
    double outHAOpen[],
    double outHAHigh[],
    double outHALow[],
    double outHAClose[])
 {
-   int today, outIdx, lookbackTotal;
-   double haOpen, haClose, haHigh, haLow, prevHAOpen, prevHAClose;
-   double tempOpen, tempHigh, tempLow, tempClose;
+   int i, outIdx, today, lookbackTotal;
+   double haOpen, haClose, tempHigh, tempLow;
 
-   /* Heikin-Ashi ("average bar"): an OHLC-to-OHLC smoothing transform.
-    *
-    *   HA_close[i] = (open[i] + high[i] + low[i] + close[i]) / 4
-    *   HA_open [0] = (open[0] + close[0]) / 2
-    *   HA_open [i] = (HA_open[i-1] + HA_close[i-1]) / 2
-    *   HA_high [i] = max(high[i], HA_open[i], HA_close[i])
-    *   HA_low  [i] = min(low [i], HA_open[i], HA_close[i])
-    *
-    * Keep the four-term sum in THIS left-to-right order. It is the oracles'
-    * association, and floating-point addition is not associative:
-    * TA_AVGPRICE sums the same four terms as (H+L+C+O)/4 and differs from
-    * HA_close in the last place on ordinary bars, so HA_close is not a
-    * composed AVGPRICE call and the two must not be unified.
-    *
-    * Every operation is one addition or one division by an exact power of
-    * two, so the transform is exact whenever its inputs are -- which is why
-    * the external captures are frozen at tolerance 0 rather than a band.
-    *
-    * BOTH stability flags are declared, and they answer different questions.
-    * `unstable_period` is the ABI knob: the open's recursion carries a factor
-    * of 1/2 per bar, so a seed's influence halves every step and dies out
-    * entirely within a few dozen bars -- a caller who spends them gets a
-    * start-independent series (56 bars suffice on the regtest history, and
-    * test_ha.c pins that). `path_dependent` declares
-    * what is true at the DEFAULT of 0: the recursion re-seeds at the anchor,
-    * so HA(3, 7, ...) starts its open at (open[3]+close[3])/2 rather than
-    * warming up from bar 0. Without it the range-stability leg compares a
-    * sub-range call against a full-range one and fails; with only it, the
-    * knob that makes the two converge would not exist.
-    */
+   *outBegIdx = 0;
+   *outNBElement = 0;
 
    lookbackTotal = ha_lookback();
 
    if( startIdx < lookbackTotal )
       startIdx = lookbackTotal;
 
-   /* Make sure there is still something to evaluate. */
    if( startIdx > endIdx )
-   {
-      *outBegIdx    = 0;
-      *outNBElement = 0;
       return TA_SUCCESS;
-   }
 
-   /* The seed is carried as a VIRTUAL previous candle rather than as a
-    * special first iteration: seeding the pair with the anchor bar's own
-    * open and close makes the uniform recursion produce
-    * (open+close)/2 at that bar, which is the published seed. One loop body
-    * then serves the anchor bar and every bar after it -- and that same pair
-    * is the streaming tier's initial state, so batch and stream share one
-    * definition of "where the recursion starts".
+   /* The seed is the published convention: the first candle opens at the raw
+    * bar's own midpoint. Its influence halves every bar, which is why the
+    * function is unstable-period rather than path-dependent -- a longer warm-up
+    * buys convergence, it does not change the answer forever.
     */
-   today       = startIdx - lookbackTotal;
-   prevHAOpen  = inOpen[today];
-   prevHAClose = inClose[today];
+   today   = startIdx - lookbackTotal;
+   haOpen  = (inOpen[today] + inClose[today]) / 2.0;
+   haClose = (((inOpen[today] + inHigh[today]) + inLow[today]) + inClose[today]) / 4.0;
 
-   /* Warm-up: advance the recursion across the unstable-period bars without
-    * emitting. Empty at the default knob of 0.
-    */
-   while( today < startIdx )
+   /* Warm-up. Emits nothing; it only carries the pair forward to startIdx. */
+   for( i = today + 1; i <= startIdx; i++ )
    {
-      tempOpen  = inOpen[today];
-      tempHigh  = inHigh[today];
-      tempLow   = inLow[today];
-      tempClose = inClose[today];
-      haOpen    = (prevHAOpen + prevHAClose) / 2.0;
-      haClose   = (tempOpen + tempHigh + tempLow + tempClose) / 4.0;
-      prevHAOpen  = haOpen;
-      prevHAClose = haClose;
-      today++;
+      haOpen  = (haOpen + haClose) / 2.0;
+      haClose = (((inOpen[i] + inHigh[i]) + inLow[i]) + inClose[i]) / 4.0;
    }
 
+   /* The summation order ((o+h)+l)+c and the two exact power-of-two divisions
+    * are the whole numeric contract: every published implementation sums in
+    * that order, so the result is bit-exact against them rather than close.
+    * TA_AVGPRICE's (h+l+c+o)/4 is a different order and differs by 1 ulp.
+    *
+    * The high and low are elementwise over bar-i quantities only, so they carry
+    * no state -- haOpen and haClose remain the entire recurrence.
+    *
+    * In-place is supported: this bar's four input values are read into the
+    * recurrence (and into tempHigh/tempLow) before the first store, so an
+    * output aliasing any input cannot clobber a value still owed to this bar.
+    * The dialect has no 3-arg max/min; nest the 2-arg builtins.
+    */
    outIdx = 0;
 
-   while( today <= endIdx )
+   tempHigh = inHigh[startIdx];
+   tempLow  = inLow[startIdx];
+
+   outHAOpen[outIdx]  = haOpen;
+   outHAHigh[outIdx]  = max( max( tempHigh, haOpen ), haClose );
+   outHALow[outIdx]   = min( min( tempLow, haOpen ), haClose );
+   outHAClose[outIdx] = haClose;
+   outIdx++;
+
+   for( i = startIdx + 1; i <= endIdx; i++ )
    {
-      tempOpen  = inOpen[today];
-      tempHigh  = inHigh[today];
-      tempLow   = inLow[today];
-      tempClose = inClose[today];
+      tempHigh = inHigh[i];
+      tempLow  = inLow[i];
 
-      haOpen  = (prevHAOpen + prevHAClose) / 2.0;
-      haClose = (tempOpen + tempHigh + tempLow + tempClose) / 4.0;
+      haOpen  = (haOpen + haClose) / 2.0;
+      haClose = (((inOpen[i] + tempHigh) + tempLow) + inClose[i]) / 4.0;
 
-      /* An elementwise clamp of the raw bar against the two body edges, so
-       * the extremes carry no state of their own.
-       */
-      haHigh = tempHigh;
-      if( haOpen > haHigh )
-         haHigh = haOpen;
-      if( haClose > haHigh )
-         haHigh = haClose;
-
-      haLow = tempLow;
-      if( haOpen < haLow )
-         haLow = haOpen;
-      if( haClose < haLow )
-         haLow = haClose;
-
-      /* Written only after this bar's four inputs are in locals above: an
-       * output buffer is allowed to alias any input, and output slot k lands
-       * on input bar k, which is at or behind `today`.
-       */
       outHAOpen[outIdx]  = haOpen;
-      outHAHigh[outIdx]  = haHigh;
-      outHALow[outIdx]   = haLow;
+      outHAHigh[outIdx]  = max( max( tempHigh, haOpen ), haClose );
+      outHALow[outIdx]   = min( min( tempLow, haOpen ), haClose );
       outHAClose[outIdx] = haClose;
       outIdx++;
-
-      prevHAOpen  = haOpen;
-      prevHAClose = haClose;
-      today++;
    }
 
    *outBegIdx    = startIdx;

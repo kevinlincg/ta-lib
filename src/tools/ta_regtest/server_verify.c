@@ -57,7 +57,6 @@ static const UnstableLookup UNSTABLE_MAP[] = {
     {"CMO",          TA_FUNC_UNST_CMO},
     {"DX",           TA_FUNC_UNST_DX},
     {"EMA",          TA_FUNC_UNST_EMA},
-    {"HA",           TA_FUNC_UNST_HA},
     {"HT_DCPERIOD",  TA_FUNC_UNST_HT_DCPERIOD},
     {"HT_DCPHASE",   TA_FUNC_UNST_HT_DCPHASE},
     {"HT_PHASOR",    TA_FUNC_UNST_HT_PHASOR},
@@ -70,6 +69,7 @@ static const UnstableLookup UNSTABLE_MAP[] = {
      * omitted too: their own knobs were inert and retired (#129) — they follow
      * their internal ADX/RSI, whose slots the numeric sync mirrors. Keep in
      * sync with the UNSTABLE_MAP in test_codegen.c. */
+    {"HA",           TA_FUNC_UNST_HA},
     {"KAMA",         TA_FUNC_UNST_KAMA},
     {"MAMA",         TA_FUNC_UNST_MAMA},
     {"MINUS_DI",     TA_FUNC_UNST_MINUS_DI},

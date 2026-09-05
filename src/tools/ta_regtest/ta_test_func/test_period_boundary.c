@@ -121,8 +121,11 @@
 /**** Local declarations.              ****/
 #define PB_DATA_SIZE 252   /* Daily reference data size. */
 
-/* Buffers for the abstract-driven sweep (max 3 outputs per function). */
-#define PB_MAX_OUTPUT 3
+/* Buffers for the abstract-driven sweep. The loops that consume these CLAMP at
+ * the bound rather than failing on it, so a function wider than this has its
+ * extra outputs silently unchecked here -- keep it at or above the corpus's
+ * widest arity (4 since HA). */
+#define PB_MAX_OUTPUT 4
 /* Server-verify scratch bounds: a Price input expands to at most OHLCV+OI (6)
  * pointers, and MACDEXT carries the most optional params (6). Sized with slack;
  * pbBuildServerInputs guards the input bound, the opt loop the param bound. */
