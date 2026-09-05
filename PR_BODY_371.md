@@ -98,4 +98,39 @@ ta-lib`; `cargo doc --no-deps` warning-free.
   (`0 or 100`) rather than a relation: which bars carry the 100 is data-dependent,
   and on the doctest's synthetic series a strict rule may legitimately raise none.
 
+## Refreshed onto dev (dev at ff7e5222)
+
+This branch was cut before dev landed CVI/MASSI (#358, #359), COPPOCK (#362) and
+CUMSUM (#372), and one of the numbers quoted above was taken in the meantime:
+
+- `FRACTAL.extrema` moves **420 -> 424**. Dev now assigns 420 to
+  `COPPOCK.circbuf.sRing`. The renumber is not hand-applied: dropping the stale
+  ledger entry and regenerating hands out the next free id, and the
+  `TA_INTERNAL_ERROR(...)` in every generated tier follows.
+- `TA_FRACTAL_ORACLE_VACUOUS = 1667` is **unchanged** and still free on dev.
+
+Every conflict this merge raised was in a generated tier, so all of them were
+resolved by taking dev's side and regenerating -- no hand-edited artifact.
+
+Re-run after this merge:
+
+- regeneration is idempotent: a second `generate` leaves the tree clean, while
+  the first is what moved the id, so the check discriminates
+- the full C reference suite -- all tests succeeded, `FRACTAL` included
+- the function corpus goes 193 -> 194 against dev, adding exactly `FRACTAL`;
+  `ta_func_api.xml` keeps all 193 prior abbreviations (the large
+  `ta_func_api.c` diff is the packed byte array reflowing, not content loss)
+
+**I did not re-run** any `--xlang-hash` leg, the cross-language
+`ta_regtest --codegen` run, `clippy`, the Rust doctests, or the Java and C#
+builds after this merge.
+
+**Still unresolved, and a maintainer call.** ER (#350), VORTEX (#349, PR #377),
+ERI (#361) and FRACTAL now all hold internal-error id **424** -- each was
+generated against the same `next:`. Only the first to land keeps it; each branch
+merged after it fails `one_id_names_one_guard` until it merges dev and
+regenerates, which reassigns the id automatically. Nothing here guesses the
+order.
+
+
 Closes #371.
