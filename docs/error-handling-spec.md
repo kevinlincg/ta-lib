@@ -222,7 +222,7 @@ the condition is a zero-length span and so is S1. Rust cannot express S4, and
 `tests/stream_open_contract.rs` covers S1 there.
 `scripts/check_stream_retcodes.py` carries S1 and S7 over the whole generated
 corpus in all four backends — a probe names one function, and this is what
-covers the other 175. It reads the *core's* arm, which in Java and C# the public
+covers the rest. It reads the *core's* arm, which in Java and C# the public
 frame makes unreachable, so those two frames are covered corpus-wide by
 `java_public_openers_check_arguments_then_the_index_pair` and
 `csharp_public_openers_reject_an_empty_history_as_an_index_fault` instead.
@@ -308,17 +308,17 @@ and nothing is written out (footnote [6], Appendix F).
 [8] All four converge on `TA_INSUFFICIENT_HISTORY`, which leaves a history
 *longer* than `MAX_INDEX + 1` (rule S2) as the only producer of
 `TA_OUT_OF_RANGE_END_INDEX` in this tier. Verified as uniform, not incidental:
-across all 176 streaming functions per backend, every short-history arm reports
+across every streaming function in every backend, each short-history arm reports
 this code and no other. What the four answered before the code existed, and why
 the borrowed one was wrong on its face, is Appendix D item 8.
 
 [9] **Withdrawn.** The warm-up history is an input *array*, and the library
 does not scan those. Until this was removed it was the only array in the library
-that was checked — 176 of 176 `Open` and 176 of 176 `OpenAndFill` entry points,
-in all four backends — which made "arrays are never scanned" a rule with one
-exception rather than a rule. What the scan cost, and why folding it into the
-fill loop was not the alternative, are in `docs/streaming-api-design.md`. U3 is
-untouched: a bar handed to `Update` or `Peek` is a single value.
+that was checked — every `Open` and every `OpenAndFill` entry point, in all four
+backends — which made "arrays are never scanned" a rule with one exception rather
+than a rule. What the scan cost, and why folding it into the fill loop was not
+the alternative, are in `docs/streaming-api-design.md`. U3 is untouched: a bar
+handed to `Update` or `Peek` is a single value.
 
 ### 2.4 Streaming tier — advancing (`Update`, `Peek`)
 
@@ -357,7 +357,7 @@ backends could honour and one could not would be worse than the accessor. `Value
 is how a caller reaches the hold, and whether to accept it or override it is the
 caller's business, at the caller's layer — never the stream's internal state.
 
-The mirror case is a function whose *output* is legitimately non-finite: the eight
+The mirror case is a function whose *output* is legitimately non-finite: those
 carrying `TA_FUNC_FLG_NAN_INF_OUT` succeed, so the state **is** touched, `Value`
 answers that non-finite value, and `OutRange` advances by one as any accepted bar
 does. Both directions leave the caller the same job — override the output at their
@@ -409,8 +409,8 @@ Java's and C#'s `clone()`/`Clone()` and Rust's derived `Clone` cannot fail
 short of the runtime's own allocation failure, which is not a `RetCode`.
 
 U3 is checked with an explicit finite test, so it rejects NaN and both
-infinities alike. Verified: 176 of 176 `Update` and `Peek` entry points check
-their bar.
+infinities alike. Verified: every `Update` and every `Peek` entry point checks
+its bar.
 
 **Reading the range** has an error surface in C alone, where it is a function
 rather than a field: `TA_StreamOutRange` answers `TA_BAD_PARAM` for a NULL
@@ -695,26 +695,26 @@ Each ✅ rests on two independent checks; neither alone is enough.
    size threshold, against a non-allocating control that must still succeed.
 
 2. **A structural check over the whole generated corpus** — a probe on one
-   function says nothing about the other 173. Verified mechanically, from the
+   function says nothing about the rest. Verified mechanically, from the
    generated sources:
 
    | Claim | Result |
    |---|---|
-   | C batch: `startIdx` guard, then `endIdx` guard, before any other return | 176 / 176 |
-   | C batch: parameter validation, then every input, the `OutRange` pointers and every output null-checked, inputs before outputs | 352 / 352 |
-   | Rust batch: `startIdx` guard → `endIdx` guard → lookback (which returns B3) → every input, then every output length-checked | 176 / 176 |
-   | Rust numerics: `startIdx` guard → `endIdx` guard → bounds asserts (following the FMA dispatcher to the real core) | 176 / 176 |
-   | Java batch: clamp (which raises B3), then every length check, then the core | 352 / 352 |
-   | C# batch: clamp, then every length check, then the core | 352 / 352 |
+   | C batch: `startIdx` guard, then `endIdx` guard, before any other return | every function |
+   | C batch: parameter validation, then every input, the `OutRange` pointers and every output null-checked, inputs before outputs | every function, both overloads |
+   | Rust batch: `startIdx` guard → `endIdx` guard → lookback (which returns B3) → every input, then every output length-checked | every function |
+   | Rust numerics: `startIdx` guard → `endIdx` guard → bounds asserts (following the FMA dispatcher to the real core) | every function |
+   | Java batch: clamp (which raises B3), then every length check, then the core | every function, both overloads |
+   | C# batch: clamp, then every length check, then the core | every function, both overloads |
    | C# cores carrying an overlap guard wherever one is expressible | no core unguarded where the type expresses it |
-   | Short-history arm reports `TA_INSUFFICIENT_HISTORY` | 176 streaming functions per backend, no backend mixing it with anything else |
+   | Short-history arm reports `TA_INSUFFICIENT_HISTORY` | every streaming function, per backend, no backend mixing it with anything else |
    | Empty-history arm reports `TA_OUT_OF_RANGE_START_INDEX` | every opener arm in all four backends, no backend mixing it with anything else |
-   | Java public opener: the history's null test, then the index pair, then every other argument | 176 `Open` + 176 `OpenAndFill` |
-   | C# public opener: an empty history is the index fault, ahead of every other input | 176 `Open` + 176 `OpenAndFill` |
-   | Rust/Java/C# public `OpenAndFill`: every output bounded by `historyLen - <N>_Lookback(...)` | 176 per backend |
+   | Java public opener: the history's null test, then the index pair, then every other argument | every `Open` and `OpenAndFill` |
+   | C# public opener: an empty history is the index fault, ahead of every other input | every `Open` and `OpenAndFill` |
+   | Rust/Java/C# public `OpenAndFill`: every output bounded by `historyLen - <N>_Lookback(...)` | every one, per backend |
 
-   Every 352 is the 176 definitions in `ta_codegen/input/` × the double and
-   float overloads, so the float surface is covered by the same evidence.
+   The "both overloads" rows are every definition in `ta_codegen/input/` taken
+   twice, once per overload, so the float surface rests on the same evidence.
 
 Most of these probes are not committed. They are throwaway drivers: the shipped
 gates cover values, and these cover the failure paths once, to produce this
