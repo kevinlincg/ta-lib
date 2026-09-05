@@ -90,7 +90,8 @@ ta-lib`; `cargo doc --no-deps` warning-free.
   between FLOOR and HMA renumbers the variants after it — as every new function
   does.
 - One new `ta_regtest` error code (`TA_FRACTAL_ORACLE_VACUOUS = 1667`), one
-  `internal_error_ids.yaml` append (`FRACTAL.extrema: 420`).
+  `internal_error_ids.yaml` append (`FRACTAL.extrema`; see the refresh section
+  below for the number it currently holds).
 - Cost per bar is `O(left + right)` comparisons, deliberately: the rescan is what
   makes the strict-vs-tie distinction cheap to state and impossible to get subtly
   wrong. At the default (2,2) that is four comparisons per output bar.
@@ -98,39 +99,48 @@ ta-lib`; `cargo doc --no-deps` warning-free.
   (`0 or 100`) rather than a relation: which bars carry the 100 is data-dependent,
   and on the doctest's synthetic series a strict rule may legitimately raise none.
 
-## Refreshed onto dev (dev at ff7e5222)
+## Refreshed onto dev (dev at aebff428, ERI #361)
 
-This branch was cut before dev landed CVI/MASSI (#358, #359), COPPOCK (#362) and
-CUMSUM (#372), and one of the numbers quoted above was taken in the meantime:
+The branch was cut before CVI/MASSI (#358, #359), COPPOCK (#362), CUMSUM (#372),
+VORTEX (#349) and ERI (#361) landed, and has been merged forward onto each. Only
+one number quoted above moved, and it moved twice, both times for the same
+reason — a function that landed first took the id FRACTAL had been assigned:
 
-- `FRACTAL.extrema` moves **420 -> 424**. Dev now assigns 420 to
-  `COPPOCK.circbuf.sRing`. The renumber is not hand-applied: dropping the stale
-  ledger entry and regenerating hands out the next free id, and the
-  `TA_INTERNAL_ERROR(...)` in every generated tier follows.
+- `FRACTAL.extrema` is now **426** (it was 420 when written, then 424, then 425).
+  On the last merge, upstream ERI had taken **425**, so both keys read 425 and
+  two different guards would have reported `5425`. The renumber is never
+  hand-applied: dropping the stale ledger entry and regenerating hands out the
+  next free id (`next: 427`), and the `TA_INTERNAL_ERROR(...)` in every generated
+  tier follows.
 - `TA_FRACTAL_ORACLE_VACUOUS = 1667` is **unchanged** and still free on dev.
 
-Every conflict this merge raised was in a generated tier, so all of them were
-resolved by taking dev's side and regenerating -- no hand-edited artifact.
+Every conflict any of these merges raised was in a generated tier, so all were
+resolved by taking dev's side and regenerating — no hand-edited artifact.
 
-Re-run after this merge:
+Re-run after the ERI merge:
 
-- regeneration is idempotent: a second `generate` leaves the tree clean, while
-  the first is what moved the id, so the check discriminates
-- the full C reference suite -- all tests succeeded, `FRACTAL` included
-- the function corpus goes 193 -> 194 against dev, adding exactly `FRACTAL`;
-  `ta_func_api.xml` keeps all 193 prior abbreviations (the large
-  `ta_func_api.c` diff is the packed byte array reflowing, not content loss)
+- `build.py regen-check` — green, so regeneration is idempotent over the merged
+  tree. It discriminates: the same command over the un-renumbered tree carries
+  the duplicate id through unchanged, which is why the check below is the one
+  that catches it.
+- `one_id_names_one_guard` (generator suite) — I re-introduced the duplicate
+  deliberately and watched it fail with `ids allocated to more than one guard:
+  [(425, ["ERI.dualmode", "FRACTAL.extrema"])]`, then reverted. This is the gate
+  that catches the collision class, and the PR gate runs it.
+- the full C reference suite over a fresh CMake build — all tests succeeded,
+  `FRACTAL` included.
+- the function corpus goes 197 -> 198 against dev, adding exactly `FRACTAL` (the
+  large `ta_func_api.c` diff is the packed byte array reflowing, not content
+  loss).
 
-**I did not re-run** any `--xlang-hash` leg, the cross-language
-`ta_regtest --codegen` run, `clippy`, the Rust doctests, or the Java and C#
-builds after this merge.
+**I did not re-run**, after this merge, any `--xlang-hash` leg, the
+cross-language `ta_regtest --codegen` run, `clippy`, the Rust doctests, or the
+Java and C# builds.
 
-**Still unresolved, and a maintainer call.** ER (#350), VORTEX (#349, PR #377),
-ERI (#361) and FRACTAL now all hold internal-error id **424** -- each was
-generated against the same `next:`. Only the first to land keeps it; each branch
-merged after it fails `one_id_names_one_guard` until it merges dev and
-regenerates, which reassigns the id automatically. Nothing here guesses the
-order.
+**Ordering note.** ER (#350, PR #378) still holds internal-error id **425** on
+its own branch, the number ERI took when it merged. That collision is dev's to
+resolve at merge time by the same mechanism used here; it is not visible on
+#378's own tree, only in the merge result.
 
 
 Closes #371.
