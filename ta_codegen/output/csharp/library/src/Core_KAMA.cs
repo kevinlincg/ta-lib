@@ -224,8 +224,17 @@ public partial class Core
        * fastest adaptation, for every window of an instrument quoted below it
        * (issue #253). A genuinely flat window is now recognized by the exact bar
        * count above instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+       * beside it compares against the SIGNED numerator, so it is false whenever
+       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+       * add/subtract of fabs terms, so an addend absorbed on the way in and
+       * subtracted later at full precision drives it to exactly 0.0 on a window
+       * that is not flat; without this clause that bar divides by zero and the
+       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+       * carried until #350).
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sumROC1);
@@ -273,7 +282,7 @@ public partial class Core
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -321,7 +330,7 @@ public partial class Core
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -423,7 +432,7 @@ public partial class Core
       tempReal2 = (double)inReal[trailingIdx++];
       periodROC = tempReal - tempReal2;
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sumROC1);
@@ -447,7 +456,7 @@ public partial class Core
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -475,7 +484,7 @@ public partial class Core
             sumROC1 = 0.0;
          }
          trailingValue = tempReal2;
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -789,7 +798,7 @@ public partial class Core
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -803,38 +812,6 @@ public partial class Core
          prevKAMA = Math.FusedMultiplyAdd(inReal - prevKAMA, tempReal, prevKAMA);
          cur_outReal = prevKAMA;
          return cur_outReal;
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inReal">Closed bars for <c>inReal</c>, oldest first.</param>
-      /// <param name="outReal">Receives one <c>outReal</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inReal, Span<double> outReal )
-      {
-         int barCount = inReal.Length;
-         if( outReal.Length < barCount || outReal.Overlaps(inReal) ) throw Core.StreamFailure("KAMA", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inReal[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("KAMA", "updateAndFill", RetCode.BadParam);
-            }
-            core.KamaStepImpl(this, inReal[i]);
-            outReal[i] = cur_outReal;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar
@@ -895,7 +872,7 @@ public partial class Core
        */
       sp.trailingValue = tempReal2;
       /* Calculate the efficiency ratio */
-      if( sp.sumROC1 <= periodROC ) {
+      if( sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sp.sumROC1);
@@ -1049,8 +1026,17 @@ public partial class Core
        * fastest adaptation, for every window of an instrument quoted below it
        * (issue #253). A genuinely flat window is now recognized by the exact bar
        * count above instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+       * beside it compares against the SIGNED numerator, so it is false whenever
+       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+       * add/subtract of fabs terms, so an addend absorbed on the way in and
+       * subtracted later at full precision drives it to exactly 0.0 on a window
+       * that is not flat; without this clause that bar divides by zero and the
+       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+       * carried until #350).
        */
-      if( sumROC1 <= periodROC ) {
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.Abs(periodROC / sumROC1);
@@ -1098,7 +1084,7 @@ public partial class Core
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);
@@ -1146,7 +1132,7 @@ public partial class Core
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC ) {
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             tempReal = 1.0;
          } else {
             tempReal = Math.Abs(periodROC / sumROC1);

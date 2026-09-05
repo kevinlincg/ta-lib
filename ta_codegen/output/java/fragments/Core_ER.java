@@ -89,16 +89,13 @@
        *     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
        *     price-carrying sum).
        *
-       * A third guard is this function's own, and the one thing kama.c has
-       * no equivalent of: the division runs only where sumROC1 is exactly
-       * positive. The clamp above cannot serve as the denominator test,
+       * A third guard is the denominator test: the division runs only where
+       * sumROC1 is exactly positive. The clamp above cannot serve as it,
        * because it compares against the SIGNED numerator and so is false for
        * every down move -- and a subtract-then-add sum can reach 0.0, or
        * below it, on a window that is not flat, when a term absorbed on the
        * way in is subtracted later at full precision. Without the guard those
-       * bars divide by zero. Where it fires, this function answers 1.0 and
-       * kama.c's inner ratio does not; no window the KAMA differential covers
-       * reaches it.
+       * bars divide by zero.
        *
        * The subtract-then-add update order matches TA_SUM's recurrence,
        * which is what makes the composite differential bit-exact. The
@@ -515,36 +512,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inReal[], double outReal[] ) {
-         requireArgument("ER updateAndFill", "inReal", inReal);
-         requireArgument("ER updateAndFill", "outReal", outReal);
-         final int barCount = inReal.length;
-         if( outReal.length < barCount || (Object)outReal == (Object)inReal )
-            throw new TaLibArgumentException("ER updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("ER updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.erStepImpl(this, inReal[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would return — the same
        * transition, with every store it would make carried in a local instead.
@@ -727,16 +694,13 @@
        *     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
        *     price-carrying sum).
        *
-       * A third guard is this function's own, and the one thing kama.c has
-       * no equivalent of: the division runs only where sumROC1 is exactly
-       * positive. The clamp above cannot serve as the denominator test,
+       * A third guard is the denominator test: the division runs only where
+       * sumROC1 is exactly positive. The clamp above cannot serve as it,
        * because it compares against the SIGNED numerator and so is false for
        * every down move -- and a subtract-then-add sum can reach 0.0, or
        * below it, on a window that is not flat, when a term absorbed on the
        * way in is subtracted later at full precision. Without the guard those
-       * bars divide by zero. Where it fires, this function answers 1.0 and
-       * kama.c's inner ratio does not; no window the KAMA differential covers
-       * reaches it.
+       * bars divide by zero.
        *
        * The subtract-then-add update order matches TA_SUM's recurrence,
        * which is what makes the composite differential bit-exact. The

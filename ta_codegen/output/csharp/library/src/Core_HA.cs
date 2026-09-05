@@ -675,47 +675,6 @@ public partial class Core
          return new HaValue(cur_outHAOpen, cur_outHAHigh, cur_outHALow, cur_outHAClose);
       }
 
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inOpen">Closed bars for <c>inOpen</c>, oldest first.</param>
-      /// <param name="inHigh">Closed bars for <c>inHigh</c>, oldest first.</param>
-      /// <param name="inLow">Closed bars for <c>inLow</c>, oldest first.</param>
-      /// <param name="inClose">Closed bars for <c>inClose</c>, oldest first.</param>
-      /// <param name="outHAOpen">Receives one <c>outHAOpen</c> value per bar committed.</param>
-      /// <param name="outHAHigh">Receives one <c>outHAHigh</c> value per bar committed.</param>
-      /// <param name="outHALow">Receives one <c>outHALow</c> value per bar committed.</param>
-      /// <param name="outHAClose">Receives one <c>outHAClose</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inOpen, ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, ReadOnlySpan<double> inClose, Span<double> outHAOpen, Span<double> outHAHigh, Span<double> outHALow, Span<double> outHAClose )
-      {
-         int barCount = inOpen.Length;
-         if( inHigh.Length != barCount || inLow.Length != barCount || inClose.Length != barCount || outHAOpen.Length < barCount || outHAHigh.Length < barCount || outHALow.Length < barCount || outHAClose.Length < barCount || outHAOpen.Overlaps(inOpen) || outHAOpen.Overlaps(inHigh) || outHAOpen.Overlaps(inLow) || outHAOpen.Overlaps(inClose) || outHAHigh.Overlaps(inOpen) || outHAHigh.Overlaps(inHigh) || outHAHigh.Overlaps(inLow) || outHAHigh.Overlaps(inClose) || outHALow.Overlaps(inOpen) || outHALow.Overlaps(inHigh) || outHALow.Overlaps(inLow) || outHALow.Overlaps(inClose) || outHAClose.Overlaps(inOpen) || outHAClose.Overlaps(inHigh) || outHAClose.Overlaps(inLow) || outHAClose.Overlaps(inClose) || outHAOpen.Overlaps(outHAHigh) || outHAOpen.Overlaps(outHALow) || outHAOpen.Overlaps(outHAClose) || outHAHigh.Overlaps(outHALow) || outHAHigh.Overlaps(outHAClose) || outHALow.Overlaps(outHAClose) ) throw Core.StreamFailure("HA", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inOpen[i]) || !double.IsFinite(inHigh[i]) || !double.IsFinite(inLow[i]) || !double.IsFinite(inClose[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("HA", "updateAndFill", RetCode.BadParam);
-            }
-            core.HaStepImpl(this, inOpen[i], inHigh[i], inLow[i], inClose[i]);
-            outHAOpen[i] = cur_outHAOpen;
-            outHAHigh[i] = cur_outHAHigh;
-            outHALow[i] = cur_outHALow;
-            outHAClose[i] = cur_outHAClose;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
-      }
-
       /// <summary>The value at the last bar this stream counted — the bar
       /// <see cref="OutRange"/> ends on. The last history bar right after open,
       /// then whatever the latest accepted <see cref="Update"/> returned.</summary>
