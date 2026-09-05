@@ -36,6 +36,93 @@ fn generated_c() -> Vec<PathBuf> {
     files
 }
 
+/// The standalone `free_batch_storages` line that closes a capture block —
+/// one or more guarded frees, nothing else on the line.
+fn is_batch_release_line(line: &str) -> bool {
+    let t = line.trim();
+    if t.is_empty() || !t.starts_with("if( ") {
+        return false;
+    }
+    let mut rest = t;
+    let mut n = 0;
+    while let Some(i) = rest.find("[0] ) { TA_Free( ") {
+        let Some(j) = rest[i..].find("); }") else { return false };
+        rest = rest[i + j + 4..].trim_start();
+        n += 1;
+        if rest.is_empty() {
+            return n > 0;
+        }
+        if !rest.starts_with("if( ") {
+            return false;
+        }
+    }
+    false
+}
+
+/// A capture block runs with the half-built handle AND the batch's own
+/// circular buffers both live: the top-level destroy was withheld so the
+/// capture can read them. Releasing only the handle strands the ring, so the
+/// `if( !sp )` guard frees both — and so must every failure return after it,
+/// down to the block's own release. The `if( !sp )` line is the ground truth
+/// for liveness, which is why the sweep keys off it rather than a name list:
+/// the paths BEFORE the batch prolog must NOT free (the pointer is still
+/// indeterminate there), so an unconditional rule would be wrong.
+#[test]
+fn a_capture_block_frees_the_live_batch_ring_on_every_failure_return() {
+    let mut blocks = 0usize;
+    let mut sites = 0usize;
+    let mut offenders: Vec<String> = Vec::new();
+    for p in &generated_c() {
+        let src = std::fs::read_to_string(p).expect("readable");
+        let lines: Vec<&str> = src.lines().collect();
+        for (i, l) in lines.iter().enumerate() {
+            if !(l.contains("if( !sp ) {") && l.contains("!= &local_")) {
+                continue;
+            }
+            blocks += 1;
+            let end = lines[i + 1..]
+                .iter()
+                .position(|x| is_batch_release_line(x))
+                .map(|k| i + 1 + k);
+            let Some(end) = end else {
+                offenders.push(format!(
+                    "{}:{}: capture block never releases the batch ring",
+                    p.display(),
+                    i + 1
+                ));
+                continue;
+            };
+            for (k, x) in lines[i + 1..end].iter().enumerate() {
+                if !x.contains("_ReleaseImpl( sp ); return") {
+                    continue;
+                }
+                sites += 1;
+                if !x.contains("!= &local_") {
+                    offenders.push(format!(
+                        "{}:{}: {}",
+                        p.display(),
+                        i + 2 + k,
+                        x.trim()
+                    ));
+                }
+            }
+        }
+    }
+    // A corpus with no such block, or a block with no failure return between
+    // the handle allocation and the release, would pass saying nothing.
+    assert!(
+        blocks > 0 && sites > 0,
+        "{blocks} capture block(s), {sites} failure return(s) — the sweep has nothing to judge"
+    );
+    assert!(
+        offenders.is_empty(),
+        "{} failure return(s) release the handle but strand the still-live batch ring \
+         (prepend `free_batch_storages` — `fail_pre` in `c_stream::alloc_and_capture`):\n{}",
+        offenders.len(),
+        offenders.join("\n")
+    );
+}
+
 #[test]
 fn no_committed_c_file_casts_away_a_name_its_block_reads() {
     let files = generated_c();

@@ -5088,7 +5088,12 @@ fn alloc_and_capture(
     } else {
         String::new()
     };
-    let _ = writeln!(s, "{pad}if( !sp ) {{ {pre}{sp_fail}return TA_ALLOC_ERR; }}");
+    // Everything below runs with `sp` allocated AND the batch buffers still
+    // live, so every failure return from here to `emit_circ_capture`'s own
+    // release owes both frees — releasing the half-built handle alone strands
+    // the batch ring. Keep new failure returns on `fail_pre`, not `pre`.
+    let fail_pre = format!("{pre}{sp_fail}");
+    let _ = writeln!(s, "{pad}if( !sp ) {{ {fail_pre}return TA_ALLOC_ERR; }}");
     let _ = writeln!(s, "{pad}memset( sp, 0, sizeof(*sp) );");
     for p in &func.optional_inputs {
         let _ = writeln!(s, "{pad}sp->{0} = {0};", p.name);
@@ -5137,7 +5142,7 @@ fn alloc_and_capture(
     let fail = if model.rings().is_empty() {
         String::new()
     } else {
-        format!("{{ {pre}TA_{n}_ReleaseImpl( sp ); return TA_ALLOC_ERR; }}")
+        format!("{{ {fail_pre}TA_{n}_ReleaseImpl( sp ); return TA_ALLOC_ERR; }}")
     };
     for ring in model.rings() {
         let v = &ring.var;
@@ -5152,7 +5157,7 @@ fn alloc_and_capture(
                 );
                 let _ = writeln!(
                     s,
-                    "{pad}if( sp->ringLag_{v} < {fwd} || sp->ringCap_{v} > historyLen ) {{ {pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
+                    "{pad}if( sp->ringLag_{v} < {fwd} || sp->ringCap_{v} > historyLen ) {{ {fail_pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
                     fwd = ring.fwd,
                     eid = crate::internal_error_ids::site(&format!("ringlag.{v}"))
                 );
@@ -5160,7 +5165,7 @@ fn alloc_and_capture(
                 let _ = writeln!(s, "{pad}sp->ringCap_{v} = (int)({} - {v});", model.cursor);
                 let _ = writeln!(
                     s,
-                    "{pad}if( sp->ringCap_{v} < 0 || sp->ringCap_{v} > historyLen ) {{ {pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
+                    "{pad}if( sp->ringCap_{v} < 0 || sp->ringCap_{v} > historyLen ) {{ {fail_pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
                     eid = crate::internal_error_ids::site(&format!("ringcap.{v}"))
                 );
             }
@@ -5196,7 +5201,7 @@ fn alloc_and_capture(
         }
         let _ = writeln!(
             s,
-            "{pad}if( sp->winCap_{v} < 1 || sp->winCap_{v} > historyLen ) {{ {pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
+            "{pad}if( sp->winCap_{v} < 1 || sp->winCap_{v} > historyLen ) {{ {fail_pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
             eid = crate::internal_error_ids::site(&format!("wincap.{v}"))
         );
         for arr in &win.arrays {
@@ -5204,7 +5209,7 @@ fn alloc_and_capture(
                 s,
                 "{pad}sp->win_{v}_{arr} = (double *)TA_Malloc( sizeof(double) * (size_t)sp->winCap_{v} );"
             );
-            let _ = writeln!(s, "{pad}if( !sp->win_{v}_{arr} ) {{ {pre}TA_{n}_ReleaseImpl( sp ); return TA_ALLOC_ERR; }}");
+            let _ = writeln!(s, "{pad}if( !sp->win_{v}_{arr} ) {{ {fail_pre}TA_{n}_ReleaseImpl( sp ); return TA_ALLOC_ERR; }}");
             // Fill with the history tail: slot cap-1 = last bar, so the next
             // update writes the new bar at pos 0 and (pos+cap-w)%cap walks
             // back w bars.
@@ -5231,7 +5236,7 @@ fn alloc_and_capture(
         }
         let _ = writeln!(
             s,
-            "{pad}if( sp->xCap < 1 || sp->xCap > historyLen ) {{ {pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
+            "{pad}if( sp->xCap < 1 || sp->xCap > historyLen ) {{ {fail_pre}TA_{n}_ReleaseImpl( sp ); return TA_INTERNAL_ERROR({eid}); }}",
             eid = crate::internal_error_ids::site("extrema")
         );
         // The slot map is a mask, so the ring is allocated at the next power of
@@ -5245,7 +5250,7 @@ fn alloc_and_capture(
                 s,
                 "{pad}sp->x_{arr} = (double *)TA_Malloc( sizeof(double) * (size_t)sp->xPhys );"
             );
-            let _ = writeln!(s, "{pad}if( !sp->x_{arr} ) {{ {pre}TA_{n}_ReleaseImpl( sp ); return TA_ALLOC_ERR; }}");
+            let _ = writeln!(s, "{pad}if( !sp->x_{arr} ) {{ {fail_pre}TA_{n}_ReleaseImpl( sp ); return TA_ALLOC_ERR; }}");
         }
         if with_state {
             // Absolute slots: bar j lives at j % cap (matches the automaton's
