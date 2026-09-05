@@ -60,3 +60,18 @@ I did NOT run `--codegen`, `--xlang-hash`, or the nightly sanitizer paths: the c
 ## Interaction with #375
 
 COPPOCK's `_OpenImpl` has the same shape, so once this lands, PR #375 needs a plain regenerate to stay a fixed point — 2 more sites, no hand edits. Whichever lands second pays it.
+
+## Re-verified on dev `710765c6`
+
+Dev moved past `98c451d2` — the September indicator batch, #382's
+`UpdateAndFill` removal and the KAMA guard — so the head is merged with
+`710765c6` and re-checked at the same three tiers:
+
+- `regen-check`: green, exit 0, 201 functions.
+- Full generator suite: 936 passed / 0 failed.
+- CMake Release build (gcc) and `./ta_regtest`: *All tests succeeded*.
+
+COPPOCK is now on dev, so the interaction noted below is already paid: the merge
+regenerated its `_OpenImpl` with the rest, and `regen-check` is a fixed point on
+the merged head. Still not run, as before: `--codegen`, `--xlang-hash` and the
+nightly sanitizer paths.
