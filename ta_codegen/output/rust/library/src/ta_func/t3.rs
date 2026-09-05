@@ -877,44 +877,6 @@ impl T3Stream {
         Ok(outReal)
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inReal.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what this call took in, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k + 1` — the committed bars, plus the rejected one, which is counted
-    /// but never written.
-    #[doc(alias = "TA_T3_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inReal: &[f64], outReal: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inReal.len();
-        if outReal.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inReal[i].is_finite() {
-                if self.out.count < Core::MAX_INDEX {
-                    self.out.count += 1;
-                }
-                return Err(RetCode::BadParam);
-            }
-            Core::t3_step_impl(&mut self.state, inReal[i], &mut outReal[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -936,7 +898,6 @@ impl T3Stream {
         {
             let sp = &self.state;
             let outReal = &mut outReal;
-            let mut cur_outReal = sp.cur_outReal;
             let mut e1 = sp.e1;
             let mut e2 = sp.e2;
             let mut e3 = sp.e3;
@@ -945,7 +906,6 @@ impl T3Stream {
             let mut e6 = sp.e6;
             if sp.optInTimePeriod == 1 {
                 (*outReal) = inReal;
-                cur_outReal = (*outReal);
                 return Ok((*outReal));
             }
             e1 = (sp.one_minus_k as f64).mul_add(e1, sp.k * inReal);
@@ -961,7 +921,7 @@ impl T3Stream {
 
     /// The value(s) at the last bar the stream counted — the bar
     /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
-    /// refreshed by every accepted `update` and `update_and_fill`, and left
+    /// refreshed by every accepted `update`, and left
     /// alone by `peek`.
     ///
     /// A clone carries them verbatim, so a forked handle can be asked its

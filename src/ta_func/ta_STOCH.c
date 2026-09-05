@@ -781,7 +781,6 @@ static TA_RetCode TA_STOCH_OpenImpl( struct TA_STOCH_Stream **stream, const doub
    subOpenDummy = 0.0;
    sub0 = NULL;
    sub1 = NULL;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement; (void)subRc; (void)subOpenDummy;
    if( outStride ) sc_outSlowK = outSlowK;
    else
    {
@@ -1300,30 +1299,6 @@ TA_LIB_API TA_RetCode TA_STOCH_Peek( const TA_STOCH_Stream *stream, double inHig
    }
    *outSlowK = cur_tempBuffer;
    *outSlowD = cur_outSlowD;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_STOCH_UpdateAndFill( TA_STOCH_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outSlowK[], double outSlowD[] )
-{
-   int i;
-   TA_RetCode retCode;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outSlowK || !outSlowD ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outSlowK == (const void *)inHigh || (const void *)outSlowK == (const void *)inLow || (const void *)outSlowK == (const void *)inClose || (const void *)outSlowD == (const void *)inHigh || (const void *)outSlowD == (const void *)inLow || (const void *)outSlowD == (const void *)inClose || (const void *)outSlowK == (const void *)outSlowD ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      retCode = TA_STOCH_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outSlowK[i], &outSlowD[i] );
-      if( retCode != TA_SUCCESS ) return retCode;
-      stream->cur_outSlowK = outSlowK[i];
-      stream->cur_outSlowD = outSlowD[i];
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

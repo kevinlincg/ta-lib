@@ -153,7 +153,12 @@ TA_LIB_API TA_RetCode TA_CDL3INSIDE( int    startIdx,
    {
       if( max(inClose[i - 1],inOpen[i - 1]) < max(inClose[i - 2],inOpen[i - 2]) && /* engulfed by 1st */
           min(inClose[i - 1],inOpen[i - 1]) > min(inClose[i - 2],inOpen[i - 2]) &&
-          ((((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 && ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 0 - 1 && inClose[i] < inOpen[i - 2]) || (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 1 && inClose[i] > inOpen[i - 2])) && /* 3rd: opposite to 1st and closing out */
+          ((((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 &&
+            ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 0 - 1 &&
+            inClose[i] < inOpen[i - 2]) ||                                         /* 3rd: opposite to 1st and closing out */
+           (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 &&
+            ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 1 &&
+            inClose[i] > inOpen[i - 2])) &&
           fabs(inClose[i - 2] - inOpen[i - 2]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 2) && /* 1st: long */
           fabs(inClose[i - 1] - inOpen[i - 1]) <= TA_CANDLEAVERAGE(BodyShort,BodyShortPeriodTotal,i - 1) ) /* 2nd: short */
       {
@@ -313,7 +318,12 @@ static void TA_CDL3INSIDE_StepImpl( struct TA_CDL3INSIDE_Stream *sp, double inOp
    }
    if( max(sp->lag1_inClose,sp->lag1_inOpen) < max(sp->lag2_inClose,sp->lag2_inOpen) && /* engulfed by 1st */
        min(sp->lag1_inClose,sp->lag1_inOpen) > min(sp->lag2_inClose,sp->lag2_inOpen) &&
-       ((((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 && ((inClose >= inOpen) ? 1 : 0 - 1) == 0 - 1 && inClose < sp->lag2_inOpen) || (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((inClose >= inOpen) ? 1 : 0 - 1) == 1 && inClose > sp->lag2_inOpen)) && /* 3rd: opposite to 1st and closing out */
+       ((((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 &&
+         ((inClose >= inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+         inClose < sp->lag2_inOpen) ||                                   /* 3rd: opposite to 1st and closing out */
+        (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+         ((inClose >= inOpen) ? 1 : 0 - 1) == 1 &&
+         inClose > sp->lag2_inOpen)) &&
        fabs(sp->lag2_inClose - sp->lag2_inOpen) > TA_STREAM_CANDLEAVERAGE(BodyLong,sp->BodyLongPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) && /* 1st: long */
        fabs(sp->lag1_inClose - sp->lag1_inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyShort,sp->BodyShortPeriodTotal,sp->lag1_inOpen,sp->lag1_inHigh,sp->lag1_inLow,sp->lag1_inClose) ) /* 2nd: short */
    {
@@ -354,8 +364,6 @@ static TA_RetCode TA_CDL3INSIDE_OpenImpl( struct TA_CDL3INSIDE_Stream **stream, 
 {
    struct TA_CDL3INSIDE_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -370,9 +378,6 @@ static TA_RetCode TA_CDL3INSIDE_OpenImpl( struct TA_CDL3INSIDE_Stream **stream, 
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int BodyLong_avgPeriod = TA_Globals->candleSettings[TA_BodyLong].avgPeriod;
@@ -436,7 +441,12 @@ static TA_RetCode TA_CDL3INSIDE_OpenImpl( struct TA_CDL3INSIDE_Stream **stream, 
       {
          if( max(inClose[i - 1],inOpen[i - 1]) < max(inClose[i - 2],inOpen[i - 2]) && /* engulfed by 1st */
              min(inClose[i - 1],inOpen[i - 1]) > min(inClose[i - 2],inOpen[i - 2]) &&
-             ((((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 && ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 0 - 1 && inClose[i] < inOpen[i - 2]) || (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 1 && inClose[i] > inOpen[i - 2])) && /* 3rd: opposite to 1st and closing out */
+             ((((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 &&
+               ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 0 - 1 &&
+               inClose[i] < inOpen[i - 2]) ||                                         /* 3rd: opposite to 1st and closing out */
+              (((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 &&
+               ((inClose[i] >= inOpen[i]) ? 1 : 0 - 1) == 1 &&
+               inClose[i] > inOpen[i - 2])) &&
              fabs(inClose[i - 2] - inOpen[i - 2]) > TA_CANDLEAVERAGE(BodyLong,BodyLongPeriodTotal,i - 2) && /* 1st: long */
              fabs(inClose[i - 1] - inOpen[i - 1]) <= TA_CANDLEAVERAGE(BodyShort,BodyShortPeriodTotal,i - 1) ) /* 2nd: short */
          {
@@ -565,7 +575,12 @@ TA_LIB_API TA_RetCode TA_CDL3INSIDE_Peek( const TA_CDL3INSIDE_Stream *stream, do
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
    if( max(sp->lag1_inClose,sp->lag1_inOpen) < max(sp->lag2_inClose,sp->lag2_inOpen) && /* engulfed by 1st */
        min(sp->lag1_inClose,sp->lag1_inOpen) > min(sp->lag2_inClose,sp->lag2_inOpen) &&
-       ((((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 && ((inClose >= inOpen) ? 1 : 0 - 1) == 0 - 1 && inClose < sp->lag2_inOpen) || (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((inClose >= inOpen) ? 1 : 0 - 1) == 1 && inClose > sp->lag2_inOpen)) && /* 3rd: opposite to 1st and closing out */
+       ((((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 1 &&
+         ((inClose >= inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+         inClose < sp->lag2_inOpen) ||                                   /* 3rd: opposite to 1st and closing out */
+        (((sp->lag2_inClose >= sp->lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+         ((inClose >= inOpen) ? 1 : 0 - 1) == 1 &&
+         inClose > sp->lag2_inOpen)) &&
        fabs(sp->lag2_inClose - sp->lag2_inOpen) > TA_STREAM_CANDLEAVERAGE(BodyLong,sp->BodyLongPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) && /* 1st: long */
        fabs(sp->lag1_inClose - sp->lag1_inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyShort,sp->BodyShortPeriodTotal,sp->lag1_inOpen,sp->lag1_inHigh,sp->lag1_inLow,sp->lag1_inClose) ) /* 2nd: short */
    {
@@ -573,26 +588,6 @@ TA_LIB_API TA_RetCode TA_CDL3INSIDE_Peek( const TA_CDL3INSIDE_Stream *stream, do
    } else 
    {
       *outInteger= 0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_CDL3INSIDE_UpdateAndFill( TA_CDL3INSIDE_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inHigh || !inLow || !inClose || !outInteger ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inOpen || (const void *)outInteger == (const void *)inHigh || (const void *)outInteger == (const void *)inLow || (const void *)outInteger == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_CDL3INSIDE_StepImpl( stream, inOpen[i], inHigh[i], inLow[i], inClose[i], &outInteger[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }

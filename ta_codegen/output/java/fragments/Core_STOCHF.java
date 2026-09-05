@@ -39,7 +39,7 @@
     *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInFastD_MAType Moving-average type used to smooth Fast-D
     *        (default 0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA,
-    *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT;
+    *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
     *        {@code MAType.DEFAULT} selects the default).
     * @return The lookback, or {@code -1} if a parameter is out of range.
     */
@@ -458,7 +458,7 @@
     *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInFastD_MAType Moving-average type used to smooth Fast-D
     *        (default 0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA,
-    *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT;
+    *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
     *        {@code MAType.DEFAULT} selects the default).
     * @param outFastK Raw %K stochastic line. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
@@ -546,7 +546,7 @@
     *        range 1..100000; {@code Integer.MIN_VALUE} selects the default).
     * @param optInFastD_MAType Moving-average type used to smooth Fast-D
     *        (default 0 = SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA,
-    *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT;
+    *        6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
     *        {@code MAType.DEFAULT} selects the default).
     * @param outFastK Raw %K stochastic line. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
@@ -703,40 +703,6 @@
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.fastK = this.cur_outFastK;
          out.fastD = this.cur_outFastD;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double inClose[], double outFastK[], double outFastD[] ) {
-         requireArgument("STOCHF updateAndFill", "inHigh", inHigh);
-         requireArgument("STOCHF updateAndFill", "inLow", inLow);
-         requireArgument("STOCHF updateAndFill", "inClose", inClose);
-         requireArgument("STOCHF updateAndFill", "outFastK", outFastK);
-         requireArgument("STOCHF updateAndFill", "outFastD", outFastD);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || inClose.length != barCount || outFastK.length < barCount || outFastD.length < barCount || (Object)outFastK == (Object)inHigh || (Object)outFastK == (Object)inLow || (Object)outFastK == (Object)inClose || (Object)outFastD == (Object)inHigh || (Object)outFastD == (Object)inLow || (Object)outFastD == (Object)inClose || (Object)outFastK == (Object)outFastD )
-            throw new TaLibArgumentException("STOCHF updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("STOCHF updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.stochfStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outFastK[i] = this.cur_outFastK;
-            outFastD[i] = this.cur_outFastD;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**

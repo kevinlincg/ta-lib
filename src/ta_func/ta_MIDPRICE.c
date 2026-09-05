@@ -646,8 +646,6 @@ static TA_RetCode TA_MIDPRICE_OpenImpl( struct TA_MIDPRICE_Stream **stream, cons
 {
    struct TA_MIDPRICE_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -666,9 +664,6 @@ static TA_RetCode TA_MIDPRICE_OpenImpl( struct TA_MIDPRICE_Stream **stream, cons
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       double lowest = 0.0;
@@ -965,26 +960,6 @@ TA_LIB_API TA_RetCode TA_MIDPRICE_Peek( const TA_MIDPRICE_Stream *stream, double
       lowest = tmpLow;
    }
    *outReal= (highest + lowest) / 2.0;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_MIDPRICE_UpdateAndFill( TA_MIDPRICE_Stream *stream, const double inHigh[], const double inLow[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_MIDPRICE_StepImpl( stream, inHigh[i], inLow[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

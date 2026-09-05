@@ -220,8 +220,17 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
     * fastest adaptation, for every window of an instrument quoted below it
     * (issue #253). A genuinely flat window is now recognized by the exact bar
     * count above instead.
+    *
+    * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+    * beside it compares against the SIGNED numerator, so it is false whenever
+    * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+    * add/subtract of fabs terms, so an addend absorbed on the way in and
+    * subtracted later at full precision drives it to exactly 0.0 on a window
+    * that is not flat; without this clause that bar divides by zero and the
+    * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+    * carried until #350).
     */
-   if( sumROC1 <= periodROC )
+   if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 
@@ -275,7 +284,7 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
        */
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio */
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -329,7 +338,7 @@ TA_LIB_API TA_RetCode TA_KAMA( int    startIdx,
        */
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio */
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -448,7 +457,7 @@ TA_RetCode TA_S_KAMA( int    startIdx,
    tempReal2 = (double)inReal[trailingIdx++];
    periodROC = tempReal - tempReal2;
    trailingValue = tempReal2;
-   if( sumROC1 <= periodROC )
+   if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 
@@ -478,7 +487,7 @@ TA_RetCode TA_S_KAMA( int    startIdx,
          sumROC1 = 0.0;
       }
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -512,7 +521,7 @@ TA_RetCode TA_S_KAMA( int    startIdx,
          sumROC1 = 0.0;
       }
       trailingValue = tempReal2;
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -607,7 +616,7 @@ static void TA_KAMA_StepImpl( struct TA_KAMA_Stream *sp, double inReal, double *
     */
    sp->trailingValue = tempReal2;
    /* Calculate the efficiency ratio */
-   if( sp->sumROC1 <= periodROC )
+   if( sp->sumROC1 <= 0.0 || sp->sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 
@@ -636,8 +645,6 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
 {
    struct TA_KAMA_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -656,9 +663,6 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    if( optInTimePeriod == 1 )
    {
@@ -785,8 +789,17 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
        * fastest adaptation, for every window of an instrument quoted below it
        * (issue #253). A genuinely flat window is now recognized by the exact bar
        * count above instead.
+       *
+       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+       * beside it compares against the SIGNED numerator, so it is false whenever
+       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
+       * add/subtract of fabs terms, so an addend absorbed on the way in and
+       * subtracted later at full precision drives it to exactly 0.0 on a window
+       * that is not flat; without this clause that bar divides by zero and the
+       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+       * carried until #350).
        */
-      if( sumROC1 <= periodROC )
+      if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
       {
          tempReal = 1.0;
       } else 
@@ -840,7 +853,7 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC )
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
          {
             tempReal = 1.0;
          } else 
@@ -894,7 +907,7 @@ static TA_RetCode TA_KAMA_OpenImpl( struct TA_KAMA_Stream **stream, const double
           */
          trailingValue = tempReal2;
          /* Calculate the efficiency ratio */
-         if( sumROC1 <= periodROC )
+         if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
          {
             tempReal = 1.0;
          } else 
@@ -1059,7 +1072,7 @@ TA_LIB_API TA_RetCode TA_KAMA_Peek( const TA_KAMA_Stream *stream, double inReal,
     */
    trailingValue = tempReal2;
    /* Calculate the efficiency ratio */
-   if( sumROC1 <= periodROC )
+   if( sumROC1 <= 0.0 || sumROC1 <= periodROC )
    {
       tempReal = 1.0;
    } else 
@@ -1074,26 +1087,6 @@ TA_LIB_API TA_RetCode TA_KAMA_Peek( const TA_KAMA_Stream *stream, double inReal,
     */
    prevKAMA = fma(inReal - prevKAMA, tempReal, prevKAMA);
    *outReal= prevKAMA;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_KAMA_UpdateAndFill( TA_KAMA_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_KAMA_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

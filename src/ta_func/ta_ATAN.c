@@ -137,7 +137,6 @@ struct TA_ATAN_Stream {
 /* Private function, not in public API. */
 static void TA_ATAN_StepImpl( struct TA_ATAN_Stream *sp, double inReal, double *outReal )
 {
-   (void)sp;
    *outReal= atan(inReal);
    sp->cur_outReal = *outReal;
 }
@@ -146,8 +145,6 @@ static TA_RetCode TA_ATAN_OpenImpl( struct TA_ATAN_Stream **stream, const double
 {
    struct TA_ATAN_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -162,9 +159,6 @@ static TA_RetCode TA_ATAN_OpenImpl( struct TA_ATAN_Stream **stream, const double
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -246,32 +240,9 @@ TA_LIB_API TA_RetCode TA_ATAN_Update( TA_ATAN_Stream *stream, double inReal, dou
 
 TA_LIB_API TA_RetCode TA_ATAN_Peek( const TA_ATAN_Stream *stream, double inReal, double *outReal )
 {
-   const struct TA_ATAN_Stream *sp = stream;
-
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
-   (void)sp;
    *outReal= atan(inReal);
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_ATAN_UpdateAndFill( TA_ATAN_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_ATAN_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

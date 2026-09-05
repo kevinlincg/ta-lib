@@ -1449,8 +1449,6 @@ static TA_RetCode TA_HT_TRENDMODE_OpenImpl( struct TA_HT_TRENDMODE_Stream **stre
    int smoothPrice_Idx;
    int maxIdx_smoothPrice;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -1465,9 +1463,6 @@ static TA_RetCode TA_HT_TRENDMODE_OpenImpl( struct TA_HT_TRENDMODE_Stream **stre
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -2480,26 +2475,6 @@ TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Peek( const TA_HT_TRENDMODE_Stream *stream
       trend = 1;
    }
    *outInteger= trend;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_HT_TRENDMODE_UpdateAndFill( TA_HT_TRENDMODE_Stream *stream, const double inReal[], int barCount, int outInteger[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outInteger ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_HT_TRENDMODE_StepImpl( stream, inReal[i], &outInteger[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

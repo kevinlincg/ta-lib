@@ -368,8 +368,6 @@ static TA_RetCode TA_EFI_OpenImpl( struct TA_EFI_Stream **stream, const double i
 {
    struct TA_EFI_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -388,9 +386,6 @@ static TA_RetCode TA_EFI_OpenImpl( struct TA_EFI_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    if( optInTimePeriod == 1 )
    {
@@ -691,26 +686,6 @@ TA_LIB_API TA_RetCode TA_EFI_Peek( const TA_EFI_Stream *stream, double inClose, 
       prevClose = inClose;
       prevMA = fma(force - prevMA, sp->optInK_1, prevMA);
       *outReal= prevMA;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_EFI_UpdateAndFill( TA_EFI_Stream *stream, const double inClose[], const double inVolume[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inClose || !inVolume || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inClose || (const void *)outReal == (const void *)inVolume ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inClose[i] ) || !TA_IS_FINITE( inVolume[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_EFI_StepImpl( stream, inClose[i], inVolume[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }

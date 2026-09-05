@@ -1578,6 +1578,75 @@ DEF_FUNCTION( CMOU,
              );
 /* CMOU END */
 
+/* COPPOCK BEGIN */
+static const TA_OptInputParameterInfo TA_DEF_UI_D_COPPOCK_WMAPeriod =
+{
+   TA_OptInput_IntegerRange,
+   "optInWMAPeriod",
+   0,
+
+   "WMA Period",
+   (const void *)&TA_DEF_TimePeriod_Positive,
+   10,
+   "Smoothing period for the ROC sum",
+
+   NULL
+};
+
+static const TA_OptInputParameterInfo TA_DEF_UI_D_COPPOCK_ROC1Period =
+{
+   TA_OptInput_IntegerRange,
+   "optInROC1Period",
+   0,
+
+   "ROC-1 Period",
+   (const void *)&TA_DEF_TimePeriod_Positive,
+   11,
+   "Short rate-of-change period",
+
+   NULL
+};
+
+static const TA_OptInputParameterInfo TA_DEF_UI_D_COPPOCK_ROC2Period =
+{
+   TA_OptInput_IntegerRange,
+   "optInROC2Period",
+   0,
+
+   "ROC-2 Period",
+   (const void *)&TA_DEF_TimePeriod_Positive,
+   14,
+   "Long rate-of-change period",
+
+   NULL
+};
+
+static const TA_InputParameterInfo    *TA_COPPOCK_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Real,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_COPPOCK_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_COPPOCK_OptInputs[] =
+{ &TA_DEF_UI_D_COPPOCK_WMAPeriod,
+  &TA_DEF_UI_D_COPPOCK_ROC1Period,
+  &TA_DEF_UI_D_COPPOCK_ROC2Period,
+  NULL
+};
+
+DEF_FUNCTION( COPPOCK,
+              TA_GroupId_MomentumIndicators,
+              "Coppock Curve",
+              TA_FUNC_FLG_STREAM
+             );
+/* COPPOCK END */
+
 /* CORREL BEGIN */
 static const TA_InputParameterInfo    *TA_CORREL_Inputs[]    =
 {
@@ -1649,6 +1718,92 @@ DEF_FUNCTION( COSH,
               TA_FUNC_FLG_STREAM
              );
 /* COSH END */
+
+/* CUMSUM BEGIN */
+static const TA_InputParameterInfo    *TA_CUMSUM_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Real,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_CUMSUM_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_CUMSUM_OptInputs[] =
+{ NULL };
+
+DEF_FUNCTION( CUMSUM,
+              TA_GroupId_MathOperators,
+              "Cumulative Sum",
+              TA_FUNC_FLG_STREAM | TA_FUNC_FLG_PATH_DEP
+             );
+/* CUMSUM END */
+
+/* CVI BEGIN */
+static const TA_OptInputParameterInfo TA_DEF_UI_D_CVI_TimePeriod =
+{
+   TA_OptInput_IntegerRange,
+   "optInTimePeriod",
+   0,
+
+   "Time Period",
+   (const void *)&TA_DEF_TimePeriod_Positive_Minimum2,
+   10,
+   "Period of the EMA smoothing the high-low spread",
+
+   NULL
+};
+
+static const TA_IntegerRange TA_DEF_CVI_ROCPeriod =
+{
+   1,
+   100000,
+   4,
+   200,
+   1
+};
+
+static const TA_OptInputParameterInfo TA_DEF_UI_D_CVI_ROCPeriod =
+{
+   TA_OptInput_IntegerRange,
+   "optInROCPeriod",
+   0,
+
+   "ROC Period",
+   (const void *)&TA_DEF_CVI_ROCPeriod,
+   10,
+   "Number of bars the rate of change reaches back",
+
+   NULL
+};
+
+static const TA_InputParameterInfo    *TA_CVI_Inputs[]    =
+{
+  &TA_DEF_UI_Input_Price_HL,
+  NULL
+};
+
+static const TA_OutputParameterInfo   *TA_CVI_Outputs[]   =
+{
+  &TA_DEF_UI_Output_Real,
+  NULL
+};
+
+static const TA_OptInputParameterInfo *TA_CVI_OptInputs[] =
+{ &TA_DEF_UI_D_CVI_TimePeriod,
+  &TA_DEF_UI_D_CVI_ROCPeriod,
+  NULL
+};
+
+DEF_FUNCTION( CVI,
+              TA_GroupId_VolatilityIndicators,
+              "Chaikin's Volatility",
+              TA_FUNC_FLG_STREAM
+             );
+/* CVI END */
 
 /****************************************************************************
  * Step 2 - Add your TA function to the table.
@@ -1722,9 +1877,12 @@ const TA_FuncDef *TA_DEF_TableC[] =
    ADD_TO_TABLE(CMF),
    ADD_TO_TABLE(CMO),
    ADD_TO_TABLE(CMOU),
+   ADD_TO_TABLE(COPPOCK),
    ADD_TO_TABLE(CORREL),
    ADD_TO_TABLE(COS),
    ADD_TO_TABLE(COSH),
+   ADD_TO_TABLE(CUMSUM),
+   ADD_TO_TABLE(CVI),
    NULL
 };
 

@@ -1227,8 +1227,6 @@ static TA_RetCode TA_HT_SINE_OpenImpl( struct TA_HT_SINE_Stream **stream, const 
    int smoothPrice_Idx;
    int maxIdx_smoothPrice;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -1243,9 +1241,6 @@ static TA_RetCode TA_HT_SINE_OpenImpl( struct TA_HT_SINE_Stream **stream, const 
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -2083,26 +2078,6 @@ TA_LIB_API TA_RetCode TA_HT_SINE_Peek( const TA_HT_SINE_Stream *stream, double i
    }
    *outSine= sin(DCPhase * sp->deg2Rad);
    *outLeadSine= sin((DCPhase + 45) * sp->deg2Rad);
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_HT_SINE_UpdateAndFill( TA_HT_SINE_Stream *stream, const double inReal[], int barCount, double outSine[], double outLeadSine[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outSine || !outLeadSine ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outSine == (const void *)inReal || (const void *)outLeadSine == (const void *)inReal || (const void *)outSine == (const void *)outLeadSine ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_HT_SINE_StepImpl( stream, inReal[i], &outSine[i], &outLeadSine[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

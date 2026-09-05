@@ -541,8 +541,6 @@ static TA_RetCode TA_WMA_OpenImpl( struct TA_WMA_Stream **stream, const double i
 {
    struct TA_WMA_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -561,9 +559,6 @@ static TA_RetCode TA_WMA_OpenImpl( struct TA_WMA_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    if( optInTimePeriod == 1 )
    {
@@ -949,26 +944,6 @@ TA_LIB_API TA_RetCode TA_WMA_Peek( const TA_WMA_Stream *stream, double inReal, d
    }
    /* Calculate the WMA for this price bar. */
    *outReal= periodSum / sp->divider;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_WMA_UpdateAndFill( TA_WMA_Stream *stream, const double inReal[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_WMA_StepImpl( stream, inReal[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

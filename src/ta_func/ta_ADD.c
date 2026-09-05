@@ -142,7 +142,6 @@ struct TA_ADD_Stream {
 /* Private function, not in public API. */
 static void TA_ADD_StepImpl( struct TA_ADD_Stream *sp, double inReal0, double inReal1, double *outReal )
 {
-   (void)sp;
    *outReal= inReal0 + inReal1;
    sp->cur_outReal = *outReal;
 }
@@ -151,8 +150,6 @@ static TA_RetCode TA_ADD_OpenImpl( struct TA_ADD_Stream **stream, const double i
 {
    struct TA_ADD_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -167,9 +164,6 @@ static TA_RetCode TA_ADD_OpenImpl( struct TA_ADD_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -250,32 +244,9 @@ TA_LIB_API TA_RetCode TA_ADD_Update( TA_ADD_Stream *stream, double inReal0, doub
 
 TA_LIB_API TA_RetCode TA_ADD_Peek( const TA_ADD_Stream *stream, double inReal0, double inReal1, double *outReal )
 {
-   const struct TA_ADD_Stream *sp = stream;
-
    if( !stream || !outReal ) return TA_BAD_PARAM;
    if( !TA_IS_FINITE( inReal0 ) || !TA_IS_FINITE( inReal1 ) ) return TA_BAD_PARAM;
-   (void)sp;
    *outReal= inReal0 + inReal1;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_ADD_UpdateAndFill( TA_ADD_Stream *stream, const double inReal0[], const double inReal1[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal0 || !inReal1 || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal0 || (const void *)outReal == (const void *)inReal1 ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal0[i] ) || !TA_IS_FINITE( inReal1[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_ADD_StepImpl( stream, inReal0[i], inReal1[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

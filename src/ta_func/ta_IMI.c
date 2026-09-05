@@ -282,8 +282,6 @@ static TA_RetCode TA_IMI_OpenImpl( struct TA_IMI_Stream **stream, const double i
 {
    struct TA_IMI_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -302,9 +300,6 @@ static TA_RetCode TA_IMI_OpenImpl( struct TA_IMI_Stream **stream, const double i
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int lookback;
@@ -467,26 +462,6 @@ TA_LIB_API TA_RetCode TA_IMI_Peek( const TA_IMI_Stream *stream, double inOpen, d
        * oscillator, so no up/down bias returns its neutral center, 50.0.
        */
       *outReal= (upsum + downsum == 0.0) ? 50.0 : 100.0 * (upsum / (upsum + downsum));
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_IMI_UpdateAndFill( TA_IMI_Stream *stream, const double inOpen[], const double inClose[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inClose || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inOpen || (const void *)outReal == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_IMI_StepImpl( stream, inOpen[i], inClose[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }

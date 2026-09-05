@@ -192,7 +192,16 @@ impl Core {
                inOpen[i - 2] <= (inOpen[i - 3]).max(inClose[i - 3]) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (NearPeriodTotal[3]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((inClose[i - 3]) - (inOpen[i - 3])).abs(), 1 => (inHigh[i - 3]) - (inLow[i - 3]), 2 => ((inHigh[i - 3]) - (if (inClose[i - 3]) >= (inOpen[i - 3]) { (inClose[i - 3]) } else { (inOpen[i - 3]) })) + ((if (inClose[i - 3]) >= (inOpen[i - 3]) { (inOpen[i - 3]) } else { (inClose[i - 3]) }) - (inLow[i - 3])), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
                inOpen[i - 1] >= (inOpen[i - 2]).min(inClose[i - 2]) - ((Near_factor) * (if (Near_avgPeriod) != 0 { (NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((inClose[i - 2]) - (inOpen[i - 2])).abs(), 1 => (inHigh[i - 2]) - (inLow[i - 2]), 2 => ((inHigh[i - 2]) - (if (inClose[i - 2]) >= (inOpen[i - 2]) { (inClose[i - 2]) } else { (inOpen[i - 2]) })) + ((if (inClose[i - 2]) >= (inOpen[i - 2]) { (inOpen[i - 2]) } else { (inClose[i - 2]) }) - (inLow[i - 2])), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd opens within/near 2nd rb
                inOpen[i - 1] <= (inOpen[i - 2]).max(inClose[i - 2]) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((inClose[i - 2]) - (inOpen[i - 2])).abs(), 1 => (inHigh[i - 2]) - (inLow[i - 2]), 2 => ((inHigh[i - 2]) - (if (inClose[i - 2]) >= (inOpen[i - 2]) { (inClose[i - 2]) } else { (inOpen[i - 2]) })) + ((if (inClose[i - 2]) >= (inOpen[i - 2]) { (inOpen[i - 2]) } else { (inClose[i - 2]) }) - (inLow[i - 2])), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
-               ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 && inClose[i - 1] > inClose[i - 2] && inClose[i - 2] > inClose[i - 3] && inOpen[i] > inClose[i - 1] && inClose[i] < inOpen[i - 3] || (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose[i - 1] < inClose[i - 2] && inClose[i - 2] < inClose[i - 3] && inOpen[i] < inClose[i - 1] && inClose[i] > inOpen[i - 3]) // if three white consecutive higher closes 4th opens above prior close 4th closes below 1st open if three black consecutive lower closes 4th opens below prior close 4th closes above 1st open
+               ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 && // if three white
+                 inClose[i - 1] > inClose[i - 2] &&
+                 inClose[i - 2] > inClose[i - 3] &&                               // consecutive higher closes
+                 inOpen[i] > inClose[i - 1] &&                                    // 4th opens above prior close
+                 inClose[i] < inOpen[i - 3] ||                                    // 4th closes below 1st open
+                (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // if three black
+                 inClose[i - 1] < inClose[i - 2] &&
+                 inClose[i - 2] < inClose[i - 3] &&                               // consecutive lower closes
+                 inOpen[i] < inClose[i - 1] &&                                    // 4th opens below prior close
+                 inClose[i] > inOpen[i - 3])                                      // 4th closes above 1st open
             {
                 outInteger[outIdx] = ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) * 100) as i32;
                 outIdx += 1;
@@ -453,7 +462,16 @@ impl Core {
            sp.lag2_inOpen <= (sp.lag3_inOpen).max(sp.lag3_inClose) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (sp.NearPeriodTotal[3]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((sp.lag3_inClose) - (sp.lag3_inOpen)).abs(), 1 => (sp.lag3_inHigh) - (sp.lag3_inLow), 2 => ((sp.lag3_inHigh) - (if (sp.lag3_inClose) >= (sp.lag3_inOpen) { (sp.lag3_inClose) } else { (sp.lag3_inOpen) })) + ((if (sp.lag3_inClose) >= (sp.lag3_inOpen) { (sp.lag3_inOpen) } else { (sp.lag3_inClose) }) - (sp.lag3_inLow)), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
            sp.lag1_inOpen >= (sp.lag2_inOpen).min(sp.lag2_inClose) - ((Near_factor) * (if (Near_avgPeriod) != 0 { (sp.NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((sp.lag2_inClose) - (sp.lag2_inOpen)).abs(), 1 => (sp.lag2_inHigh) - (sp.lag2_inLow), 2 => ((sp.lag2_inHigh) - (if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inClose) } else { (sp.lag2_inOpen) })) + ((if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inOpen) } else { (sp.lag2_inClose) }) - (sp.lag2_inLow)), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd opens within/near 2nd rb
            sp.lag1_inOpen <= (sp.lag2_inOpen).max(sp.lag2_inClose) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (sp.NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((sp.lag2_inClose) - (sp.lag2_inOpen)).abs(), 1 => (sp.lag2_inHigh) - (sp.lag2_inLow), 2 => ((sp.lag2_inHigh) - (if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inClose) } else { (sp.lag2_inOpen) })) + ((if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inOpen) } else { (sp.lag2_inClose) }) - (sp.lag2_inLow)), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
-           ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && sp.lag1_inClose > sp.lag2_inClose && sp.lag2_inClose > sp.lag3_inClose && inOpen > sp.lag1_inClose && inClose < sp.lag3_inOpen || (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && sp.lag1_inClose < sp.lag2_inClose && sp.lag2_inClose < sp.lag3_inClose && inOpen < sp.lag1_inClose && inClose > sp.lag3_inOpen) // if three white consecutive higher closes 4th opens above prior close 4th closes below 1st open if three black consecutive lower closes 4th opens below prior close 4th closes above 1st open
+           ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && // if three white
+             sp.lag1_inClose > sp.lag2_inClose &&
+             sp.lag2_inClose > sp.lag3_inClose &&                               // consecutive higher closes
+             inOpen > sp.lag1_inClose &&                                        // 4th opens above prior close
+             inClose < sp.lag3_inOpen ||                                        // 4th closes below 1st open
+            (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // if three black
+             sp.lag1_inClose < sp.lag2_inClose &&
+             sp.lag2_inClose < sp.lag3_inClose &&                               // consecutive lower closes
+             inOpen < sp.lag1_inClose &&                                        // 4th opens below prior close
+             inClose > sp.lag3_inOpen)                                          // 4th closes above 1st open
         {
             (*outInteger) = ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) * 100) as i32;
         } else {
@@ -598,7 +616,16 @@ impl Core {
                inOpen[i - 2] <= (inOpen[i - 3]).max(inClose[i - 3]) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (NearPeriodTotal[3]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((inClose[i - 3]) - (inOpen[i - 3])).abs(), 1 => (inHigh[i - 3]) - (inLow[i - 3]), 2 => ((inHigh[i - 3]) - (if (inClose[i - 3]) >= (inOpen[i - 3]) { (inClose[i - 3]) } else { (inOpen[i - 3]) })) + ((if (inClose[i - 3]) >= (inOpen[i - 3]) { (inOpen[i - 3]) } else { (inClose[i - 3]) }) - (inLow[i - 3])), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
                inOpen[i - 1] >= (inOpen[i - 2]).min(inClose[i - 2]) - ((Near_factor) * (if (Near_avgPeriod) != 0 { (NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((inClose[i - 2]) - (inOpen[i - 2])).abs(), 1 => (inHigh[i - 2]) - (inLow[i - 2]), 2 => ((inHigh[i - 2]) - (if (inClose[i - 2]) >= (inOpen[i - 2]) { (inClose[i - 2]) } else { (inOpen[i - 2]) })) + ((if (inClose[i - 2]) >= (inOpen[i - 2]) { (inOpen[i - 2]) } else { (inClose[i - 2]) }) - (inLow[i - 2])), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd opens within/near 2nd rb
                inOpen[i - 1] <= (inOpen[i - 2]).max(inClose[i - 2]) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((inClose[i - 2]) - (inOpen[i - 2])).abs(), 1 => (inHigh[i - 2]) - (inLow[i - 2]), 2 => ((inHigh[i - 2]) - (if (inClose[i - 2]) >= (inOpen[i - 2]) { (inClose[i - 2]) } else { (inOpen[i - 2]) })) + ((if (inClose[i - 2]) >= (inOpen[i - 2]) { (inOpen[i - 2]) } else { (inClose[i - 2]) }) - (inLow[i - 2])), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
-               ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 && inClose[i - 1] > inClose[i - 2] && inClose[i - 2] > inClose[i - 3] && inOpen[i] > inClose[i - 1] && inClose[i] < inOpen[i - 3] || (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose[i - 1] < inClose[i - 2] && inClose[i - 2] < inClose[i - 3] && inOpen[i] < inClose[i - 1] && inClose[i] > inOpen[i - 3]) // if three white consecutive higher closes 4th opens above prior close 4th closes below 1st open if three black consecutive lower closes 4th opens below prior close 4th closes above 1st open
+               ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 && // if three white
+                 inClose[i - 1] > inClose[i - 2] &&
+                 inClose[i - 2] > inClose[i - 3] &&                               // consecutive higher closes
+                 inOpen[i] > inClose[i - 1] &&                                    // 4th opens above prior close
+                 inClose[i] < inOpen[i - 3] ||                                    // 4th closes below 1st open
+                (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // if three black
+                 inClose[i - 1] < inClose[i - 2] &&
+                 inClose[i - 2] < inClose[i - 3] &&                               // consecutive lower closes
+                 inOpen[i] < inClose[i - 1] &&                                    // 4th opens below prior close
+                 inClose[i] > inOpen[i - 3])                                      // 4th closes above 1st open
             {
                 outInteger[({ let _v = outIdx; outIdx += 1; _v } * outStride) as usize] = ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
@@ -844,44 +871,6 @@ impl Cdl3linestrikeStream {
         Ok(outInteger)
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inOpen.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what this call took in, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k + 1` — the committed bars, plus the rejected one, which is counted
-    /// but never written.
-    #[doc(alias = "TA_CDL3LINESTRIKE_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inOpen: &[f64], inHigh: &[f64], inLow: &[f64], inClose: &[f64], outInteger: &mut [i32]) -> Result<(), RetCode> {
-        let barCount = inOpen.len();
-        if inHigh.len() != inOpen.len() || inLow.len() != inOpen.len() || inClose.len() != inOpen.len() || outInteger.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
-                if self.out.count < Core::MAX_INDEX {
-                    self.out.count += 1;
-                }
-                return Err(RetCode::BadParam);
-            }
-            Core::cdl3linestrike_step_impl(&mut self.state, &self.cs_near, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -916,7 +905,16 @@ impl Cdl3linestrikeStream {
                sp.lag2_inOpen <= (sp.lag3_inOpen).max(sp.lag3_inClose) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (sp.NearPeriodTotal[3]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((sp.lag3_inClose) - (sp.lag3_inOpen)).abs(), 1 => (sp.lag3_inHigh) - (sp.lag3_inLow), 2 => ((sp.lag3_inHigh) - (if (sp.lag3_inClose) >= (sp.lag3_inOpen) { (sp.lag3_inClose) } else { (sp.lag3_inOpen) })) + ((if (sp.lag3_inClose) >= (sp.lag3_inOpen) { (sp.lag3_inOpen) } else { (sp.lag3_inClose) }) - (sp.lag3_inLow)), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
                sp.lag1_inOpen >= (sp.lag2_inOpen).min(sp.lag2_inClose) - ((Near_factor) * (if (Near_avgPeriod) != 0 { (sp.NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((sp.lag2_inClose) - (sp.lag2_inOpen)).abs(), 1 => (sp.lag2_inHigh) - (sp.lag2_inLow), 2 => ((sp.lag2_inHigh) - (if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inClose) } else { (sp.lag2_inOpen) })) + ((if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inOpen) } else { (sp.lag2_inClose) }) - (sp.lag2_inLow)), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) && // 3rd opens within/near 2nd rb
                sp.lag1_inOpen <= (sp.lag2_inOpen).max(sp.lag2_inClose) + ((Near_factor) * (if (Near_avgPeriod) != 0 { (sp.NearPeriodTotal[2]) / (Near_avgPeriod as f64) } else { match Near_rangeType { 0 => ((sp.lag2_inClose) - (sp.lag2_inOpen)).abs(), 1 => (sp.lag2_inHigh) - (sp.lag2_inLow), 2 => ((sp.lag2_inHigh) - (if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inClose) } else { (sp.lag2_inOpen) })) + ((if (sp.lag2_inClose) >= (sp.lag2_inOpen) { (sp.lag2_inOpen) } else { (sp.lag2_inClose) }) - (sp.lag2_inLow)), _ => 0.0 } }) / (if (Near_rangeType) == 2 { 2.0 } else { 1.0 })) &&
-               ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && sp.lag1_inClose > sp.lag2_inClose && sp.lag2_inClose > sp.lag3_inClose && inOpen > sp.lag1_inClose && inClose < sp.lag3_inOpen || (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && sp.lag1_inClose < sp.lag2_inClose && sp.lag2_inClose < sp.lag3_inClose && inOpen < sp.lag1_inClose && inClose > sp.lag3_inOpen) // if three white consecutive higher closes 4th opens above prior close 4th closes below 1st open if three black consecutive lower closes 4th opens below prior close 4th closes above 1st open
+               ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && // if three white
+                 sp.lag1_inClose > sp.lag2_inClose &&
+                 sp.lag2_inClose > sp.lag3_inClose &&                               // consecutive higher closes
+                 inOpen > sp.lag1_inClose &&                                        // 4th opens above prior close
+                 inClose < sp.lag3_inOpen ||                                        // 4th closes below 1st open
+                (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // if three black
+                 sp.lag1_inClose < sp.lag2_inClose &&
+                 sp.lag2_inClose < sp.lag3_inClose &&                               // consecutive lower closes
+                 inOpen < sp.lag1_inClose &&                                        // 4th opens below prior close
+                 inClose > sp.lag3_inOpen)                                          // 4th closes above 1st open
             {
                 (*outInteger) = ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
@@ -928,7 +926,7 @@ impl Cdl3linestrikeStream {
 
     /// The value(s) at the last bar the stream counted — the bar
     /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
-    /// refreshed by every accepted `update` and `update_and_fill`, and left
+    /// refreshed by every accepted `update`, and left
     /// alone by `peek`.
     ///
     /// A clone carries them verbatim, so a forked handle can be asked its

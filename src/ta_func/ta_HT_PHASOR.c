@@ -995,8 +995,6 @@ static TA_RetCode TA_HT_PHASOR_OpenImpl( struct TA_HT_PHASOR_Stream **stream, co
 {
    struct TA_HT_PHASOR_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -1011,9 +1009,6 @@ static TA_RetCode TA_HT_PHASOR_OpenImpl( struct TA_HT_PHASOR_Stream **stream, co
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int outIdx;
@@ -1604,26 +1599,6 @@ TA_LIB_API TA_RetCode TA_HT_PHASOR_Peek( const TA_HT_PHASOR_Stream *stream, doub
        */
       I1ForEvenPrev3 = I1ForEvenPrev2;
       I1ForEvenPrev2 = detrender;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_HT_PHASOR_UpdateAndFill( TA_HT_PHASOR_Stream *stream, const double inReal[], int barCount, double outInPhase[], double outQuadrature[] )
-{
-   int i;
-
-   if( !stream || !inReal || !outInPhase || !outQuadrature ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInPhase == (const void *)inReal || (const void *)outQuadrature == (const void *)inReal || (const void *)outInPhase == (const void *)outQuadrature ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_HT_PHASOR_StepImpl( stream, inReal[i], &outInPhase[i], &outQuadrature[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }

@@ -219,6 +219,23 @@ int main( int argc, char **argv )
    printf( "Random seed: %u  (replay with --seed=%u)\n", randSeed, randSeed );
    srand( randSeed );
 
+   /* The output-arity cap must hold before anything sizes or clamps by it
+    * (issue #352) — checked here rather than inside test_codegen() because
+    * --fuzz-064 and --xlang-hash below are self-contained early returns that
+    * never reach it, and their buffers clamp at the same cap. */
+   {
+      ErrorNumber arityRet;
+      if( TA_Initialize() != TA_SUCCESS )
+      {
+         printf( "TA_Initialize failed\n" );
+         return TA_TESTUTIL_INIT_FAILED;
+      }
+      arityRet = codegen_output_arity_within_cap();
+      TA_Shutdown();
+      if( arityRet != TA_TEST_PASS )
+         return arityRet;
+   }
+
    /* Opt-in bit-exact differential fuzz vs released v0.6.4 (ta_064_serve).
     * Self-contained: init the lib, run the fuzz, done — skips the rest. */
    if( doFuzz064 )
@@ -665,6 +682,34 @@ static int tagPrefixMatches(const char *tags, const char *token)
    return 0;
 }
 
+/* Does any comma-separated element of `tags` accept this short token, by the
+ * '_'-component rule in test_codegen.h? The group tag is a list of names, so the
+ * rule applies per element: "DI" reaches the tag holding PLUS_DI and MINUS_DI.
+ */
+static int tagHasShortToken(const char *tags, const char *token)
+{
+   char elem[128];
+   const char *p = tags;
+
+   while( *p )
+   {
+      const char *end = strchr(p, ',');
+      size_t elemLen = (end == NULL) ? strlen(p) : (size_t)(end - p);
+
+      if( elemLen < sizeof(elem) )
+      {
+         memcpy(elem, p, elemLen);
+         elem[elemLen] = '\0';
+         if( codegen_short_filter_token_matches(elem, token) )
+            return 1;
+      }
+      if( end == NULL )
+         return 0;
+      p = end + 1;
+   }
+   return 0;
+}
+
 static int matchesFilter(const char *filter, const char *tags)
 {
    char filterCopy[1024];
@@ -679,7 +724,12 @@ static int matchesFilter(const char *filter, const char *tags)
    token = strtok(filterCopy, ",");
    while( token != NULL )
    {
-      if( strstr(tags, token) != NULL )
+      if( strlen(token) <= 2 )
+      {
+         if( tagHasShortToken(tags, token) )
+            return 1;
+      }
+      else if( strstr(tags, token) != NULL )
          return 1;
       if( tagPrefixMatches(tags, token) )
          return 1;
@@ -745,7 +795,7 @@ static ErrorNumber testTAFunction_ALL( void )
    DO_TEST( test_func_sar,      "SAR,SAREXT" );
    DO_TEST( test_func_stoch,    "STOCH,STOCHF,STOCHRSI" );
    DO_TEST( test_func_per_hlcv, "MFI,AD,ADOSC" );
-   DO_TEST( test_func_per_cv,   "NVI,PVI" );
+   DO_TEST( test_func_per_cv,   "NVI,PVI,PVT" );
    DO_TEST( test_func_1in_2out, "PHASOR,SINE,HT_PHASOR,HT_SINE" );
    DO_TEST( test_func_per_ema,  "TRIX" );
    DO_TEST( test_func_macd,     "MACD,MACDFIX,MACDEXT" );
@@ -796,15 +846,34 @@ static ErrorNumber testTAFunction_ALL( void )
     * and a single file had grown past 4000 lines. Each carries its own tag, so
     * --function= reaches the members of whichever file they live in. */
    DO_TEST( test_func_composite1, "PVO,VWMA,CMF,HMA,EFI,QSTICK,AO,AC,SUM" );
-   DO_TEST( test_func_composite2, "SMI" );
+   DO_TEST( test_func_composite2, "SMI,COPPOCK,ER" );
    DO_TEST( test_func_marketfi, "MARKETFI" );
    DO_TEST( test_func_cmf,       "CMF" );
    DO_TEST( test_func_kc,        "KC" );
    DO_TEST( test_func_donchian,  "DONCHIAN" );
+   DO_TEST( test_func_rma,       "RMA" );
    DO_TEST( test_func_supertrend, "SUPERTREND" );
    DO_TEST( test_func_mfi,       "MFI" );
    DO_TEST( test_func_vwap,      "VWAP" );
    DO_TEST( test_func_cmou,      "CMOU" );
+   DO_TEST( test_func_vortex,    "VORTEX" );
+   DO_TEST( test_func_eri,       "ERI" );
+   DO_TEST( test_func_cumsum,    "CUMSUM" );
+   DO_TEST( test_func_zlema,     "ZLEMA" );
+   DO_TEST( test_func_vhf,       "VHF" );
+   DO_TEST( test_func_rvi,       "RVI" );
+   DO_TEST( test_func_fractal,   "FRACTAL" );
+   DO_TEST( test_func_ha,        "HA" );
+   DO_TEST( test_func_tsi,       "TSI" );
+   DO_TEST( test_func_kdj,       "KDJ" );
+   DO_TEST( test_func_adr,       "ADR" );
+   DO_TEST( test_func_fosc,      "FOSC" );
+   DO_TEST( test_func_dpo,       "DPO" );
+   DO_TEST( test_func_percentrank, "PERCENTRANK" );
+   DO_TEST( test_func_percentile, "PERCENTILE" );
+   DO_TEST( test_func_cvi,       "CVI" );
+   DO_TEST( test_func_massi,     "MASSI" );
+   DO_TEST( test_func_rvol,      "RVOL" );
    DO_TEST( test_func_variants,  "TA_S_,VARIANT" );
    DO_TEST( test_candle_precision, "CDLDOJI,CANDLE,VARIANT,PRECISION" );
    DO_TEST_LBL( test_func_rolling_extremum,

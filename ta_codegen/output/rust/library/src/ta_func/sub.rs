@@ -433,44 +433,6 @@ impl SubStream {
         Ok(outReal)
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inReal0.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what this call took in, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k + 1` — the committed bars, plus the rejected one, which is counted
-    /// but never written.
-    #[doc(alias = "TA_SUB_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inReal0: &[f64], inReal1: &[f64], outReal: &mut [f64]) -> Result<(), RetCode> {
-        let barCount = inReal0.len();
-        if inReal1.len() != inReal0.len() || outReal.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inReal0[i].is_finite() || !inReal1[i].is_finite() {
-                if self.out.count < Core::MAX_INDEX {
-                    self.out.count += 1;
-                }
-                return Err(RetCode::BadParam);
-            }
-            Core::sub_step_impl(&mut self.state, inReal0[i], inReal1[i], &mut outReal[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -490,7 +452,6 @@ impl SubStream {
         }
         let mut outReal: f64 = 0.0_f64;
         {
-            let sp = &self.state;
             let outReal = &mut outReal;
             (*outReal) = inReal0 - inReal1;
         }
@@ -499,7 +460,7 @@ impl SubStream {
 
     /// The value(s) at the last bar the stream counted — the bar
     /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
-    /// refreshed by every accepted `update` and `update_and_fill`, and left
+    /// refreshed by every accepted `update`, and left
     /// alone by `peek`.
     ///
     /// A clone carries them verbatim, so a forked handle can be asked its

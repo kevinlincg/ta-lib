@@ -54,6 +54,8 @@ pub enum FuncId {
     ADD,
     /// Chaikin A/D Oscillator — [`Core::ADOSC`](crate::Core::ADOSC).
     ADOSC,
+    /// Average Day Range — [`Core::ADR`](crate::Core::ADR).
+    ADR,
     /// Average Directional Movement Index — [`Core::ADX`](crate::Core::ADX).
     ADX,
     /// Average Directional Movement Index Rating — [`Core::ADXR`](crate::Core::ADXR).
@@ -214,28 +216,46 @@ pub enum FuncId {
     CMO,
     /// Chande Momentum Oscillator (Unsmoothed) — [`Core::CMOU`](crate::Core::CMOU).
     CMOU,
+    /// Coppock Curve — [`Core::COPPOCK`](crate::Core::COPPOCK).
+    COPPOCK,
     /// Pearson's Correlation Coefficient (r) — [`Core::CORREL`](crate::Core::CORREL).
     CORREL,
     /// Vector Trigonometric Cos — [`Core::COS`](crate::Core::COS).
     COS,
     /// Vector Trigonometric Cosh — [`Core::COSH`](crate::Core::COSH).
     COSH,
+    /// Cumulative Sum — [`Core::CUMSUM`](crate::Core::CUMSUM).
+    CUMSUM,
+    /// Chaikin's Volatility — [`Core::CVI`](crate::Core::CVI).
+    CVI,
     /// Double Exponential Moving Average — [`Core::DEMA`](crate::Core::DEMA).
     DEMA,
     /// Vector Arithmetic Div — [`Core::DIV`](crate::Core::DIV).
     DIV,
     /// Donchian Channels — [`Core::DONCHIAN`](crate::Core::DONCHIAN).
     DONCHIAN,
+    /// Detrended Price Oscillator — [`Core::DPO`](crate::Core::DPO).
+    DPO,
     /// Directional Movement Index — [`Core::DX`](crate::Core::DX).
     DX,
     /// Elder's Force Index — [`Core::EFI`](crate::Core::EFI).
     EFI,
     /// Exponential Moving Average — [`Core::EMA`](crate::Core::EMA).
     EMA,
+    /// Kaufman Efficiency Ratio — [`Core::ER`](crate::Core::ER).
+    ER,
+    /// Elder Ray Index (Bull Power / Bear Power) — [`Core::ERI`](crate::Core::ERI).
+    ERI,
     /// Vector Arithmetic Exp — [`Core::EXP`](crate::Core::EXP).
     EXP,
     /// Vector Floor — [`Core::FLOOR`](crate::Core::FLOOR).
     FLOOR,
+    /// Forecast Oscillator — [`Core::FOSC`](crate::Core::FOSC).
+    FOSC,
+    /// Williams Fractal — [`Core::FRACTAL`](crate::Core::FRACTAL).
+    FRACTAL,
+    /// Heikin-Ashi Candles — [`Core::HA`](crate::Core::HA).
+    HA,
     /// Hull Moving Average — [`Core::HMA`](crate::Core::HMA).
     HMA,
     /// Hilbert Transform - Dominant Cycle Period — [`Core::HT_DCPERIOD`](crate::Core::HT_DCPERIOD).
@@ -256,6 +276,8 @@ pub enum FuncId {
     KAMA,
     /// Keltner Channels — [`Core::KC`](crate::Core::KC).
     KC,
+    /// KDJ Stochastic — [`Core::KDJ`](crate::Core::KDJ).
+    KDJ,
     /// Linear Regression — [`Core::LINEARREG`](crate::Core::LINEARREG).
     LINEARREG,
     /// Linear Regression Angle — [`Core::LINEARREG_ANGLE`](crate::Core::LINEARREG_ANGLE).
@@ -280,6 +302,8 @@ pub enum FuncId {
     MAMA,
     /// Market Facilitation Index — [`Core::MARKETFI`](crate::Core::MARKETFI).
     MARKETFI,
+    /// Mass Index — [`Core::MASSI`](crate::Core::MASSI).
+    MASSI,
     /// Moving average with variable period — [`Core::MAVP`](crate::Core::MAVP).
     MAVP,
     /// Highest value over a specified period — [`Core::MAX`](crate::Core::MAX).
@@ -316,6 +340,10 @@ pub enum FuncId {
     NVI,
     /// On Balance Volume — [`Core::OBV`](crate::Core::OBV).
     OBV,
+    /// Percentile (nearest rank) — [`Core::PERCENTILE`](crate::Core::PERCENTILE).
+    PERCENTILE,
+    /// Percent Rank — [`Core::PERCENTRANK`](crate::Core::PERCENTRANK).
+    PERCENTRANK,
     /// Plus Directional Indicator — [`Core::PLUS_DI`](crate::Core::PLUS_DI).
     PLUS_DI,
     /// Plus Directional Movement — [`Core::PLUS_DM`](crate::Core::PLUS_DM).
@@ -326,8 +354,12 @@ pub enum FuncId {
     PVI,
     /// Percentage Volume Oscillator — [`Core::PVO`](crate::Core::PVO).
     PVO,
+    /// Price Volume Trend — [`Core::PVT`](crate::Core::PVT).
+    PVT,
     /// Qstick — [`Core::QSTICK`](crate::Core::QSTICK).
     QSTICK,
+    /// Wilder's Smoothed Moving Average — [`Core::RMA`](crate::Core::RMA).
+    RMA,
     /// Rate of change : ((price/prevPrice)-1)*100 — [`Core::ROC`](crate::Core::ROC).
     ROC,
     /// Rate of change Percentage: (price-prevPrice)/prevPrice — [`Core::ROCP`](crate::Core::ROCP).
@@ -338,6 +370,10 @@ pub enum FuncId {
     ROCR100,
     /// Relative Strength Index — [`Core::RSI`](crate::Core::RSI).
     RSI,
+    /// Relative Volatility Index — [`Core::RVI`](crate::Core::RVI).
+    RVI,
+    /// Relative Volume — [`Core::RVOL`](crate::Core::RVOL).
+    RVOL,
     /// Parabolic SAR — [`Core::SAR`](crate::Core::SAR).
     SAR,
     /// Parabolic SAR - Extended — [`Core::SAREXT`](crate::Core::SAREXT).
@@ -382,12 +418,18 @@ pub enum FuncId {
     TRIX,
     /// Time Series Forecast — [`Core::TSF`](crate::Core::TSF).
     TSF,
+    /// True Strength Index — [`Core::TSI`](crate::Core::TSI).
+    TSI,
     /// Typical Price — [`Core::TYPPRICE`](crate::Core::TYPPRICE).
     TYPPRICE,
     /// Ultimate Oscillator — [`Core::ULTOSC`](crate::Core::ULTOSC).
     ULTOSC,
     /// Variance — [`Core::VAR`](crate::Core::VAR).
     VAR,
+    /// Vertical Horizontal Filter — [`Core::VHF`](crate::Core::VHF).
+    VHF,
+    /// Vortex Indicator — [`Core::VORTEX`](crate::Core::VORTEX).
+    VORTEX,
     /// Volume Weighted Average Price — [`Core::VWAP`](crate::Core::VWAP).
     VWAP,
     /// Volume Weighted Moving Average — [`Core::VWMA`](crate::Core::VWMA).
@@ -400,11 +442,13 @@ pub enum FuncId {
     WILLR,
     /// Weighted Moving Average — [`Core::WMA`](crate::Core::WMA).
     WMA,
+    /// Zero-Lag Exponential Moving Average — [`Core::ZLEMA`](crate::Core::ZLEMA).
+    ZLEMA,
 }
 
 impl FuncId {
     /// Number of functions in the registry.
-    pub const COUNT: usize = 179;
+    pub const COUNT: usize = 201;
     /// Metadata for this function (O(1) index into the const table).
     #[inline] pub fn info(self) -> &'static FuncInfo { &FUNC_TABLE[self as usize] }
     /// Upper-case TA name, e.g. "RSI".
@@ -537,7 +581,7 @@ flag_newtype!(
     /// call may write NaN or ±Inf (e.g. ACOS outside `[-1, 1]`, LN of zero,
     /// `0/0`). Not set where a non-finite value needs magnitudes large enough to
     /// overflow the intermediate arithmetic. Set on ACOS, ASIN, DIV, LN, LOG10,
-    /// SQRT and VWMA, and on no others.
+    /// RVOL, SQRT and VWMA, and on no others.
     NAN_INF_OUTPUT = 0x4000_0000,
     /// A period of 1 performs no smoothing: the lookback is 0 and every output
     /// value is a bit-exact copy of its input value.
@@ -729,7 +773,7 @@ impl FuncInfo {
 
 /// Backing storage for [`FUNCS`], indexed by [`FuncId`]. Link-time const, in
 /// `.rodata`. Private, so its length is nobody's business but this module's.
-static FUNC_TABLE: [FuncInfo; 179] = [
+static FUNC_TABLE: [FuncInfo; 201] = [
     FuncInfo {
         id: FuncId::AC,
         name: "AC",
@@ -797,6 +841,17 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::ADR,
+        name: "ADR",
+        group: Group::VolatilityIndicators,
+        hint: "Average Day Range",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHL", kind: InputType::Price, flags: InputFlags(0x00000006) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 14, suggested: (1, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::ADX,
         name: "ADX",
         group: Group::MomentumIndicators,
@@ -836,7 +891,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Absolute Price Oscillator",
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 1 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 1 } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -924,7 +979,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Bollinger Bands",
         flags: FuncFlags(0x03000000),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 20, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInNbDevUp", display_name: "Deviations up", hint: "Deviation multiplier for upper band", flags: OptInputFlags(0x00000000), kind: OptInputType::RealRange { min: -3e37, max: 3e37, precision: 2, default: 2.0, suggested: (-2.0, 2.0, 0.2) } }, OptInputInfo { param_name: "optInNbDevDn", display_name: "Deviations down", hint: "Deviation multiplier for lower band", flags: OptInputFlags(0x00000000), kind: OptInputType::RealRange { min: -3e37, max: 3e37, precision: 2, default: 2.0, suggested: (-2.0, 2.0, 0.2) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 20, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInNbDevUp", display_name: "Deviations up", hint: "Deviation multiplier for upper band", flags: OptInputFlags(0x00000000), kind: OptInputType::RealRange { min: -3e37, max: 3e37, precision: 2, default: 2.0, suggested: (-2.0, 2.0, 0.2) } }, OptInputInfo { param_name: "optInNbDevDn", display_name: "Deviations down", hint: "Deviation multiplier for lower band", flags: OptInputFlags(0x00000000), kind: OptInputType::RealRange { min: -3e37, max: 3e37, precision: 2, default: 2.0, suggested: (-2.0, 2.0, 0.2) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, ],
         outputs: &[OutputInfo { param_name: "outRealUpperBand", kind: OutputType::Real, flags: OutputFlags(0x00000800) }, OutputInfo { param_name: "outRealMiddleBand", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outRealLowerBand", kind: OutputType::Real, flags: OutputFlags(0x00001000) }, ],
         unst_id: None,
     },
@@ -1677,6 +1732,17 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::COPPOCK,
+        name: "COPPOCK",
+        group: Group::MomentumIndicators,
+        hint: "Coppock Curve",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInWMAPeriod", display_name: "WMA Period", hint: "Smoothing period for the ROC sum", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 10, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInROC1Period", display_name: "ROC-1 Period", hint: "Short rate-of-change period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 11, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInROC2Period", display_name: "ROC-2 Period", hint: "Long rate-of-change period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 14, suggested: (1, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::CORREL,
         name: "CORREL",
         group: Group::StatisticFunctions,
@@ -1706,6 +1772,28 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
         opt_inputs: &[],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::CUMSUM,
+        name: "CUMSUM",
+        group: Group::MathOperators,
+        hint: "Cumulative Sum",
+        flags: FuncFlags(0x22000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::CVI,
+        name: "CVI",
+        group: Group::VolatilityIndicators,
+        hint: "Chaikin's Volatility",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHL", kind: InputType::Price, flags: InputFlags(0x00000006) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Period of the EMA smoothing the high-low spread", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 10, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInROCPeriod", display_name: "ROC Period", hint: "Number of bars the rate of change reaches back", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 10, suggested: (4, 200, 1) } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -1743,6 +1831,17 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::DPO,
+        name: "DPO",
+        group: Group::MomentumIndicators,
+        hint: "Detrended Price Oscillator",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 20, suggested: (10, 60, 5) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::DX,
         name: "DX",
         group: Group::MomentumIndicators,
@@ -1776,6 +1875,28 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: Some(FuncUnstId::EMA),
     },
     FuncInfo {
+        id: FuncId::ER,
+        name: "ER",
+        group: Group::MomentumIndicators,
+        hint: "Kaufman Efficiency Ratio",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Number of one-bar changes in the path sum", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 10, suggested: (2, 100, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::ERI,
+        name: "ERI",
+        group: Group::MomentumIndicators,
+        hint: "Elder Ray Index (Bull Power / Bear Power)",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHLC", kind: InputType::Price, flags: InputFlags(0x0000000e) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Number of bars in the EMA of close", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 13, suggested: (1, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outBullPower", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outBearPower", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::EXP,
         name: "EXP",
         group: Group::MathTransform,
@@ -1796,6 +1917,39 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         opt_inputs: &[],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::FOSC,
+        name: "FOSC",
+        group: Group::MomentumIndicators,
+        hint: "Forecast Oscillator",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 5, suggested: (2, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::FRACTAL,
+        name: "FRACTAL",
+        group: Group::MomentumIndicators,
+        hint: "Williams Fractal",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHL", kind: InputType::Price, flags: InputFlags(0x00000006) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInLeftBars", display_name: "Left Bars", hint: "Number of bars required to be lower/higher before the pivot", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 2, suggested: (1, 10, 1) } }, OptInputInfo { param_name: "optInRightBars", display_name: "Right Bars", hint: "Number of bars required to be lower/higher after the pivot", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 2, suggested: (1, 10, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outSwingHigh", kind: OutputType::Integer, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outSwingLow", kind: OutputType::Integer, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::HA,
+        name: "HA",
+        group: Group::PriceTransform,
+        hint: "Heikin-Ashi Candles",
+        flags: FuncFlags(0x0b000000),
+        inputs: &[InputInfo { param_name: "inPriceOHLC", kind: InputType::Price, flags: InputFlags(0x0000000f) }, ],
+        opt_inputs: &[],
+        outputs: &[OutputInfo { param_name: "outHAOpen", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outHAHigh", kind: OutputType::Real, flags: OutputFlags(0x00000801) }, OutputInfo { param_name: "outHALow", kind: OutputType::Real, flags: OutputFlags(0x00001001) }, OutputInfo { param_name: "outHAClose", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: Some(FuncUnstId::HA),
     },
     FuncInfo {
         id: FuncId::HMA,
@@ -1908,6 +2062,17 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::KDJ,
+        name: "KDJ",
+        group: Group::MomentumIndicators,
+        hint: "KDJ Stochastic",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHLC", kind: InputType::Price, flags: InputFlags(0x0000000e) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 9, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_Period", display_name: "Slow-K Period", hint: "Smoothing for making the Slow-K line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_MAType", display_name: "Slow-K MA", hint: "Type of Moving Average for Slow-K", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 13 } }, OptInputInfo { param_name: "optInSlowD_Period", display_name: "Slow-D Period", hint: "Smoothing for making the Slow-D line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowD_MAType", display_name: "Slow-D MA", hint: "Type of Moving Average for Slow-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 13 } }, ],
+        outputs: &[OutputInfo { param_name: "outK", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outD", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outJ", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::LINEARREG,
         name: "LINEARREG",
         group: Group::StatisticFunctions,
@@ -1980,7 +2145,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Moving average",
         flags: FuncFlags(0x03000001),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 30, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 30, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -2002,7 +2167,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "MACD with controllable MA type",
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInFastMAType", display_name: "Fast MA", hint: "Type of Moving Average for fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowMAType", display_name: "Slow MA", hint: "Type of Moving Average for slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, OptInputInfo { param_name: "optInSignalPeriod", display_name: "Signal Period", hint: "Smoothing for the signal line (period length)", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 9, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSignalMAType", display_name: "Signal MA", hint: "Type of Moving Average for signal line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInFastMAType", display_name: "Fast MA", hint: "Type of Moving Average for fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowMAType", display_name: "Slow MA", hint: "Type of Moving Average for slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, OptInputInfo { param_name: "optInSignalPeriod", display_name: "Signal Period", hint: "Smoothing for the signal line (period length)", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 9, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSignalMAType", display_name: "Signal MA", hint: "Type of Moving Average for signal line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, ],
         outputs: &[OutputInfo { param_name: "outMACD", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outMACDSignal", kind: OutputType::Real, flags: OutputFlags(0x00000004) }, OutputInfo { param_name: "outMACDHist", kind: OutputType::Real, flags: OutputFlags(0x00000010) }, ],
         unst_id: None,
     },
@@ -2040,13 +2205,24 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::MASSI,
+        name: "MASSI",
+        group: Group::VolatilityIndicators,
+        hint: "Mass Index",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHL", kind: InputType::Price, flags: InputFlags(0x00000006) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of both exponential averages of the high-low range", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 9, suggested: (2, 50, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Number of bars the ratio is summed over", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 25, suggested: (10, 50, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::MAVP,
         name: "MAVP",
         group: Group::OverlapStudies,
         hint: "Moving average with variable period",
         flags: FuncFlags(0x03000000),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, InputInfo { param_name: "inPeriods", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInMinPeriod", display_name: "Minimum Period", hint: "Value less than minimum will be changed to Minimum period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 2, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInMaxPeriod", display_name: "Maximum Period", hint: "Value higher than maximum will be changed to Maximum period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 30, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInMinPeriod", display_name: "Minimum Period", hint: "Value less than minimum will be changed to Minimum period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 2, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInMaxPeriod", display_name: "Maximum Period", hint: "Value higher than maximum will be changed to Maximum period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 30, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -2238,6 +2414,28 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::PERCENTILE,
+        name: "PERCENTILE",
+        group: Group::StatisticFunctions,
+        hint: "Percentile (nearest rank)",
+        flags: FuncFlags(0x03000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Number of bars in the window", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 30, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInPercentile", display_name: "Percentile", hint: "Percentile to report", flags: OptInputFlags(0x00100000), kind: OptInputType::RealRange { min: 0.0, max: 100.0, precision: 2, default: 50.0, suggested: (10.0, 90.0, 5.0) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::PERCENTRANK,
+        name: "PERCENTRANK",
+        group: Group::StatisticFunctions,
+        hint: "Percent Rank",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 100, suggested: (20, 200, 20) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::PLUS_DI,
         name: "PLUS_DI",
         group: Group::MomentumIndicators,
@@ -2266,7 +2464,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Percentage Price Oscillator",
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 1 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 1 } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -2288,7 +2486,18 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Percentage Volume Oscillator",
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inPriceV", kind: InputType::Price, flags: InputFlags(0x00000010) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 1 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the fast MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 12, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slow MA", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInMAType", display_name: "MA Type", hint: "Type of Moving Average", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 1 } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::PVT,
+        name: "PVT",
+        group: Group::VolumeIndicators,
+        hint: "Price Volume Trend",
+        flags: FuncFlags(0x22000000),
+        inputs: &[InputInfo { param_name: "inPriceCV", kind: InputType::Price, flags: InputFlags(0x00000018) }, ],
+        opt_inputs: &[],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -2302,6 +2511,17 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 10, suggested: (4, 200, 1) } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::RMA,
+        name: "RMA",
+        group: Group::OverlapStudies,
+        hint: "Wilder's Smoothed Moving Average",
+        flags: FuncFlags(0x0b000001),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 30, suggested: (1, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: Some(FuncUnstId::RMA),
     },
     FuncInfo {
         id: FuncId::ROC,
@@ -2357,6 +2577,28 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 14, suggested: (4, 200, 1) } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: Some(FuncUnstId::RSI),
+    },
+    FuncInfo {
+        id: FuncId::RVI,
+        name: "RVI",
+        group: Group::VolatilityIndicators,
+        hint: "Relative Volatility Index",
+        flags: FuncFlags(0x0a000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period of the Wilder smoothing applied to both legs", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 14, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInStdDevPeriod", display_name: "StdDev Period", hint: "Time period of the standard deviation", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 10, suggested: (4, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: Some(FuncUnstId::RVI),
+    },
+    FuncInfo {
+        id: FuncId::RVOL,
+        name: "RVOL",
+        group: Group::VolumeIndicators,
+        hint: "Relative Volume",
+        flags: FuncFlags(0x42000000),
+        inputs: &[InputInfo { param_name: "inPriceV", kind: InputType::Price, flags: InputFlags(0x00000010) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 20, suggested: (1, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
     },
     FuncInfo {
         id: FuncId::SAR,
@@ -2453,7 +2695,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Stochastic",
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inPriceHLC", kind: InputType::Price, flags: InputFlags(0x0000000e) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 5, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_Period", display_name: "Slow-K Period", hint: "Smoothing for making the Slow-K line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_MAType", display_name: "Slow-K MA", hint: "Type of Moving Average for Slow-K", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, OptInputInfo { param_name: "optInSlowD_Period", display_name: "Slow-D Period", hint: "Smoothing for making the Slow-D line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowD_MAType", display_name: "Slow-D MA", hint: "Type of Moving Average for Slow-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 5, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_Period", display_name: "Slow-K Period", hint: "Smoothing for making the Slow-K line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowK_MAType", display_name: "Slow-K MA", hint: "Type of Moving Average for Slow-K", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, OptInputInfo { param_name: "optInSlowD_Period", display_name: "Slow-D Period", hint: "Smoothing for making the Slow-D line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInSlowD_MAType", display_name: "Slow-D MA", hint: "Type of Moving Average for Slow-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, ],
         outputs: &[OutputInfo { param_name: "outSlowK", kind: OutputType::Real, flags: OutputFlags(0x00000004) }, OutputInfo { param_name: "outSlowD", kind: OutputType::Real, flags: OutputFlags(0x00000004) }, ],
         unst_id: None,
     },
@@ -2464,7 +2706,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Stochastic Fast",
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inPriceHLC", kind: InputType::Price, flags: InputFlags(0x0000000e) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 5, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_Period", display_name: "Fast-D Period", hint: "Smoothing for making the Fast-D line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_MAType", display_name: "Fast-D MA", hint: "Type of Moving Average for Fast-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 5, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_Period", display_name: "Fast-D Period", hint: "Smoothing for making the Fast-D line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_MAType", display_name: "Fast-D MA", hint: "Type of Moving Average for Fast-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, ],
         outputs: &[OutputInfo { param_name: "outFastK", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outFastD", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -2475,7 +2717,7 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         hint: "Stochastic Relative Strength Index",
         flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
-        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 14, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 5, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_Period", display_name: "Fast-D Period", hint: "Smoothing for making the Fast-D line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_MAType", display_name: "Fast-D MA", hint: "Type of Moving Average for Fast-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), ], default: 0 } }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 14, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInFastK_Period", display_name: "Fast-K Period", hint: "Time period for building the Fast-K line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 5, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_Period", display_name: "Fast-D Period", hint: "Smoothing for making the Fast-D line. Usually set to 3", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 3, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInFastD_MAType", display_name: "Fast-D MA", hint: "Type of Moving Average for Fast-D", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerList { values: &[(0, "SMA"), (1, "EMA"), (2, "WMA"), (3, "DEMA"), (4, "TEMA"), (5, "TRIMA"), (6, "KAMA"), (7, "MAMA"), (8, "T3"), (9, "HMA"), (10, "DISABLED"), (11, "DEFAULT"), (12, "ZLEMA"), (13, "RMA"), ], default: 0 } }, ],
         outputs: &[OutputInfo { param_name: "outFastK", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outFastD", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
@@ -2601,6 +2843,17 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         unst_id: None,
     },
     FuncInfo {
+        id: FuncId::TSI,
+        name: "TSI",
+        group: Group::MomentumIndicators,
+        hint: "True Strength Index",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInFirstPeriod", display_name: "First Smoothing Period", hint: "Period of the first smoothing, applied to the raw momentum", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 25, suggested: (2, 100, 1) } }, OptInputInfo { param_name: "optInSecondPeriod", display_name: "Second Smoothing Period", hint: "Period of the second smoothing, applied to the first", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 13, suggested: (2, 50, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
         id: FuncId::TYPPRICE,
         name: "TYPPRICE",
         group: Group::PriceTransform,
@@ -2631,6 +2884,28 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
         opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 5, suggested: (1, 200, 1) } }, OptInputInfo { param_name: "optInNbDev", display_name: "Deviations", hint: "Nb of deviations", flags: OptInputFlags(0x00000000), kind: OptInputType::RealRange { min: -3e37, max: 3e37, precision: 2, default: 1.0, suggested: (-2.0, 2.0, 0.2) } }, ],
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::VHF,
+        name: "VHF",
+        group: Group::MomentumIndicators,
+        hint: "Vertical Horizontal Filter",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 28, suggested: (14, 56, 7) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
+    FuncInfo {
+        id: FuncId::VORTEX,
+        name: "VORTEX",
+        group: Group::MomentumIndicators,
+        hint: "Vortex Indicator",
+        flags: FuncFlags(0x02000000),
+        inputs: &[InputInfo { param_name: "inPriceHLC", kind: InputType::Price, flags: InputFlags(0x0000000e) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Number of bars in the rolling sums", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 14, suggested: (1, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outPlusVI", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outMinusVI", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
     FuncInfo {
@@ -2699,6 +2974,17 @@ static FUNC_TABLE: [FuncInfo; 179] = [
         outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
         unst_id: None,
     },
+    FuncInfo {
+        id: FuncId::ZLEMA,
+        name: "ZLEMA",
+        group: Group::OverlapStudies,
+        hint: "Zero-Lag Exponential Moving Average",
+        flags: FuncFlags(0x03000001),
+        inputs: &[InputInfo { param_name: "inReal", kind: InputType::Real, flags: InputFlags(0x00000000) }, ],
+        opt_inputs: &[OptInputInfo { param_name: "optInTimePeriod", display_name: "Time Period", hint: "Time period", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 1, max: 100000, default: 30, suggested: (1, 200, 1) } }, ],
+        outputs: &[OutputInfo { param_name: "outReal", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, ],
+        unst_id: None,
+    },
 ];
 
 /// All function metadata, indexed by [`FuncId`]. Link-time const, in `.rodata`.
@@ -2723,6 +3009,7 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "AD" => FuncId::AD,
         "ADD" => FuncId::ADD,
         "ADOSC" => FuncId::ADOSC,
+        "ADR" => FuncId::ADR,
         "ADX" => FuncId::ADX,
         "ADXR" => FuncId::ADXR,
         "AO" => FuncId::AO,
@@ -2803,17 +3090,26 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "CMF" => FuncId::CMF,
         "CMO" => FuncId::CMO,
         "CMOU" => FuncId::CMOU,
+        "COPPOCK" => FuncId::COPPOCK,
         "CORREL" => FuncId::CORREL,
         "COS" => FuncId::COS,
         "COSH" => FuncId::COSH,
+        "CUMSUM" => FuncId::CUMSUM,
+        "CVI" => FuncId::CVI,
         "DEMA" => FuncId::DEMA,
         "DIV" => FuncId::DIV,
         "DONCHIAN" => FuncId::DONCHIAN,
+        "DPO" => FuncId::DPO,
         "DX" => FuncId::DX,
         "EFI" => FuncId::EFI,
         "EMA" => FuncId::EMA,
+        "ER" => FuncId::ER,
+        "ERI" => FuncId::ERI,
         "EXP" => FuncId::EXP,
         "FLOOR" => FuncId::FLOOR,
+        "FOSC" => FuncId::FOSC,
+        "FRACTAL" => FuncId::FRACTAL,
+        "HA" => FuncId::HA,
         "HMA" => FuncId::HMA,
         "HT_DCPERIOD" => FuncId::HT_DCPERIOD,
         "HT_DCPHASE" => FuncId::HT_DCPHASE,
@@ -2824,6 +3120,7 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "IMI" => FuncId::IMI,
         "KAMA" => FuncId::KAMA,
         "KC" => FuncId::KC,
+        "KDJ" => FuncId::KDJ,
         "LINEARREG" => FuncId::LINEARREG,
         "LINEARREG_ANGLE" => FuncId::LINEARREG_ANGLE,
         "LINEARREG_INTERCEPT" => FuncId::LINEARREG_INTERCEPT,
@@ -2836,6 +3133,7 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "MACDFIX" => FuncId::MACDFIX,
         "MAMA" => FuncId::MAMA,
         "MARKETFI" => FuncId::MARKETFI,
+        "MASSI" => FuncId::MASSI,
         "MAVP" => FuncId::MAVP,
         "MAX" => FuncId::MAX,
         "MAXINDEX" => FuncId::MAXINDEX,
@@ -2854,17 +3152,23 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "NATR" => FuncId::NATR,
         "NVI" => FuncId::NVI,
         "OBV" => FuncId::OBV,
+        "PERCENTILE" => FuncId::PERCENTILE,
+        "PERCENTRANK" => FuncId::PERCENTRANK,
         "PLUS_DI" => FuncId::PLUS_DI,
         "PLUS_DM" => FuncId::PLUS_DM,
         "PPO" => FuncId::PPO,
         "PVI" => FuncId::PVI,
         "PVO" => FuncId::PVO,
+        "PVT" => FuncId::PVT,
         "QSTICK" => FuncId::QSTICK,
+        "RMA" => FuncId::RMA,
         "ROC" => FuncId::ROC,
         "ROCP" => FuncId::ROCP,
         "ROCR" => FuncId::ROCR,
         "ROCR100" => FuncId::ROCR100,
         "RSI" => FuncId::RSI,
+        "RVI" => FuncId::RVI,
+        "RVOL" => FuncId::RVOL,
         "SAR" => FuncId::SAR,
         "SAREXT" => FuncId::SAREXT,
         "SIN" => FuncId::SIN,
@@ -2887,15 +3191,19 @@ fn get_func_handle_exact(name: &str) -> Option<FuncId> {
         "TRIMA" => FuncId::TRIMA,
         "TRIX" => FuncId::TRIX,
         "TSF" => FuncId::TSF,
+        "TSI" => FuncId::TSI,
         "TYPPRICE" => FuncId::TYPPRICE,
         "ULTOSC" => FuncId::ULTOSC,
         "VAR" => FuncId::VAR,
+        "VHF" => FuncId::VHF,
+        "VORTEX" => FuncId::VORTEX,
         "VWAP" => FuncId::VWAP,
         "VWMA" => FuncId::VWMA,
         "WAD" => FuncId::WAD,
         "WCLPRICE" => FuncId::WCLPRICE,
         "WILLR" => FuncId::WILLR,
         "WMA" => FuncId::WMA,
+        "ZLEMA" => FuncId::ZLEMA,
         _ => return None,
     })
 }
@@ -2944,7 +3252,7 @@ pub const MAX_INPUTS: usize = 2;
 /// Widest optional-parameter arity in the corpus.
 pub const MAX_OPT_INPUTS: usize = 8;
 /// Widest output arity in the corpus.
-pub const MAX_OUTPUTS: usize = 3;
+pub const MAX_OUTPUTS: usize = 4;
 
 
 use crate::{Core, OutRange, RetCode};
@@ -3159,6 +3467,7 @@ impl<'a> ParamHolder<'a> {
             FuncId::AD => self.core.AD_Lookback(),
             FuncId::ADD => self.core.ADD_Lookback(),
             FuncId::ADOSC => self.core.ADOSC_Lookback(self.int_opt[0], self.int_opt[1]),
+            FuncId::ADR => self.core.ADR_Lookback(self.int_opt[0]),
             FuncId::ADX => self.core.ADX_Lookback(self.int_opt[0]),
             FuncId::ADXR => self.core.ADXR_Lookback(self.int_opt[0]),
             FuncId::AO => self.core.AO_Lookback(self.int_opt[0], self.int_opt[1]),
@@ -3239,17 +3548,26 @@ impl<'a> ParamHolder<'a> {
             FuncId::CMF => self.core.CMF_Lookback(self.int_opt[0]),
             FuncId::CMO => self.core.CMO_Lookback(self.int_opt[0]),
             FuncId::CMOU => self.core.CMOU_Lookback(self.int_opt[0]),
+            FuncId::COPPOCK => self.core.COPPOCK_Lookback(self.int_opt[0], self.int_opt[1], self.int_opt[2]),
             FuncId::CORREL => self.core.CORREL_Lookback(self.int_opt[0]),
             FuncId::COS => self.core.COS_Lookback(),
             FuncId::COSH => self.core.COSH_Lookback(),
+            FuncId::CUMSUM => self.core.CUMSUM_Lookback(),
+            FuncId::CVI => self.core.CVI_Lookback(self.int_opt[0], self.int_opt[1]),
             FuncId::DEMA => self.core.DEMA_Lookback(self.int_opt[0]),
             FuncId::DIV => self.core.DIV_Lookback(),
             FuncId::DONCHIAN => self.core.DONCHIAN_Lookback(self.int_opt[0]),
+            FuncId::DPO => self.core.DPO_Lookback(self.int_opt[0]),
             FuncId::DX => self.core.DX_Lookback(self.int_opt[0]),
             FuncId::EFI => self.core.EFI_Lookback(self.int_opt[0]),
             FuncId::EMA => self.core.EMA_Lookback(self.int_opt[0]),
+            FuncId::ER => self.core.ER_Lookback(self.int_opt[0]),
+            FuncId::ERI => self.core.ERI_Lookback(self.int_opt[0]),
             FuncId::EXP => self.core.EXP_Lookback(),
             FuncId::FLOOR => self.core.FLOOR_Lookback(),
+            FuncId::FOSC => self.core.FOSC_Lookback(self.int_opt[0]),
+            FuncId::FRACTAL => self.core.FRACTAL_Lookback(self.int_opt[0], self.int_opt[1]),
+            FuncId::HA => self.core.HA_Lookback(),
             FuncId::HMA => self.core.HMA_Lookback(self.int_opt[0]),
             FuncId::HT_DCPERIOD => self.core.HT_DCPERIOD_Lookback(),
             FuncId::HT_DCPHASE => self.core.HT_DCPHASE_Lookback(),
@@ -3260,6 +3578,7 @@ impl<'a> ParamHolder<'a> {
             FuncId::IMI => self.core.IMI_Lookback(self.int_opt[0]),
             FuncId::KAMA => self.core.KAMA_Lookback(self.int_opt[0]),
             FuncId::KC => self.core.KC_Lookback(self.int_opt[0], self.int_opt[1], self.real_opt[2]),
+            FuncId::KDJ => self.core.KDJ_Lookback(self.int_opt[0], self.int_opt[1], MAType::try_from(self.int_opt[2])?, self.int_opt[3], MAType::try_from(self.int_opt[4])?),
             FuncId::LINEARREG => self.core.LINEARREG_Lookback(self.int_opt[0]),
             FuncId::LINEARREG_ANGLE => self.core.LINEARREG_ANGLE_Lookback(self.int_opt[0]),
             FuncId::LINEARREG_INTERCEPT => self.core.LINEARREG_INTERCEPT_Lookback(self.int_opt[0]),
@@ -3272,6 +3591,7 @@ impl<'a> ParamHolder<'a> {
             FuncId::MACDFIX => self.core.MACDFIX_Lookback(self.int_opt[0]),
             FuncId::MAMA => self.core.MAMA_Lookback(self.real_opt[0], self.real_opt[1]),
             FuncId::MARKETFI => self.core.MARKETFI_Lookback(),
+            FuncId::MASSI => self.core.MASSI_Lookback(self.int_opt[0], self.int_opt[1]),
             FuncId::MAVP => self.core.MAVP_Lookback(self.int_opt[0], self.int_opt[1], MAType::try_from(self.int_opt[2])?),
             FuncId::MAX => self.core.MAX_Lookback(self.int_opt[0]),
             FuncId::MAXINDEX => self.core.MAXINDEX_Lookback(self.int_opt[0]),
@@ -3290,17 +3610,23 @@ impl<'a> ParamHolder<'a> {
             FuncId::NATR => self.core.NATR_Lookback(self.int_opt[0]),
             FuncId::NVI => self.core.NVI_Lookback(),
             FuncId::OBV => self.core.OBV_Lookback(),
+            FuncId::PERCENTILE => self.core.PERCENTILE_Lookback(self.int_opt[0], self.real_opt[1]),
+            FuncId::PERCENTRANK => self.core.PERCENTRANK_Lookback(self.int_opt[0]),
             FuncId::PLUS_DI => self.core.PLUS_DI_Lookback(self.int_opt[0]),
             FuncId::PLUS_DM => self.core.PLUS_DM_Lookback(self.int_opt[0]),
             FuncId::PPO => self.core.PPO_Lookback(self.int_opt[0], self.int_opt[1], MAType::try_from(self.int_opt[2])?),
             FuncId::PVI => self.core.PVI_Lookback(),
             FuncId::PVO => self.core.PVO_Lookback(self.int_opt[0], self.int_opt[1], MAType::try_from(self.int_opt[2])?),
+            FuncId::PVT => self.core.PVT_Lookback(),
             FuncId::QSTICK => self.core.QSTICK_Lookback(self.int_opt[0]),
+            FuncId::RMA => self.core.RMA_Lookback(self.int_opt[0]),
             FuncId::ROC => self.core.ROC_Lookback(self.int_opt[0]),
             FuncId::ROCP => self.core.ROCP_Lookback(self.int_opt[0]),
             FuncId::ROCR => self.core.ROCR_Lookback(self.int_opt[0]),
             FuncId::ROCR100 => self.core.ROCR100_Lookback(self.int_opt[0]),
             FuncId::RSI => self.core.RSI_Lookback(self.int_opt[0]),
+            FuncId::RVI => self.core.RVI_Lookback(self.int_opt[0], self.int_opt[1]),
+            FuncId::RVOL => self.core.RVOL_Lookback(self.int_opt[0]),
             FuncId::SAR => self.core.SAR_Lookback(self.real_opt[0], self.real_opt[1]),
             FuncId::SAREXT => self.core.SAREXT_Lookback(self.real_opt[0], self.real_opt[1], self.real_opt[2], self.real_opt[3], self.real_opt[4], self.real_opt[5], self.real_opt[6], self.real_opt[7]),
             FuncId::SIN => self.core.SIN_Lookback(),
@@ -3323,15 +3649,19 @@ impl<'a> ParamHolder<'a> {
             FuncId::TRIMA => self.core.TRIMA_Lookback(self.int_opt[0]),
             FuncId::TRIX => self.core.TRIX_Lookback(self.int_opt[0]),
             FuncId::TSF => self.core.TSF_Lookback(self.int_opt[0]),
+            FuncId::TSI => self.core.TSI_Lookback(self.int_opt[0], self.int_opt[1]),
             FuncId::TYPPRICE => self.core.TYPPRICE_Lookback(),
             FuncId::ULTOSC => self.core.ULTOSC_Lookback(self.int_opt[0], self.int_opt[1], self.int_opt[2]),
             FuncId::VAR => self.core.VAR_Lookback(self.int_opt[0], self.real_opt[1]),
+            FuncId::VHF => self.core.VHF_Lookback(self.int_opt[0]),
+            FuncId::VORTEX => self.core.VORTEX_Lookback(self.int_opt[0]),
             FuncId::VWAP => self.core.VWAP_Lookback(),
             FuncId::VWMA => self.core.VWMA_Lookback(self.int_opt[0]),
             FuncId::WAD => self.core.WAD_Lookback(),
             FuncId::WCLPRICE => self.core.WCLPRICE_Lookback(),
             FuncId::WILLR => self.core.WILLR_Lookback(self.int_opt[0]),
             FuncId::WMA => self.core.WMA_Lookback(self.int_opt[0]),
+            FuncId::ZLEMA => self.core.ZLEMA_Lookback(self.int_opt[0]),
         }
     }
 
@@ -3436,6 +3766,17 @@ impl<'a> ParamHolder<'a> {
                 let i0_4 = self.price[0][4].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.ADOSC(start_idx, end_idx, i0_1, i0_2, i0_3, i0_4, self.int_opt[0], self.int_opt[1], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::ADR => {
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.ADR(start_idx, end_idx, i0_1, i0_2, self.int_opt[0], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
@@ -4456,6 +4797,16 @@ impl<'a> ParamHolder<'a> {
                     Err(e) => e,
                 }
             }
+            FuncId::COPPOCK => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.COPPOCK(start_idx, end_idx, i0, self.int_opt[0], self.int_opt[1], self.int_opt[2], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
             FuncId::CORREL => {
                 let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
                 let i1 = self.real_in[1].ok_or(RetCode::BadParam)?;
@@ -4481,6 +4832,27 @@ impl<'a> ParamHolder<'a> {
                 let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.COSH(start_idx, end_idx, i0, &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::CUMSUM => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.CUMSUM(start_idx, end_idx, i0, &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::CVI => {
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.CVI(start_idx, end_idx, i0_1, i0_2, self.int_opt[0], self.int_opt[1], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
@@ -4524,6 +4896,16 @@ impl<'a> ParamHolder<'a> {
                     Err(e) => e,
                 }
             }
+            FuncId::DPO => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.DPO(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
             FuncId::DX => {
                 let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
                 let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
@@ -4557,6 +4939,31 @@ impl<'a> ParamHolder<'a> {
                     Err(e) => e,
                 }
             }
+            FuncId::ER => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.ER(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::ERI => {
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let i0_3 = self.price[0][3].ok_or(RetCode::BadParam)?;
+                if self.real_out[0].is_none() || self.real_out[1].is_none() { return Err(RetCode::BadParam); }
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let mut o1 = self.real_out[1].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.ERI(start_idx, end_idx, i0_1, i0_2, i0_3, self.int_opt[0], &mut *o0, &mut *o1);
+                self.real_out[0] = Some(o0);
+                self.real_out[1] = Some(o1);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
             FuncId::EXP => {
                 let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
@@ -4572,6 +4979,50 @@ impl<'a> ParamHolder<'a> {
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.FLOOR(start_idx, end_idx, i0, &mut *o0);
                 self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::FOSC => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.FOSC(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::FRACTAL => {
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                if self.int_out[0].is_none() || self.int_out[1].is_none() { return Err(RetCode::BadParam); }
+                let mut o0 = self.int_out[0].take().ok_or(RetCode::BadParam)?;
+                let mut o1 = self.int_out[1].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.FRACTAL(start_idx, end_idx, i0_1, i0_2, self.int_opt[0], self.int_opt[1], &mut *o0, &mut *o1);
+                self.int_out[0] = Some(o0);
+                self.int_out[1] = Some(o1);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::HA => {
+                let i0_0 = self.price[0][0].ok_or(RetCode::BadParam)?;
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let i0_3 = self.price[0][3].ok_or(RetCode::BadParam)?;
+                if self.real_out[0].is_none() || self.real_out[1].is_none() || self.real_out[2].is_none() || self.real_out[3].is_none() { return Err(RetCode::BadParam); }
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let mut o1 = self.real_out[1].take().ok_or(RetCode::BadParam)?;
+                let mut o2 = self.real_out[2].take().ok_or(RetCode::BadParam)?;
+                let mut o3 = self.real_out[3].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.HA(start_idx, end_idx, i0_0, i0_1, i0_2, i0_3, &mut *o0, &mut *o1, &mut *o2, &mut *o3);
+                self.real_out[0] = Some(o0);
+                self.real_out[1] = Some(o1);
+                self.real_out[2] = Some(o2);
+                self.real_out[3] = Some(o3);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
                     Err(e) => e,
@@ -4683,6 +5134,25 @@ impl<'a> ParamHolder<'a> {
                 let mut o1 = self.real_out[1].take().ok_or(RetCode::BadParam)?;
                 let mut o2 = self.real_out[2].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.KC(start_idx, end_idx, i0_1, i0_2, i0_3, self.int_opt[0], self.int_opt[1], self.real_opt[2], &mut *o0, &mut *o1, &mut *o2);
+                self.real_out[0] = Some(o0);
+                self.real_out[1] = Some(o1);
+                self.real_out[2] = Some(o2);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::KDJ => {
+                let e2 = MAType::try_from(self.int_opt[2])?;
+                let e4 = MAType::try_from(self.int_opt[4])?;
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let i0_3 = self.price[0][3].ok_or(RetCode::BadParam)?;
+                if self.real_out[0].is_none() || self.real_out[1].is_none() || self.real_out[2].is_none() { return Err(RetCode::BadParam); }
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let mut o1 = self.real_out[1].take().ok_or(RetCode::BadParam)?;
+                let mut o2 = self.real_out[2].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.KDJ(start_idx, end_idx, i0_1, i0_2, i0_3, self.int_opt[0], self.int_opt[1], e2, self.int_opt[3], e4, &mut *o0, &mut *o1, &mut *o2);
                 self.real_out[0] = Some(o0);
                 self.real_out[1] = Some(o1);
                 self.real_out[2] = Some(o2);
@@ -4829,6 +5299,17 @@ impl<'a> ParamHolder<'a> {
                 let i0_4 = self.price[0][4].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.MARKETFI(start_idx, end_idx, i0_1, i0_2, i0_4, &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::MASSI => {
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.MASSI(start_idx, end_idx, i0_1, i0_2, self.int_opt[0], self.int_opt[1], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
@@ -5036,6 +5517,26 @@ impl<'a> ParamHolder<'a> {
                     Err(e) => e,
                 }
             }
+            FuncId::PERCENTILE => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.PERCENTILE(start_idx, end_idx, i0, self.int_opt[0], self.real_opt[1], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::PERCENTRANK => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.PERCENTRANK(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
             FuncId::PLUS_DI => {
                 let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
                 let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
@@ -5092,11 +5593,32 @@ impl<'a> ParamHolder<'a> {
                     Err(e) => e,
                 }
             }
+            FuncId::PVT => {
+                let i0_3 = self.price[0][3].ok_or(RetCode::BadParam)?;
+                let i0_4 = self.price[0][4].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.PVT(start_idx, end_idx, i0_3, i0_4, &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
             FuncId::QSTICK => {
                 let i0_0 = self.price[0][0].ok_or(RetCode::BadParam)?;
                 let i0_3 = self.price[0][3].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.QSTICK(start_idx, end_idx, i0_0, i0_3, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::RMA => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.RMA(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
@@ -5147,6 +5669,26 @@ impl<'a> ParamHolder<'a> {
                 let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.RSI(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::RVI => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.RVI(start_idx, end_idx, i0, self.int_opt[0], self.int_opt[1], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::RVOL => {
+                let i0_4 = self.price[0][4].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.RVOL(start_idx, end_idx, i0_4, self.int_opt[0], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
@@ -5405,6 +5947,16 @@ impl<'a> ParamHolder<'a> {
                     Err(e) => e,
                 }
             }
+            FuncId::TSI => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.TSI(start_idx, end_idx, i0, self.int_opt[0], self.int_opt[1], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
             FuncId::TYPPRICE => {
                 let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
                 let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
@@ -5434,6 +5986,31 @@ impl<'a> ParamHolder<'a> {
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.VAR(start_idx, end_idx, i0, self.int_opt[0], self.real_opt[1], &mut *o0);
                 self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::VHF => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.VHF(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::VORTEX => {
+                let i0_1 = self.price[0][1].ok_or(RetCode::BadParam)?;
+                let i0_2 = self.price[0][2].ok_or(RetCode::BadParam)?;
+                let i0_3 = self.price[0][3].ok_or(RetCode::BadParam)?;
+                if self.real_out[0].is_none() || self.real_out[1].is_none() { return Err(RetCode::BadParam); }
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let mut o1 = self.real_out[1].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.VORTEX(start_idx, end_idx, i0_1, i0_2, i0_3, self.int_opt[0], &mut *o0, &mut *o1);
+                self.real_out[0] = Some(o0);
+                self.real_out[1] = Some(o1);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
                     Err(e) => e,
@@ -5503,6 +6080,16 @@ impl<'a> ParamHolder<'a> {
                 let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
                 let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
                 let res = self.core.WMA(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
+                self.real_out[0] = Some(o0);
+                match res {
+                    Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }
+                    Err(e) => e,
+                }
+            }
+            FuncId::ZLEMA => {
+                let i0 = self.real_in[0].ok_or(RetCode::BadParam)?;
+                let mut o0 = self.real_out[0].take().ok_or(RetCode::BadParam)?;
+                let res = self.core.ZLEMA(start_idx, end_idx, i0, self.int_opt[0], &mut *o0);
                 self.real_out[0] = Some(o0);
                 match res {
                     Ok(r) => { beg = r.beg_idx; nb = r.count; RetCode::Success }

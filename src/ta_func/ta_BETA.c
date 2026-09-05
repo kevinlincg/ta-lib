@@ -1003,8 +1003,6 @@ static TA_RetCode TA_BETA_OpenImpl( struct TA_BETA_Stream **stream, const double
 {
    struct TA_BETA_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -1023,9 +1021,6 @@ static TA_RetCode TA_BETA_OpenImpl( struct TA_BETA_Stream **stream, const double
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       double S_xx = 0.0;
@@ -1720,26 +1715,6 @@ TA_LIB_API TA_RetCode TA_BETA_Peek( const TA_BETA_Stream *stream, double inReal0
    } else 
    {
       *outReal= 0.0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_BETA_UpdateAndFill( TA_BETA_Stream *stream, const double inReal0[], const double inReal1[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inReal0 || !inReal1 || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal0 || (const void *)outReal == (const void *)inReal1 ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inReal0[i] ) || !TA_IS_FINITE( inReal1[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_BETA_StepImpl( stream, inReal0[i], inReal1[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }

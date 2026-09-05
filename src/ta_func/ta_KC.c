@@ -416,7 +416,6 @@ static TA_RetCode TA_KC_OpenImpl( struct TA_KC_Stream **stream, const double inH
    int dummyBegIdx;
    int dummyNBElement;
    TA_RetCode subRc;
-   double subOpenDummy;
    double *sc_outRealUpperBand;
    double *sc_outRealMiddleBand;
    double *sc_outRealLowerBand;
@@ -452,11 +451,9 @@ static TA_RetCode TA_KC_OpenImpl( struct TA_KC_Stream **stream, const double inH
    dummyBegIdx = 0;
    dummyNBElement = 0;
    subRc = TA_SUCCESS;
-   subOpenDummy = 0.0;
    sub0 = NULL;
    sub1 = NULL;
    sub2 = NULL;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement; (void)subRc; (void)subOpenDummy;
    if( outStride ) sc_outRealUpperBand = outRealUpperBand;
    else
    {
@@ -735,31 +732,6 @@ TA_LIB_API TA_RetCode TA_KC_Peek( const TA_KC_Stream *stream, double inHigh, dou
    *outRealUpperBand = cur_outRealUpperBand;
    *outRealMiddleBand = cur_outRealMiddleBand;
    *outRealLowerBand = cur_outRealLowerBand;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_KC_UpdateAndFill( TA_KC_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
-{
-   int i;
-   TA_RetCode retCode;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outRealUpperBand == (const void *)inHigh || (const void *)outRealUpperBand == (const void *)inLow || (const void *)outRealUpperBand == (const void *)inClose || (const void *)outRealMiddleBand == (const void *)inHigh || (const void *)outRealMiddleBand == (const void *)inLow || (const void *)outRealMiddleBand == (const void *)inClose || (const void *)outRealLowerBand == (const void *)inHigh || (const void *)outRealLowerBand == (const void *)inLow || (const void *)outRealLowerBand == (const void *)inClose || (const void *)outRealUpperBand == (const void *)outRealMiddleBand || (const void *)outRealUpperBand == (const void *)outRealLowerBand || (const void *)outRealMiddleBand == (const void *)outRealLowerBand ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      retCode = TA_KC_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outRealUpperBand[i], &outRealMiddleBand[i], &outRealLowerBand[i] );
-      if( retCode != TA_SUCCESS ) return retCode;
-      stream->cur_outRealUpperBand = outRealUpperBand[i];
-      stream->cur_outRealMiddleBand = outRealMiddleBand[i];
-      stream->cur_outRealLowerBand = outRealLowerBand[i];
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

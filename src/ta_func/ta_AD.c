@@ -235,8 +235,6 @@ static TA_RetCode TA_AD_OpenImpl( struct TA_AD_Stream **stream, const double inH
 {
    struct TA_AD_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -251,9 +249,6 @@ static TA_RetCode TA_AD_OpenImpl( struct TA_AD_Stream **stream, const double inH
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       int nbBar;
@@ -389,26 +384,6 @@ TA_LIB_API TA_RetCode TA_AD_Peek( const TA_AD_Stream *stream, double inHigh, dou
       ad += (close - low - (high - close)) / tmp * (double)inVolume;
    }
    *outReal= ad;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_AD_UpdateAndFill( TA_AD_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], const double inVolume[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inHigh || !inLow || !inClose || !inVolume || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow || (const void *)outReal == (const void *)inClose || (const void *)outReal == (const void *)inVolume ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) || !TA_IS_FINITE( inVolume[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_AD_StepImpl( stream, inHigh[i], inLow[i], inClose[i], inVolume[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

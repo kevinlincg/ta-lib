@@ -290,8 +290,6 @@ static TA_RetCode TA_QSTICK_OpenImpl( struct TA_QSTICK_Stream **stream, const do
 {
    struct TA_QSTICK_Stream *sp;
    int endIdx;
-   int dummyBegIdx;
-   int dummyNBElement;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
@@ -310,9 +308,6 @@ static TA_RetCode TA_QSTICK_OpenImpl( struct TA_QSTICK_Stream **stream, const do
    }
 
    endIdx = historyLen - 1;
-   dummyBegIdx = 0;
-   dummyNBElement = 0;
-   (void)startIdx; (void)dummyBegIdx; (void)dummyNBElement;
 
    {
       double periodTotal = 0.0;
@@ -491,26 +486,6 @@ TA_LIB_API TA_RetCode TA_QSTICK_Peek( const TA_QSTICK_Stream *stream, double inO
    tempReal = periodTotal;
    periodTotal -= (sp->ringPos_trailingIdx != pkSlot0) ? ring_trailingIdx_derived[sp->ringPos_trailingIdx] : pkVal0;
    *outReal= tempReal / (double)sp->optInTimePeriod;
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_QSTICK_UpdateAndFill( TA_QSTICK_Stream *stream, const double inOpen[], const double inClose[], int barCount, double outReal[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inClose || !outReal ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inOpen || (const void *)outReal == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_QSTICK_StepImpl( stream, inOpen[i], inClose[i], &outReal[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
    return TA_SUCCESS;
 }
 

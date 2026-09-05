@@ -931,40 +931,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double inClose[], double outSMI[], double outSMISignal[] ) {
-         requireArgument("SMI updateAndFill", "inHigh", inHigh);
-         requireArgument("SMI updateAndFill", "inLow", inLow);
-         requireArgument("SMI updateAndFill", "inClose", inClose);
-         requireArgument("SMI updateAndFill", "outSMI", outSMI);
-         requireArgument("SMI updateAndFill", "outSMISignal", outSMISignal);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || inClose.length != barCount || outSMI.length < barCount || outSMISignal.length < barCount || (Object)outSMI == (Object)inHigh || (Object)outSMI == (Object)inLow || (Object)outSMI == (Object)inClose || (Object)outSMISignal == (Object)inHigh || (Object)outSMISignal == (Object)inLow || (Object)outSMISignal == (Object)inClose || (Object)outSMI == (Object)outSMISignal )
-            throw new TaLibArgumentException("SMI updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("SMI updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.smiStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outSMI[i] = this.cur_outSMI;
-            outSMISignal[i] = this.cur_outSMISignal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.
@@ -983,8 +949,8 @@
          double den = 0.0;
          double halfDen = 0.0;
          double smiValue = 0.0;
-         double cur_outSMI = sp.cur_outSMI;
-         double cur_outSMISignal = sp.cur_outSMISignal;
+         double cur_outSMI = 0.0;
+         double cur_outSMISignal = 0.0;
          double emaFastDen = sp.emaFastDen;
          double emaFastNum = sp.emaFastNum;
          double emaSlowDen = sp.emaSlowDen;
