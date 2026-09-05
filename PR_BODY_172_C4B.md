@@ -132,3 +132,13 @@ so, or closing it; either way it should not be closed by building a candlestick
 corpus for that sweep.
 
 _Head re-verified after merging dev `af4cdede` (which landed #338, then DONCHIAN): `regen-check` green, exit 0, 179 functions; generator suite 904 passed / 0 failed. The net diff against dev is unchanged by that merge — the same 2 files._
+
+_Head re-verified after merging dev `710765c6` (which landed #382, removing the
+`UpdateAndFill` tier, plus the September indicator batch and the KAMA guard):
+`regen-check` green, exit 0, 201 functions; generator suite 937 passed / 0
+failed. One line of the diff changed with that merge and it is stated here
+rather than left silent — both sweeps filtered on `.update(` **or**
+`.updateAndFill(`, and the second term now names a tier that does not exist, so
+it is dropped from each. Removing it leaves both sweeps' counts and verdicts
+identical, which is what says the term was already dead. The net diff against
+dev is otherwise the same 2 files._
