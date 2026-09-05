@@ -22,7 +22,7 @@ A single-output function answers with a `double` (or an `int` for a candlestick
 pattern) return. A multi-output one writes into a sink you pass and own — see
 [Multi-input / multi-output](#multi-input-multi-output).
 
-Two more calls, `openAndFill` and `updateAndFill`, write array output instead of a single value — see [Array-Fill Calls](#array-fill-calls) below.
+One more call, `openAndFill`, writes array output instead of a single value — see [Array-Fill Open](#array-fill-open) below.
 
 Additional read-only [utility functions](#utility-calls) are available.
 
@@ -86,16 +86,13 @@ mutable object breaks `HashMap`/`HashSet` the moment a reused sink becomes a key
 Passing `null` is an `IllegalArgumentException`, taken before the bar is
 committed.
 
-## Array-Fill Calls
+## Array-Fill Open
 
-`open` and `update` each write a single value. Two more calls write a full array instead — the same shape the [batch method](/api/java/) would produce — while still driving the stream:
+`open` and `update` each write a single value. One more call writes a full array instead — the same shape the [batch method](/api/java/) would produce — while still opening the stream:
 
 | Call | When | Does |
 |------|------|------|
 | `core.<name>OpenAndFill(..)` | once, instead of `open` | like `open`, but also fills the output for **every** history bar |
-| `stream.updateAndFill(bars, outs)` | instead of a loop of `update` | commit `n` closed bars and write the `n` values |
-
-**`openAndFill`**
 
 ```java
 import io.github.talib.OutRange;
@@ -110,27 +107,6 @@ double v = s.update(newClose);
 ```
 
 The optional parameters and output arrays are exactly the [batch method](/api/java/)'s. The range written is reported on the returned stream as `outRange()` rather than through out-parameters — see [Utility Calls](#utility-calls) below. The output arrays must not alias the input or each other.
-
-**`updateAndFill`**
-
-```java
-double[] out = new double[gap.length];
-
-s.updateAndFill(gap, out);          // out[i] is the SMA at gap[i]
-```
-
-`updateAndFill` has no second return value for the range it wrote — call
-`outRange()` afterward (see [Utility Calls](#utility-calls)).
-
-It throws `IllegalArgumentException` before committing or counting anything if
-the input arrays differ in length, an output is shorter than the bar count, or
-an output is the same array as an input or as another output. A zero-length
-call does nothing. An invalid bar (NaN or ±Inf) also throws
-`IllegalArgumentException`, exactly as `update` does, and stops the call there:
-the bars **before** it are committed with their values written, and the invalid
-bar is counted but neither committed nor written to its output slot.
-`outRange()` says where it stopped — its last bar is the rejected one, so it
-counts one more than the values written.
 
 ## Utility Calls
 
@@ -180,7 +156,6 @@ See [Rules](#rules) for when concurrent reads of these are safe.
 |------|-----------|
 | `<name>Open` / `<name>OpenAndFill` | Too little history throws `InsufficientHistoryException` (a subclass of `IllegalArgumentException` — catch it to accumulate more bars and retry). Out-of-range parameters throw plain `IllegalArgumentException`. |
 | `update` / `peek` | `IllegalArgumentException` on invalid input such as NaN or ±Inf. The stream's state is untouched — nothing is committed — but a rejected `update` still advances `outRange()` by one, and `value()` answers the value(s) at the last bar the stream counted; `peek` advances nothing. Nothing else throws after a successful `open` (see the note below for the one composed-indicator corner). |
-| `updateAndFill` | Ragged inputs, an output shorter than the bar count, or an output that is also an input or another output throw `IllegalArgumentException` — none of which commits or counts anything. An invalid bar (NaN or ±Inf) also throws `IllegalArgumentException`, having committed the bars before it and counted — but not committed — the invalid one. |
 | `value` / `clone` / `outRange` | Never throw. |
 
 ## Discovering streamable functions

@@ -634,41 +634,6 @@ public partial class Core
          return new FractalValue(cur_outSwingHigh, cur_outSwingLow);
       }
 
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inHigh">Closed bars for <c>inHigh</c>, oldest first.</param>
-      /// <param name="inLow">Closed bars for <c>inLow</c>, oldest first.</param>
-      /// <param name="outSwingHigh">Receives one <c>outSwingHigh</c> value per bar committed.</param>
-      /// <param name="outSwingLow">Receives one <c>outSwingLow</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, Span<int> outSwingHigh, Span<int> outSwingLow )
-      {
-         int barCount = inHigh.Length;
-         if( inLow.Length != barCount || outSwingHigh.Length < barCount || outSwingLow.Length < barCount || outSwingHigh.Overlaps(outSwingLow) ) throw Core.StreamFailure("FRACTAL", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inHigh[i]) || !double.IsFinite(inLow[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("FRACTAL", "updateAndFill", RetCode.BadParam);
-            }
-            core.FractalStepImpl(this, inHigh[i], inLow[i]);
-            outSwingHigh[i] = cur_outSwingHigh;
-            outSwingLow[i] = cur_outSwingLow;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
-      }
-
       /// <summary>The value at the last bar this stream counted — the bar
       /// <see cref="OutRange"/> ends on. The last history bar right after open,
       /// then whatever the latest accepted <see cref="Update"/> returned.</summary>

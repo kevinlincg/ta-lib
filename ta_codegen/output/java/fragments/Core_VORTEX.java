@@ -639,40 +639,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double inClose[], double outPlusVI[], double outMinusVI[] ) {
-         requireArgument("VORTEX updateAndFill", "inHigh", inHigh);
-         requireArgument("VORTEX updateAndFill", "inLow", inLow);
-         requireArgument("VORTEX updateAndFill", "inClose", inClose);
-         requireArgument("VORTEX updateAndFill", "outPlusVI", outPlusVI);
-         requireArgument("VORTEX updateAndFill", "outMinusVI", outMinusVI);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || inClose.length != barCount || outPlusVI.length < barCount || outMinusVI.length < barCount || (Object)outPlusVI == (Object)inHigh || (Object)outPlusVI == (Object)inLow || (Object)outPlusVI == (Object)inClose || (Object)outMinusVI == (Object)inHigh || (Object)outMinusVI == (Object)inLow || (Object)outMinusVI == (Object)inClose || (Object)outPlusVI == (Object)outMinusVI )
-            throw new TaLibArgumentException("VORTEX updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("VORTEX updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.vortexStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outPlusVI[i] = this.cur_outPlusVI;
-            outMinusVI[i] = this.cur_outMinusVI;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.

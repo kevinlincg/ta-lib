@@ -2951,21 +2951,14 @@ fn emit_update_and_peek(
     // tail to ride on — the composed, dispatch and period-bank steps write the
     // caller's slots directly. `step_fallible` is exactly that set. Placed with
     // the count so the two describe the same bar.
-    let cur_retain = |idx: Option<&str>| -> String {
+    let cur_retain = || -> String {
         if !step_fallible {
             return String::new();
         }
         let mut t = String::new();
         for out in &func.outputs {
             let nm = &out.name;
-            match idx {
-                None => {
-                    let _ = writeln!(t, "        self.state.cur_{nm} = {nm};");
-                }
-                Some(i) => {
-                    let _ = writeln!(t, "            self.state.cur_{nm} = {nm}[{i}];");
-                }
-            }
+            let _ = writeln!(t, "        self.state.cur_{nm} = {nm};");
         }
         t
     };
@@ -2974,155 +2967,12 @@ fn emit_update_and_peek(
         o,
         "        Core::{sn}_step_impl(&mut self.state, {cs_args}{fwd_bars}{out_refs}){step_try};"
     );
-    o.push_str(&cur_retain(None));
+    o.push_str(&cur_retain());
     // After the step: a sub-stream rejecting through `?` must not count the
     // bar, and the non-finite check above owns the one rejection that does.
     o.push_str(&advance_out_count("        "));
     let _ = writeln!(o, "        Ok({ret})");
     let _ = writeln!(o, "    }}\n");
-    // --- update_and_fill ------------------------------------------------------
-    // One emitter for every tier: each one owns a `<n>_step_impl` with the same
-    // surface, so the n-bar filler is that step in a loop whatever the tier
-    // underneath is (issue #246).
-    //
-    // Slices carry their own lengths, so there is no `barCount` parameter and no
-    // aliasing guard — `&[f64]` and `&mut [f64]` cannot alias, which is the C
-    // hazard the C wrapper has to reject by hand.
-    let mut in_sig = String::new();
-    let mut len_checks: Vec<String> = Vec::new();
-    for (k, a) in inputs.iter().enumerate() {
-        let _ = write!(in_sig, "{a}: &[f64], ");
-        if k > 0 {
-            len_checks.push(format!("{a}.len() != {}.len()", inputs[0]));
-        }
-    }
-    // A `nullable` output may be declined here exactly as at the opener (rule
-    // U6a): `Option<&mut [T]>`, bounded only where it was supplied, and its
-    // slot for the bar swapped for a throwaway sink so the step still computes
-    // it. The choice is the CALL's, not the handle's — nothing recorded at
-    // `Open` constrains what this call presents.
-    let nullable = super::common::nullable_output_names(func);
-    let mut out_sig = String::new();
-    let mut sink_decls = String::new();
-    for out in &func.outputs {
-        let (t, z) = if out_is_int(func, &out.name) { ("i32", "0_i32") } else { ("f64", "0.0_f64") };
-        let name = &out.name;
-        if nullable.contains(name) {
-            let _ = write!(out_sig, "mut {name}: Option<&mut [{t}]>, ");
-            len_checks.push(format!("{name}.as_deref().is_some_and(|o| o.len() < barCount)"));
-            let _ = writeln!(sink_decls, "        let mut sink_{name}: {t} = {z};");
-        } else {
-            let _ = write!(out_sig, "{name}: &mut [{t}], ");
-            len_checks.push(format!("{name}.len() < barCount"));
-        }
-    }
-    let count_src = inputs
-        .first()
-        .map_or_else(|| "0".to_string(), |a| format!("{a}.len()"));
-    let idx_bars: String = inputs
-        .iter()
-        .map(|a| format!("{a}[i]"))
-        .collect::<Vec<_>>()
-        .join(", ");
-    let idx_outs: String = func
-        .outputs
-        .iter()
-        .map(|out| {
-            if nullable.contains(&out.name) {
-                format!("slot_{}", out.name)
-            } else {
-                format!("&mut {}[i]", out.name)
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(", ");
-    let step_args = if idx_bars.is_empty() {
-        idx_outs.clone()
-    } else {
-        format!("{idx_bars}, {idx_outs}")
-    };
-    // Rule U6a reads the same as S6a, and a caller of this tier needs telling in
-    // the same place a caller of the opener is told.
-    let declinable = if nullable.is_empty() {
-        String::new()
-    } else {
-        let list = super::common::nullable_output_list(func)
-            .iter()
-            .map(|n| format!("`{n}`"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        format!(
-            "\x20   ///\n\
-             \x20   /// {list} may be declined with `None`, per call and independently of\n\
-             \x20   /// what the opener was given: the value is still computed —\n\
-             \x20   /// [`Self::update`] reports it — and nothing is written out.\n"
-        )
-    };
-    let _ = writeln!(
-        o,
-        "    /// Commit `n` closed bars and write their `n` values, in one call —\n\
-         \x20   /// exactly `n` back-to-back [`Self::update`] calls, with one set of\n\
-         \x20   /// argument checks instead of `n`. `n` is `{count_src}`; the outputs must\n\
-         \x20   /// hold at least that many. Never allocates.\n\
-         {declinable}\
-         \x20   ///\n\
-         \x20   /// [`Self::out_range`] counts what this call took in, which is what makes the\n\
-         \x20   /// rejection below readable: there is no second out-parameter for it.\n\
-         \x20   ///\n\
-         \x20   /// # Errors\n\
-         \x20   ///\n\
-         \x20   /// [`RetCode::BadParam`] if the input slices differ in length, if an output\n\
-         \x20   /// is shorter than the bar count — neither commits anything — or if a bar\n\
-         \x20   /// is not finite. A non-finite bar `k` is rejected exactly as `update`\n\
-         \x20   /// rejects it: bars `0..k` stay committed and their values written, bar `k`\n\
-         \x20   /// and everything after it is not, and `out_range().count` has advanced by\n\
-         \x20   /// `k + 1` — the committed bars, plus the rejected one, which is counted\n\
-         \x20   /// but never written."
-    );
-    let _ = writeln!(o, "    #[doc(alias = \"TA_{n}_UpdateAndFill\")]");
-    let _ = writeln!(
-        o,
-        "    pub fn update_and_fill(&mut self, {}) -> Result<(), RetCode> {{",
-        format!("{in_sig}{out_sig}").trim_end_matches(", ")
-    );
-    let _ = writeln!(o, "        let barCount = {count_src};");
-    if !len_checks.is_empty() {
-        let _ = writeln!(
-            o,
-            "        if {} {{\n            return Err(RetCode::BadParam);\n        }}",
-            len_checks.join(" || ")
-        );
-    }
-    o.push_str(&sink_decls);
-    let _ = writeln!(o, "        for i in 0..barCount {{");
-    if !inputs.is_empty() {
-        let conds: Vec<String> = inputs.iter().map(|a| format!("!{a}[i].is_finite()")).collect();
-        let _ = write!(
-            o,
-            "            if {} {{\n{}                return Err(RetCode::BadParam);\n            }}\n",
-            conds.join(" || "),
-            advance_out_count("                ")
-        );
-    }
-    for out in &func.outputs {
-        let name = &out.name;
-        if nullable.contains(name) {
-            let _ = writeln!(
-                o,
-                "            let slot_{name} = match {name}.as_deref_mut() {{ Some(_s) => &mut _s[i], None => &mut sink_{name} }};"
-            );
-        }
-    }
-    let _ = writeln!(
-        o,
-        "            Core::{sn}_step_impl(&mut self.state, {cs_args}{step_args}){step_try};"
-    );
-    o.push_str(&cur_retain(Some("i")));
-    o.push_str(&advance_out_count("            "));
-    let _ = writeln!(o, "        }}");
-    let _ = writeln!(o, "        Ok(())");
-    let _ = writeln!(o, "    }}\n");
-
     let _ = writeln!(
         o,
         "    /// Evaluate a forming bar without committing — bit-identical to what the\n\
@@ -3173,7 +3023,7 @@ fn emit_update_and_peek(
         o,
         "    /// The value(s) at the last bar the stream counted — the bar\n\
          \x20   /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,\n\
-         \x20   /// refreshed by every accepted `update` and `update_and_fill`, and left\n\
+         \x20   /// refreshed by every accepted `update`, and left\n\
          \x20   /// alone by `peek`.\n\
          \x20   ///\n\
          \x20   /// A clone carries them verbatim, so a forked handle can be asked its\n\

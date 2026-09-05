@@ -100,7 +100,7 @@ fn expected(func: &ir::FuncDef) -> BTreeSet<String> {
     let n = &func.name;
     let mut want: BTreeSet<String> = [format!("TA_{n}"), format!("TA_{n}_Lookback")].into();
     if func.streaming {
-        for verb in ["Stream", "Open", "OpenAndFill", "Update", "UpdateAndFill", "Peek", "Value"] {
+        for verb in ["Stream", "Open", "OpenAndFill", "Update", "Peek", "Value"] {
             want.insert(format!("TA_{n}_{verb}"));
         }
         want.insert("TA_StreamOutRange".to_string());
