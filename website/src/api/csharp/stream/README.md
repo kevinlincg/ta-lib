@@ -18,7 +18,7 @@ Each streamable function adds two factory methods on `Core` and a handful of mem
 | `stream.Update(bar)` | once per **closed** bar | commit one bar, return the new value |
 | `stream.Peek(bar)` | any time on the **forming** bar | evaluate a provisional bar **without** committing |
 
-Two more calls, `OpenAndFill` and `UpdateAndFill`, write array output instead of a single value — see [Array-Fill Calls](#array-fill-calls) below.
+One more call, `OpenAndFill`, writes array output instead of a single value — see [Array-Fill Open](#array-fill-open) below.
 
 Additional read-only [utility functions](#utility-calls) are available.
 
@@ -71,16 +71,13 @@ var (upper, middle, lower) = b.Value;
 These are record structs, so `==` is .NET's `double` equality: `NaN` equals `NaN` **and** `+0.0` equals `-0.0`. (Java's record differs on the second.) Compare `BitConverter.DoubleToInt64Bits` per component when bit-level identity is what you mean.
 :::
 
-## Array-Fill Calls
+## Array-Fill Open
 
-`Open` and `Update` each write a single value. Two more calls write a full array instead — the same shape the [batch method](/api/csharp/) would produce — while still driving the stream:
+`Open` and `Update` each write a single value. One more call writes a full array instead — the same shape the [batch method](/api/csharp/) would produce — while still opening the stream:
 
 | Call | When | Does |
 |------|------|------|
 | `core.<Name>OpenAndFill(..)` | once, instead of `Open` | like `Open`, but also fills the output for **every** history bar |
-| `stream.UpdateAndFill(bars, outs)` | instead of a loop of `Update` | commit `n` closed bars and write the `n` values |
-
-**`OpenAndFill`**
 
 ```csharp
 double[] history = /* ...your closing prices... */;
@@ -94,26 +91,6 @@ OutRange r = s.OutRange;    // the bars it has an output for
 ```
 
 The output arguments are the batch call's, in the same order. An output may not overlap an input, or another output — that throws `ArgumentException` and mints no stream. With spans that means genuine memory overlap, not just the same buffer: two slices of one array that share even one element are rejected.
-
-**`UpdateAndFill`**
-
-```csharp
-double[] outReal = new double[gap.Length];
-
-s.UpdateAndFill(gap, outReal);      // outReal[i] is the SMA at gap[i]
-```
-
-`UpdateAndFill` has no second return value for the range it wrote — read
-`OutRange` afterward (see [Utility Calls](#utility-calls)).
-
-It throws `ArgumentException` before committing or counting anything if the
-input spans differ in length, an output is shorter than the bar count, or an
-output overlaps an input or another output. An empty call does nothing. An
-invalid bar (NaN or ±Inf) also throws `ArgumentException`, exactly as `Update`
-does, and stops the call there: the bars **before** it are committed with their
-values written, and the invalid bar is counted but neither committed nor
-written to its output slot. `OutRange` says where it stopped — its last bar is
-the rejected one, so it counts one more than the values written.
 
 ## Utility Calls
 
@@ -159,7 +136,7 @@ See [Rules](#rules) for when concurrent reads of these are safe.
 
 ## Error model
 
-`Open` and `OpenAndFill` throw. After a successful open the only thing `Update` and `Peek` reject is invalid input such as NaN or ±Inf; `UpdateAndFill` adds ragged inputs, an output shorter than the bar count and an overlapping output, all three before it commits or counts anything. A rejected bar leaves the stream's state untouched — nothing is committed — but a rejected `Update` still advances `OutRange` by one, and `Value` answers the value(s) at the last bar the stream counted. `Value`, `Clone()` and `OutRange` never throw.
+`Open` and `OpenAndFill` throw. After a successful open the only thing `Update` and `Peek` reject is invalid input such as NaN or ±Inf. A rejected bar leaves the stream's state untouched — nothing is committed — but a rejected `Update` still advances `OutRange` by one, and `Value` answers the value(s) at the last bar the stream counted. `Value`, `Clone()` and `OutRange` never throw.
 
 | Condition | Exception |
 |---|---|
