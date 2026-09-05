@@ -1,77 +1,59 @@
-feat(ha): Heikin-Ashi Candles, and the harness cap that blocked a 4th output (#373)
+feat(ha): HA — Heikin-Ashi Candles, and the harness's first four-output function (#373)
 
-Implements #373. HA is the first shipped function with four outputs, so it lands together with the hand-written-harness widening the issue identifies as the substantial part of the work.
+Implements #373 as ruled: `TA_HA(inPriceOHLC) -> outHAOpen, outHAHigh, outHALow, outHAClose`, group `Price Transform`, flags `[overlap, unstable_period, stream]`, lookback `TA_GetUnstablePeriod(TA_FUNC_UNST_HA)` with a default of 0, so every input bar produces an output bar.
+
+The close is the bar's four-price average, the open the midpoint of the previous candle's own open and close (the only recursive term), the high and low the elementwise extrema of the raw bar against that pair. Two carried doubles, no ring — `stream-census` derives T2, `state=2`.
+
+## The flags: `unstable_period`, and deliberately not `path_dependent`
+
+Worth stating up front, because an earlier revision of this branch shipped both and the difference is a gate rather than a preference.
+
+`path_dependent` is *true* in the narrow sense: at the default knob of 0 the recursion re-seeds at the anchor, so `TA_HA(3, 7, ...)` starts its open at `(open[3]+close[3])/2` rather than warming up from bar 0, and a sub-range call therefore differs from the full-history one. But declaring it costs exactly what the card predicted:
+
+- With `unstable_period` alone plus the `UNSTABLE_MAP` row, `stability_class()` answers `TA_STABLE_CONVERGING` and the range sweep **value-compares all four outputs** across every start/end pair. MEASURED — deleting only the `UNSTABLE_MAP` row, so the class falls back to `EPSILON`, fails it: `doRangeTestFixSize diff data for idx=0 (9.315750e+01, 9.200000e+01) ... For output #1 of 4`. That is the gate proving it is live, on this function, on all four outputs.
+- With `path_dependent` set, that same gate maps to `TA_STABLE_SKIP` and compares nothing.
+
+So the pair trades a live four-output value gate for a leg asserting the flag is earned. The convergence the knob buys is what makes `CONVERGING` the truthful class.
 
 ## The cap
 
-`CODEGEN_MAX_OUTPUTS` goes 3 → 4. The issue counts 39 sites; all 39 turned out to be *symbolic* references to the define, so the clamped comparison loops and the sized buffer arrays scale with it and needed no per-site edit. What did need editing is the other three places the number 3 is written down by hand, none of which the startup guard from #352 covers:
+`CODEGEN_MAX_OUTPUTS` goes 3 → 4. Every reference to it is symbolic, so the clamped loops and sized buffers scale with the define. What needed editing is the other places the number 3 is written by hand:
 
-- `TestBuffer` gains `out3`, and `TA_NB_OUT` goes 3 → 4, so the classic per-function harness can hold a fourth output plane (`buf` grows one plane per global buffer — 5 × 1 × 480 doubles, ~19 KB).
-- `test_variants.c`'s `V_MAX_OUTPUT` 3 → 4. Without it the variant gate refuses HA at startup: `4 inputs / 4 outputs / 0 optIn exceeds the gate's V_MAX_* bounds`.
-- `ta_test_legacy.c`'s `nbOutput > 3` guard is deliberately **not** raised. It is per-frozen-case, and a post-cutover function has no v0.6.4 case, so it can never see HA. Raising it would widen a gate that has nothing to gate.
+- `V_MAX_OUTPUT` (`test_variants.c`) — this one announced itself: the `TA_S_`/VARIANT gate **failed loudly** on HA rather than clamping.
+- `PB_MAX_OUTPUT` (`test_period_boundary.c`) — this one **clamps silently** (`o < PB_MAX_OUTPUT`), so a wider function loses its extra outputs there with nothing to say so. Raised and commented. Whether that loop should fail like the other two rather than clamp is a separate call, and I have not made it here.
 
-`internal_error_ids.yaml`, the `FuncUnstId` enum and the generated side all took HA without hand-holding; the enum row is appended at 25, never inserted.
+Neither the raise nor the guard is taken on trust:
 
-## The function
+- Perturbing **only the fourth output** in the generated Rust by `1e-9` is caught by `server_verify` as a BITWISE mismatch — so the raised cap really does compare output 4, rather than passing with it unread.
+- Left at 3, the #352 startup guard refuses to run the suite at all, naming HA. The silent case is unreachable in both directions.
 
-```
-HA_close[i] = (open[i] + high[i] + low[i] + close[i]) / 4
-HA_open[0]  = (open[0] + close[0]) / 2
-HA_open[i]  = (HA_open[i-1] + HA_close[i-1]) / 2
-HA_high[i]  = max(high[i], HA_open[i], HA_close[i])
-HA_low[i]   = min(low[i],  HA_open[i], HA_close[i])
-```
+`TA_FUNC_UNST_HA` appends as value 25. Beyond `enums.yaml` that is the Rust template's `FuncUnstId` variant and `COUNT`, three regtest unstable tables, and two generator inventories (`abstract_rows_suite`'s id table, `stability_suite`'s self-declaring count).
 
-Four outputs as ruled. Every operation is one addition or one division by a power of two, so the transform is exact whenever its inputs are, and the goldens are frozen at **tolerance zero** rather than a relative band.
+## Numerics
 
-The seed is carried as a *virtual previous candle* — the pair initialised to the anchor bar's own open and close — rather than as a special first iteration. The uniform recursion then produces `(open+close)/2` at that bar, one loop body serves the anchor and every bar after it, and the same pair is the streaming tier's initial state. It is also what keeps the steady loop free of `endIdx` references, which stage-1 streamability requires.
+The summation order `((o+h)+l)+c` and the two exact power-of-two divisions are the whole contract, and all four backends render that association. It is **not** `TA_AVGPRICE`'s `(h+l+c+o)/4`: same four terms, different order, and floating-point addition does not associate. The test asserts the difference rather than commenting it — differing on at least one bar AND agreeing to within rounding on every bar, so it fails both if the two are ever unified and if they drift for a real reason. MEASURED: 17 of 252 bars differ, all by one ulp.
 
-**Keep the summation order.** `TA_AVGPRICE` sums the same four terms as `(H+L+C+O)/4`. Floating-point addition is not associative, and on the 252-bar regtest history the two orders differ by one ulp on **17 of 252 bars**. So `HA_close` is not a composed `AVGPRICE` call, and leg 3 of the test asserts they disagree — otherwise the rule is unenforced prose and a future "simplification" would pass every other leg.
+## Tests
 
-## One deviation from the issue, and its cost
+`test_ha.c`, registered in `ta_regtest.c`, `ta_test_func.h`, `CMakeLists.txt` and `Makefile.am`.
 
-The issue lists `flags: [overlap, unstable_period, stream]`. This ships `path_dependent` as well. They answer different questions:
+- **1008 bit-exact comparisons** — all four outputs, all 252 SREF bars, against a pandas-ta-classic 0.6.52 capture (run here, not quoted), compared with `memcmp` so a signed-zero divergence cannot pass as equal.
+- **The seed, on a corpus that can see it.** SREF bar 0 satisfies `open + close == high + low` (`92.5 + 91.5 == 93.25 + 90.75`), which is exactly the condition under which the published seed and ta4j's raw-bar seed agree from bar 1 on — a golden frozen on SREF pins the seed at bar 0 and nowhere else. S12 is a 12-bar corpus violating that identity, from the same capture, and the leg carries its own control: an in-test raw-bar seed must disagree at every bar from 1 on, or the corpus has drifted degenerate and is pinning nothing.
+- **The unstable period as a warm-up, not a different answer.** MEASURED here, `k = 54` is the smallest warm-up reproducing the full history bit-for-bit at every bar it can be asked for; `k = 10` does not, which is the control that keeps the `k = 54` leg from passing for free.
+- **Edges**: the single-bar seed, an all-flat window (exact, no epsilon), and all four in-place calls, each output in turn handed the input it would clobber.
 
-- `unstable_period` is the ABI knob the issue specifies as the sole lookback.
-- `path_dependent` is what is true at its **default of 0**: the open recursion re-seeds at the anchor, so `HA(3, 7, ...)` starts its open at `(open[3]+close[3])/2` rather than warming up from bar 0. A sub-range call therefore legitimately disagrees with a full-history one, and without the flag the range-stability leg value-compares them and fails.
+## Gates
 
-The cost is real and worth stating: `path_dependent` maps to `TA_DO_NOT_COMPARE` → `TA_STABLE_SKIP`, so the generic range sweep value-compares **nothing** for HA. That is why `test_ha.c` carries the value coverage itself, and why the cross-language sweep reports HA as `0 value-compared, 1 path-dependent: coherency only` — its values are gated by `--xlang-hash` instead. If you would rather HA declared only `unstable_period` and left the range sweep to fail, say so and I will restructure rather than special-case it.
+Full `./ta_regtest` green; `regtest.py --function=HA --language=c,rust,java` rc 0 including `stream_verify` against the frozen oracle; `--xlang-hash` 506 cases per server, zero mismatches, bit-identical on Rust and Java across all shapes and the unstable-period axis; `regen-check`, `check-source-lists` and `clippy` clean; generator suite, `cargo test --doc/--tests`, warning-free `cargo doc`.
 
-The knob does buy start-independence back, and the amount is measured, not asserted: on the regtest history a call anchored at bar 100 needs **56** warm-up bars to become bit-identical to the full-history call over its whole emitted range; **48** still leaves two bars differing, and **32** leaves fifteen. The test pins both ends — exact agreement at 64, disagreement at 0.
+Two more things verified by breaking them and watching them fail: swapping the sum to AVGPRICE's order fails the golden at bar 1 (`93.164999999999992` vs `93.165000000000006`), and reading `inHigh[i]`/`inLow[i]` after the first store reddens the #130 in-place alias gate on 195/252 values — which is what the body's `tempHigh`/`tempLow` exist for.
 
-## Verification
+## What I did not check
 
-Primary proof is an external capture. `pandas-ta-classic 0.6.52`'s `ha()` over the 252-bar regtest history, frozen as `ha_gold_open` / `ha_gold_close` and compared with `memcmp`. An independent re-derivation agrees with the oracle on **all 1008 values, bitwise** (all four columns), which is what lets the two clamped outputs ride on spot pins plus a recomputed clamp identity instead of two more full tables.
+- **The C# leg.** No .NET SDK in this environment, so its server was never built or run. CI's "Generated C# compiles" and the nightly `--xlang-hash` cover it.
+- **`±0`.** `max`/`min` over `{high, HA_open, HA_close}` can tie only on a signed zero, where C's comparison macro and Java's `Math.max` need not agree. No divergence appeared across `--xlang-hash`'s shapes on C, Rust and Java; I did not construct a targeted ±0 corpus, and C# is unverified as above.
+- **The bench row.** `ta_bench` reports a near-zero reference time for HA, as it does for CUMSUM and every other post-cutover function — the reference arm has no such function. No performance claim is made here.
 
-Seven legs, and **every one has a control that I broke and watched fail**:
+## Note on this branch's history
 
-| # | Leg | Control | Result |
-|---|-----|---------|--------|
-| 1 | External golden, 252 bars, tolerance 0 | swap the sum to AVGPRICE's order | red: `close bar 1: 93.164999999999992 != oracle 93.165000000000006` |
-| 1 | " | seed the open recursion from the high | red: `open bar 0: 92.375 != oracle 92` |
-| 2 | Clamp identity, all 252 bars | delete both `haOpen` clamp arms | red: `clamped pin bar 2: (96.375,94.25) != oracle (96.375,92.58250000000001)` |
-| 3 | `HA_close` ≠ `AVGPRICE` | (17/252 bars differ — measured, non-vacuous) | — |
-| 4 | `path_dependent` earned | drop the flag from the YAML | red: `TA_FUNC_FLG_PATH_DEP is not published` |
-| 5 | Unstable-period convergence | (56/48/32-bar thresholds measured) | — |
-| 6 | Edges + four-way in-place aliasing | — | — |
-| 7 | Malformed bars | delete both `haClose` clamp arms | red: `malformed bar 1: (100,100,99,75) != (100,100,75,75)` |
-
-**Leg 7 exists because of a control that stayed green.** Deleting both `HA_close` clamp arms left legs 1–6 passing on the whole 252-bar history. On a well-formed bar (`low ≤ open,close ≤ high`) `HA_close` is an average of the four and is therefore already inside `[low, high]`, so its two clamp arms are unreachable there — half the clamp was untested. Leg 7 adds four bars whose high sits below their own body, arranged so each of the four arms decides one output: high from `HA_open` (bar 1) and from `HA_close` (bar 2), low from `HA_close` (bar 1) and from `HA_open` (bar 3). All 16 expected values are exact in binary and the oracle reproduces them bit-identically.
-
-Gates run locally, all green:
-
-- `scripts/build.py regen-check` — regenerating changes nothing
-- `scripts/build.py check-source-lists` — CMake and autotools agree (72 files)
-- full C reference suite, including the abstract, variant and streaming gates
-- the same suite under **ASan/UBSan** (`--sanitize`, `halt_on_error=1`)
-- `scripts/regtest.py --function=HA` (C, Rust, Java) against the frozen `ta_ref_serve` oracle
-- `ta_regtest --xlang-hash --function=HA` — **Rust and Java bit-identical to the in-process C library on 506 cases each, zero mismatches**, including at unstable period 3
-- `cargo test` in the generator (all suites), `cargo clippy --all-targets -D warnings` on both the generator and the generated crate, `cargo doc --no-deps`, and the crate's 598 doctests
-
-**What I did not run:** the **C# backend** — there is no .NET SDK on the machine I built this on, so `Core_HA.cs` is generated and committed but never compiled or value-checked. The PR gate's "Generated C# compiles" job and the nightly's C# parity job are the first things to watch. I also did not run `scripts/synth_gate.py` (nightly), nor `--fuzz-064` (HA is post-cutover, so it has no v0.6.4 arm).
-
-Two generator-side hand-maintained lists needed HA appended, and both failed loudly first, which is the point of them: `tests/abstract_rows_suite.rs`'s unstable-id table and `tests/stability_suite.rs`'s self-declaring count (21 → 22).
-
-## No performance claim
-
-`scripts/regtest.py` printed a `HA … 40826.67x` row in the direct bench. That is vacuous — the reference arm has no HA to time, so the "6" it reports is timer quantisation against nothing. There is no performance claim in this PR.
+The branch carries two commits by design. The first is a complete earlier implementation; the second supersedes its flag choice with the measurement above, keeps its two strongest legs (the asserted AVGPRICE difference and the four-way aliasing), and adds the seed-discriminating corpus. One leg of the first commit is **not** carried over and is worth a look if you want it: a malformed-bar corpus reaching the `HA_high`/`HA_low` clamp arms that ordinary bars cannot — on a well-formed bar the average is already inside `[low, high]`, so two clamp arms are unreachable without it.
