@@ -11,8 +11,8 @@ got the dispatch. On glibc that exclusion is unnecessary: clang implements
 resolver + `.default` + `.fma` clone pair gcc does. Below 14 the attribute is a
 hard compile error, so `__clang_major__ >= 14` is a build gate, not a tuning
 choice. Apple clang numbers itself on its own scale and would misread that
-floor — it never reaches the test, because Mach-O has no ifunc and macOS has no
-`__GLIBC__`.
+floor — it never reaches the test, because macOS has no `__GLIBC__`, which is
+the sole term holding macOS out.
 
 ## Measurement
 
@@ -90,11 +90,56 @@ one.
 - **musl** — no Docker in my environment. The `__GLIBC__` requirement is
   untouched, and the nightly `musl-build` job still covers it.
 - **macOS / Apple clang** — unchanged; still excluded by `__GLIBC__`, so #380's
-  original measurement stands as written.
+  original measurement stands as written. I did not build, run or measure
+  anything on macOS; see the `supportsIFunc()` note below for what I checked
+  instead, which is a source reading and not a build.
 - **clang < 14** — I have only clang 18. The `>= 14` floor comes from the
   release notes that introduce `target_clones` on x86, not from a build I ran.
 - **The new nightly job on an Actions runner** — I ran its commands locally, not
   on GitHub.
+
+## Correcting one sentence: `supportsIFunc()` and Mach-O
+
+An earlier revision of this branch justified the macOS exclusion with "Mach-O
+has no ifunc". **That is wrong**, and since the guard comment is the thing a
+future reader trusts, the head now says only what holds. Clang decides ifunc
+availability in `TargetInfo::supportsIFunc()`
+(`clang/include/clang/Basic/TargetInfo.h`), and reading the release branches:
+
+| clang | first line of `supportsIFunc()` |
+|---|---|
+| 17.x | *(absent)* — ELF only: Linux non-musl, or FreeBSD |
+| 18.x | `if (getTriple().isOSBinFormatMachO()) return true;` |
+| 19.x, main | same, plus Windows/AArch64, AVR, AIX ≥ 7.2 |
+
+`supportsMultiVersioning()` is `isX86() || isAArch64()` throughout. So on
+**macOS x86_64 with clang ≥ 18 the front-end does not refuse `target_clones` for
+want of ifunc** — the only term excluding macOS from `TA_FMA_MULTIVERSION` is
+`__GLIBC__`, which is a libc test standing in for a platform decision. musl is a
+different matter and the old sentence was right about it: `!isMusl()` is
+explicit in every version above.
+
+I am **not** widening the guard here, and I am not claiming macOS would get
+faster. What I have is a source reading, and it leaves three things unanswered
+that only a macOS box can settle:
+
+1. Whether Apple clang carries that upstream change, and at which Apple version
+   — Apple's `__clang_major__` is its own scale, so a version test written
+   against upstream releases cannot be reused, and `__apple_build_version__` or
+   a configure-time compile probe would be needed instead.
+2. Whether the Mach-O lowering links and dispatches correctly end to end, not
+   just compiles.
+3. Whether it actually recovers the 0.62 ns — the regression this issue is
+   about was measured on x86_64 macOS, and on arm64 the question likely does not
+   arise at all, since FMA is ARMv8 baseline and `fma()` should lower to `fmadd`
+   with no dispatch. **I did not verify that arm64 lowering claim**; I have no
+   Apple hardware and no Apple clang.
+
+So this is offered as evidence against option (3) being *forced*, not as a
+finished alternative: if it holds up on your machine, a fourth option exists
+(admit macOS/x86_64 the same way), and it is strictly better than accepting the
+regression there. If Apple clang turns out to lag the change, option (3) stands
+for macOS on its own merits rather than on a claim about the object format.
 
 ## One lead I am not acting on here
 
