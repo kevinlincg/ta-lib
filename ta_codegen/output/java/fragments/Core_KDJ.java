@@ -521,42 +521,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double inClose[], double outK[], double outD[], double outJ[] ) {
-         requireArgument("KDJ updateAndFill", "inHigh", inHigh);
-         requireArgument("KDJ updateAndFill", "inLow", inLow);
-         requireArgument("KDJ updateAndFill", "inClose", inClose);
-         requireArgument("KDJ updateAndFill", "outK", outK);
-         requireArgument("KDJ updateAndFill", "outD", outD);
-         requireArgument("KDJ updateAndFill", "outJ", outJ);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || inClose.length != barCount || outK.length < barCount || outD.length < barCount || outJ.length < barCount || (Object)outK == (Object)inHigh || (Object)outK == (Object)inLow || (Object)outK == (Object)inClose || (Object)outD == (Object)inHigh || (Object)outD == (Object)inLow || (Object)outD == (Object)inClose || (Object)outJ == (Object)inHigh || (Object)outJ == (Object)inLow || (Object)outJ == (Object)inClose || (Object)outK == (Object)outD || (Object)outK == (Object)outJ || (Object)outD == (Object)outJ )
-            throw new TaLibArgumentException("KDJ updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("KDJ updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.kdjStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outK[i] = this.cur_outK;
-            outD[i] = this.cur_outD;
-            outJ[i] = this.cur_outJ;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.

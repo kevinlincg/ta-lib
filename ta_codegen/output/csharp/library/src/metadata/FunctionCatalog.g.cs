@@ -213,10 +213,13 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
             MakeDx(),
             MakeEfi(),
             MakeEma(),
+            MakeEr(),
             MakeEri(),
             MakeExp(),
             MakeFloor(),
             MakeFosc(),
+            MakeFractal(),
+            MakeHa(),
             MakeHma(),
             MakeHtDcperiod(),
             MakeHtDcphase(),
@@ -274,6 +277,7 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
             MakeRocr(),
             MakeRocr100(),
             MakeRsi(),
+            MakeRvi(),
             MakeRvol(),
             MakeSar(),
             MakeSarext(),
@@ -2477,6 +2481,29 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
             core.EMA(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOut(0)));
 
+    private static FunctionInfo MakeEr() => new(
+        name: "ER",
+        group: FunctionGroup.MomentumIndicators,
+        hint: "Kaufman Efficiency Ratio",
+        flags: FunctionFlags.Stream,
+        unstableId: null,
+        inputs:
+        [
+            new InputInfo(InputKind.Real, "inReal", PriceComponents.None, []),
+        ],
+        optInputs:
+        [
+            new OptInputInfo("optInTimePeriod", "Time Period", "Number of one-bar changes in the path sum", OptInputFlags.None, new OptInputDomain.IntegerRange(2, 100000, 10, 2, 100, 1)),
+        ],
+        outputs:
+        [
+            new OutputInfo(OutputKind.Real, "outReal", OutputFlags.Line),
+        ],
+        lookback: static (core, c) => core.ER_Lookback(c.IntOpt(0)),
+        invoke: static (core, c, startIdx, endIdx) =>
+            core.ER(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOut(0)));
+
     private static FunctionInfo MakeEri() => new(
         name: "ERI",
         group: FunctionGroup.MomentumIndicators,
@@ -2563,6 +2590,54 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
         invoke: static (core, c, startIdx, endIdx) =>
             core.FOSC(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOut(0)));
+
+    private static FunctionInfo MakeFractal() => new(
+        name: "FRACTAL",
+        group: FunctionGroup.MomentumIndicators,
+        hint: "Williams Fractal",
+        flags: FunctionFlags.Stream,
+        unstableId: null,
+        inputs:
+        [
+            new InputInfo(InputKind.Price, "inPriceHL", PriceComponents.High | PriceComponents.Low, [PriceComponents.High, PriceComponents.Low]),
+        ],
+        optInputs:
+        [
+            new OptInputInfo("optInLeftBars", "Left Bars", "Number of bars required to be lower/higher before the pivot", OptInputFlags.None, new OptInputDomain.IntegerRange(1, 100000, 2, 1, 10, 1)),
+            new OptInputInfo("optInRightBars", "Right Bars", "Number of bars required to be lower/higher after the pivot", OptInputFlags.None, new OptInputDomain.IntegerRange(1, 100000, 2, 1, 10, 1)),
+        ],
+        outputs:
+        [
+            new OutputInfo(OutputKind.Integer, "outSwingHigh", OutputFlags.Line),
+            new OutputInfo(OutputKind.Integer, "outSwingLow", OutputFlags.Line),
+        ],
+        lookback: static (core, c) => core.FRACTAL_Lookback(c.IntOpt(0), c.IntOpt(1)),
+        invoke: static (core, c, startIdx, endIdx) =>
+            core.FRACTAL(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), c.IntOpt(1), c.IntOut(0), c.IntOut(1)));
+
+    private static FunctionInfo MakeHa() => new(
+        name: "HA",
+        group: FunctionGroup.PriceTransform,
+        hint: "Heikin-Ashi Candles",
+        flags: FunctionFlags.Overlap | FunctionFlags.Stream | FunctionFlags.UnstablePeriod,
+        unstableId: FuncUnstId.HA,
+        inputs:
+        [
+            new InputInfo(InputKind.Price, "inPriceOHLC", PriceComponents.Open | PriceComponents.High | PriceComponents.Low | PriceComponents.Close, [PriceComponents.Open, PriceComponents.High, PriceComponents.Low, PriceComponents.Close]),
+        ],
+        optInputs: [],
+        outputs:
+        [
+            new OutputInfo(OutputKind.Real, "outHAOpen", OutputFlags.Line),
+            new OutputInfo(OutputKind.Real, "outHAHigh", OutputFlags.Line | OutputFlags.UpperLimit),
+            new OutputInfo(OutputKind.Real, "outHALow", OutputFlags.Line | OutputFlags.LowerLimit),
+            new OutputInfo(OutputKind.Real, "outHAClose", OutputFlags.Line),
+        ],
+        lookback: static (core, c) => core.HA_Lookback(),
+        invoke: static (core, c, startIdx, endIdx) =>
+            core.HA(
+                startIdx, endIdx, c.Price(0, PriceComponents.Open), c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.RealOut(0), c.RealOut(1), c.RealOut(2), c.RealOut(3)));
 
     private static FunctionInfo MakeHma() => new(
         name: "HMA",
@@ -3870,6 +3945,30 @@ public sealed class FunctionCatalog : IReadOnlyList<FunctionInfo>
         invoke: static (core, c, startIdx, endIdx) =>
             core.RSI(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOut(0)));
+
+    private static FunctionInfo MakeRvi() => new(
+        name: "RVI",
+        group: FunctionGroup.VolatilityIndicators,
+        hint: "Relative Volatility Index",
+        flags: FunctionFlags.Stream | FunctionFlags.UnstablePeriod,
+        unstableId: FuncUnstId.RVI,
+        inputs:
+        [
+            new InputInfo(InputKind.Real, "inReal", PriceComponents.None, []),
+        ],
+        optInputs:
+        [
+            new OptInputInfo("optInTimePeriod", "Time Period", "Time period of the Wilder smoothing applied to both legs", OptInputFlags.None, new OptInputDomain.IntegerRange(1, 100000, 14, 4, 200, 1)),
+            new OptInputInfo("optInStdDevPeriod", "StdDev Period", "Time period of the standard deviation", OptInputFlags.None, new OptInputDomain.IntegerRange(2, 100000, 10, 4, 200, 1)),
+        ],
+        outputs:
+        [
+            new OutputInfo(OutputKind.Real, "outReal", OutputFlags.Line),
+        ],
+        lookback: static (core, c) => core.RVI_Lookback(c.IntOpt(0), c.IntOpt(1)),
+        invoke: static (core, c, startIdx, endIdx) =>
+            core.RVI(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.IntOpt(1), c.RealOut(0)));
 
     private static FunctionInfo MakeRvol() => new(
         name: "RVOL",

@@ -300,7 +300,7 @@ cd ../bin && ./ta_regtest --codegen --language=c,rust --function=SMA,RSI
 
 ## `stream_verify` — what each leg family can and cannot see
 
-One request drives eight families against one seeded series. They are not
+One request drives seven families against one seeded series. They are not
 interchangeable, and the coverage they add is very uneven:
 
 | family | what it compares | blind to |
@@ -320,13 +320,12 @@ of floors: every streaming function must report a non-zero `peek_reps`, and
 refusals outnumbering completed probes on one request is a failure of its own.
 
 | **state equivalence** | the whole handle after `Open(P)` + `n-P` updates vs the handle after `Open(n)` | a defect present in BOTH tiers |
-| `UpdateAndFill` | `Open(P)` then ONE call over the tail, every value vs batch, plus canary slack and the rejections each backend can express (aliased or overlapping output, an output shorter than the run, a negative count, a zero-bar no-op) | what every value family is blind to — whether the handle knows how many bars it has consumed |
-| **range** | the handle's `OutRange` against the batch range, at four sites: the `OpenAndFill` handle, `Open(P)` + updates, `Open(P)` + one `UpdateAndFill`, and the anchored `OpenInternal` | an anchor the history does not reach — every site keeps `lb < Sidx < svN - 1`, so the post-clamp history re-check is pinned in the generator instead |
+| **range** | the handle's `OutRange` against the batch range, at four sites: the `OpenAndFill` handle, `Open(P)` + updates, the anchored `OpenInternal`, and the forked handle | an anchor the history does not reach — every site keeps `lb < Sidx < svN - 1`, so the post-clamp history re-check is pinned in the generator instead |
 
-Of the six value families, three delegate to the batch transcription and two are
-same-tier: the prefix sweep's Update loop and the n-bar filler are the only
-things looking at the streaming step against a batch reference, and both can
-only report a difference the **output** shows.
+Of the five value families, two delegate to the batch transcription — the
+`OpenAndFill` and anchored `OpenInternal` legs — leaving the prefix sweep's
+Update loop as the only one looking at the streaming step against a batch
+reference, and it can only report a difference the **output** shows.
 
 For a candlestick the output is a 3-valued integer, so an arithmetic error in a
 `<Setting>PeriodTotal` is invisible until it crosses a decision threshold.
@@ -341,13 +340,14 @@ The **range** leg is the odd one out twice over: the only family that is neither
 C-only nor a value comparison — it compares a number pair, so it sees what every
 value leg is structurally blind to — and the first with a per-SITE ratchet rather
 than a total. Each server reports which of its own sites fired (`range_sites`)
-and how many it has (`range_sites_n`); the driver ORs the mask across the run and
-demands every bit, because a total cannot see one site of three stop. Rust
-declares two sites: its server is a separate crate and cannot reach the
-`pub(crate)` `_OpenInternal` seam, so it says so rather than pretending.
-`sv_range_sites_mask_matches_the_declared_count` checks mask against count on
-emitted text, since a site added without bumping the count, or one reusing
-another's bit, leaves a full mask at run time and fails open.
+and which set it has (`range_sites_all`); the driver ORs the mask across the run
+and demands every bit, because a total cannot see one site of four stop. Rust
+declares three: its server is a separate crate and cannot reach the `pub(crate)`
+`_OpenInternal` seam, so it says so rather than pretending.
+`sv_range_sites_mask_matches_the_declared_set` checks the bits a server ORs in
+against the set it declares, on emitted text, since a site added without joining
+the set, or one reusing another's bit, leaves a full mask at run time and fails
+open.
 
 **Why it holds bit-for-bit.** `Update` is the transcribed batch loop body, so
 both routes execute the identical operation sequence over the identical bars, and

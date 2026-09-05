@@ -103,10 +103,13 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_DX.c \
 	ta_EFI.c \
 	ta_EMA.c \
+	ta_ER.c \
 	ta_ERI.c \
 	ta_EXP.c \
 	ta_FLOOR.c \
 	ta_FOSC.c \
+	ta_FRACTAL.c \
+	ta_HA.c \
 	ta_HMA.c \
 	ta_HT_DCPERIOD.c \
 	ta_HT_DCPHASE.c \
@@ -164,6 +167,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_ROCR.c \
 	ta_ROCR100.c \
 	ta_RSI.c \
+	ta_RVI.c \
 	ta_RVOL.c \
 	ta_SAR.c \
 	ta_SAREXT.c \

@@ -1,6 +1,6 @@
 //! # TA-Lib: Technical Analysis Library
 //!
-//! 197 technical-analysis indicators — moving averages, momentum oscillators,
+//! 200+ technical-analysis indicators — moving averages, momentum oscillators,
 //! volatility bands, volume studies, Hilbert Transform cycle analysis, statistics,
 //! price transforms, and 61 candlestick-pattern recognizers — as a pure-Rust crate.
 //!
@@ -170,7 +170,7 @@
 //! * [`TAN`](Core::TAN) — Vector Trigonometric Tan
 //! * [`TANH`](Core::TANH) — Vector Trigonometric Tanh
 //!
-//! ## Momentum Indicators (45)
+//! ## Momentum Indicators (47)
 //!
 //! * [`AC`](Core::AC) — Accelerator/Decelerator Oscillator
 //! * [`ADX`](Core::ADX) — Average Directional Movement Index
@@ -186,8 +186,10 @@
 //! * [`COPPOCK`](Core::COPPOCK) — Coppock Curve
 //! * [`DPO`](Core::DPO) — Detrended Price Oscillator
 //! * [`DX`](Core::DX) — Directional Movement Index
+//! * [`ER`](Core::ER) — Kaufman Efficiency Ratio
 //! * [`ERI`](Core::ERI) — Elder Ray Index (Bull Power / Bear Power)
 //! * [`FOSC`](Core::FOSC) — Forecast Oscillator
+//! * [`FRACTAL`](Core::FRACTAL) — Williams Fractal
 //! * [`IMI`](Core::IMI) — Intraday Momentum Index
 //! * [`KDJ`](Core::KDJ) — KDJ Stochastic
 //! * [`MACD`](Core::MACD) — Moving Average Convergence/Divergence
@@ -310,10 +312,11 @@
 //! * [`CDLUPSIDEGAP2CROWS`](Core::CDLUPSIDEGAP2CROWS) — Upside Gap Two Crows
 //! * [`CDLXSIDEGAP3METHODS`](Core::CDLXSIDEGAP3METHODS) — Upside/Downside Gap Three Methods
 //!
-//! ## Price Transform (5)
+//! ## Price Transform (6)
 //!
 //! * [`AVGDEV`](Core::AVGDEV) — Average Deviation
 //! * [`AVGPRICE`](Core::AVGPRICE) — Average Price
+//! * [`HA`](Core::HA) — Heikin-Ashi Candles
 //! * [`MEDPRICE`](Core::MEDPRICE) — Median Price
 //! * [`TYPPRICE`](Core::TYPPRICE) — Typical Price
 //! * [`WCLPRICE`](Core::WCLPRICE) — Weighted Close Price
@@ -332,13 +335,14 @@
 //! * [`TSF`](Core::TSF) — Time Series Forecast
 //! * [`VAR`](Core::VAR) — Variance
 //!
-//! ## Volatility Indicators (6)
+//! ## Volatility Indicators (7)
 //!
 //! * [`ADR`](Core::ADR) — Average Day Range
 //! * [`ATR`](Core::ATR) — Average True Range
 //! * [`CVI`](Core::CVI) — Chaikin's Volatility
 //! * [`MASSI`](Core::MASSI) — Mass Index
 //! * [`NATR`](Core::NATR) — Normalized Average True Range
+//! * [`RVI`](Core::RVI) — Relative Volatility Index
 //! * [`TRANGE`](Core::TRANGE) — True Range
 //!
 //! ## Volume Indicators (12)

@@ -846,7 +846,7 @@ static ErrorNumber testTAFunction_ALL( void )
     * and a single file had grown past 4000 lines. Each carries its own tag, so
     * --function= reaches the members of whichever file they live in. */
    DO_TEST( test_func_composite1, "PVO,VWMA,CMF,HMA,EFI,QSTICK,AO,AC,SUM" );
-   DO_TEST( test_func_composite2, "SMI,COPPOCK" );
+   DO_TEST( test_func_composite2, "SMI,COPPOCK,ER" );
    DO_TEST( test_func_marketfi, "MARKETFI" );
    DO_TEST( test_func_cmf,       "CMF" );
    DO_TEST( test_func_kc,        "KC" );
@@ -861,6 +861,9 @@ static ErrorNumber testTAFunction_ALL( void )
    DO_TEST( test_func_cumsum,    "CUMSUM" );
    DO_TEST( test_func_zlema,     "ZLEMA" );
    DO_TEST( test_func_vhf,       "VHF" );
+   DO_TEST( test_func_rvi,       "RVI" );
+   DO_TEST( test_func_fractal,   "FRACTAL" );
+   DO_TEST( test_func_ha,        "HA" );
    DO_TEST( test_func_tsi,       "TSI" );
    DO_TEST( test_func_kdj,       "KDJ" );
    DO_TEST( test_func_adr,       "ADR" );

@@ -220,10 +220,13 @@ public final class Functions {
       put(m, f_DX());
       put(m, f_EFI());
       put(m, f_EMA());
+      put(m, f_ER());
       put(m, f_ERI());
       put(m, f_EXP());
       put(m, f_FLOOR());
       put(m, f_FOSC());
+      put(m, f_FRACTAL());
+      put(m, f_HA());
       put(m, f_HMA());
       put(m, f_HT_DCPERIOD());
       put(m, f_HT_DCPHASE());
@@ -281,6 +284,7 @@ public final class Functions {
       put(m, f_ROCR());
       put(m, f_ROCR100());
       put(m, f_RSI());
+      put(m, f_RVI());
       put(m, f_RVOL());
       put(m, f_SAR());
       put(m, f_SAREXT());
@@ -1799,6 +1803,24 @@ public final class Functions {
          ));
    }
 
+   private static FunctionInfo f_ER() {
+      return new FunctionInfo(
+         "ER", "Momentum Indicators", "Kaufman Efficiency Ratio", 0x02000000,
+         List.of(
+            new InputInfo(InputType.REAL, "inReal", 0x00000000)
+         ),
+         List.of(
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInTimePeriod", 0x00000000,
+               "Time Period", "Number of one-bar changes in the path sum", 10.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               2, 100000, 2, 100, 1, null)
+         ),
+         List.of(
+            new OutputInfo(OutputType.REAL, "outReal", 0x00000001)
+         ));
+   }
+
    private static FunctionInfo f_ERI() {
       return new FunctionInfo(
          "ERI", "Momentum Indicators", "Elder Ray Index (Bull Power / Bear Power)", 0x02000000,
@@ -1857,6 +1879,45 @@ public final class Functions {
          ),
          List.of(
             new OutputInfo(OutputType.REAL, "outReal", 0x00000001)
+         ));
+   }
+
+   private static FunctionInfo f_FRACTAL() {
+      return new FunctionInfo(
+         "FRACTAL", "Momentum Indicators", "Williams Fractal", 0x02000000,
+         List.of(
+            new InputInfo(InputType.PRICE, "inPriceHL", 0x00000006)
+         ),
+         List.of(
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInLeftBars", 0x00000000,
+               "Left Bars", "Number of bars required to be lower/higher before the pivot", 2.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               1, 100000, 1, 10, 1, null),
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInRightBars", 0x00000000,
+               "Right Bars", "Number of bars required to be lower/higher after the pivot", 2.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               1, 100000, 1, 10, 1, null)
+         ),
+         List.of(
+            new OutputInfo(OutputType.INTEGER, "outSwingHigh", 0x00000001),
+            new OutputInfo(OutputType.INTEGER, "outSwingLow", 0x00000001)
+         ));
+   }
+
+   private static FunctionInfo f_HA() {
+      return new FunctionInfo(
+         "HA", "Price Transform", "Heikin-Ashi Candles", 0x0B000000,
+         List.of(
+            new InputInfo(InputType.PRICE, "inPriceOHLC", 0x0000000F)
+         ),
+         List.of(),
+         List.of(
+            new OutputInfo(OutputType.REAL, "outHAOpen", 0x00000001),
+            new OutputInfo(OutputType.REAL, "outHAHigh", 0x00000801),
+            new OutputInfo(OutputType.REAL, "outHALow", 0x00001001),
+            new OutputInfo(OutputType.REAL, "outHAClose", 0x00000001)
          ));
    }
 
@@ -2921,6 +2982,29 @@ public final class Functions {
             new OptInputInfo(
                OptInputType.INTEGER_RANGE, "optInTimePeriod", 0x00000000,
                "Time Period", "Time period", 14.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               2, 100000, 4, 200, 1, null)
+         ),
+         List.of(
+            new OutputInfo(OutputType.REAL, "outReal", 0x00000001)
+         ));
+   }
+
+   private static FunctionInfo f_RVI() {
+      return new FunctionInfo(
+         "RVI", "Volatility Indicators", "Relative Volatility Index", 0x0A000000,
+         List.of(
+            new InputInfo(InputType.REAL, "inReal", 0x00000000)
+         ),
+         List.of(
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInTimePeriod", 0x00000000,
+               "Time Period", "Time period of the Wilder smoothing applied to both legs", 14.0,
+               0.0, 0.0, 0, 0.0, 0.0, 0.0,
+               1, 100000, 4, 200, 1, null),
+            new OptInputInfo(
+               OptInputType.INTEGER_RANGE, "optInStdDevPeriod", 0x00000000,
+               "StdDev Period", "Time period of the standard deviation", 10.0,
                0.0, 0.0, 0, 0.0, 0.0, 0.0,
                2, 100000, 4, 200, 1, null)
          ),
