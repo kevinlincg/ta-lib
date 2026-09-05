@@ -129,11 +129,17 @@ impl Core {
         // in an uptrend, while this function does not consider it
         outIdx = 0;
         loop {
-            if (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 && (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose[i - 1] > inOpen[i - 2] && inOpen[i - 1] < inClose[i - 2] && inClose[i] > inClose[i - 1] || (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && inOpen[i - 1] > inClose[i - 2] && inClose[i - 1] < inOpen[i - 2] && inClose[i] < inClose[i - 1] {
-                // white engulfs black
-                // third candle higher
-                // black engulfs white
-                // third candle lower
+            if (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 &&
+                (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // white engulfs black
+                inClose[i - 1] > inOpen[i - 2] &&
+                inOpen[i - 1] < inClose[i - 2] &&
+                inClose[i] > inClose[i - 1] ||                                    // third candle higher
+               (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 &&
+                (if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && // black engulfs white
+                inOpen[i - 1] > inClose[i - 2] &&
+                inClose[i - 1] < inOpen[i - 2] &&
+                inClose[i] < inClose[i - 1]                                       // third candle lower
+            {
                 outInteger[outIdx] = ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) * 100) as i32;
                 outIdx += 1;
             } else {
@@ -302,11 +308,17 @@ struct Cdl3outsideStreamState {
 #[allow(unused_parens)]
 impl Core {
     fn cdl3outside_step_impl(sp: &mut Cdl3outsideStreamState, inOpen: f64, inHigh: f64, inLow: f64, inClose: f64, outInteger: &mut i32) {
-        if (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && sp.lag1_inClose > sp.lag2_inOpen && sp.lag1_inOpen < sp.lag2_inClose && inClose > sp.lag1_inClose || (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && sp.lag1_inOpen > sp.lag2_inClose && sp.lag1_inClose < sp.lag2_inOpen && inClose < sp.lag1_inClose {
-            // white engulfs black
-            // third candle higher
-            // black engulfs white
-            // third candle lower
+        if (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 &&
+            (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // white engulfs black
+            sp.lag1_inClose > sp.lag2_inOpen &&
+            sp.lag1_inOpen < sp.lag2_inClose &&
+            inClose > sp.lag1_inClose ||                                        // third candle higher
+           (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 &&
+            (if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && // black engulfs white
+            sp.lag1_inOpen > sp.lag2_inClose &&
+            sp.lag1_inClose < sp.lag2_inOpen &&
+            inClose < sp.lag1_inClose                                           // third candle lower
+        {
             (*outInteger) = ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) * 100) as i32;
         } else {
             (*outInteger) = 0;
@@ -372,11 +384,17 @@ impl Core {
         // in an uptrend, while this function does not consider it
         outIdx = 0;
         loop {
-            if (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 && (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && inClose[i - 1] > inOpen[i - 2] && inOpen[i - 1] < inClose[i - 2] && inClose[i] > inClose[i - 1] || (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && inOpen[i - 1] > inClose[i - 2] && inClose[i - 1] < inOpen[i - 2] && inClose[i] < inClose[i - 1] {
-                // white engulfs black
-                // third candle higher
-                // black engulfs white
-                // third candle lower
+            if (if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) == 1 &&
+                (((if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // white engulfs black
+                inClose[i - 1] > inOpen[i - 2] &&
+                inOpen[i - 1] < inClose[i - 2] &&
+                inClose[i] > inClose[i - 1] ||                                    // third candle higher
+               (((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 })) as i32) == 0 - 1 &&
+                (if inClose[i - 2] >= inOpen[i - 2] { 1 } else { 0 - 1 }) == 1 && // black engulfs white
+                inOpen[i - 1] > inClose[i - 2] &&
+                inClose[i - 1] < inOpen[i - 2] &&
+                inClose[i] < inClose[i - 1]                                       // third candle lower
+            {
                 outInteger[({ let _v = outIdx; outIdx += 1; _v } * outStride) as usize] = ((if inClose[i - 1] >= inOpen[i - 1] { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
                 outInteger[({ let _v = outIdx; outIdx += 1; _v } * outStride) as usize] = 0;
@@ -554,44 +572,6 @@ impl Cdl3outsideStream {
         Ok(outInteger)
     }
 
-    /// Commit `n` closed bars and write their `n` values, in one call —
-    /// exactly `n` back-to-back [`Self::update`] calls, with one set of
-    /// argument checks instead of `n`. `n` is `inOpen.len()`; the outputs must
-    /// hold at least that many. Never allocates.
-    ///
-    /// [`Self::out_range`] counts what this call took in, which is what makes the
-    /// rejection below readable: there is no second out-parameter for it.
-    ///
-    /// # Errors
-    ///
-    /// [`RetCode::BadParam`] if the input slices differ in length, if an output
-    /// is shorter than the bar count — neither commits anything — or if a bar
-    /// is not finite. A non-finite bar `k` is rejected exactly as `update`
-    /// rejects it: bars `0..k` stay committed and their values written, bar `k`
-    /// and everything after it is not, and `out_range().count` has advanced by
-    /// `k + 1` — the committed bars, plus the rejected one, which is counted
-    /// but never written.
-    #[doc(alias = "TA_CDL3OUTSIDE_UpdateAndFill")]
-    pub fn update_and_fill(&mut self, inOpen: &[f64], inHigh: &[f64], inLow: &[f64], inClose: &[f64], outInteger: &mut [i32]) -> Result<(), RetCode> {
-        let barCount = inOpen.len();
-        if inHigh.len() != inOpen.len() || inLow.len() != inOpen.len() || inClose.len() != inOpen.len() || outInteger.len() < barCount {
-            return Err(RetCode::BadParam);
-        }
-        for i in 0..barCount {
-            if !inOpen[i].is_finite() || !inHigh[i].is_finite() || !inLow[i].is_finite() || !inClose[i].is_finite() {
-                if self.out.count < Core::MAX_INDEX {
-                    self.out.count += 1;
-                }
-                return Err(RetCode::BadParam);
-            }
-            Core::cdl3outside_step_impl(&mut self.state, inOpen[i], inHigh[i], inLow[i], inClose[i], &mut outInteger[i]);
-            if self.out.count < Core::MAX_INDEX {
-                self.out.count += 1;
-            }
-        }
-        Ok(())
-    }
-
     /// Evaluate a forming bar without committing — bit-identical to what the
     /// next `update` with the same bar would return: the same transition,
     /// rewritten so every store it would make lives in a local instead. It
@@ -613,11 +593,17 @@ impl Cdl3outsideStream {
         {
             let sp = &self.state;
             let outInteger = &mut outInteger;
-            if (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 && (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && sp.lag1_inClose > sp.lag2_inOpen && sp.lag1_inOpen < sp.lag2_inClose && inClose > sp.lag1_inClose || (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && (if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && sp.lag1_inOpen > sp.lag2_inClose && sp.lag1_inClose < sp.lag2_inOpen && inClose < sp.lag1_inClose {
-                // white engulfs black
-                // third candle higher
-                // black engulfs white
-                // third candle lower
+            if (if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) == 1 &&
+                (((if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 && // white engulfs black
+                sp.lag1_inClose > sp.lag2_inOpen &&
+                sp.lag1_inOpen < sp.lag2_inClose &&
+                inClose > sp.lag1_inClose ||                                        // third candle higher
+               (((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 })) as i32) == 0 - 1 &&
+                (if sp.lag2_inClose >= sp.lag2_inOpen { 1 } else { 0 - 1 }) == 1 && // black engulfs white
+                sp.lag1_inOpen > sp.lag2_inClose &&
+                sp.lag1_inClose < sp.lag2_inOpen &&
+                inClose < sp.lag1_inClose                                           // third candle lower
+            {
                 (*outInteger) = ((if sp.lag1_inClose >= sp.lag1_inOpen { 1 } else { 0 - 1 }) * 100) as i32;
             } else {
                 (*outInteger) = 0;
@@ -628,7 +614,7 @@ impl Cdl3outsideStream {
 
     /// The value(s) at the last bar the stream counted — the bar
     /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
-    /// refreshed by every accepted `update` and `update_and_fill`, and left
+    /// refreshed by every accepted `update`, and left
     /// alone by `peek`.
     ///
     /// A clone carries them verbatim, so a forked handle can be asked its

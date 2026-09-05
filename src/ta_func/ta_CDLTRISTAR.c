@@ -139,9 +139,8 @@ TA_LIB_API TA_RetCode TA_CDLTRISTAR( int    startIdx,
    {
       if( fabs(inClose[i - 2] - inOpen[i - 2]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) && /* 1st: doji */
           fabs(inClose[i - 1] - inOpen[i - 1]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) && /* 2nd: doji */
-          fabs(inClose[i] - inOpen[i]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) )
+          fabs(inClose[i] - inOpen[i]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) ) /* 3rd: doji */
       {
-         /* 3rd: doji */
          outInteger[outIdx] = 0;
          if( ((min(inOpen[i - 1],inClose[i - 1]) > max(inOpen[i - 2],inClose[i - 2])) ? 1 : 0) && /* 2nd gaps up */
              max(inOpen[i],inClose[i]) < max(inOpen[i - 1],inClose[i - 1]) ) /* 3rd is not higher than 2nd */
@@ -294,9 +293,8 @@ static void TA_CDLTRISTAR_StepImpl( struct TA_CDLTRISTAR_Stream *sp, double inOp
    }
    if( fabs(sp->lag2_inClose - sp->lag2_inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) && /* 1st: doji */
        fabs(sp->lag1_inClose - sp->lag1_inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) && /* 2nd: doji */
-       fabs(inClose - inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) )
+       fabs(inClose - inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) ) /* 3rd: doji */
    {
-      /* 3rd: doji */
       *outInteger= 0;
       if( ((min(sp->lag1_inOpen,sp->lag1_inClose) > max(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0) && /* 2nd gaps up */
           max(inOpen,inClose) < max(sp->lag1_inOpen,sp->lag1_inClose) ) /* 3rd is not higher than 2nd */
@@ -400,9 +398,8 @@ static TA_RetCode TA_CDLTRISTAR_OpenImpl( struct TA_CDLTRISTAR_Stream **stream, 
       {
          if( fabs(inClose[i - 2] - inOpen[i - 2]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) && /* 1st: doji */
              fabs(inClose[i - 1] - inOpen[i - 1]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) && /* 2nd: doji */
-             fabs(inClose[i] - inOpen[i]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) )
+             fabs(inClose[i] - inOpen[i]) <= TA_CANDLEAVERAGE(BodyDoji,BodyPeriodTotal,i - 2) ) /* 3rd: doji */
          {
-            /* 3rd: doji */
             outInteger[outIdx * outStride] = 0;
             if( ((min(inOpen[i - 1],inClose[i - 1]) > max(inOpen[i - 2],inClose[i - 2])) ? 1 : 0) && /* 2nd gaps up */
                 max(inOpen[i],inClose[i]) < max(inOpen[i - 1],inClose[i - 1]) ) /* 3rd is not higher than 2nd */
@@ -525,9 +522,8 @@ TA_LIB_API TA_RetCode TA_CDLTRISTAR_Peek( const TA_CDLTRISTAR_Stream *stream, do
    if( !TA_IS_FINITE( inOpen ) || !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
    if( fabs(sp->lag2_inClose - sp->lag2_inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) && /* 1st: doji */
        fabs(sp->lag1_inClose - sp->lag1_inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) && /* 2nd: doji */
-       fabs(inClose - inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) )
+       fabs(inClose - inOpen) <= TA_STREAM_CANDLEAVERAGE(BodyDoji,sp->BodyPeriodTotal,sp->lag2_inOpen,sp->lag2_inHigh,sp->lag2_inLow,sp->lag2_inClose) ) /* 3rd: doji */
    {
-      /* 3rd: doji */
       *outInteger= 0;
       if( ((min(sp->lag1_inOpen,sp->lag1_inClose) > max(sp->lag2_inOpen,sp->lag2_inClose)) ? 1 : 0) && /* 2nd gaps up */
           max(inOpen,inClose) < max(sp->lag1_inOpen,sp->lag1_inClose) ) /* 3rd is not higher than 2nd */
@@ -542,26 +538,6 @@ TA_LIB_API TA_RetCode TA_CDLTRISTAR_Peek( const TA_CDLTRISTAR_Stream *stream, do
    } else 
    {
       *outInteger= 0;
-   }
-   return TA_SUCCESS;
-}
-
-TA_LIB_API TA_RetCode TA_CDLTRISTAR_UpdateAndFill( TA_CDLTRISTAR_Stream *stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int barCount, int outInteger[] )
-{
-   int i;
-
-   if( !stream || !inOpen || !inHigh || !inLow || !inClose || !outInteger ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inOpen || (const void *)outInteger == (const void *)inHigh || (const void *)outInteger == (const void *)inLow || (const void *)outInteger == (const void *)inClose ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inOpen[i] ) || !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      TA_CDLTRISTAR_StepImpl( stream, inOpen[i], inHigh[i], inLow[i], inClose[i], &outInteger[i] );
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    }
    return TA_SUCCESS;
 }

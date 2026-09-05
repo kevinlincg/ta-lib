@@ -75,11 +75,17 @@
        */
       outIdx = 0;
       do {
-         if( ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 && ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && inClose[i - 1] > inOpen[i - 2] && inOpen[i - 1] < inClose[i - 2] && inClose[i] > inClose[i - 1] || ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 && ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 && inOpen[i - 1] > inClose[i - 2] && inClose[i - 1] < inOpen[i - 2] && inClose[i] < inClose[i - 1] ) {
-            /* white engulfs black */
-            /* third candle higher */
-            /* black engulfs white */
-            /* third candle lower */
+         if( ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 &&
+              ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && /* white engulfs black */
+              inClose[i - 1] > inOpen[i - 2] &&
+              inOpen[i - 1] < inClose[i - 2] &&
+              inClose[i] > inClose[i - 1] ||                              /* third candle higher */
+             ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 &&
+              ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 &&     /* black engulfs white */
+              inOpen[i - 1] > inClose[i - 2] &&
+              inClose[i - 1] < inOpen[i - 2] &&
+              inClose[i] < inClose[i - 1] )                               /* third candle lower */
+         {
             outInteger[outIdx++] = ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) * 100;
          } else {
             outInteger[outIdx++] = 0;
@@ -353,39 +359,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inOpen.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inOpen[], double inHigh[], double inLow[], double inClose[], int outInteger[] ) {
-         requireArgument("CDL3OUTSIDE updateAndFill", "inOpen", inOpen);
-         requireArgument("CDL3OUTSIDE updateAndFill", "inHigh", inHigh);
-         requireArgument("CDL3OUTSIDE updateAndFill", "inLow", inLow);
-         requireArgument("CDL3OUTSIDE updateAndFill", "inClose", inClose);
-         requireArgument("CDL3OUTSIDE updateAndFill", "outInteger", outInteger);
-         final int barCount = inOpen.length;
-         if( inHigh.length != barCount || inLow.length != barCount || inClose.length != barCount || outInteger.length < barCount || (Object)outInteger == (Object)inOpen || (Object)outInteger == (Object)inHigh || (Object)outInteger == (Object)inLow || (Object)outInteger == (Object)inClose )
-            throw new TaLibArgumentException("CDL3OUTSIDE updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inOpen[i]) || !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("CDL3OUTSIDE updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.cdl3outsideStepImpl(this, inOpen[i], inHigh[i], inLow[i], inClose[i]);
-            outInteger[i] = this.cur_outInteger;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would return — the same
        * transition, with every store it would make carried in a local instead.
@@ -398,12 +371,18 @@
          if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL3OUTSIDE peek: BadParam", RetCode.BadParam);
          Cdl3outsideStream sp = this;
-         int cur_outInteger = sp.cur_outInteger;
-         if( ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 1 && ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && sp.lag1_inClose > sp.lag2_inOpen && sp.lag1_inOpen < sp.lag2_inClose && inClose > sp.lag1_inClose || ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 1 && sp.lag1_inOpen > sp.lag2_inClose && sp.lag1_inClose < sp.lag2_inOpen && inClose < sp.lag1_inClose ) {
-            /* white engulfs black */
-            /* third candle higher */
-            /* black engulfs white */
-            /* third candle lower */
+         int cur_outInteger = 0;
+         if( ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 1 &&
+              ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && /* white engulfs black */
+              sp.lag1_inClose > sp.lag2_inOpen &&
+              sp.lag1_inOpen < sp.lag2_inClose &&
+              inClose > sp.lag1_inClose ||                                  /* third candle higher */
+             ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+              ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 1 &&     /* black engulfs white */
+              sp.lag1_inOpen > sp.lag2_inClose &&
+              sp.lag1_inClose < sp.lag2_inOpen &&
+              inClose < sp.lag1_inClose )                                   /* third candle lower */
+         {
             cur_outInteger = ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) * 100;
          } else {
             cur_outInteger = 0;
@@ -439,11 +418,17 @@
    }
    void cdl3outsideStepImpl( Cdl3outsideStream sp, double inOpen, double inHigh, double inLow, double inClose )
    {
-      if( ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 1 && ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && sp.lag1_inClose > sp.lag2_inOpen && sp.lag1_inOpen < sp.lag2_inClose && inClose > sp.lag1_inClose || ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 && ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 1 && sp.lag1_inOpen > sp.lag2_inClose && sp.lag1_inClose < sp.lag2_inOpen && inClose < sp.lag1_inClose ) {
-         /* white engulfs black */
-         /* third candle higher */
-         /* black engulfs white */
-         /* third candle lower */
+      if( ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 1 &&
+           ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 0 - 1 && /* white engulfs black */
+           sp.lag1_inClose > sp.lag2_inOpen &&
+           sp.lag1_inOpen < sp.lag2_inClose &&
+           inClose > sp.lag1_inClose ||                                  /* third candle higher */
+          ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) == 0 - 1 &&
+           ((sp.lag2_inClose >= sp.lag2_inOpen) ? 1 : 0 - 1) == 1 &&     /* black engulfs white */
+           sp.lag1_inOpen > sp.lag2_inClose &&
+           sp.lag1_inClose < sp.lag2_inOpen &&
+           inClose < sp.lag1_inClose )                                   /* third candle lower */
+      {
          sp.cur_outInteger = ((sp.lag1_inClose >= sp.lag1_inOpen) ? 1 : 0 - 1) * 100;
       } else {
          sp.cur_outInteger = 0;
@@ -504,11 +489,17 @@
        */
       outIdx = 0;
       do {
-         if( ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 && ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && inClose[i - 1] > inOpen[i - 2] && inOpen[i - 1] < inClose[i - 2] && inClose[i] > inClose[i - 1] || ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 && ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 && inOpen[i - 1] > inClose[i - 2] && inClose[i - 1] < inOpen[i - 2] && inClose[i] < inClose[i - 1] ) {
-            /* white engulfs black */
-            /* third candle higher */
-            /* black engulfs white */
-            /* third candle lower */
+         if( ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 1 &&
+              ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 0 - 1 && /* white engulfs black */
+              inClose[i - 1] > inOpen[i - 2] &&
+              inOpen[i - 1] < inClose[i - 2] &&
+              inClose[i] > inClose[i - 1] ||                              /* third candle higher */
+             ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) == 0 - 1 &&
+              ((inClose[i - 2] >= inOpen[i - 2]) ? 1 : 0 - 1) == 1 &&     /* black engulfs white */
+              inOpen[i - 1] > inClose[i - 2] &&
+              inClose[i - 1] < inOpen[i - 2] &&
+              inClose[i] < inClose[i - 1] )                               /* third candle lower */
+         {
             outInteger[outIdx++ * outStride] = ((inClose[i - 1] >= inOpen[i - 1]) ? 1 : 0 - 1) * 100;
          } else {
             outInteger[outIdx++ * outStride] = 0;

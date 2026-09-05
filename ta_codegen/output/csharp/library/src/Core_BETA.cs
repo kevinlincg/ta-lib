@@ -954,7 +954,7 @@ public partial class Core
          double S_y = sp.S_y;
          double S_yy = sp.S_yy;
          int barsSinceReseed = sp.barsSinceReseed;
-         double cur_outReal = sp.cur_outReal;
+         double cur_outReal = 0.0;
          int i = sp.i;
          int j = sp.j;
          double last_price_x = sp.last_price_x;
@@ -1145,39 +1145,6 @@ public partial class Core
             cur_outReal = 0.0;
          }
          return cur_outReal;
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inReal0">Closed bars for <c>inReal0</c>, oldest first.</param>
-      /// <param name="inReal1">Closed bars for <c>inReal1</c>, oldest first.</param>
-      /// <param name="outReal">Receives one <c>outReal</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inReal0, ReadOnlySpan<double> inReal1, Span<double> outReal )
-      {
-         int barCount = inReal0.Length;
-         if( inReal1.Length != barCount || outReal.Length < barCount || outReal.Overlaps(inReal0) || outReal.Overlaps(inReal1) ) throw Core.StreamFailure("BETA", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inReal0[i]) || !double.IsFinite(inReal1[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("BETA", "updateAndFill", RetCode.BadParam);
-            }
-            core.BetaStepImpl(this, inReal0[i], inReal1[i]);
-            outReal[i] = cur_outReal;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

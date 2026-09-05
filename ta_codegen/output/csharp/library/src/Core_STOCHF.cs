@@ -83,7 +83,7 @@ public partial class Core
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInFastD_MAType">Moving-average type used to smooth Fast-D (default 0 = SMA; values: 0=SMA,
    /// 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-   /// 10=DISABLED, 11=DEFAULT; <c>MAType.DEFAULT</c> (or
+   /// 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
    /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <returns>The lookback, or <c>-1</c> if a parameter is out of range.</returns>
    public int STOCHF_Lookback( int optInFastK_Period, int optInFastD_Period, MAType optInFastD_MAType )
@@ -512,7 +512,7 @@ public partial class Core
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInFastD_MAType">Moving-average type used to smooth Fast-D (default 0 = SMA; values: 0=SMA,
    /// 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-   /// 10=DISABLED, 11=DEFAULT; <c>MAType.DEFAULT</c> (or
+   /// 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
    /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="outFastK">Raw %K stochastic line. Must hold at least <c>endIdx - startIdx + 1</c>
    /// values.</param>
@@ -601,7 +601,7 @@ public partial class Core
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInFastD_MAType">Moving-average type used to smooth Fast-D (default 0 = SMA; values: 0=SMA,
    /// 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA,
-   /// 10=DISABLED, 11=DEFAULT; <c>MAType.DEFAULT</c> (or
+   /// 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
    /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="outFastK">Raw %K stochastic line. Must hold at least <c>endIdx - startIdx + 1</c>
    /// values.</param>
@@ -882,42 +882,6 @@ public partial class Core
          cur_outFastD = sp.sub0.Peek(cur_tempBuffer);
          cur_outFastK = cur_tempBuffer;
          return new StochfValue(cur_outFastK, cur_outFastD);
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inHigh">Closed bars for <c>inHigh</c>, oldest first.</param>
-      /// <param name="inLow">Closed bars for <c>inLow</c>, oldest first.</param>
-      /// <param name="inClose">Closed bars for <c>inClose</c>, oldest first.</param>
-      /// <param name="outFastK">Receives one <c>outFastK</c> value per bar committed.</param>
-      /// <param name="outFastD">Receives one <c>outFastD</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, ReadOnlySpan<double> inClose, Span<double> outFastK, Span<double> outFastD )
-      {
-         int barCount = inHigh.Length;
-         if( inLow.Length != barCount || inClose.Length != barCount || outFastK.Length < barCount || outFastD.Length < barCount || outFastK.Overlaps(inHigh) || outFastK.Overlaps(inLow) || outFastK.Overlaps(inClose) || outFastD.Overlaps(inHigh) || outFastD.Overlaps(inLow) || outFastD.Overlaps(inClose) || outFastK.Overlaps(outFastD) ) throw Core.StreamFailure("STOCHF", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inHigh[i]) || !double.IsFinite(inLow[i]) || !double.IsFinite(inClose[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("STOCHF", "updateAndFill", RetCode.BadParam);
-            }
-            core.StochfStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outFastK[i] = cur_outFastK;
-            outFastD[i] = cur_outFastD;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

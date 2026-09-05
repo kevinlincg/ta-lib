@@ -85,14 +85,20 @@
          /* copy here the pattern recognition code below */
          if( inHigh[i - 1] < inHigh[i - 2] &&
              inLow[i - 1] > inLow[i - 2] &&   /* 1st + 2nd: lower high and higher low */
-             (inHigh[i] < inHigh[i - 1] && inLow[i] < inLow[i - 1] || inHigh[i] > inHigh[i - 1] && inLow[i] > inLow[i - 1]) ) /* (bull) 3rd: lower high and lower low (bear) 3rd: higher high and higher low */
+             (inHigh[i] < inHigh[i - 1] &&
+               inLow[i] < inLow[i - 1] ||     /* (bull) 3rd: lower high and lower low */
+              inHigh[i] > inHigh[i - 1] &&
+               inLow[i] > inLow[i - 1]) )     /* (bear) 3rd: higher high and higher low */
          {
             patternResult = 100 * ((inHigh[i] < inHigh[i - 1]) ? 1 : 0 - 1);
             savedHigh = inHigh[i - 1];
             savedLow = inLow[i - 1];
             cd = 4;
          } else if( cd > 0 &&
-             (patternResult > 0 && inClose[i] > savedHigh || patternResult < 0 && inClose[i] < savedLow) ) /* search for confirmation if hikkake was no more than 3 bars ago close higher than the high of 2nd close lower than the low of 2nd */
+             (patternResult > 0 &&       /* search for confirmation if hikkake was no more than 3 bars ago */
+               inClose[i] > savedHigh || /* close higher than the high of 2nd */
+              patternResult < 0 &&
+               inClose[i] < savedLow) )  /* close lower than the low of 2nd */
          {
             cd = 0;
          }
@@ -117,7 +123,10 @@
       do {
          if( inHigh[i - 1] < inHigh[i - 2] &&
              inLow[i - 1] > inLow[i - 2] &&   /* 1st + 2nd: lower high and higher low */
-             (inHigh[i] < inHigh[i - 1] && inLow[i] < inLow[i - 1] || inHigh[i] > inHigh[i - 1] && inLow[i] > inLow[i - 1]) ) /* (bull) 3rd: lower high and lower low (bear) 3rd: higher high and higher low */
+             (inHigh[i] < inHigh[i - 1] &&
+               inLow[i] < inLow[i - 1] ||     /* (bull) 3rd: lower high and lower low */
+              inHigh[i] > inHigh[i - 1] &&
+               inLow[i] > inLow[i - 1]) )     /* (bear) 3rd: higher high and higher low */
          {
             patternResult = 100 * ((inHigh[i] < inHigh[i - 1]) ? 1 : 0 - 1);
             savedHigh = inHigh[i - 1];
@@ -125,7 +134,10 @@
             cd = 4;
             outInteger[outIdx++] = patternResult;
          } else if( cd > 0 &&
-             (patternResult > 0 && inClose[i] > savedHigh || patternResult < 0 && inClose[i] < savedLow) ) /* search for confirmation if hikkake was no more than 3 bars ago close higher than the high of 2nd close lower than the low of 2nd */
+             (patternResult > 0 &&       /* search for confirmation if hikkake was no more than 3 bars ago */
+               inClose[i] > savedHigh || /* close higher than the high of 2nd */
+              patternResult < 0 &&
+               inClose[i] < savedLow) )  /* close lower than the low of 2nd */
          {
             outInteger[outIdx++] = patternResult + 100 * ((patternResult > 0) ? 1 : 0 - 1);
             cd = 0;
@@ -441,39 +453,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inOpen.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inOpen[], double inHigh[], double inLow[], double inClose[], int outInteger[] ) {
-         requireArgument("CDLHIKKAKE updateAndFill", "inOpen", inOpen);
-         requireArgument("CDLHIKKAKE updateAndFill", "inHigh", inHigh);
-         requireArgument("CDLHIKKAKE updateAndFill", "inLow", inLow);
-         requireArgument("CDLHIKKAKE updateAndFill", "inClose", inClose);
-         requireArgument("CDLHIKKAKE updateAndFill", "outInteger", outInteger);
-         final int barCount = inOpen.length;
-         if( inHigh.length != barCount || inLow.length != barCount || inClose.length != barCount || outInteger.length < barCount || (Object)outInteger == (Object)inOpen || (Object)outInteger == (Object)inHigh || (Object)outInteger == (Object)inLow || (Object)outInteger == (Object)inClose )
-            throw new TaLibArgumentException("CDLHIKKAKE updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inOpen[i]) || !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("CDLHIKKAKE updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.cdlhikkakeStepImpl(this, inOpen[i], inHigh[i], inLow[i], inClose[i]);
-            outInteger[i] = this.cur_outInteger;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would return — the same
        * transition, with every store it would make carried in a local instead.
@@ -487,13 +466,16 @@
             throw new TaLibArgumentException("CDLHIKKAKE peek: BadParam", RetCode.BadParam);
          CdlhikkakeStream sp = this;
          int cd = sp.cd;
-         int cur_outInteger = sp.cur_outInteger;
+         int cur_outInteger = 0;
          int patternResult = sp.patternResult;
          double savedHigh = sp.savedHigh;
          double savedLow = sp.savedLow;
          if( sp.lag1_inHigh < sp.lag2_inHigh &&
              sp.lag1_inLow > sp.lag2_inLow &&   /* 1st + 2nd: lower high and higher low */
-             (inHigh < sp.lag1_inHigh && inLow < sp.lag1_inLow || inHigh > sp.lag1_inHigh && inLow > sp.lag1_inLow) ) /* (bull) 3rd: lower high and lower low (bear) 3rd: higher high and higher low */
+             (inHigh < sp.lag1_inHigh &&
+               inLow < sp.lag1_inLow ||         /* (bull) 3rd: lower high and lower low */
+              inHigh > sp.lag1_inHigh &&
+               inLow > sp.lag1_inLow) )         /* (bear) 3rd: higher high and higher low */
          {
             patternResult = 100 * ((inHigh < sp.lag1_inHigh) ? 1 : 0 - 1);
             savedHigh = sp.lag1_inHigh;
@@ -501,7 +483,10 @@
             cd = 4;
             cur_outInteger = patternResult;
          } else if( cd > 0 &&
-             (patternResult > 0 && inClose > savedHigh || patternResult < 0 && inClose < savedLow) ) /* search for confirmation if hikkake was no more than 3 bars ago close higher than the high of 2nd close lower than the low of 2nd */
+             (patternResult > 0 &&    /* search for confirmation if hikkake was no more than 3 bars ago */
+               inClose > savedHigh || /* close higher than the high of 2nd */
+              patternResult < 0 &&
+               inClose < savedLow) )  /* close lower than the low of 2nd */
          {
             cur_outInteger = patternResult + 100 * ((patternResult > 0) ? 1 : 0 - 1);
             cd = 0;
@@ -541,7 +526,10 @@
    {
       if( sp.lag1_inHigh < sp.lag2_inHigh &&
           sp.lag1_inLow > sp.lag2_inLow &&   /* 1st + 2nd: lower high and higher low */
-          (inHigh < sp.lag1_inHigh && inLow < sp.lag1_inLow || inHigh > sp.lag1_inHigh && inLow > sp.lag1_inLow) ) /* (bull) 3rd: lower high and lower low (bear) 3rd: higher high and higher low */
+          (inHigh < sp.lag1_inHigh &&
+            inLow < sp.lag1_inLow ||         /* (bull) 3rd: lower high and lower low */
+           inHigh > sp.lag1_inHigh &&
+            inLow > sp.lag1_inLow) )         /* (bear) 3rd: higher high and higher low */
       {
          sp.patternResult = 100 * ((inHigh < sp.lag1_inHigh) ? 1 : 0 - 1);
          sp.savedHigh = sp.lag1_inHigh;
@@ -549,7 +537,10 @@
          sp.cd = 4;
          sp.cur_outInteger = sp.patternResult;
       } else if( sp.cd > 0 &&
-          (sp.patternResult > 0 && inClose > sp.savedHigh || sp.patternResult < 0 && inClose < sp.savedLow) ) /* search for confirmation if hikkake was no more than 3 bars ago close higher than the high of 2nd close lower than the low of 2nd */
+          (sp.patternResult > 0 &&    /* search for confirmation if hikkake was no more than 3 bars ago */
+            inClose > sp.savedHigh || /* close higher than the high of 2nd */
+           sp.patternResult < 0 &&
+            inClose < sp.savedLow) )  /* close lower than the low of 2nd */
       {
          sp.cur_outInteger = sp.patternResult + 100 * ((sp.patternResult > 0) ? 1 : 0 - 1);
          sp.cd = 0;
@@ -619,14 +610,20 @@
          /* copy here the pattern recognition code below */
          if( inHigh[i - 1] < inHigh[i - 2] &&
              inLow[i - 1] > inLow[i - 2] &&   /* 1st + 2nd: lower high and higher low */
-             (inHigh[i] < inHigh[i - 1] && inLow[i] < inLow[i - 1] || inHigh[i] > inHigh[i - 1] && inLow[i] > inLow[i - 1]) ) /* (bull) 3rd: lower high and lower low (bear) 3rd: higher high and higher low */
+             (inHigh[i] < inHigh[i - 1] &&
+               inLow[i] < inLow[i - 1] ||     /* (bull) 3rd: lower high and lower low */
+              inHigh[i] > inHigh[i - 1] &&
+               inLow[i] > inLow[i - 1]) )     /* (bear) 3rd: higher high and higher low */
          {
             patternResult = 100 * ((inHigh[i] < inHigh[i - 1]) ? 1 : 0 - 1);
             savedHigh = inHigh[i - 1];
             savedLow = inLow[i - 1];
             cd = 4;
          } else if( cd > 0 &&
-             (patternResult > 0 && inClose[i] > savedHigh || patternResult < 0 && inClose[i] < savedLow) ) /* search for confirmation if hikkake was no more than 3 bars ago close higher than the high of 2nd close lower than the low of 2nd */
+             (patternResult > 0 &&       /* search for confirmation if hikkake was no more than 3 bars ago */
+               inClose[i] > savedHigh || /* close higher than the high of 2nd */
+              patternResult < 0 &&
+               inClose[i] < savedLow) )  /* close lower than the low of 2nd */
          {
             cd = 0;
          }
@@ -651,7 +648,10 @@
       do {
          if( inHigh[i - 1] < inHigh[i - 2] &&
              inLow[i - 1] > inLow[i - 2] &&   /* 1st + 2nd: lower high and higher low */
-             (inHigh[i] < inHigh[i - 1] && inLow[i] < inLow[i - 1] || inHigh[i] > inHigh[i - 1] && inLow[i] > inLow[i - 1]) ) /* (bull) 3rd: lower high and lower low (bear) 3rd: higher high and higher low */
+             (inHigh[i] < inHigh[i - 1] &&
+               inLow[i] < inLow[i - 1] ||     /* (bull) 3rd: lower high and lower low */
+              inHigh[i] > inHigh[i - 1] &&
+               inLow[i] > inLow[i - 1]) )     /* (bear) 3rd: higher high and higher low */
          {
             patternResult = 100 * ((inHigh[i] < inHigh[i - 1]) ? 1 : 0 - 1);
             savedHigh = inHigh[i - 1];
@@ -659,7 +659,10 @@
             cd = 4;
             outInteger[outIdx++ * outStride] = patternResult;
          } else if( cd > 0 &&
-             (patternResult > 0 && inClose[i] > savedHigh || patternResult < 0 && inClose[i] < savedLow) ) /* search for confirmation if hikkake was no more than 3 bars ago close higher than the high of 2nd close lower than the low of 2nd */
+             (patternResult > 0 &&       /* search for confirmation if hikkake was no more than 3 bars ago */
+               inClose[i] > savedHigh || /* close higher than the high of 2nd */
+              patternResult < 0 &&
+               inClose[i] < savedLow) )  /* close lower than the low of 2nd */
          {
             outInteger[outIdx++ * outStride] = patternResult + 100 * ((patternResult > 0) ? 1 : 0 - 1);
             cd = 0;

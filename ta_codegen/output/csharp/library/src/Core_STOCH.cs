@@ -81,14 +81,14 @@ public partial class Core
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInSlowK_MAType">MA type used to smooth into SlowK (default 0 = SMA; values: 0=SMA, 1=EMA,
    /// 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-   /// 11=DEFAULT; <c>MAType.DEFAULT</c> (or <c>(MAType)int.MinValue</c>) selects
-   /// the default).</param>
+   /// 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
+   /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="optInSlowD_Period">Smoothing period for the SlowD signal line (default 3; range 1..100000;
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInSlowD_MAType">MA type used for the SlowD line (default 0 = SMA; values: 0=SMA, 1=EMA,
    /// 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-   /// 11=DEFAULT; <c>MAType.DEFAULT</c> (or <c>(MAType)int.MinValue</c>) selects
-   /// the default).</param>
+   /// 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
+   /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <returns>The lookback, or <c>-1</c> if a parameter is out of range.</returns>
    public int STOCH_Lookback( int optInFastK_Period, int optInSlowK_Period, MAType optInSlowK_MAType, int optInSlowD_Period, MAType optInSlowD_MAType )
    {
@@ -570,14 +570,14 @@ public partial class Core
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInSlowK_MAType">MA type used to smooth into SlowK (default 0 = SMA; values: 0=SMA, 1=EMA,
    /// 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-   /// 11=DEFAULT; <c>MAType.DEFAULT</c> (or <c>(MAType)int.MinValue</c>) selects
-   /// the default).</param>
+   /// 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
+   /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="optInSlowD_Period">Smoothing period for the SlowD signal line (default 3; range 1..100000;
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInSlowD_MAType">MA type used for the SlowD line (default 0 = SMA; values: 0=SMA, 1=EMA,
    /// 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-   /// 11=DEFAULT; <c>MAType.DEFAULT</c> (or <c>(MAType)int.MinValue</c>) selects
-   /// the default).</param>
+   /// 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
+   /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="outSlowK">Raw FastK smoothed by SlowK_Period MA. Must hold at least <c>endIdx -
    /// startIdx + 1</c> values.</param>
    /// <param name="outSlowD">Signal line: SlowK smoothed by SlowD_Period MA. Must hold at least
@@ -668,14 +668,14 @@ public partial class Core
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInSlowK_MAType">MA type used to smooth into SlowK (default 0 = SMA; values: 0=SMA, 1=EMA,
    /// 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-   /// 11=DEFAULT; <c>MAType.DEFAULT</c> (or <c>(MAType)int.MinValue</c>) selects
-   /// the default).</param>
+   /// 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
+   /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="optInSlowD_Period">Smoothing period for the SlowD signal line (default 3; range 1..100000;
    /// <c>int.MinValue</c> selects the default).</param>
    /// <param name="optInSlowD_MAType">MA type used for the SlowD line (default 0 = SMA; values: 0=SMA, 1=EMA,
    /// 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA, 8=T3, 9=HMA, 10=DISABLED,
-   /// 11=DEFAULT; <c>MAType.DEFAULT</c> (or <c>(MAType)int.MinValue</c>) selects
-   /// the default).</param>
+   /// 11=DEFAULT, 12=ZLEMA, 13=RMA; <c>MAType.DEFAULT</c> (or
+   /// <c>(MAType)int.MinValue</c>) selects the default).</param>
    /// <param name="outSlowK">Raw FastK smoothed by SlowK_Period MA. Must hold at least <c>endIdx -
    /// startIdx + 1</c> values.</param>
    /// <param name="outSlowD">Signal line: SlowK smoothed by SlowD_Period MA. Must hold at least
@@ -964,42 +964,6 @@ public partial class Core
          cur_outSlowD = sp.sub1.Peek(cur_tempBuffer);
          cur_outSlowK = cur_tempBuffer;
          return new StochValue(cur_outSlowK, cur_outSlowD);
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inHigh">Closed bars for <c>inHigh</c>, oldest first.</param>
-      /// <param name="inLow">Closed bars for <c>inLow</c>, oldest first.</param>
-      /// <param name="inClose">Closed bars for <c>inClose</c>, oldest first.</param>
-      /// <param name="outSlowK">Receives one <c>outSlowK</c> value per bar committed.</param>
-      /// <param name="outSlowD">Receives one <c>outSlowD</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, ReadOnlySpan<double> inClose, Span<double> outSlowK, Span<double> outSlowD )
-      {
-         int barCount = inHigh.Length;
-         if( inLow.Length != barCount || inClose.Length != barCount || outSlowK.Length < barCount || outSlowD.Length < barCount || outSlowK.Overlaps(inHigh) || outSlowK.Overlaps(inLow) || outSlowK.Overlaps(inClose) || outSlowD.Overlaps(inHigh) || outSlowD.Overlaps(inLow) || outSlowD.Overlaps(inClose) || outSlowK.Overlaps(outSlowD) ) throw Core.StreamFailure("STOCH", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inHigh[i]) || !double.IsFinite(inLow[i]) || !double.IsFinite(inClose[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("STOCH", "updateAndFill", RetCode.BadParam);
-            }
-            core.StochStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outSlowK[i] = cur_outSlowK;
-            outSlowD[i] = cur_outSlowD;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

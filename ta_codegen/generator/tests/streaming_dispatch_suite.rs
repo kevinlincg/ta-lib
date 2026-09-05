@@ -691,174 +691,76 @@ fn test_mama_nullable_fama_is_declinable_at_the_opener_in_every_backend() {
     }
 }
 
-/// Rule U6a — the same declination at `UpdateAndFill`, in all four backends
-/// (issue #270). It is a property of the CALL: nothing on the handle records
-/// what the opener was given, so there is no flag to set and none to compare.
+/// One emitted method, from its signature to the brace that closes it.
+fn method<'a>(src: &'a str, sig: &str, what: &str) -> &'a str {
+    let at = src.find(sig).unwrap_or_else(|| panic!("{what}: `{sig}` not found"));
+    let rest = &src[at..];
+    let open = rest.find('{').unwrap_or_else(|| panic!("{what}: `{sig}` has no body"));
+    let mut depth = 0usize;
+    for (i, ch) in rest[open..].char_indices() {
+        match ch {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return &rest[..open + i + 1];
+                }
+            }
+            _ => {}
+        }
+    }
+    panic!("{what}: `{sig}` has no body")
+}
+
+/// Rule U6a — a declined output at the ADVANCING tier. C is the only backend
+/// that can spell it there: its `Update` takes one out-pointer per output, where
+/// Rust returns a tuple and Java and C# write a caller-owned value class, none of
+/// which has a way to say "not this one". The ported backends are pinned at the
+/// opener instead, by the test above.
 ///
-/// Three clauses per ported backend, because two of them can pass while the
-/// feature is broken: the capacity bound must be conditional, the store into the
-/// caller's array must be guarded, and the value must still be COMPUTED — which
-/// in Java and C# means the step's write to the handle's `cur_` field is
-/// untouched, and in Rust means the declined slot is a sink rather than a
-/// skipped call. The last clause is the negative one, and the only thing that
-/// can see "the handle remembers what the opener was given": the number of ways
-/// the fill can reject, which such a comparison would have to add to.
+/// Two clauses, because either can pass while the feature is broken: the
+/// presence guard must name the required outputs and only those, and the
+/// declinable pointer must reach the step unchanged — the step's own
+/// `if( out != NULL )` is what turns a declination into a suppressed write
+/// rather than a suppressed computation.
 #[test]
-fn test_mama_nullable_fama_is_declinable_at_update_and_fill_in_every_backend() {
-    let (func, enums) = load_indicator("mama");
+fn test_a_nullable_output_is_declinable_at_update_in_c() {
     let registry = make_registry();
     let helpers = HelperRegistry::empty();
-
-    fn method<'a>(src: &'a str, sig: &str, what: &str) -> &'a str {
-        let at = src.find(sig).unwrap_or_else(|| panic!("{what}: `{sig}` not found"));
-        let rest = &src[at..];
-        let open = rest.find('{').unwrap_or_else(|| panic!("{what}: `{sig}` has no body"));
-        let mut depth = 0usize;
-        for (i, ch) in rest[open..].char_indices() {
-            match ch {
-                '{' => depth += 1,
-                '}' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        return &rest[..open + i + 1];
-                    }
-                }
-                _ => {}
-            }
-        }
-        panic!("{what}: `{sig}` has no body")
-    }
-
-    let rust = backends::rust_lang::generate(&func, &enums, &registry, &helpers);
-    let r = method(
-        &rust,
-        "pub fn update_and_fill(&mut self,",
-        "Rust update_and_fill",
-    );
-    assert!(
-        r.contains("mut outFAMA: Option<&mut [f64]>"),
-        "Rust: the fill takes Option, as the opener does"
-    );
-    assert!(
-        r.contains("outFAMA.as_deref().is_some_and(|o| o.len() < barCount)"),
-        "Rust: U6 bounds a nullable output only where it was supplied"
-    );
-    assert!(
-        r.contains("let mut sink_outFAMA: f64 = 0.0_f64;")
-            && r.contains("let slot_outFAMA = match outFAMA.as_deref_mut() { Some(_s) => &mut _s[i], None => &mut sink_outFAMA };")
-            && r.contains(", &mut outMAMA[i], slot_outFAMA);"),
-        "Rust: a declined output still gets a slot, so the step still computes it"
-    );
-
-    let java = backends::java::generate(&func, &enums, &registry, &helpers);
-    let j = method(
-        &java,
-        "public void updateAndFill( double inReal[], double outMAMA[], double outFAMA[] )",
-        "Java updateAndFill",
-    );
-    assert!(
-        j.contains("(outFAMA != null && outFAMA.length < barCount)"),
-        "Java: U6 bounds a nullable output only where it was supplied"
-    );
-    assert!(
-        j.contains("if( outFAMA != null ) outFAMA[i] = this.cur_outFAMA;"),
-        "Java: the store into a declined output is guarded"
-    );
-    assert!(
-        j.contains("core.mamaStepImpl(this, inReal[i]);") && !j.contains("if( outFAMA != null ) core."),
-        "Java: the step runs unconditionally — declining suppresses the write, not the computation"
-    );
-    // U2 is what makes U6a mean something here: a DECLINED output is accepted, an
-    // ABSENT required one is `BadParam` naming it — and the presence test has to
-    // precede the length, which is the thing that reads off a null array.
-    let at_present = j
-        .find("requireArgument(\"MAMA updateAndFill\", \"outMAMA\", outMAMA);")
-        .expect("Java: the required output is checked for presence");
-    assert!(
-        j.contains("requireArgument(\"MAMA updateAndFill\", \"inReal\", inReal);")
-            && !j.contains("requireArgument(\"MAMA updateAndFill\", \"outFAMA\""),
-        "Java: every required array is checked, and the declinable one is not"
-    );
-    assert!(
-        at_present < j.find("final int barCount").expect("Java: the bar count"),
-        "Java: presence precedes the length that would read off a null array"
-    );
-
-    let csharp = backends::csharp::generate(&func, &enums, &registry, &helpers);
-    let c_sharp = method(
-        &csharp,
-        "public void UpdateAndFill( ReadOnlySpan<double> inReal, Span<double> outMAMA, Span<double> outFAMA )",
-        "C# UpdateAndFill",
-    );
-    assert!(
-        c_sharp.contains("(!outFAMA.IsEmpty && outFAMA.Length < barCount)"),
-        "C#: U6 bounds a nullable output only where it was supplied"
-    );
-    assert!(
-        c_sharp.contains("if( !outFAMA.IsEmpty ) outFAMA[i] = cur_outFAMA;"),
-        "C#: the store into a declined output is guarded"
-    );
-    assert!(
-        c_sharp.contains("core.MamaStepImpl(this, inReal[i]);")
-            && !c_sharp.contains("if( !outFAMA.IsEmpty ) core."),
-        "C#: the step runs unconditionally — declining suppresses the write, not the computation"
-    );
-
-    let c = backends::c::generate(&func, &enums, &registry, &helpers);
-    let c_fill = method(
-        &c,
-        "TA_RetCode TA_MAMA_UpdateAndFill( TA_MAMA_Stream *stream,",
-        "C UpdateAndFill",
-    );
-    assert!(
-        c_fill.contains("if( !stream || !inReal || !outMAMA ) return TA_BAD_PARAM;"),
-        "C: a declined output is not an absent argument, and the required one still is"
-    );
-    assert!(
-        c_fill.contains("outFAMA ? &outFAMA[i] : NULL"),
-        "C: the declined slot is NULL rather than arithmetic on a NULL pointer"
-    );
-
-    // U6a meets U7: a declined output aliases nothing, so every alias term whose
-    // operand can be absent guards it first — two declined outputs would
-    // otherwise compare equal and reject a legal call. Emitted, never probed at
-    // run time (a declining call has no second buffer to alias with).
-    for (lang, body, term) in [
-        ("Java", j, "(outFAMA != null && (Object)outMAMA == (Object)outFAMA)"),
-        ("C", c_fill, "(outFAMA != NULL && (const void *)outMAMA == (const void *)outFAMA)"),
+    for (name, load, guard, step) in [
+        (
+            "MAMA",
+            load_indicator("mama"),
+            "if( !stream || !outMAMA ) return TA_BAD_PARAM;",
+            "TA_MAMA_StepImpl( stream, inReal, outMAMA, outFAMA );",
+        ),
+        (
+            "SYNTH10",
+            load_synth("synth10"),
+            "if( !stream || !outRequired ) return TA_BAD_PARAM;",
+            "TA_SYNTH10_StepImpl( stream, inReal, outFirstOptional, outRequired, outSecondOptional );",
+        ),
     ] {
-        assert!(
-            body.contains(term),
-            "{lang}: the alias term guards the declinable operand"
+        let (func, enums) = load;
+        let c = backends::c::generate(&func, &enums, &registry, &helpers);
+        let upd = method(
+            &c,
+            &format!("TA_RetCode TA_{name}_Update( TA_{name}_Stream *stream,"),
+            &format!("C {name} Update"),
         );
-    }
-    assert!(
-        c_sharp.contains("outMAMA.Overlaps(outFAMA)") && !c_sharp.contains("outFAMA.IsEmpty || outMAMA.Overlaps"),
-        "C#: `Overlaps` already answers false for an empty span, so the term needs no guard"
-    );
-
-    // The declination is a property of the CALL, so there is no third rejection:
-    // a fill that compared its output set against the opener's would need one,
-    // and counting the exits is what would catch it. The counts are the rules
-    // this tier has and no more — the capacity bound and the per-bar finite test
-    // everywhere, plus C's absent-argument, negative-count and aliasing guards,
-    // which the other three cannot express.
-    for (lang, body, exit, want) in [
-        ("Rust", r, "return Err(RetCode::BadParam);", 2),
-        ("Java", j, "throw new TaLibArgumentException(\"MAMA updateAndFill: BadParam\", RetCode.BadParam);", 2),
-        ("C#", c_sharp, "throw Core.StreamFailure(\"MAMA\", \"updateAndFill\", RetCode.BadParam);", 2),
-        ("C", c_fill, "return TA_BAD_PARAM;", 4),
-    ] {
-        assert_eq!(
-            body.matches(exit).count(),
-            want,
-            "{lang}: `UpdateAndFill` rejects on {want} conditions — a third would be \
-             the handle remembering what the opener was given, which this design does not do"
+        assert!(
+            upd.contains(guard),
+            "{name}: the presence guard names the required outputs and not the declinable ones:\n{upd}"
+        );
+        assert!(
+            upd.contains(step),
+            "{name}: a declined output reaches the step as NULL — the value is computed and \
+             the write is what the step suppresses:\n{upd}"
         );
     }
 }
 
-/// Rule U6a over the arrangement `MAMA` cannot reach: `SYNTH10` declares three
+/// Rule S6a over the arrangement `MAMA` cannot reach: `SYNTH10` declares three
 /// outputs with the FIRST and THIRD `nullable` (issue #262's fixture). Two
 /// things only it can show — that the guards are per output rather than one
 /// blanket branch, and that a nullable output at index 0 does not displace the
@@ -867,81 +769,72 @@ fn test_mama_nullable_fama_is_declinable_at_update_and_fill_in_every_backend() {
 /// `scripts/synth_gate.py` drives the same fixture end to end, but only
 /// nightly; this is the PR gate's view of it.
 #[test]
-fn test_synth10_two_nullable_outputs_are_declinable_at_update_and_fill() {
+fn test_synth10_two_nullable_outputs_are_declinable_at_the_opener() {
     let (func, enums) = load_synth("synth10");
     let registry = make_registry();
     let helpers = HelperRegistry::empty();
 
     let rust = backends::rust_lang::generate(&func, &enums, &registry, &helpers);
     assert!(
-        rust.contains("mut outFirstOptional: Option<&mut [f64]>, outRequired: &mut [f64], mut outSecondOptional: Option<&mut [f64]>) -> Result<(), RetCode>"),
+        rust.contains("&self, inReal: &[f64], outFirstOptional: Option<&mut [f64]>, outRequired: &mut [f64], outSecondOptional: Option<&mut [f64]>,"),
         "Rust: each nullable output takes its own Option, the required one stays a slice"
     );
     for name in ["outFirstOptional", "outSecondOptional"] {
         assert!(
-            rust.contains(&format!("let mut sink_{name}: f64 = 0.0_f64;")),
-            "Rust: {name} gets its own sink"
+            rust.contains(&format!("let mut sink_{name} = [0.0_f64; 1];")),
+            "Rust: {name} gets its own sink, so the plain opener still computes it"
         );
     }
-    assert!(
-        rust.contains("synth10_step_impl(&mut self.state, inReal[i], slot_outFirstOptional, &mut outRequired[i], slot_outSecondOptional);"),
-        "Rust: the step takes a slot per declinable output and the array for the required one"
-    );
 
     let java = backends::java::generate(&func, &enums, &registry, &helpers);
     let csharp = backends::csharp::generate(&func, &enums, &registry, &helpers);
     let c = backends::c::generate(&func, &enums, &registry, &helpers);
-    for (lang, src, guarded, plain) in [
+
+    // The capacity bound is per output and conditional only on the declinable
+    // ones — one blanket branch over "any output declined" would pass every
+    // value comparison and drop the required output's bound with it.
+    for (lang, src, conditional, unconditional) in [
         (
             "Java",
             &java,
             vec![
-                "if( outFirstOptional != null ) outFirstOptional[i] = this.cur_outFirstOptional;",
-                "if( outSecondOptional != null ) outSecondOptional[i] = this.cur_outSecondOptional;",
+                "if( outFirstOptional != null ) requireLength(\"SYNTH10 openAndFill\", \"outFirstOptional\", outFirstOptional, guardOutLen);",
+                "if( outSecondOptional != null ) requireLength(\"SYNTH10 openAndFill\", \"outSecondOptional\", outSecondOptional, guardOutLen);",
             ],
-            "outRequired[i] = this.cur_outRequired;",
+            "requireLength(\"SYNTH10 openAndFill\", \"outRequired\", outRequired, guardOutLen);",
         ),
         (
             "C#",
             &csharp,
             vec![
-                "if( !outFirstOptional.IsEmpty ) outFirstOptional[i] = cur_outFirstOptional;",
-                "if( !outSecondOptional.IsEmpty ) outSecondOptional[i] = cur_outSecondOptional;",
+                "if( !outFirstOptional.IsEmpty ) RequireFillLength(\"SYNTH10\", \"openAndFill\", \"outFirstOptional\", outFirstOptional.Length, guardOutLen);",
+                "if( !outSecondOptional.IsEmpty ) RequireFillLength(\"SYNTH10\", \"openAndFill\", \"outSecondOptional\", outSecondOptional.Length, guardOutLen);",
             ],
-            "outRequired[i] = cur_outRequired;",
-        ),
-        (
-            "C",
-            &c,
-            vec![
-                "outFirstOptional ? &outFirstOptional[i] : NULL",
-                "outSecondOptional ? &outSecondOptional[i] : NULL",
-            ],
-            "&outRequired[i]",
+            "RequireFillLength(\"SYNTH10\", \"openAndFill\", \"outRequired\", outRequired.Length, guardOutLen);",
         ),
     ] {
-        for g in &guarded {
-            assert!(src.contains(g), "{lang}: `{g}` — each declinable output is guarded on its own");
+        for w in &conditional {
+            assert!(src.contains(w), "{lang}: `{w}` — each declinable output is bounded on its own");
         }
-        assert!(src.contains(plain), "{lang}: the required output is written unconditionally");
+        assert!(
+            src.contains(unconditional),
+            "{lang}: the required output keeps an unconditional bound"
+        );
     }
 
-    // The required output's bound is NOT made conditional by its declinable
-    // neighbours, and the required output is still an absent-argument fault in C.
+    // S6a meets S6: a declined output aliases nothing, so every alias term whose
+    // operand can be absent guards it first — two declined outputs would
+    // otherwise compare equal and reject a legal call.
     assert!(
-        java.contains("|| outRequired.length < barCount ||"),
-        "Java: the required output keeps an unconditional bound"
+        java.contains("(outFirstOptional != null && outSecondOptional != null && (Object)outFirstOptional == (Object)outSecondOptional)"),
+        "Java: an alias term over two declinable operands guards both"
     );
     assert!(
-        csharp.contains("|| outRequired.Length < barCount ||"),
-        "C#: the required output keeps an unconditional bound"
+        c.contains("(outFirstOptional != NULL && outSecondOptional != NULL && (const void *)outFirstOptional == (const void *)outSecondOptional)"),
+        "C: an alias term over two declinable operands guards both"
     );
     assert!(
-        rust.contains("|| outRequired.len() < barCount ||"),
-        "Rust: the required output keeps an unconditional bound"
-    );
-    assert!(
-        c.contains("if( !stream || !inReal || !outRequired ) return TA_BAD_PARAM;"),
+        c.contains("if( !inReal || !outBegIdx || !outNBElement || !outRequired ) return TA_BAD_PARAM;"),
         "C: the required output is the only one an absent-argument guard names"
     );
 }
@@ -1303,7 +1196,7 @@ fn test_c_state_struct_text_is_the_emitted_struct() {
         );
         checked += 1;
     }
-    assert!(checked >= 170, "expected the streaming corpus, saw {checked}");
+    assert!(checked >= 200, "expected the streaming corpus, saw {checked}");
 }
 
 /// The layout `TA_StreamOutRange` reads through (#241). One public accessor
@@ -1350,7 +1243,7 @@ fn c_stream_every_tier_leads_with_the_range_head() {
         tiers.insert(format!("{:?}", std::mem::discriminant(&plan)));
         checked += 1;
     }
-    assert!(checked >= 170, "expected the streaming corpus, saw {checked}");
+    assert!(checked >= 200, "expected the streaming corpus, saw {checked}");
     assert_eq!(tiers.len(), 5, "all five stream tiers must be covered, saw {}", tiers.len());
 }
 
@@ -1366,9 +1259,9 @@ fn c_stream_every_tier_leads_with_the_range_head() {
 ///
 /// Both directions per backend, and on every call site the backend has, so a
 /// half-applied rename (a definition the callers no longer name, or a Peek left
-/// on the old word) fails rather than passing on the half that moved. C names
-/// two call sites (`Update` and `UpdateAndFill`); Rust and Java name one each,
-/// because their `peek` runs a frame inline rather than the step on a copy.
+/// on the old word) fails rather than passing on the half that moved. Every
+/// backend names exactly one call site, because their `peek` runs a frame inline
+/// rather than the step on a copy.
 #[test]
 fn the_transition_tier_is_step_impl_in_every_backend() {
     // SMA's own `stream` flag, not one forced on here: a test that sets the flag
@@ -1390,7 +1283,7 @@ fn the_transition_tier_is_step_impl_in_every_backend() {
             "c",
             &c,
             "static void TA_SMA_StepImpl( struct TA_SMA_Stream *sp,",
-            &["TA_SMA_StepImpl( stream,", "TA_SMA_StepImpl( stream, inReal[i]"],
+            &["TA_SMA_StepImpl( stream, inReal, outReal );"],
             "StepInternal",
         ),
         (
@@ -1525,19 +1418,19 @@ fn identity_anchor_clamps_before_it_rechecks_in_every_backend() {
 /// `SvRangeSite`): C, Java and C# reach the anchored `_OpenInternal` seam and
 /// Rust's server, a separate crate, cannot. All four can fork a live stream
 /// since C gained `TA_<N>_Clone` (#287), so Rust is the one server whose set is
-/// a strict subset — and a count still could not say WHICH four it has.
+/// a strict subset — and a count could not say WHICH sites it has.
 #[test]
 fn sv_range_sites_mask_matches_the_declared_set() {
     let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../ta_codegen/input");
     let enums = parser::enums::load_enums(&base.join("enums.yaml"));
     let funcs: Vec<ir::FuncDef> = discover_indicators().iter().map(|n| load_indicator(n).0).collect();
 
-    // Fill = 1, Prefix = 2, UpdateFill = 4, Anchored = 8, Copy = 16.
+    // Fill = 1, Prefix = 2, Anchored = 4, Copy = 8.
     let servers = [
-        ("c", ta_codegen_lib::server_gen::generate_c_server(&funcs, &enums), 1 | 2 | 4 | 8 | 16u32),
-        ("java", ta_codegen_lib::server_gen::generate_java_server(&funcs, &enums), 1 | 2 | 4 | 8 | 16),
-        ("csharp", ta_codegen_lib::server_gen::generate_csharp_server(&funcs, &enums), 1 | 2 | 4 | 8 | 16),
-        ("rust", ta_codegen_lib::server_gen::generate_rust_server(&funcs, &enums), 1 | 2 | 4 | 16),
+        ("c", ta_codegen_lib::server_gen::generate_c_server(&funcs, &enums), 1 | 2 | 4 | 8u32),
+        ("java", ta_codegen_lib::server_gen::generate_java_server(&funcs, &enums), 1 | 2 | 4 | 8),
+        ("csharp", ta_codegen_lib::server_gen::generate_csharp_server(&funcs, &enums), 1 | 2 | 4 | 8),
+        ("rust", ta_codegen_lib::server_gen::generate_rust_server(&funcs, &enums), 1 | 2 | 8),
     ];
 
     for (lang, src, want_all) in servers {
@@ -1594,7 +1487,7 @@ fn test_c_server_state_equivalence_leg() {
         .map(|n| load_indicator(n).0)
         .collect();
     let streaming: Vec<&ir::FuncDef> = funcs.iter().filter(|f| f.streaming).collect();
-    assert!(streaming.len() >= 170, "expected the streaming corpus, saw {}", streaming.len());
+    assert!(streaming.len() >= 200, "expected the streaming corpus, saw {}", streaming.len());
     let srv = ta_codegen_lib::server_gen::generate_c_server(&funcs, &enums);
 
     for f in &streaming {
@@ -1762,10 +1655,9 @@ fn test_c_mavp_period_bank() {
     assert!(upd.contains("*outReal = stream->scratch[cp - stream->optInMinPeriod];"), "outputs the selected slot");
     // Peek: only the selected slot (non-committing).
     let peek = s.split("TA_MAVP_Peek").nth(1).unwrap();
-    // Up to the NEXT entry point, which is the n-bar filler (#246) — it drives
-    // the bank the way Update does, so slicing all the way to Close would read
-    // its body as Peek's.
-    let peek = &peek[..peek.find("TA_MAVP_UpdateAndFill").unwrap_or(peek.len())];
+    // Bounded at the next entry point, so the negative below reads Peek's body
+    // alone rather than everything to the end of the section.
+    let peek = &peek[..peek.find("TA_MAVP_Close").unwrap_or(peek.len())];
     assert!(peek.contains("TA_MA_Peek( stream->bank[cp - stream->optInMinPeriod], inReal, outReal );"), "peeks only the selected slot");
     assert!(!peek.contains("TA_MA_Update"), "peek never advances the bank");
     // Close frees every sub-stream + the arrays.
@@ -1930,7 +1822,7 @@ fn test_c_no_step_impl_stores_a_ring_slot_twice() {
     // Both floors matter: the first proves the sweep still walks the streaming
     // corpus, the second that it is actually looking at rings — a skip that
     // silently emptied `stores` would keep the first green on its own.
-    assert!(stepped >= 170, "expected the streaming corpus, saw {stepped}");
+    assert!(stepped >= 195, "expected the streaming corpus, saw {stepped}");
     assert!(with_rings >= 80, "expected the ring-carrying corpus, saw {with_rings}");
 }
 

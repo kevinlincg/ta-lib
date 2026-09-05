@@ -1225,8 +1225,8 @@ public partial class Core
          double I1ForEvenPrev3 = sp.I1ForEvenPrev3;
          double I1ForOddPrev2 = sp.I1ForOddPrev2;
          double I1ForOddPrev3 = sp.I1ForOddPrev3;
-         double cur_outFAMA = sp.cur_outFAMA;
-         double cur_outMAMA = sp.cur_outMAMA;
+         double cur_outFAMA = 0.0;
+         double cur_outMAMA = 0.0;
          double fama = sp.fama;
          int hilbertIdx = sp.hilbertIdx;
          double mama = sp.mama;
@@ -1369,43 +1369,6 @@ public partial class Core
          cur_outFAMA = fama;
          cur_outMAMA = mama;
          return new MamaValue(cur_outMAMA, cur_outFAMA);
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// <para><c>outFAMA</c> may be declined with an empty span, per call and
-      /// independently of what the opener was given: the value is still computed —
-      /// <see cref="Value"/> reports it — and nothing is written out.</para>
-      /// </remarks>
-      /// <param name="inReal">Closed bars for <c>inReal</c>, oldest first.</param>
-      /// <param name="outMAMA">Receives one <c>outMAMA</c> value per bar committed.</param>
-      /// <param name="outFAMA">Receives one <c>outFAMA</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inReal, Span<double> outMAMA, Span<double> outFAMA )
-      {
-         int barCount = inReal.Length;
-         if( outMAMA.Length < barCount || (!outFAMA.IsEmpty && outFAMA.Length < barCount) || outMAMA.Overlaps(inReal) || outFAMA.Overlaps(inReal) || outMAMA.Overlaps(outFAMA) ) throw Core.StreamFailure("MAMA", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inReal[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("MAMA", "updateAndFill", RetCode.BadParam);
-            }
-            core.MamaStepImpl(this, inReal[i]);
-            outMAMA[i] = cur_outMAMA;
-            if( !outFAMA.IsEmpty ) outFAMA[i] = cur_outFAMA;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

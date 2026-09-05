@@ -25,8 +25,8 @@
     *        {@code Integer.MIN_VALUE} selects the default).
     * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @return The lookback, or {@code -1} if a parameter is out of range.
     */
    public int PVO_Lookback( int optInFastPeriod, int optInSlowPeriod, MAType optInMAType )
@@ -238,8 +238,8 @@
     *        {@code Integer.MIN_VALUE} selects the default).
     * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outReal PVO value in percent. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
     * @return The range written: {@code begIdx} is the first bar with a value,
@@ -318,8 +318,8 @@
     *        {@code Integer.MIN_VALUE} selects the default).
     * @param optInMAType Moving average type used for both MAs (default 1 = EMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outReal PVO value in percent. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
     * @return The range written: {@code begIdx} is the first bar with a value,
@@ -441,36 +441,6 @@
          core.pvoStepImpl(this, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inVolume.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inVolume[], double outReal[] ) {
-         requireArgument("PVO updateAndFill", "inVolume", inVolume);
-         requireArgument("PVO updateAndFill", "outReal", outReal);
-         final int barCount = inVolume.length;
-         if( outReal.length < barCount || (Object)outReal == (Object)inVolume )
-            throw new TaLibArgumentException("PVO updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inVolume[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("PVO updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.pvoStepImpl(this, inVolume[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**

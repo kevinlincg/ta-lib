@@ -275,37 +275,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double outReal[] ) {
-         requireArgument("MEDPRICE updateAndFill", "inHigh", inHigh);
-         requireArgument("MEDPRICE updateAndFill", "inLow", inLow);
-         requireArgument("MEDPRICE updateAndFill", "outReal", outReal);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || outReal.length < barCount || (Object)outReal == (Object)inHigh || (Object)outReal == (Object)inLow )
-            throw new TaLibArgumentException("MEDPRICE updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("MEDPRICE updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.medpriceStepImpl(this, inHigh[i], inLow[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would return — the same
        * transition, with every store it would make carried in a local instead.
@@ -318,7 +287,7 @@
          if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("MEDPRICE peek: BadParam", RetCode.BadParam);
          MedpriceStream sp = this;
-         double cur_outReal = sp.cur_outReal;
+         double cur_outReal = 0.0;
          cur_outReal = (inHigh + inLow) / 2.0;
          return cur_outReal;
       }

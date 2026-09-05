@@ -601,38 +601,6 @@
       }
 
       /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inReal[], double outMin[], double outMax[] ) {
-         requireArgument("MINMAX updateAndFill", "inReal", inReal);
-         requireArgument("MINMAX updateAndFill", "outMin", outMin);
-         requireArgument("MINMAX updateAndFill", "outMax", outMax);
-         final int barCount = inReal.length;
-         if( outMin.length < barCount || outMax.length < barCount || (Object)outMin == (Object)inReal || (Object)outMax == (Object)inReal || (Object)outMin == (Object)outMax )
-            throw new TaLibArgumentException("MINMAX updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("MINMAX updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.minmaxStepImpl(this, inReal[i]);
-            outMin[i] = this.cur_outMin;
-            outMax[i] = this.cur_outMax;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
-      }
-
-      /**
        * Evaluate a forming bar without committing — bit-identical to what the
        * next {@code update} with the same bar would write — the same
        * transition, with every store it would make carried in a local instead.
@@ -648,8 +616,8 @@
          MinmaxStream sp = this;
          double tmpHigh = 0.0;
          double tmpLow = 0.0;
-         double cur_outMax = sp.cur_outMax;
-         double cur_outMin = sp.cur_outMin;
+         double cur_outMax = 0.0;
+         double cur_outMin = 0.0;
          double highest = sp.highest;
          int highestIdx = sp.highestIdx;
          int i = sp.i;

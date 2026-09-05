@@ -1221,8 +1221,8 @@ public partial class Core
          double I1ForOddPrev3 = sp.I1ForOddPrev3;
          double Im = sp.Im;
          double Re = sp.Re;
-         double cur_outLeadSine = sp.cur_outLeadSine;
-         double cur_outSine = sp.cur_outSine;
+         double cur_outLeadSine = 0.0;
+         double cur_outSine = 0.0;
          int hilbertIdx = sp.hilbertIdx;
          double period = sp.period;
          double periodWMASub = sp.periodWMASub;
@@ -1426,40 +1426,6 @@ public partial class Core
          cur_outSine = Math.Sin(DCPhase * sp.deg2Rad);
          cur_outLeadSine = Math.Sin((DCPhase + 45) * sp.deg2Rad);
          return new HtSineValue(cur_outSine, cur_outLeadSine);
-      }
-
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inReal">Closed bars for <c>inReal</c>, oldest first.</param>
-      /// <param name="outSine">Receives one <c>outSine</c> value per bar committed.</param>
-      /// <param name="outLeadSine">Receives one <c>outLeadSine</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inReal, Span<double> outSine, Span<double> outLeadSine )
-      {
-         int barCount = inReal.Length;
-         if( outSine.Length < barCount || outLeadSine.Length < barCount || outSine.Overlaps(inReal) || outLeadSine.Overlaps(inReal) || outSine.Overlaps(outLeadSine) ) throw Core.StreamFailure("HT_SINE", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inReal[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("HT_SINE", "updateAndFill", RetCode.BadParam);
-            }
-            core.HtSineStepImpl(this, inReal[i]);
-            outSine[i] = cur_outSine;
-            outLeadSine[i] = cur_outLeadSine;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
       }
 
       /// <summary>The value at the last bar this stream counted — the bar

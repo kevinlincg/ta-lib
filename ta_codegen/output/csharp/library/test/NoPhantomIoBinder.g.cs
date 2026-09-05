@@ -139,6 +139,12 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.Price(0, PriceComponents.Volume), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["ADR"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.ADR_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["ADX"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.ADX_Impl(
@@ -619,6 +625,12 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["COPPOCK"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.COPPOCK_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.IntOpt(1), c.IntOpt(2), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["CORREL"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.CORREL_Impl(
@@ -635,6 +647,18 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.COSH_Impl(
                 startIdx, endIdx, c.Series(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["CUMSUM"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.CUMSUM_Impl(
+                startIdx, endIdx, c.Series(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["CVI"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.CVI_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
         ["DEMA"] = static (core, c, startIdx, endIdx) =>
@@ -655,6 +679,12 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), out int b, out int n, c.RealOut(0), c.RealOut(1), c.RealOut(2));
             return new CallOutcome(rc, b, n);
         },
+        ["DPO"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.DPO_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["DX"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.DX_Impl(
@@ -673,6 +703,18 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["ER"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.ER_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["ERI"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.ERI_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.IntOpt(0), out int b, out int n, c.RealOut(0), c.RealOut(1));
+            return new CallOutcome(rc, b, n);
+        },
         ["EXP"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.EXP_Impl(
@@ -683,6 +725,24 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.FLOOR_Impl(
                 startIdx, endIdx, c.Series(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["FOSC"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.FOSC_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["FRACTAL"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.FRACTAL_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.IntOut(0), c.IntOut(1));
+            return new CallOutcome(rc, b, n);
+        },
+        ["HA"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.HA_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.Open), c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), out int b, out int n, c.RealOut(0), c.RealOut(1), c.RealOut(2), c.RealOut(3));
             return new CallOutcome(rc, b, n);
         },
         ["HMA"] = static (core, c, startIdx, endIdx) =>
@@ -743,6 +803,12 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.KC_Impl(
                 startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.IntOpt(0), c.IntOpt(1), c.RealOpt(2), out int b, out int n, c.RealOut(0), c.RealOut(1), c.RealOut(2));
+            return new CallOutcome(rc, b, n);
+        },
+        ["KDJ"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.KDJ_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.IntOpt(0), c.IntOpt(1), (MAType)c.IntOpt(2), c.IntOpt(3), (MAType)c.IntOpt(4), out int b, out int n, c.RealOut(0), c.RealOut(1), c.RealOut(2));
             return new CallOutcome(rc, b, n);
         },
         ["LINEARREG"] = static (core, c, startIdx, endIdx) =>
@@ -815,6 +881,12 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.MARKETFI_Impl(
                 startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Volume), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["MASSI"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.MASSI_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
         ["MAVP"] = static (core, c, startIdx, endIdx) =>
@@ -925,6 +997,18 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Series(0), c.Price(1, PriceComponents.Volume), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["PERCENTILE"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.PERCENTILE_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOpt(1), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["PERCENTRANK"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.PERCENTRANK_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["PLUS_DI"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.PLUS_DI_Impl(
@@ -955,10 +1039,22 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Price(0, PriceComponents.Volume), c.IntOpt(0), c.IntOpt(1), (MAType)c.IntOpt(2), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["PVT"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.PVT_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.Close), c.Price(0, PriceComponents.Volume), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["QSTICK"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.QSTICK_Impl(
                 startIdx, endIdx, c.Price(0, PriceComponents.Open), c.Price(0, PriceComponents.Close), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["RMA"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.RMA_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
         ["ROC"] = static (core, c, startIdx, endIdx) =>
@@ -989,6 +1085,18 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.RSI_Impl(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["RVI"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.RVI_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["RVOL"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.RVOL_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.Volume), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
         ["SAR"] = static (core, c, startIdx, endIdx) =>
@@ -1123,6 +1231,12 @@ internal static class NoPhantomIoBinder
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },
+        ["TSI"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.TSI_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), c.IntOpt(1), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
         ["TYPPRICE"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.TYPPRICE_Impl(
@@ -1139,6 +1253,18 @@ internal static class NoPhantomIoBinder
         {
             RetCode rc = core.VAR_Impl(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), c.RealOpt(1), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["VHF"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.VHF_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["VORTEX"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.VORTEX_Impl(
+                startIdx, endIdx, c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.IntOpt(0), out int b, out int n, c.RealOut(0), c.RealOut(1));
             return new CallOutcome(rc, b, n);
         },
         ["VWAP"] = static (core, c, startIdx, endIdx) =>
@@ -1174,6 +1300,12 @@ internal static class NoPhantomIoBinder
         ["WMA"] = static (core, c, startIdx, endIdx) =>
         {
             RetCode rc = core.WMA_Impl(
+                startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
+            return new CallOutcome(rc, b, n);
+        },
+        ["ZLEMA"] = static (core, c, startIdx, endIdx) =>
+        {
+            RetCode rc = core.ZLEMA_Impl(
                 startIdx, endIdx, c.Series(0), c.IntOpt(0), out int b, out int n, c.RealOut(0));
             return new CallOutcome(rc, b, n);
         },

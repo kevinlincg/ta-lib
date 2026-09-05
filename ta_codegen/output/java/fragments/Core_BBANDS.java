@@ -48,8 +48,8 @@
     *        (default 2; {@code -4e37} selects the default).
     * @param optInMAType Moving-average type for the middle band (default 0 =
     *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @return The lookback, or {@code -1} if a parameter is out of range.
     */
    public int BBANDS_Lookback( int optInTimePeriod, double optInNbDevUp, double optInNbDevDn, MAType optInMAType )
@@ -635,8 +635,8 @@
     *        (default 2; {@code -4e37} selects the default).
     * @param optInMAType Moving-average type for the middle band (default 0 =
     *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outRealUpperBand Middle band plus nbDevUp standard deviations. Must
     *        hold at least {@code endIdx - startIdx + 1} values.
     * @param outRealMiddleBand The moving average. Must hold at least
@@ -732,8 +732,8 @@
     *        (default 2; {@code -4e37} selects the default).
     * @param optInMAType Moving-average type for the middle band (default 0 =
     *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outRealUpperBand Middle band plus nbDevUp standard deviations. Must
     *        hold at least {@code endIdx - startIdx + 1} values.
     * @param outRealMiddleBand The moving average. Must hold at least
@@ -873,40 +873,6 @@
          out.realUpperBand = this.cur_outRealUpperBand;
          out.realMiddleBand = this.cur_outRealMiddleBand;
          out.realLowerBand = this.cur_outRealLowerBand;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inReal.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inReal[], double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] ) {
-         requireArgument("BBANDS updateAndFill", "inReal", inReal);
-         requireArgument("BBANDS updateAndFill", "outRealUpperBand", outRealUpperBand);
-         requireArgument("BBANDS updateAndFill", "outRealMiddleBand", outRealMiddleBand);
-         requireArgument("BBANDS updateAndFill", "outRealLowerBand", outRealLowerBand);
-         final int barCount = inReal.length;
-         if( outRealUpperBand.length < barCount || outRealMiddleBand.length < barCount || outRealLowerBand.length < barCount || (Object)outRealUpperBand == (Object)inReal || (Object)outRealMiddleBand == (Object)inReal || (Object)outRealLowerBand == (Object)inReal || (Object)outRealUpperBand == (Object)outRealMiddleBand || (Object)outRealUpperBand == (Object)outRealLowerBand || (Object)outRealMiddleBand == (Object)outRealLowerBand )
-            throw new TaLibArgumentException("BBANDS updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inReal[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("BBANDS updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.bbandsStepImpl(this, inReal[i]);
-            outRealUpperBand[i] = this.cur_outRealUpperBand;
-            outRealMiddleBand[i] = this.cur_outRealMiddleBand;
-            outRealLowerBand[i] = this.cur_outRealLowerBand;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**

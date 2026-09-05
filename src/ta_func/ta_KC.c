@@ -735,31 +735,6 @@ TA_LIB_API TA_RetCode TA_KC_Peek( const TA_KC_Stream *stream, double inHigh, dou
    return TA_SUCCESS;
 }
 
-TA_LIB_API TA_RetCode TA_KC_UpdateAndFill( TA_KC_Stream *stream, const double inHigh[], const double inLow[], const double inClose[], int barCount, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
-{
-   int i;
-   TA_RetCode retCode;
-
-   if( !stream || !inHigh || !inLow || !inClose || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( barCount < 0 ) return TA_BAD_PARAM;
-   if( (const void *)outRealUpperBand == (const void *)inHigh || (const void *)outRealUpperBand == (const void *)inLow || (const void *)outRealUpperBand == (const void *)inClose || (const void *)outRealMiddleBand == (const void *)inHigh || (const void *)outRealMiddleBand == (const void *)inLow || (const void *)outRealMiddleBand == (const void *)inClose || (const void *)outRealLowerBand == (const void *)inHigh || (const void *)outRealLowerBand == (const void *)inLow || (const void *)outRealLowerBand == (const void *)inClose || (const void *)outRealUpperBand == (const void *)outRealMiddleBand || (const void *)outRealUpperBand == (const void *)outRealLowerBand || (const void *)outRealMiddleBand == (const void *)outRealLowerBand ) return TA_BAD_PARAM;
-   for( i = 0; i < barCount; i++ )
-   {
-      if( !TA_IS_FINITE( inHigh[i] ) || !TA_IS_FINITE( inLow[i] ) || !TA_IS_FINITE( inClose[i] ) )
-      {
-         if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-         return TA_BAD_PARAM;
-      }
-      retCode = TA_KC_StepImpl( stream, inHigh[i], inLow[i], inClose[i], &outRealUpperBand[i], &outRealMiddleBand[i], &outRealLowerBand[i] );
-      if( retCode != TA_SUCCESS ) return retCode;
-      stream->cur_outRealUpperBand = outRealUpperBand[i];
-      stream->cur_outRealMiddleBand = outRealMiddleBand[i];
-      stream->cur_outRealLowerBand = outRealLowerBand[i];
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-   }
-   return TA_SUCCESS;
-}
-
 TA_LIB_API TA_RetCode TA_KC_Close( TA_KC_Stream *stream )
 {
    if( !stream ) return TA_SUCCESS;

@@ -38,15 +38,15 @@
     *        default).
     * @param optInSlowK_MAType MA type used to smooth into SlowK (default 0 =
     *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param optInSlowD_Period Smoothing period for the SlowD signal line
     *        (default 3; range 1..100000; {@code Integer.MIN_VALUE} selects the
     *        default).
     * @param optInSlowD_MAType MA type used for the SlowD line (default 0 = SMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @return The lookback, or {@code -1} if a parameter is out of range.
     */
    public int STOCH_Lookback( int optInFastK_Period, int optInSlowK_Period, MAType optInSlowK_MAType, int optInSlowD_Period, MAType optInSlowD_MAType )
@@ -513,15 +513,15 @@
     *        default).
     * @param optInSlowK_MAType MA type used to smooth into SlowK (default 0 =
     *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param optInSlowD_Period Smoothing period for the SlowD signal line
     *        (default 3; range 1..100000; {@code Integer.MIN_VALUE} selects the
     *        default).
     * @param optInSlowD_MAType MA type used for the SlowD line (default 0 = SMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outSlowK Raw FastK smoothed by SlowK_Period MA. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
     * @param outSlowD Signal line: SlowK smoothed by SlowD_Period MA. Must hold
@@ -613,15 +613,15 @@
     *        default).
     * @param optInSlowK_MAType MA type used to smooth into SlowK (default 0 =
     *        SMA; values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param optInSlowD_Period Smoothing period for the SlowD signal line
     *        (default 3; range 1..100000; {@code Integer.MIN_VALUE} selects the
     *        default).
     * @param optInSlowD_MAType MA type used for the SlowD line (default 0 = SMA;
     *        values: 0=SMA, 1=EMA, 2=WMA, 3=DEMA, 4=TEMA, 5=TRIMA, 6=KAMA, 7=MAMA,
-    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT; {@code MAType.DEFAULT} selects the
-    *        default).
+    *        8=T3, 9=HMA, 10=DISABLED, 11=DEFAULT, 12=ZLEMA, 13=RMA;
+    *        {@code MAType.DEFAULT} selects the default).
     * @param outSlowK Raw FastK smoothed by SlowK_Period MA. Must hold at least
     *        {@code endIdx - startIdx + 1} values.
     * @param outSlowD Signal line: SlowK smoothed by SlowD_Period MA. Must hold
@@ -786,40 +786,6 @@
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.slowK = this.cur_outSlowK;
          out.slowD = this.cur_outSlowD;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double inClose[], double outSlowK[], double outSlowD[] ) {
-         requireArgument("STOCH updateAndFill", "inHigh", inHigh);
-         requireArgument("STOCH updateAndFill", "inLow", inLow);
-         requireArgument("STOCH updateAndFill", "inClose", inClose);
-         requireArgument("STOCH updateAndFill", "outSlowK", outSlowK);
-         requireArgument("STOCH updateAndFill", "outSlowD", outSlowD);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || inClose.length != barCount || outSlowK.length < barCount || outSlowD.length < barCount || (Object)outSlowK == (Object)inHigh || (Object)outSlowK == (Object)inLow || (Object)outSlowK == (Object)inClose || (Object)outSlowD == (Object)inHigh || (Object)outSlowD == (Object)inLow || (Object)outSlowD == (Object)inClose || (Object)outSlowK == (Object)outSlowD )
-            throw new TaLibArgumentException("STOCH updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("STOCH updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.stochStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outSlowK[i] = this.cur_outSlowK;
-            outSlowD[i] = this.cur_outSlowD;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**
