@@ -59,6 +59,35 @@ fn load() -> Vec<FuncDef> {
     funcs
 }
 
+/// An annotation whose subject is no longer flagged is stale, and must surface.
+///
+/// `ANNOTATED` is consumed by the sweep as a `continue`, so a row outlives the division
+/// it excuses: fix the guard and the row sits there forever, still asserting an open
+/// question that has been closed. That is the same silent-allowlist failure the table
+/// exists to avoid, one step removed. #385 produced the first instance -- KAMA's row
+/// went stale the moment its denominator test landed.
+#[test]
+fn no_annotation_is_stale() {
+    let funcs = load();
+    let mut stale = Vec::new();
+    for (name, divisor, why, _) in ANNOTATED {
+        let f = funcs
+            .iter()
+            .find(|f| f.name == *name)
+            .unwrap_or_else(|| panic!("{name} is annotated but not in the input tree"));
+        if !findings_for(f).iter().any(|fd| fd.divisor == *divisor) {
+            stale.push(format!("{name}: `{divisor}` -- annotated \"{why}\""));
+        }
+    }
+    assert!(
+        stale.is_empty(),
+        "annotation(s) whose division the sweep no longer reports. The guard was fixed \
+         or the divisor renamed; delete the row rather than leaving it asserting a \
+         question that is closed:\n  {}",
+        stale.join("\n  ")
+    );
+}
+
 /// Divisions the sweep reports that have been READ, each with what was concluded.
 ///
 /// Deliberately not named "known-safe": one entry below is an open question rather
@@ -82,14 +111,6 @@ const ANNOTATED: &[(&str, &str, &str, &str)] = &[
     ("HT_SINE", "smoothPeriod", "period clamped to [6,50] before the combination", ""),
     ("HT_TRENDMODE", "smoothPeriod", "period clamped to [6,50] before the combination", ""),
 
-    // OPEN, not cleared. KAMA divides by the same running `sumROC1` that ER does, under
-    // the same asymmetric clamp, and WITHOUT the exact denominator test ER gained in
-    // #350 -- `er.c:56` records the difference explicitly ("the one thing kama.c has no
-    // equivalent of"), and the #378 review asked for a fix that closes ER "without
-    // touching KAMA parity". So the gap is deliberate and documented, and whether the
-    // two should converge is a decision about KAMA's output, not a defect to patch
-    // under a sweep. Listed so the sweep is green and the question stays visible.
-    ("KAMA", "sumROC1", "OPEN: same shape as the ER defect fixed in #350; see #381", ""),
 
     // Unguarded BY DECISION, not by oversight. `vwma.c:124` divides by the rolling
     // volume sum with no test, and `vwma.yaml` declares `nan_inf_output` to say so --

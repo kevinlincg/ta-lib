@@ -258,7 +258,16 @@ impl Core {
         // fastest adaptation, for every window of an instrument quoted below it
         // (issue #253). A genuinely flat window is now recognized by the exact bar
         // count above instead.
-        if sumROC1 <= periodROC {
+        //
+        // `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+        // beside it compares against the SIGNED numerator, so it is false whenever
+        // periodROC < 0 and cannot stand in for one. sumROC1 is a running
+        // add/subtract of fabs terms, so an addend absorbed on the way in and
+        // subtracted later at full precision drives it to exactly 0.0 on a window
+        // that is not flat; without this clause that bar divides by zero and the
+        // +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+        // carried until #350).
+        if sumROC1 <= 0.0 || sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sumROC1).abs();
@@ -300,7 +309,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -344,7 +353,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -542,7 +551,7 @@ impl Core {
         // and outReal can be pointers to the same buffer.
         sp.trailingValue = tempReal2;
         // Calculate the efficiency ratio
-        if sp.sumROC1 <= periodROC {
+        if sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sp.sumROC1).abs();
@@ -698,7 +707,16 @@ impl Core {
         // fastest adaptation, for every window of an instrument quoted below it
         // (issue #253). A genuinely flat window is now recognized by the exact bar
         // count above instead.
-        if sumROC1 <= periodROC {
+        //
+        // `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
+        // beside it compares against the SIGNED numerator, so it is false whenever
+        // periodROC < 0 and cannot stand in for one. sumROC1 is a running
+        // add/subtract of fabs terms, so an addend absorbed on the way in and
+        // subtracted later at full precision drives it to exactly 0.0 on a window
+        // that is not flat; without this clause that bar divides by zero and the
+        // +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
+        // carried until #350).
+        if sumROC1 <= 0.0 || sumROC1 <= periodROC {
             tempReal = 1.0;
         } else {
             tempReal = (periodROC / sumROC1).abs();
@@ -740,7 +758,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -784,7 +802,7 @@ impl Core {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();
@@ -1066,7 +1084,7 @@ impl KamaStream {
             // and outReal can be pointers to the same buffer.
             trailingValue = tempReal2;
             // Calculate the efficiency ratio
-            if sumROC1 <= periodROC {
+            if sumROC1 <= 0.0 || sumROC1 <= periodROC {
                 tempReal = 1.0;
             } else {
                 tempReal = (periodROC / sumROC1).abs();

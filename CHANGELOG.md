@@ -95,6 +95,7 @@ See [github commits](https://github.com/TA-Lib/ta-lib/commits) for complete list
 - `TA_SetCompatibility()` and `TA_GetCompatibility()`. The notion of variant (e.g. MetaStock compatibility) is not actively maintained and will be removed in a future release. Default behavior is unaffected. Moving forward TA-Lib will create separate TA functions for distinct behaviors.
 
 ### Fixed
+- (#385) KAMA could divide by zero and return `-Inf`, after which every remaining bar of the call was NaN. It needs a window whose one-bar changes sum to exactly zero through floating-point absorption while the net change over that window is negative.
 - (#130) In-place calls (same buffer as input and output) returned wrong values for STOCH, STOCHF and MAVP. Regular (separate-buffer) calls were always correct.
 - (#118,#242) VAR, CORREL, STDDEV and BBANDS more precise and faster.
 - (#33) Float overflow in the single-precision (`TA_S_*`) functions. Thanks @iglesias !

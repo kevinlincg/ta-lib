@@ -89,16 +89,13 @@
        *     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
        *     price-carrying sum).
        *
-       * A third guard is this function's own, and the one thing kama.c has
-       * no equivalent of: the division runs only where sumROC1 is exactly
-       * positive. The clamp above cannot serve as the denominator test,
+       * A third guard is the denominator test: the division runs only where
+       * sumROC1 is exactly positive. The clamp above cannot serve as it,
        * because it compares against the SIGNED numerator and so is false for
        * every down move -- and a subtract-then-add sum can reach 0.0, or
        * below it, on a window that is not flat, when a term absorbed on the
        * way in is subtracted later at full precision. Without the guard those
-       * bars divide by zero. Where it fires, this function answers 1.0 and
-       * kama.c's inner ratio does not; no window the KAMA differential covers
-       * reaches it.
+       * bars divide by zero.
        *
        * The subtract-then-add update order matches TA_SUM's recurrence,
        * which is what makes the composite differential bit-exact. The
@@ -727,16 +724,13 @@
        *     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
        *     price-carrying sum).
        *
-       * A third guard is this function's own, and the one thing kama.c has
-       * no equivalent of: the division runs only where sumROC1 is exactly
-       * positive. The clamp above cannot serve as the denominator test,
+       * A third guard is the denominator test: the division runs only where
+       * sumROC1 is exactly positive. The clamp above cannot serve as it,
        * because it compares against the SIGNED numerator and so is false for
        * every down move -- and a subtract-then-add sum can reach 0.0, or
        * below it, on a window that is not flat, when a term absorbed on the
        * way in is subtracted later at full precision. Without the guard those
-       * bars divide by zero. Where it fires, this function answers 1.0 and
-       * kama.c's inner ratio does not; no window the KAMA differential covers
-       * reaches it.
+       * bars divide by zero.
        *
        * The subtract-then-add update order matches TA_SUM's recurrence,
        * which is what makes the composite differential bit-exact. The
