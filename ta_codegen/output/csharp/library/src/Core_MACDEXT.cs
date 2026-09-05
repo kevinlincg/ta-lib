@@ -780,42 +780,6 @@ public partial class Core
          return new MacdextValue(cur_outMACD, cur_outMACDSignal, cur_outMACDHist);
       }
 
-      /// <summary>Commit <c>n</c> closed bars and write their <c>n</c> values, in one call.</summary>
-      /// <remarks>
-      /// <para>Exactly <c>n</c> back-to-back <see cref="Update"/> calls, with one set of
-      /// argument checks instead of <c>n</c>. The outputs must hold at least
-      /// <c>n</c> values and must not overlap an input or each other.</para>
-      /// <para><see cref="OutRange"/> counts what this call took in, which is what makes
-      /// a rejection readable: a non-finite bar <c>k</c> throws
-      /// <see cref="System.ArgumentException"/> exactly as <see cref="Update"/>
-      /// would, with the bars before <c>k</c> committed and written, bar <c>k</c>
-      /// and everything after it not written, and the count advanced by <c>k +
-      /// 1</c> — the committed bars plus the rejected one, so the last bar counted
-      /// is the one that failed.</para>
-      /// </remarks>
-      /// <param name="inReal">Closed bars for <c>inReal</c>, oldest first.</param>
-      /// <param name="outMACD">Receives one <c>outMACD</c> value per bar committed.</param>
-      /// <param name="outMACDSignal">Receives one <c>outMACDSignal</c> value per bar committed.</param>
-      /// <param name="outMACDHist">Receives one <c>outMACDHist</c> value per bar committed.</param>
-      public void UpdateAndFill( ReadOnlySpan<double> inReal, Span<double> outMACD, Span<double> outMACDSignal, Span<double> outMACDHist )
-      {
-         int barCount = inReal.Length;
-         if( outMACD.Length < barCount || outMACDSignal.Length < barCount || outMACDHist.Length < barCount || outMACD.Overlaps(inReal) || outMACDSignal.Overlaps(inReal) || outMACDHist.Overlaps(inReal) || outMACD.Overlaps(outMACDSignal) || outMACD.Overlaps(outMACDHist) || outMACDSignal.Overlaps(outMACDHist) ) throw Core.StreamFailure("MACDEXT", "updateAndFill", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ )
-         {
-            if( !double.IsFinite(inReal[i]) )
-            {
-               if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-               throw Core.StreamFailure("MACDEXT", "updateAndFill", RetCode.BadParam);
-            }
-            core.MacdextStepImpl(this, inReal[i]);
-            outMACD[i] = cur_outMACD;
-            outMACDSignal[i] = cur_outMACDSignal;
-            outMACDHist[i] = cur_outMACDHist;
-            if( outRangeCount < Core.MAX_INDEX ) outRangeCount++;
-         }
-      }
-
       /// <summary>The value at the last bar this stream counted — the bar
       /// <see cref="OutRange"/> ends on. The last history bar right after open,
       /// then whatever the latest accepted <see cref="Update"/> returned.</summary>

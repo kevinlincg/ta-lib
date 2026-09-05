@@ -108,44 +108,6 @@ The saving is one-time warm-up work, so the case for it is ergonomics, one fewer
 full-history allocation, and closing the two-pass footgun — not steady-state
 throughput.
 
-## `UpdateAndFill` — n closed bars in one call
-
-Exactly `n` back-to-back `update` calls, in order: same values, same state, same
-per-bar rejection. What disappears is the per-call cost around the step — one
-call frame and one argument-check set for the whole run instead of one per bar.
-There is no out-meta pair; the range rides on the handle.
-
-**A rejected bar commits the bars before it.** The loop stops at the first error,
-so bar `k` being non-finite is rejected the way `update` rejects it: bars
-`[0, k)` stay committed with their values written, bar `k` and everything after
-does not, output slot `k` is untouched, and the handle's range has advanced by
-`k + 1` — the committed bars plus the rejected one, which `update` counts too.
-The caller reads the range to learn where it stopped and resumes with the rest.
-This is the one call in the library that returns a failure AND leaves output
-behind, so what it leaves is specified rather than merely allowed.
-
-That advance is gated absolutely — one rejected `Update` counts one bar, a `Peek`
-none — by a leg in each backend's stream suite and by `out_range_advance_suite`
-over the emitted text of every streamable function in all four. Comparing an
-`UpdateAndFill` against a control handle driven one bar at a time cannot gate it:
-that compare is symmetric and stays green with the advance deleted from both
-arms.
-
-Reading the `n` bars as an input array instead — never scanned, `count += n`
-unconditionally — was rejected. The two reasons the warm-up scan was deleted stop
-applying here: that scan was an extra pass over caller memory, while this check
-is a comparison on a value the loop has already loaded, and a partial fill is
-unacceptable in `OpenAndFill` because it leaves no handle and a half-written
-array with nothing to describe it, where here it leaves `k` successful updates
-and a handle that says so. Under the array reading, `UpdateAndFill` would have
-been the one way to poison a handle silently.
-
-Outputs may not alias the inputs or each other. Exact equality happens to be safe
-— the step takes bar `i` by value, so output `i` is written after every input `i`
-is read — and is rejected anyway, because it is the only case C can see and
-admitting it would advertise a guarantee whose immediate neighbourhood (an output
-overlapping an input at a non-zero offset) is silent corruption.
-
 ## Semantic definition
 
 For every function F, parameters p and series `x[0..t]`: after `open(x[0..k], p)`
@@ -156,8 +118,8 @@ settings, which must not change over the stream's lifetime, and the unstable
 period in effect at open.
 
 - **The range matches batch too, not just the values.** After a handle has been
-  fed `N` bars by any mixture of the openers, `update` and `updateAndFill`, its
-  `OutRange` is what the batch call over those same bars reports.
+  fed `N` bars by an opener and `update`, its `OutRange` is what the batch call
+  over those same bars reports.
 - **The history given to `open` defines bar 0.** For seedings that depend on the
   whole history (EMA under Metastock compatibility), that is the definition, by
   design.
@@ -221,8 +183,6 @@ TA_LIB_API TA_RetCode TA_SMA_OpenAndFill( TA_SMA_Stream **stream, const double i
                                           int *outBegIdx, int *outNBElement,
                                           double outReal[] );
 TA_LIB_API TA_RetCode TA_SMA_Update( TA_SMA_Stream *stream, double inReal, double *outReal );
-TA_LIB_API TA_RetCode TA_SMA_UpdateAndFill( TA_SMA_Stream *stream, const double inReal[],
-                                            int barCount, double outReal[] );
 TA_LIB_API TA_RetCode TA_SMA_Peek( const TA_SMA_Stream *stream, double inReal, double *outReal );
 TA_LIB_API TA_RetCode TA_SMA_Value( const TA_SMA_Stream *stream, double *outReal );
 TA_LIB_API TA_RetCode TA_SMA_Clone( const TA_SMA_Stream *stream, TA_SMA_Stream **clone );
@@ -240,7 +200,6 @@ let core = Core::builder().build()?;               // immutable settings
 let (mut s, _last) = core.sma_open(&history, 14)?; // &self on Core; the handle
                                                    // holds its own Core by value
 let v = s.update(x)?;                              // &mut self
-s.update_and_fill(&gap_bars, &mut out)?;
 let provisional = s.peek(forming)?;                // &self, commits nothing
 let r = s.out_range();
 ```
@@ -250,7 +209,6 @@ Core core = new Core();
 Core.SmaStream s = core.smaOpen(history, 14);   // throws on reject
 double v = s.update(bar);
 double p = s.peek(formingBarClose);
-s.updateAndFill(gapBars, out);
 Core.SmaStream t = s.clone();                   // independent fork
 Core.MacdOut mv = new Core.MacdOut();           // allocate once, reuse per bar
 m.update(bar, mv);                              // mv.macd / .macdSignal / .macdHist

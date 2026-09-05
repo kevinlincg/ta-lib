@@ -1,6 +1,6 @@
 //! # TA-Lib: Technical Analysis Library
 //!
-//! 186 technical-analysis indicators — moving averages, momentum oscillators,
+//! 200+ technical-analysis indicators — moving averages, momentum oscillators,
 //! volatility bands, volume studies, Hilbert Transform cycle analysis, statistics,
 //! price transforms, and 61 candlestick-pattern recognizers — as a pure-Rust crate.
 //!
@@ -137,9 +137,10 @@
 //! * [`HT_SINE`](Core::HT_SINE) — Hilbert Transform - SineWave
 //! * [`HT_TRENDMODE`](Core::HT_TRENDMODE) — Hilbert Transform - Trend vs Cycle Mode
 //!
-//! ## Math Operators (11)
+//! ## Math Operators (12)
 //!
 //! * [`ADD`](Core::ADD) — Vector Arithmetic Add
+//! * [`CUMSUM`](Core::CUMSUM) — Cumulative Sum
 //! * [`DIV`](Core::DIV) — Vector Arithmetic Div
 //! * [`MAX`](Core::MAX) — Highest value over a specified period
 //! * [`MAXINDEX`](Core::MAXINDEX) — Index of highest value over a specified period
@@ -169,7 +170,7 @@
 //! * [`TAN`](Core::TAN) — Vector Trigonometric Tan
 //! * [`TANH`](Core::TANH) — Vector Trigonometric Tanh
 //!
-//! ## Momentum Indicators (39)
+//! ## Momentum Indicators (47)
 //!
 //! * [`AC`](Core::AC) — Accelerator/Decelerator Oscillator
 //! * [`ADX`](Core::ADX) — Average Directional Movement Index
@@ -182,9 +183,15 @@
 //! * [`CCI`](Core::CCI) — Commodity Channel Index
 //! * [`CMO`](Core::CMO) — Chande Momentum Oscillator
 //! * [`CMOU`](Core::CMOU) — Chande Momentum Oscillator (Unsmoothed)
+//! * [`COPPOCK`](Core::COPPOCK) — Coppock Curve
+//! * [`DPO`](Core::DPO) — Detrended Price Oscillator
 //! * [`DX`](Core::DX) — Directional Movement Index
+//! * [`ER`](Core::ER) — Kaufman Efficiency Ratio
+//! * [`ERI`](Core::ERI) — Elder Ray Index (Bull Power / Bear Power)
 //! * [`FOSC`](Core::FOSC) — Forecast Oscillator
+//! * [`FRACTAL`](Core::FRACTAL) — Williams Fractal
 //! * [`IMI`](Core::IMI) — Intraday Momentum Index
+//! * [`KDJ`](Core::KDJ) — KDJ Stochastic
 //! * [`MACD`](Core::MACD) — Moving Average Convergence/Divergence
 //! * [`MACDEXT`](Core::MACDEXT) — MACD with controllable MA type
 //! * [`MACDFIX`](Core::MACDFIX) — Moving Average Convergence/Divergence Fix 12/26
@@ -206,8 +213,10 @@
 //! * [`STOCHF`](Core::STOCHF) — Stochastic Fast
 //! * [`STOCHRSI`](Core::STOCHRSI) — Stochastic Relative Strength Index
 //! * [`TRIX`](Core::TRIX) — 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
+//! * [`TSI`](Core::TSI) — True Strength Index
 //! * [`ULTOSC`](Core::ULTOSC) — Ultimate Oscillator
 //! * [`VHF`](Core::VHF) — Vertical Horizontal Filter
+//! * [`VORTEX`](Core::VORTEX) — Vortex Indicator
 //! * [`WAD`](Core::WAD) — Williams' Accumulation/Distribution
 //! * [`WILLR`](Core::WILLR) — Williams' %R
 //!
@@ -303,15 +312,16 @@
 //! * [`CDLUPSIDEGAP2CROWS`](Core::CDLUPSIDEGAP2CROWS) — Upside Gap Two Crows
 //! * [`CDLXSIDEGAP3METHODS`](Core::CDLXSIDEGAP3METHODS) — Upside/Downside Gap Three Methods
 //!
-//! ## Price Transform (5)
+//! ## Price Transform (6)
 //!
 //! * [`AVGDEV`](Core::AVGDEV) — Average Deviation
 //! * [`AVGPRICE`](Core::AVGPRICE) — Average Price
+//! * [`HA`](Core::HA) — Heikin-Ashi Candles
 //! * [`MEDPRICE`](Core::MEDPRICE) — Median Price
 //! * [`TYPPRICE`](Core::TYPPRICE) — Typical Price
 //! * [`WCLPRICE`](Core::WCLPRICE) — Weighted Close Price
 //!
-//! ## Statistic Functions (9)
+//! ## Statistic Functions (11)
 //!
 //! * [`BETA`](Core::BETA) — Beta
 //! * [`CORREL`](Core::CORREL) — Pearson's Correlation Coefficient (r)
@@ -319,15 +329,20 @@
 //! * [`LINEARREG_ANGLE`](Core::LINEARREG_ANGLE) — Linear Regression Angle
 //! * [`LINEARREG_INTERCEPT`](Core::LINEARREG_INTERCEPT) — Linear Regression Intercept
 //! * [`LINEARREG_SLOPE`](Core::LINEARREG_SLOPE) — Linear Regression Slope
+//! * [`PERCENTILE`](Core::PERCENTILE) — Percentile (nearest rank)
+//! * [`PERCENTRANK`](Core::PERCENTRANK) — Percent Rank
 //! * [`STDDEV`](Core::STDDEV) — Standard Deviation
 //! * [`TSF`](Core::TSF) — Time Series Forecast
 //! * [`VAR`](Core::VAR) — Variance
 //!
-//! ## Volatility Indicators (4)
+//! ## Volatility Indicators (7)
 //!
 //! * [`ADR`](Core::ADR) — Average Day Range
 //! * [`ATR`](Core::ATR) — Average True Range
+//! * [`CVI`](Core::CVI) — Chaikin's Volatility
+//! * [`MASSI`](Core::MASSI) — Mass Index
 //! * [`NATR`](Core::NATR) — Normalized Average True Range
+//! * [`RVI`](Core::RVI) — Relative Volatility Index
 //! * [`TRANGE`](Core::TRANGE) — True Range
 //!
 //! ## Volume Indicators (12)

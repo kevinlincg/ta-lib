@@ -23,9 +23,9 @@
    public int WAD_Lookback( )
    {
       /* The first bar has no previous close, so it accumulates nothing and the
-       * line starts at 0.0 -- the same convention as the other four cumulative
-       * lines in the tree: OBV, AD, NVI and PVI all return 0 here and emit a
-       * seed value at startIdx. Tulip's ti_wad_start() returns 1 instead, so its
+       * line starts at 0.0 -- the same convention as the other cumulative
+       * lines in the tree: OBV, AD, NVI, PVI and PVT all return 0 here and emit
+       * a seed value at startIdx. Tulip's ti_wad_start() returns 1 instead, so its
        * series is this one without the leading zero.
        */
       return 0 ;
@@ -404,38 +404,6 @@
          core.wadStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
-      }
-
-      /**
-       * Commit {@code n} closed bars and write their {@code n} values, in one
-       * call — exactly {@code n} back-to-back {@code update} calls, with one
-       * set of argument checks instead of {@code n}. {@code n} is
-       * {@code inHigh.length}; the outputs must hold at least that many, and must
-       * not be the same array as an input or as each other.
-       * <p>{@link #outRange()} counts what this call took in, which is what makes a
-       * rejection readable: a non-finite bar {@code k} throws
-       * {@link IllegalArgumentException} exactly as {@code update} would, with
-       * the bars before {@code k} committed and written, bar {@code k} and
-       * everything after it not, and the count advanced by {@code k + 1} —
-       * the committed bars plus the rejected one.
-       */
-      public void updateAndFill( double inHigh[], double inLow[], double inClose[], double outReal[] ) {
-         requireArgument("WAD updateAndFill", "inHigh", inHigh);
-         requireArgument("WAD updateAndFill", "inLow", inLow);
-         requireArgument("WAD updateAndFill", "inClose", inClose);
-         requireArgument("WAD updateAndFill", "outReal", outReal);
-         final int barCount = inHigh.length;
-         if( inLow.length != barCount || inClose.length != barCount || outReal.length < barCount || (Object)outReal == (Object)inHigh || (Object)outReal == (Object)inLow || (Object)outReal == (Object)inClose )
-            throw new TaLibArgumentException("WAD updateAndFill: BadParam", RetCode.BadParam);
-         for( int i = 0; i < barCount; i++ ) {
-            if( !Double.isFinite(inHigh[i]) || !Double.isFinite(inLow[i]) || !Double.isFinite(inClose[i]) ) {
-               if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-               throw new TaLibArgumentException("WAD updateAndFill: BadParam", RetCode.BadParam);
-            }
-            core.wadStepImpl(this, inHigh[i], inLow[i], inClose[i]);
-            outReal[i] = this.cur_outReal;
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
-         }
       }
 
       /**

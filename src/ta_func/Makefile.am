@@ -90,18 +90,26 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_CMF.c \
 	ta_CMO.c \
 	ta_CMOU.c \
+	ta_COPPOCK.c \
 	ta_CORREL.c \
 	ta_COS.c \
 	ta_COSH.c \
+	ta_CUMSUM.c \
+	ta_CVI.c \
 	ta_DEMA.c \
 	ta_DIV.c \
 	ta_DONCHIAN.c \
+	ta_DPO.c \
 	ta_DX.c \
 	ta_EFI.c \
 	ta_EMA.c \
+	ta_ER.c \
+	ta_ERI.c \
 	ta_EXP.c \
 	ta_FLOOR.c \
 	ta_FOSC.c \
+	ta_FRACTAL.c \
+	ta_HA.c \
 	ta_HMA.c \
 	ta_HT_DCPERIOD.c \
 	ta_HT_DCPHASE.c \
@@ -112,6 +120,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_IMI.c \
 	ta_KAMA.c \
 	ta_KC.c \
+	ta_KDJ.c \
 	ta_LINEARREG.c \
 	ta_LINEARREG_ANGLE.c \
 	ta_LINEARREG_INTERCEPT.c \
@@ -124,6 +133,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_MACDFIX.c \
 	ta_MAMA.c \
 	ta_MARKETFI.c \
+	ta_MASSI.c \
 	ta_MAVP.c \
 	ta_MAX.c \
 	ta_MAXINDEX.c \
@@ -142,6 +152,8 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_NATR.c \
 	ta_NVI.c \
 	ta_OBV.c \
+	ta_PERCENTILE.c \
+	ta_PERCENTRANK.c \
 	ta_PLUS_DI.c \
 	ta_PLUS_DM.c \
 	ta_PPO.c \
@@ -155,6 +167,7 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_ROCR.c \
 	ta_ROCR100.c \
 	ta_RSI.c \
+	ta_RVI.c \
 	ta_RVOL.c \
 	ta_SAR.c \
 	ta_SAREXT.c \
@@ -178,10 +191,12 @@ libta_func_la_SOURCES = ta_utility.c \
 	ta_TRIMA.c \
 	ta_TRIX.c \
 	ta_TSF.c \
+	ta_TSI.c \
 	ta_TYPPRICE.c \
 	ta_ULTOSC.c \
 	ta_VAR.c \
 	ta_VHF.c \
+	ta_VORTEX.c \
 	ta_VWAP.c \
 	ta_VWMA.c \
 	ta_WAD.c \

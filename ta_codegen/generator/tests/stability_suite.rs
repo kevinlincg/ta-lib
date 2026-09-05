@@ -38,7 +38,7 @@ fn load() -> Vec<FuncDef> {
         parser::c_source::wire_parsed_source(&mut f, &parsed);
         funcs.push(f);
     }
-    assert!(funcs.len() > 160, "expected the whole input tree, got {}", funcs.len());
+    assert!(funcs.len() >= 200, "expected the whole input tree, got {}", funcs.len());
     funcs
 }
 
@@ -50,23 +50,30 @@ fn load() -> Vec<FuncDef> {
 const INHERITED: &[(&str, &str)] = &[
     ("ADOSC", "EMA"),
     ("ADXR", "ADX"),
+    ("CVI", "EMA"),
     ("DEMA", "EMA"),
+    ("ERI", "EMA"),
     ("KC", "ATR"),
     ("MACD", "EMA"),
     ("MACDFIX", "EMA"),
+    ("MASSI", "EMA"),
     ("SMI", "EMA"),
     ("STOCHRSI", "RSI"),
     ("SUPERTREND", "ATR"),
     ("TEMA", "EMA"),
     ("TRIX", "EMA"),
+    ("TSI", "EMA"),
     ("ZLEMA", "EMA"),
 ];
 
 /// Functions whose stability is the caller's MA-type choice. Measured: BBANDS, MA,
 /// MACDEXT, MAVP, STOCH and STOCHF are stable at their (SMA) defaults and unstable with
-/// EMA; APO, PPO and PVO default to EMA and so move even at defaults.
-const MATYPE_DEPENDENT: &[&str] =
-    &["APO", "BBANDS", "MA", "MACDEXT", "MAVP", "PPO", "PVO", "STOCH", "STOCHF", "STOCHRSI"];
+/// EMA; APO, PPO, PVO and KDJ default to a recursive average and so move even at
+/// defaults.
+const MATYPE_DEPENDENT: &[&str] = &[
+    "APO", "BBANDS", "KDJ", "MA", "MACDEXT", "MAVP", "PPO", "PVO", "STOCH", "STOCHF",
+    "STOCHRSI",
+];
 
 #[test]
 fn classification_matches_the_measured_library() {
@@ -79,7 +86,7 @@ fn classification_matches_the_measured_library() {
         .filter(|f| f.flags.iter().any(|x| x == "unstable_period"))
         .map(|f| f.name.as_str())
         .collect();
-    assert_eq!(declared.len(), 21, "the measured set of self-declaring functions is 21");
+    assert_eq!(declared.len(), 23, "the measured set of self-declaring functions is 23");
     for f in &funcs {
         assert_eq!(
             st[&f.name].intrinsic,

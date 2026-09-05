@@ -124,16 +124,16 @@ static ErrorNumber callWithDefaults( const char *funcName,
 									 const char *datasetName );
 
 /**** Local variables definitions.     ****/
-static double inputNegData[100];
-static double inputZeroData[100];
-static double inputRandFltEpsilon[100];
-static double inputRandDblEpsilon[100];
+static double inputNegData[200];
+static double inputZeroData[200];
+static double inputRandFltEpsilon[200];
+static double inputRandDblEpsilon[200];
 static double inputRandomData[2000];
 
-static int    inputNegData_int[100];
-static int    inputZeroData_int[100];
-static int    inputRandFltEpsilon_int[100];
-static int    inputRandDblEpsilon_int[100];
+static int    inputNegData_int[200];
+static int    inputZeroData_int[200];
+static int    inputRandFltEpsilon_int[200];
+static int    inputRandDblEpsilon_int[200];
 static int    inputRandomData_int[2000];
 
 static double output[10][2000];
@@ -3715,7 +3715,7 @@ static ErrorNumber test_default_calls(void)
        * A single "at least N cases" floor would not: the six rejection rows
        * alone satisfy it, and the boundary-accept half could vanish unnoticed.
        * That half is precisely what catches a `>=` off-by-one. */
-      if( errNumber == TA_TEST_PASS && indexRangeNbFuncs < 150 )
+      if( errNumber == TA_TEST_PASS && indexRangeNbFuncs < 200 )
       {
          printf( "Failed: index-range gate saw only %d function(s)\n",
                  indexRangeNbFuncs );

@@ -148,18 +148,26 @@ static void bench_tracked_free(void *p) {
 #include "ta_CMF.c"
 #include "ta_CMO.c"
 #include "ta_CMOU.c"
+#include "ta_COPPOCK.c"
 #include "ta_CORREL.c"
 #include "ta_COS.c"
 #include "ta_COSH.c"
+#include "ta_CUMSUM.c"
+#include "ta_CVI.c"
 #include "ta_DEMA.c"
 #include "ta_DIV.c"
 #include "ta_DONCHIAN.c"
+#include "ta_DPO.c"
 #include "ta_DX.c"
 #include "ta_EFI.c"
 #include "ta_EMA.c"
+#include "ta_ER.c"
+#include "ta_ERI.c"
 #include "ta_EXP.c"
 #include "ta_FLOOR.c"
 #include "ta_FOSC.c"
+#include "ta_FRACTAL.c"
+#include "ta_HA.c"
 #include "ta_HMA.c"
 #include "ta_HT_DCPERIOD.c"
 #include "ta_HT_DCPHASE.c"
@@ -170,6 +178,7 @@ static void bench_tracked_free(void *p) {
 #include "ta_IMI.c"
 #include "ta_KAMA.c"
 #include "ta_KC.c"
+#include "ta_KDJ.c"
 #include "ta_LINEARREG.c"
 #include "ta_LINEARREG_ANGLE.c"
 #include "ta_LINEARREG_INTERCEPT.c"
@@ -181,6 +190,7 @@ static void bench_tracked_free(void *p) {
 #include "ta_MACDFIX.c"
 #include "ta_MAMA.c"
 #include "ta_MARKETFI.c"
+#include "ta_MASSI.c"
 #include "ta_MAVP.c"
 #include "ta_MAX.c"
 #include "ta_MAXINDEX.c"
@@ -199,6 +209,8 @@ static void bench_tracked_free(void *p) {
 #include "ta_NATR.c"
 #include "ta_NVI.c"
 #include "ta_OBV.c"
+#include "ta_PERCENTILE.c"
+#include "ta_PERCENTRANK.c"
 #include "ta_PLUS_DI.c"
 #include "ta_PLUS_DM.c"
 #include "ta_PPO.c"
@@ -212,6 +224,7 @@ static void bench_tracked_free(void *p) {
 #include "ta_ROCR.c"
 #include "ta_ROCR100.c"
 #include "ta_RSI.c"
+#include "ta_RVI.c"
 #include "ta_RVOL.c"
 #include "ta_SAR.c"
 #include "ta_SAREXT.c"
@@ -235,10 +248,12 @@ static void bench_tracked_free(void *p) {
 #include "ta_TRIMA.c"
 #include "ta_TRIX.c"
 #include "ta_TSF.c"
+#include "ta_TSI.c"
 #include "ta_TYPPRICE.c"
 #include "ta_ULTOSC.c"
 #include "ta_VAR.c"
 #include "ta_VHF.c"
+#include "ta_VORTEX.c"
 #include "ta_VWAP.c"
 #include "ta_VWMA.c"
 #include "ta_WAD.c"
@@ -306,6 +321,7 @@ static void generate_price_data(int n) {
 static double g_outBuf0[MAX_POINTS];
 static double g_outBuf1[MAX_POINTS];
 static double g_outBuf2[MAX_POINTS];
+static double g_outBuf3[MAX_POINTS];
 static int g_outIntBuf0[MAX_POINTS];
 static int g_outIntBuf1[MAX_POINTS];
 
@@ -6201,6 +6217,70 @@ static void bench_stream_all(const char *filter, int iters) {
         }
         fflush(stdout);
     }
+    if( func_matches(filter, "COPPOCK") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_COPPOCK_Lookback(10, 11, 14);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_COPPOCK(t, t, g_rt_close, 10, 11, 14, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_COPPOCK_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_COPPOCK_Open(&st, g_close, g_nPoints, 10, 11, 14, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_COPPOCK_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_COPPOCK_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_COPPOCK_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_COPPOCK_Close(st);
+            bench_stream_row("COPPOCK", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_COPPOCK_Close(st); }
+            bench_stream_row("COPPOCK", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
     if( func_matches(filter, "CORREL") ) {
         long long best_b = 0, best_u = -1, best_p = -1;
         int begIdx = 0, nb = 0;
@@ -6391,6 +6471,135 @@ static void bench_stream_all(const char *filter, int iters) {
             g_sink += (int)acc + nb;
             if( st ) { g_ta_track = 0; TA_COSH_Close(st); }
             bench_stream_row("COSH", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "CUMSUM") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_CUMSUM_Lookback();
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_CUMSUM(t, t, g_rt_close, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_CUMSUM_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_CUMSUM_Open(&st, g_close, g_nPoints, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_CUMSUM_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_CUMSUM_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_CUMSUM_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_CUMSUM_Close(st);
+            bench_stream_row("CUMSUM", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_CUMSUM_Close(st); }
+            bench_stream_row("CUMSUM", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "CVI") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_CVI_Lookback(10, 10);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                TA_CVI(t, t, g_rt_high, g_rt_low, 10, 10, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_CVI_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_CVI_Open(&st, g_high, g_low, g_nPoints, 10, 10, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_CVI_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_CVI_Peek(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_CVI_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_CVI_Close(st);
+            bench_stream_row("CVI", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_CVI_Close(st); }
+            bench_stream_row("CVI", best_b/(double)iters, -1.0, -1.0, lb, 0);
         }
         fflush(stdout);
     }
@@ -6598,6 +6807,70 @@ static void bench_stream_all(const char *filter, int iters) {
         }
         fflush(stdout);
     }
+    if( func_matches(filter, "DPO") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_DPO_Lookback(20);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_DPO(t, t, g_rt_close, 20, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_DPO_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_DPO_Open(&st, g_close, g_nPoints, 20, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_DPO_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_DPO_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_DPO_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_DPO_Close(st);
+            bench_stream_row("DPO", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_DPO_Close(st); }
+            bench_stream_row("DPO", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
     if( func_matches(filter, "DX") ) {
         long long best_b = 0, best_u = -1, best_p = -1;
         int begIdx = 0, nb = 0;
@@ -6793,6 +7066,141 @@ static void bench_stream_all(const char *filter, int iters) {
         }
         fflush(stdout);
     }
+    if( func_matches(filter, "ER") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_ER_Lookback(10);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_ER(t, t, g_rt_close, 10, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_ER_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_ER_Open(&st, g_close, g_nPoints, 10, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_ER_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_ER_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_ER_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_ER_Close(st);
+            bench_stream_row("ER", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_ER_Close(st); }
+            bench_stream_row("ER", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "ERI") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_ERI_Lookback(13);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_ERI(t, t, g_rt_high, g_rt_low, g_rt_close, 13, &begIdx, &nb, g_outBuf0, g_outBuf1);
+                acc += g_outBuf0[0];
+                acc += g_outBuf1[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_ERI_Stream *st = NULL;
+            double v0 = 0.0;
+            double v1 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_ERI_Open(&st, g_high, g_low, g_close, g_nPoints, 13, &v0, &v1);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_ERI_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1);
+                    acc += v0;
+                    acc += v1;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_ERI_Peek(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1);
+                        acc += v0;
+                        acc += v1;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_ERI_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1);
+                        acc += v0;
+                        acc += v1;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_ERI_Close(st);
+            bench_stream_row("ERI", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_ERI_Close(st); }
+            bench_stream_row("ERI", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
     if( func_matches(filter, "EXP") ) {
         long long best_b = 0, best_u = -1, best_p = -1;
         int begIdx = 0, nb = 0;
@@ -6982,6 +7390,158 @@ static void bench_stream_all(const char *filter, int iters) {
             g_sink += (int)acc + nb;
             if( st ) { g_ta_track = 0; TA_FOSC_Close(st); }
             bench_stream_row("FOSC", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "FRACTAL") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_FRACTAL_Lookback(2, 2);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                TA_FRACTAL(t, t, g_rt_high, g_rt_low, 2, 2, &begIdx, &nb, g_outIntBuf0, g_outIntBuf1);
+                acc += (double)g_outIntBuf0[0];
+                acc += (double)g_outIntBuf1[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_FRACTAL_Stream *st = NULL;
+            int iv0 = 0;
+            int iv1 = 0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_FRACTAL_Open(&st, g_high, g_low, g_nPoints, 2, 2, &iv0, &iv1);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_FRACTAL_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &iv0, &iv1);
+                    acc += (double)iv0;
+                    acc += (double)iv1;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_FRACTAL_Peek(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &iv0, &iv1);
+                        acc += (double)iv0;
+                        acc += (double)iv1;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_FRACTAL_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &iv0, &iv1);
+                        acc += (double)iv0;
+                        acc += (double)iv1;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_FRACTAL_Close(st);
+            bench_stream_row("FRACTAL", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_FRACTAL_Close(st); }
+            bench_stream_row("FRACTAL", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "HA") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_HA_Lookback();
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_open[t] = g_open[it & BENCH_MASK];
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_HA(t, t, g_rt_open, g_rt_high, g_rt_low, g_rt_close, &begIdx, &nb, g_outBuf0, g_outBuf1, g_outBuf2, g_outBuf3);
+                acc += g_outBuf0[0];
+                acc += g_outBuf1[0];
+                acc += g_outBuf2[0];
+                acc += g_outBuf3[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_HA_Stream *st = NULL;
+            double v0 = 0.0;
+            double v1 = 0.0;
+            double v2 = 0.0;
+            double v3 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_HA_Open(&st, g_open, g_high, g_low, g_close, g_nPoints, &v0, &v1, &v2, &v3);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_HA_Update(st, g_open[it & BENCH_MASK], g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2, &v3);
+                    acc += v0;
+                    acc += v1;
+                    acc += v2;
+                    acc += v3;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_HA_Peek(st, g_open[it & BENCH_MASK], g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2, &v3);
+                        acc += v0;
+                        acc += v1;
+                        acc += v2;
+                        acc += v3;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_HA_Update(st, g_open[it & BENCH_MASK], g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2, &v3);
+                        acc += v0;
+                        acc += v1;
+                        acc += v2;
+                        acc += v3;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_HA_Close(st);
+            bench_stream_row("HA", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_HA_Close(st); }
+            bench_stream_row("HA", best_b/(double)iters, -1.0, -1.0, lb, 0);
         }
         fflush(stdout);
     }
@@ -7645,6 +8205,82 @@ static void bench_stream_all(const char *filter, int iters) {
             g_sink += (int)acc + nb;
             if( st ) { g_ta_track = 0; TA_KC_Close(st); }
             bench_stream_row("KC", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "KDJ") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_KDJ_Lookback(9, 3, 13, 3, 13);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_KDJ(t, t, g_rt_high, g_rt_low, g_rt_close, 9, 3, 13, 3, 13, &begIdx, &nb, g_outBuf0, g_outBuf1, g_outBuf2);
+                acc += g_outBuf0[0];
+                acc += g_outBuf1[0];
+                acc += g_outBuf2[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_KDJ_Stream *st = NULL;
+            double v0 = 0.0;
+            double v1 = 0.0;
+            double v2 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_KDJ_Open(&st, g_high, g_low, g_close, g_nPoints, 9, 3, 13, 3, 13, &v0, &v1, &v2);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_KDJ_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2);
+                    acc += v0;
+                    acc += v1;
+                    acc += v2;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_KDJ_Peek(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2);
+                        acc += v0;
+                        acc += v1;
+                        acc += v2;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_KDJ_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1, &v2);
+                        acc += v0;
+                        acc += v1;
+                        acc += v2;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_KDJ_Close(st);
+            bench_stream_row("KDJ", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_KDJ_Close(st); }
+            bench_stream_row("KDJ", best_b/(double)iters, -1.0, -1.0, lb, 0);
         }
         fflush(stdout);
     }
@@ -8450,6 +9086,71 @@ static void bench_stream_all(const char *filter, int iters) {
             g_sink += (int)acc + nb;
             if( st ) { g_ta_track = 0; TA_MARKETFI_Close(st); }
             bench_stream_row("MARKETFI", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "MASSI") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_MASSI_Lookback(9, 25);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                TA_MASSI(t, t, g_rt_high, g_rt_low, 9, 25, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_MASSI_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_MASSI_Open(&st, g_high, g_low, g_nPoints, 9, 25, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_MASSI_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_MASSI_Peek(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_MASSI_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_MASSI_Close(st);
+            bench_stream_row("MASSI", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_MASSI_Close(st); }
+            bench_stream_row("MASSI", best_b/(double)iters, -1.0, -1.0, lb, 0);
         }
         fflush(stdout);
     }
@@ -9629,6 +10330,134 @@ static void bench_stream_all(const char *filter, int iters) {
         }
         fflush(stdout);
     }
+    if( func_matches(filter, "PERCENTILE") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_PERCENTILE_Lookback(30, 50.000000000000000);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_PERCENTILE(t, t, g_rt_close, 30, 50.000000000000000, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_PERCENTILE_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_PERCENTILE_Open(&st, g_close, g_nPoints, 30, 50.000000000000000, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_PERCENTILE_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_PERCENTILE_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_PERCENTILE_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_PERCENTILE_Close(st);
+            bench_stream_row("PERCENTILE", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_PERCENTILE_Close(st); }
+            bench_stream_row("PERCENTILE", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "PERCENTRANK") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_PERCENTRANK_Lookback(100);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_PERCENTRANK(t, t, g_rt_close, 100, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_PERCENTRANK_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_PERCENTRANK_Open(&st, g_close, g_nPoints, 100, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_PERCENTRANK_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_PERCENTRANK_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_PERCENTRANK_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_PERCENTRANK_Close(st);
+            bench_stream_row("PERCENTRANK", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_PERCENTRANK_Close(st); }
+            bench_stream_row("PERCENTRANK", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
     if( func_matches(filter, "PLUS_DI") ) {
         long long best_b = 0, best_u = -1, best_p = -1;
         int begIdx = 0, nb = 0;
@@ -10464,6 +11293,70 @@ static void bench_stream_all(const char *filter, int iters) {
             g_sink += (int)acc + nb;
             if( st ) { g_ta_track = 0; TA_RSI_Close(st); }
             bench_stream_row("RSI", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "RVI") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_RVI_Lookback(14, 10);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_RVI(t, t, g_rt_close, 14, 10, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_RVI_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_RVI_Open(&st, g_close, g_nPoints, 14, 10, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_RVI_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_RVI_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_RVI_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_RVI_Close(st);
+            bench_stream_row("RVI", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_RVI_Close(st); }
+            bench_stream_row("RVI", best_b/(double)iters, -1.0, -1.0, lb, 0);
         }
         fflush(stdout);
     }
@@ -11977,6 +12870,70 @@ static void bench_stream_all(const char *filter, int iters) {
         }
         fflush(stdout);
     }
+    if( func_matches(filter, "TSI") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_TSI_Lookback(25, 13);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_TSI(t, t, g_rt_close, 25, 13, &begIdx, &nb, g_outBuf0);
+                acc += g_outBuf0[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_TSI_Stream *st = NULL;
+            double v0 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_TSI_Open(&st, g_close, g_nPoints, 25, 13, &v0);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_TSI_Update(st, g_close[it & BENCH_MASK], &v0);
+                    acc += v0;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_TSI_Peek(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_TSI_Update(st, g_close[it & BENCH_MASK], &v0);
+                        acc += v0;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_TSI_Close(st);
+            bench_stream_row("TSI", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_TSI_Close(st); }
+            bench_stream_row("TSI", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
     if( func_matches(filter, "TYPPRICE") ) {
         long long best_b = 0, best_u = -1, best_p = -1;
         int begIdx = 0, nb = 0;
@@ -12234,6 +13191,77 @@ static void bench_stream_all(const char *filter, int iters) {
             g_sink += (int)acc + nb;
             if( st ) { g_ta_track = 0; TA_VHF_Close(st); }
             bench_stream_row("VHF", best_b/(double)iters, -1.0, -1.0, lb, 0);
+        }
+        fflush(stdout);
+    }
+    if( func_matches(filter, "VORTEX") ) {
+        long long best_b = 0, best_u = -1, best_p = -1;
+        int begIdx = 0, nb = 0;
+        size_t handle_bytes = 0;
+        double acc = 0.0;
+        int lb = TA_VORTEX_Lookback(14);
+        if( lb < 0 ) lb = 0;
+        for( int pass = 0; pass < 3; pass++ ) {
+            int t = lb;
+            long long t0 = get_nanotime();
+            for( int it = 0; it < iters; it++ ) {
+                g_rt_high[t] = g_high[it & BENCH_MASK];
+                g_rt_low[t] = g_low[it & BENCH_MASK];
+                g_rt_close[t] = g_close[it & BENCH_MASK];
+                TA_VORTEX(t, t, g_rt_high, g_rt_low, g_rt_close, 14, &begIdx, &nb, g_outBuf0, g_outBuf1);
+                acc += g_outBuf0[0];
+                acc += g_outBuf1[0];
+                t++;
+            }
+            long long el = get_nanotime() - t0;
+            if( !best_b || el < best_b ) best_b = el;
+        }
+        TA_VORTEX_Stream *st = NULL;
+            double v0 = 0.0;
+            double v1 = 0.0;
+        g_trk_reset(); g_ta_track = 1;
+        TA_RetCode orc = TA_VORTEX_Open(&st, g_high, g_low, g_close, g_nPoints, 14, &v0, &v1);
+        g_ta_track = 0; handle_bytes = g_ta_live_bytes;
+        if( orc == TA_SUCCESS && st ) {
+            int blk = (iters >= 64) ? 32 : 1;
+            int nblk = iters / blk; int npk = nblk * blk; if( npk < 1 ) npk = 1;
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long t0 = get_nanotime();
+                for( int it = 0; it < iters; it++ ) {
+                    TA_VORTEX_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1);
+                    acc += v0;
+                    acc += v1;
+                }
+                long long tu = get_nanotime() - t0;
+                if( best_u < 0 || tu < best_u ) best_u = tu;
+            }
+            for( int pass = 0; pass < 3; pass++ ) {
+                long long tp = 0;
+                for( int b = 0; b < nblk; b++ ) {
+                    long long t0 = get_nanotime();
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_VORTEX_Peek(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1);
+                        acc += v0;
+                        acc += v1;
+                    }
+                    tp += get_nanotime() - t0;
+                    for( int j = 0; j < blk; j++ ) {
+                        int it = b * blk + j;
+                        TA_VORTEX_Update(st, g_high[it & BENCH_MASK], g_low[it & BENCH_MASK], g_close[it & BENCH_MASK], &v0, &v1);
+                        acc += v0;
+                        acc += v1;
+                    }
+                }
+                if( best_p < 0 || tp < best_p ) best_p = tp;
+            }
+            g_sink += (int)acc + nb;
+            TA_VORTEX_Close(st);
+            bench_stream_row("VORTEX", best_b/(double)iters, best_u/(double)iters, best_p/(double)npk, lb, handle_bytes);
+        } else {
+            g_sink += (int)acc + nb;
+            if( st ) { g_ta_track = 0; TA_VORTEX_Close(st); }
+            bench_stream_row("VORTEX", best_b/(double)iters, -1.0, -1.0, lb, 0);
         }
         fflush(stdout);
     }
