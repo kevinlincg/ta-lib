@@ -107,3 +107,21 @@ but that probe marked *every* `Update` unconditionally, and its control
 (`TA_SMA_Update`, which contains no `fma` at all) moved 1.154x on the same run —
 so no number there is claimable and I am not proposing the change. It looks
 worth its own issue and a clean experiment.
+
+## Re-verified on dev `710765c6`
+
+Dev moved (the September indicator batch, #382's `UpdateAndFill` removal, the
+KAMA guard), so the head is merged with `710765c6` and the two commands the new
+nightly job runs were re-run locally, on Ubuntu clang 18.1.3, x86-64 glibc:
+
+- With this branch's header: `cmake -DCMAKE_C_COMPILER=clang`, Release —
+  **480 `TA_*` IFUNC dispatch symbols** in `libta-lib.so.0.8.1`, and the full C
+  reference suite on that build reports *All tests succeeded* (201 functions,
+  the rolling-extremum, frozen-064 and streaming-finite legs included).
+- **The control, run and watched to fail:** restoring dev's `ta_utility.h` in the
+  same tree and rebuilding with the same clang gives **0** — which is the
+  regression the job exists to catch, and it is what dev ships to a clang build
+  today. `test "$n" -gt 0` is therefore discriminating, not decorative.
+
+The "what I did not check" list above is unchanged: aarch64, musl, macOS/Apple
+clang, clang < 14 and the job on a real Actions runner are all still unrun.
