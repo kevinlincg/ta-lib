@@ -134,6 +134,10 @@ def show_help():
                         regen-check.
     check-source-lists  Verify the CMake and autotools ta_regtest source
                         lists agree (no build; pure text check)
+    check-exports       Verify every declaration in the installed headers
+                        carries TA_LIB_API and has a definition under src/ —
+                        the two halves of being callable from the Windows DLL
+                        (#57). Pure text; also run as part of regen-check.
     check-cargo-lock    Verify both committed Cargo.lock files still satisfy
                         their manifests (resolve only, no build). Also the
                         first thing regen-check does, because any later cargo
@@ -513,6 +517,18 @@ def check_stream_retcodes(root_dir: str) -> bool:
     ).returncode == 0
 
 
+def check_exports(root_dir: str) -> bool:
+    """Every installed declaration is reachable from the Windows DLL.
+
+    Reads the headers rather than a DLL so it runs on the PR gate, on any
+    machine, one commit before the release that would have shipped without the
+    symbol. See its docstring for what that costs.
+    """
+    return subprocess.run(
+        [sys.executable, os.path.join(root_dir, 'scripts', 'check_exports.py')]
+    ).returncode == 0
+
+
 def regen_check(root_dir: str) -> int:
     """Verify the committed generated output matches ta_codegen/input/.
 
@@ -531,6 +547,10 @@ def regen_check(root_dir: str) -> int:
 
     print("\n=== History-length return codes (rules S1 and S7) ===")
     if not check_stream_retcodes(root_dir):
+        return 1
+
+    print("\n=== Windows DLL export surface ===")
+    if not check_exports(root_dir):
         return 1
 
     print("\n=== ta_codegen/input formatting ===")
@@ -714,6 +734,9 @@ def main():
 
     if args.target == 'check-stream-retcodes':
         sys.exit(0 if check_stream_retcodes(root_dir) else 1)
+
+    if args.target == 'check-exports':
+        sys.exit(0 if check_exports(root_dir) else 1)
 
     if args.target == 'check-mcdc':
         sys.exit(subprocess.call(
