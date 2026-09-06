@@ -113,12 +113,11 @@ overlapping ones.
 - `./ta_regtest` green (the full hand-written C suite, including the streaming
   gates and the frozen v0.6.4 leg).
 - `ta_regtest --codegen --language=c` green over the whole corpus (161 pass, 0
-  fail). That run was made on `dev` at `f0f89e1c` with the C server carrying the
-  same short-history-leg reordering the maintainer has since landed as
-  `7625e259`: without it the leg reports a false
+  fail), on this branch merged to dev tip `7625e259`, and `./ta_regtest` green
+  again on that merge. An earlier run at `f0f89e1c` could reach no verdict at
+  all: the short-history leg reported a false
   `open accepted a history shorter than one output` on every unstable-period
-  function, and the C leg cannot reach a verdict on anything else. This branch
-  now merges `7625e259`, and regenerating on the merged tree changes nothing.
+  function until `7625e259` fixed it.
 - Regenerated: the diff is `src/ta_func/*.c` plus the emitter; `output/rust`,
   `output/java` and `output/csharp` regenerate byte-identical, and no generated
   server or bench file moves.
