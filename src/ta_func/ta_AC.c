@@ -814,12 +814,16 @@ TA_LIB_API TA_RetCode TA_AC_Open( TA_AC_Stream **stream, const double inHigh[], 
 
 TA_LIB_API TA_RetCode TA_AC_OpenAndFill( TA_AC_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow ) return TA_BAD_PARAM;
+   fillNb = TA_AC_Lookback( optInFastPeriod, optInSlowPeriod, optInSignalPeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inLow, historyLen ) ) return TA_BAD_PARAM;
    return TA_AC_OpenAndFillInternal( stream, inHigh, inLow, 0, historyLen, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, outBegIdx, outNBElement, outReal );
 }
 

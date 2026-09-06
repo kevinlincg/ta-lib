@@ -551,12 +551,16 @@ TA_LIB_API TA_RetCode TA_STOCHRSI_Open( TA_STOCHRSI_Stream **stream, const doubl
 
 TA_LIB_API TA_RetCode TA_STOCHRSI_OpenAndFill( TA_STOCHRSI_Stream **stream, const double inReal[], int historyLen, int optInTimePeriod, int optInFastK_Period, int optInFastD_Period, TA_MAType optInFastD_MAType, int *outBegIdx, int *outNBElement, double outFastK[], double outFastD[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outFastK || !outFastD ) return TA_BAD_PARAM;
-   if( (const void *)outFastK == (const void *)inReal || (const void *)outFastD == (const void *)inReal || (const void *)outFastK == (const void *)outFastD ) return TA_BAD_PARAM;
+   fillNb = TA_STOCHRSI_Lookback( optInTimePeriod, optInFastK_Period, optInFastD_Period, optInFastD_MAType );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outFastK, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outFastD, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outFastK, fillNb, outFastD, fillNb ) ) return TA_BAD_PARAM;
    return TA_STOCHRSI_OpenAndFillInternal( stream, inReal, 0, historyLen, optInTimePeriod, optInFastK_Period, optInFastD_Period, optInFastD_MAType, outBegIdx, outNBElement, outFastK, outFastD );
 }
 

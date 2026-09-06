@@ -1278,12 +1278,16 @@ TA_LIB_API TA_RetCode TA_SMI_Open( TA_SMI_Stream **stream, const double inHigh[]
 
 TA_LIB_API TA_RetCode TA_SMI_OpenAndFill( TA_SMI_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int optInTimePeriod, int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod, int *outBegIdx, int *outNBElement, double outSMI[], double outSMISignal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outSMI || !outSMISignal ) return TA_BAD_PARAM;
-   if( (const void *)outSMI == (const void *)inHigh || (const void *)outSMI == (const void *)inLow || (const void *)outSMI == (const void *)inClose || (const void *)outSMISignal == (const void *)inHigh || (const void *)outSMISignal == (const void *)inLow || (const void *)outSMISignal == (const void *)inClose || (const void *)outSMI == (const void *)outSMISignal ) return TA_BAD_PARAM;
+   fillNb = TA_SMI_Lookback( optInTimePeriod, optInFastPeriod, optInSlowPeriod, optInSignalPeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outSMI, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outSMI, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outSMI, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outSMISignal, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outSMISignal, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outSMISignal, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outSMI, fillNb, outSMISignal, fillNb ) ) return TA_BAD_PARAM;
    return TA_SMI_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, optInTimePeriod, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, outBegIdx, outNBElement, outSMI, outSMISignal );
 }
 

@@ -839,12 +839,16 @@ TA_LIB_API TA_RetCode TA_MACDEXT_Open( TA_MACDEXT_Stream **stream, const double 
 
 TA_LIB_API TA_RetCode TA_MACDEXT_OpenAndFill( TA_MACDEXT_Stream **stream, const double inReal[], int historyLen, int optInFastPeriod, TA_MAType optInFastMAType, int optInSlowPeriod, TA_MAType optInSlowMAType, int optInSignalPeriod, TA_MAType optInSignalMAType, int *outBegIdx, int *outNBElement, double outMACD[], double outMACDSignal[], double outMACDHist[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outMACD || !outMACDSignal || !outMACDHist ) return TA_BAD_PARAM;
-   if( (const void *)outMACD == (const void *)inReal || (const void *)outMACDSignal == (const void *)inReal || (const void *)outMACDHist == (const void *)inReal || (const void *)outMACD == (const void *)outMACDSignal || (const void *)outMACD == (const void *)outMACDHist || (const void *)outMACDSignal == (const void *)outMACDHist ) return TA_BAD_PARAM;
+   fillNb = TA_MACDEXT_Lookback( optInFastPeriod, optInFastMAType, optInSlowPeriod, optInSlowMAType, optInSignalPeriod, optInSignalMAType );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outMACD, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outMACDSignal, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outMACDHist, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outMACD, fillNb, outMACDSignal, fillNb ) || TA_RANGES_OVERLAP( outMACD, fillNb, outMACDHist, fillNb ) || TA_RANGES_OVERLAP( outMACDSignal, fillNb, outMACDHist, fillNb ) ) return TA_BAD_PARAM;
    return TA_MACDEXT_OpenAndFillInternal( stream, inReal, 0, historyLen, optInFastPeriod, optInFastMAType, optInSlowPeriod, optInSlowMAType, optInSignalPeriod, optInSignalMAType, outBegIdx, outNBElement, outMACD, outMACDSignal, outMACDHist );
 }
 

@@ -2076,12 +2076,16 @@ TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Open( TA_HT_TRENDMODE_Stream **stream, con
 
 TA_LIB_API TA_RetCode TA_HT_TRENDMODE_OpenAndFill( TA_HT_TRENDMODE_Stream **stream, const double inReal[], int historyLen, int *outBegIdx, int *outNBElement, int outInteger[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outInteger ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inReal ) return TA_BAD_PARAM;
+   fillNb = TA_HT_TRENDMODE_Lookback();
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outInteger, fillNb, inReal, historyLen ) ) return TA_BAD_PARAM;
    return TA_HT_TRENDMODE_OpenAndFillInternal( stream, inReal, 0, historyLen, outBegIdx, outNBElement, outInteger );
 }
 

@@ -29,6 +29,16 @@
    #define TA_FMA_MULTIVERSION
 #endif
 
+/* Counts are in ELEMENTS of each array passed, so operands of different element
+ * types are still measured against each other correctly.
+ */
+#define TA_RANGES_OVERLAP(a,aNb,b,bNb) \
+   TA_BytesOverlap( (const void *)(a), (size_t)(aNb) * sizeof((a)[0]), \
+                    (const void *)(b), (size_t)(bNb) * sizeof((b)[0]) )
+
+int TA_BytesOverlap( const void *a, size_t aBytes,
+                     const void *b, size_t bBytes );
+
 /* Provides an equivalent to standard "math.h" functions. */
 #define std_floor floor
 #define std_ceil  ceil

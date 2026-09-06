@@ -625,12 +625,16 @@ TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_Open( TA_CDLMORNINGDOJISTAR_Stream *
 
 TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_OpenAndFill( TA_CDLMORNINGDOJISTAR_Stream **stream, const double inOpen[], const double inHigh[], const double inLow[], const double inClose[], int historyLen, double optInPenetration, int *outBegIdx, int *outNBElement, int outInteger[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inOpen || !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outInteger ) return TA_BAD_PARAM;
-   if( (const void *)outInteger == (const void *)inOpen || (const void *)outInteger == (const void *)inHigh || (const void *)outInteger == (const void *)inLow || (const void *)outInteger == (const void *)inClose ) return TA_BAD_PARAM;
+   fillNb = TA_CDLMORNINGDOJISTAR_Lookback( optInPenetration );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outInteger, fillNb, inOpen, historyLen ) || TA_RANGES_OVERLAP( outInteger, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outInteger, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outInteger, fillNb, inClose, historyLen ) ) return TA_BAD_PARAM;
    return TA_CDLMORNINGDOJISTAR_OpenAndFillInternal( stream, inOpen, inHigh, inLow, inClose, 0, historyLen, optInPenetration, outBegIdx, outNBElement, outInteger );
 }
 

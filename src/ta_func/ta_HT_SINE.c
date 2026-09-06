@@ -1762,12 +1762,16 @@ TA_LIB_API TA_RetCode TA_HT_SINE_Open( TA_HT_SINE_Stream **stream, const double 
 
 TA_LIB_API TA_RetCode TA_HT_SINE_OpenAndFill( TA_HT_SINE_Stream **stream, const double inReal[], int historyLen, int *outBegIdx, int *outNBElement, double outSine[], double outLeadSine[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outSine || !outLeadSine ) return TA_BAD_PARAM;
-   if( (const void *)outSine == (const void *)inReal || (const void *)outLeadSine == (const void *)inReal || (const void *)outSine == (const void *)outLeadSine ) return TA_BAD_PARAM;
+   fillNb = TA_HT_SINE_Lookback();
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outSine, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outLeadSine, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outSine, fillNb, outLeadSine, fillNb ) ) return TA_BAD_PARAM;
    return TA_HT_SINE_OpenAndFillInternal( stream, inReal, 0, historyLen, outBegIdx, outNBElement, outSine, outLeadSine );
 }
 

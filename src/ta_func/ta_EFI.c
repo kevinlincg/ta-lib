@@ -628,12 +628,16 @@ TA_LIB_API TA_RetCode TA_EFI_Open( TA_EFI_Stream **stream, const double inClose[
 
 TA_LIB_API TA_RetCode TA_EFI_OpenAndFill( TA_EFI_Stream **stream, const double inClose[], const double inVolume[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inClose || !inVolume || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inClose || (const void *)outReal == (const void *)inVolume ) return TA_BAD_PARAM;
+   fillNb = TA_EFI_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inVolume, historyLen ) ) return TA_BAD_PARAM;
    return TA_EFI_OpenAndFillInternal( stream, inClose, inVolume, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
 }
 

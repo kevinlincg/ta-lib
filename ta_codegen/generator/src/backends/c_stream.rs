@@ -439,20 +439,61 @@ fn required_args(func: &FuncDef, frame: Frame) -> Vec<String> {
 /// NULL on the copy-out. `OpenAndFill` does pass the caller's arrays straight
 /// down, so there the repeat is real, and cheaper than teaching the frame which
 /// of its arguments the callee will see.
-/// One alias comparison, with the NULL guard a declinable operand needs.
+/// One overlap comparison, with the NULL guard a declinable operand needs.
 ///
-/// A declined output aliases nothing, and two of them would otherwise compare
-/// equal — `NULL == NULL` — rejecting a legal call. The batch emitter guards the
+/// A declined output aliases nothing, and two of them would otherwise share the
+/// same address — `NULL` — rejecting a legal call. The batch emitter guards the
 /// nullable operand for exactly this reason (rule B6a).
-fn alias_term(func: &FuncDef, a: &str, b: &str) -> String {
+fn alias_term(func: &FuncDef, a: &str, a_nb: &str, b: &str, b_nb: &str) -> String {
     let nullable = super::common::nullable_output_names(func);
-    let term = format!("(const void *){a} == (const void *){b}");
+    let term = format!("TA_RANGES_OVERLAP( {a}, {a_nb}, {b}, {b_nb} )");
     match (nullable.contains(a), nullable.contains(b)) {
         (false, false) => term,
         (true, false) => format!("({a} != NULL && {term})"),
         (false, true) => format!("({b} != NULL && {term})"),
         (true, true) => format!("({a} != NULL && {b} != NULL && {term})"),
     }
+}
+
+/// The public fill's aliasing rejection.
+///
+/// The destination extent is what the call WRITES (`historyLen - lookback`), not
+/// `historyLen`: measured wider, a caller whose output ends exactly where an
+/// input begins is refused over bytes nothing touches.
+///
+/// A call that writes nothing measures its destination over ONE element rather
+/// than zero — a zero extent overlaps nothing, so a destination that IS an input
+/// would stop being rejected here.
+fn alias_guard(func: &FuncDef, outs: &[String], inputs: &[String]) -> String {
+    let n = uname(func);
+    let mut terms: Vec<String> = Vec::new();
+    for out in outs {
+        for inp in inputs {
+            terms.push(alias_term(func, out, "fillNb", inp, "historyLen"));
+        }
+    }
+    for (i, a) in outs.iter().enumerate() {
+        for b in &outs[i + 1..] {
+            terms.push(alias_term(func, a, "fillNb", b, "fillNb"));
+        }
+    }
+    if terms.is_empty() {
+        return String::new();
+    }
+    let args: Vec<String> = func.optional_inputs.iter().map(|p| p.name.clone()).collect();
+    let lb_call = if args.is_empty() {
+        format!("TA_{n}_Lookback()")
+    } else {
+        format!("TA_{n}_Lookback( {} )", args.join(", "))
+    };
+    let mut s = String::new();
+    let _ = writeln!(s, "   fillNb = {lb_call};");
+    let _ = writeln!(
+        s,
+        "   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;"
+    );
+    let _ = writeln!(s, "   if( {} ) return TA_BAD_PARAM;", terms.join(" || "));
+    s
 }
 
 fn presence_guard(func: &FuncDef, frame: Frame) -> String {
@@ -556,28 +597,16 @@ fn emit_open_and_fill_wrapper(o: &mut String, func: &FuncDef) {
     let n = uname(func);
     let inputs = streaming::input_array_names(func);
     let outs: Vec<String> = func.outputs.iter().map(|x| x.name.clone()).collect();
+    let alias = alias_guard(func, &outs, &inputs);
     let _ = writeln!(o, "{}\n{{", open_and_fill_signature(func));
+    if !alias.is_empty() {
+        let _ = writeln!(o, "   int fillNb;\n");
+    }
     let _ = writeln!(o, "   if( !stream ) return TA_BAD_PARAM;");
     let _ = writeln!(o, "   *stream = NULL;");
     o.push_str(index_pair_guards());
     o.push_str(&presence_guard(func, Frame::OpenAndFill));
-    // Cast to `const void *` so the comparison is well-typed for any output
-    // element type (an integer output vs double inputs would otherwise warn
-    // "comparison of distinct pointer types lacks a cast").
-    let mut alias: Vec<String> = Vec::new();
-    for out in &outs {
-        for inp in &inputs {
-            alias.push(alias_term(func, out, inp));
-        }
-    }
-    for (i, a) in outs.iter().enumerate() {
-        for b in &outs[i + 1..] {
-            alias.push(alias_term(func, a, b));
-        }
-    }
-    if !alias.is_empty() {
-        let _ = writeln!(o, "   if( {} ) return TA_BAD_PARAM;", alias.join(" || "));
-    }
+    o.push_str(&alias);
     // Straight to the anchored seam at 0, not to `_OpenImpl`, so the seam has a
     // caller for every function instead of only the sixteen something composes
     // over. The guard above is the difference between the two frames.
@@ -2464,6 +2493,9 @@ fn emit_dispatch_open(
     );
     let _ = writeln!(o, "   struct TA_{n}_Stream *sp;");
     let _ = writeln!(o, "   TA_RetCode retCode;");
+    if mode == DispatchOpen::Fill {
+        let _ = writeln!(o, "   int fillNb;");
+    }
     let _ = writeln!(o, "\n   if( !stream ) return TA_BAD_PARAM;");
     let _ = writeln!(o, "   *stream = NULL;");
     o.push_str(index_pair_guards());
@@ -2477,24 +2509,11 @@ fn emit_dispatch_open(
         let _ = writeln!(o, "   (void)startIdx;");
     }
     if mode == DispatchOpen::Fill {
-        // Aliasing: fill writes the caller's arrays, so they must be distinct
+        // Aliasing: fill writes the caller's arrays, so they must be disjoint
         // from every input and from each other (the callee OpenAndFill also
         // guards, but the identity path below fills directly). The internal
         // variant deliberately carries no such guard — see [`DispatchOpen`].
-        let mut alias: Vec<String> = Vec::new();
-        for outp in &outputs {
-            for inp in &inputs {
-                alias.push(alias_term(func, outp, inp));
-            }
-        }
-        for (i, a) in outputs.iter().enumerate() {
-            for b in &outputs[i + 1..] {
-                alias.push(alias_term(func, a, b));
-            }
-        }
-        if !alias.is_empty() {
-            let _ = writeln!(o, "   if( {} ) return TA_BAD_PARAM;", alias.join(" || "));
-        }
+        o.push_str(&alias_guard(func, &outputs, &inputs));
     }
     o.push_str(&emit_opt_param_validation(func, "TA_BAD_PARAM", enums));
     let _ = writeln!(o, "\n   sp = (struct TA_{n}_Stream *)TA_Malloc( sizeof(*sp) );");
@@ -4520,19 +4539,14 @@ fn emit_period_bank(
     let _ = writeln!(o, "{}\n{{", open_and_fill_signature(func));
     let _ = writeln!(o, "   struct TA_{n}_Stream *sp;");
     let _ = writeln!(o, "   int k, cp, lookbackTotal, t;");
+    let _ = writeln!(o, "   int fillNb;");
     let _ = writeln!(o, "   double cpReal;");
     let _ = writeln!(o, "   TA_RetCode retCode;");
     let _ = writeln!(o, "\n   if( !stream ) return TA_BAD_PARAM;");
     let _ = writeln!(o, "   *stream = NULL;");
     o.push_str(index_pair_guards());
     o.push_str(&presence_guard(func, Frame::OpenAndFill));
-    let mut alias: Vec<String> = Vec::new();
-    for inp in &inputs {
-        alias.push(alias_term(func, out, inp));
-    }
-    if !alias.is_empty() {
-        let _ = writeln!(o, "   if( {} ) return TA_BAD_PARAM;", alias.join(" || "));
-    }
+    o.push_str(&alias_guard(func, std::slice::from_ref(out), &inputs));
     o.push_str(&emit_opt_param_validation(func, "TA_BAD_PARAM", enums));
     let _ = writeln!(o, "   if( {min} > {max} ) return TA_BAD_PARAM;");
     let _ = writeln!(

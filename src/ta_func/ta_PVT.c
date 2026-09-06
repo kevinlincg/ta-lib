@@ -275,12 +275,16 @@ TA_LIB_API TA_RetCode TA_PVT_Open( TA_PVT_Stream **stream, const double inClose[
 
 TA_LIB_API TA_RetCode TA_PVT_OpenAndFill( TA_PVT_Stream **stream, const double inClose[], const double inVolume[], int historyLen, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inClose || !inVolume || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inClose || (const void *)outReal == (const void *)inVolume ) return TA_BAD_PARAM;
+   fillNb = TA_PVT_Lookback();
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inVolume, historyLen ) ) return TA_BAD_PARAM;
    return TA_PVT_OpenAndFillInternal( stream, inClose, inVolume, 0, historyLen, outBegIdx, outNBElement, outReal );
 }
 

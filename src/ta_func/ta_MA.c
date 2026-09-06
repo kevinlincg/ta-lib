@@ -542,13 +542,16 @@ TA_LIB_API TA_RetCode TA_MA_OpenAndFill( TA_MA_Stream **stream, const double inR
 {
    struct TA_MA_Stream *sp;
    TA_RetCode retCode;
+   int fillNb;
 
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
+   fillNb = TA_MA_Lookback( optInTimePeriod, optInMAType );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inReal, historyLen ) ) return TA_BAD_PARAM;
    if( (int)optInTimePeriod == TA_INTEGER_DEFAULT )
       optInTimePeriod = 30;
    else if( (int)optInTimePeriod < 1 || (int)optInTimePeriod > 100000 )

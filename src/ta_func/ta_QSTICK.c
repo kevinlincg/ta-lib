@@ -435,12 +435,16 @@ TA_LIB_API TA_RetCode TA_QSTICK_Open( TA_QSTICK_Stream **stream, const double in
 
 TA_LIB_API TA_RetCode TA_QSTICK_OpenAndFill( TA_QSTICK_Stream **stream, const double inOpen[], const double inClose[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inOpen || !inClose || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inOpen || (const void *)outReal == (const void *)inClose ) return TA_BAD_PARAM;
+   fillNb = TA_QSTICK_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inOpen, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inClose, historyLen ) ) return TA_BAD_PARAM;
    return TA_QSTICK_OpenAndFillInternal( stream, inOpen, inClose, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
 }
 

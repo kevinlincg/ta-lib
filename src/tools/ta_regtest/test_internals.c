@@ -549,6 +549,7 @@ static ErrorNumber testStreamShortHistory( void )
  */
 static int bacReject, bacAccept;
 static int s4Reject, s4Accept;
+static int ovReject, ovAccept;
 static int u6aUpd;
 
 #define BAC_REJECT( name, call )                                               \
@@ -599,6 +600,32 @@ static int u6aUpd;
       s4Accept++;                                                              \
    } while(0)
 
+/* Counted apart from S4's own pair: an overlap case deleted from the set below
+ * would otherwise hide behind the twelve rejections above it. */
+#define OV_REJECT( name, call )                                                \
+   do {                                                                        \
+      TA_RetCode rc__ = (call);                                                \
+      if( rc__ != TA_BAD_PARAM )                                               \
+      {                                                                        \
+         printf( "\nFailed: %s returned %d, expected TA_BAD_PARAM (%d)\n",     \
+                 name, (int)rc__, (int)TA_BAD_PARAM );                         \
+         return TA_BATCH_ARG_WRONG_CODE;                                       \
+      }                                                                        \
+      ovReject++;                                                              \
+   } while(0)
+
+#define OV_ACCEPT( name, call )                                                \
+   do {                                                                        \
+      TA_RetCode rc__ = (call);                                                \
+      if( rc__ != TA_SUCCESS )                                                 \
+      {                                                                        \
+         printf( "\nFailed: %s returned %d, expected TA_SUCCESS\n",            \
+                 name, (int)rc__ );                                            \
+         return TA_BATCH_ARG_CONTROL;                                          \
+      }                                                                        \
+      ovAccept++;                                                              \
+   } while(0)
+
 static ErrorNumber testBatchArgumentContract( void )
 {
    static double bars[512];
@@ -619,6 +646,7 @@ static ErrorNumber testBatchArgumentContract( void )
 
    bacReject = bacAccept = 0;
    s4Reject = s4Accept = 0;
+   ovReject = ovAccept = 0;
    u6aUpd = 0;
 
    for( i = 0; i < 512; i++ )
@@ -819,6 +847,84 @@ static ErrorNumber testBatchArgumentContract( void )
       S4_ACCEPT( "TA_CDL3OUTSIDE_Open",
                  TA_CDL3OUTSIDE_Open( &cst, bars, bars, bars, bars, 252, outI ) );
       if( cst ) { TA_CDL3OUTSIDE_Close( cst ); cst = NULL; }
+   }
+
+   /* Rule S4, aliasing half: what OpenAndFill rejects is a shared BYTE, not a
+    * shared address.
+    *
+    * Each rejected placement below has an accepted twin one element away, which
+    * is what pins the arithmetic rather than only the direction: a guard reading
+    * the destination as historyLen elements rejects the accepted twins, one
+    * comparing addresses accepts the rejected ones. Extents come from the
+    * library's own Lookback, so a lookback change moves the test with the code.
+    */
+   {
+      static double packed[1024];
+      TA_SMA_Stream  *sst = NULL;
+      TA_MAMA_Stream *mst = NULL;
+      double *in = &packed[512];
+      int lb, fillNb, k;
+
+      for( k = 0; k < 1024; k++ )
+         packed[k] = 100.0 + (double)k * 0.25;
+
+      lb = TA_SMA_Lookback( 30 );
+      fillNb = 252 - lb;
+      if( lb < 1 || fillNb < 2 || fillNb > 512 )
+      {
+         printf( "\nFailed: the overlap gate's SMA extent is unusable (%d, %d)\n",
+                 lb, fillNb );
+         return TA_BATCH_ARG_VACUOUS;
+      }
+
+      /* Inside the input, one bar in. */
+      OV_REJECT( "TA_SMA_OpenAndFill(outReal = inReal + 1)",
+                 TA_SMA_OpenAndFill( &sst, in, 252, 30, &beg, &nb, in + 1 ) );
+      /* Ending one element inside it. */
+      OV_REJECT( "TA_SMA_OpenAndFill(outReal ends 1 into inReal)",
+                 TA_SMA_OpenAndFill( &sst, in, 252, 30, &beg, &nb, in - fillNb + 1 ) );
+      /* Ending exactly where the input starts: nothing is shared. */
+      OV_ACCEPT( "TA_SMA_OpenAndFill(outReal abuts inReal from below)",
+                 TA_SMA_OpenAndFill( &sst, in, 252, 30, &beg, &nb, in - fillNb ) );
+      if( sst ) { TA_SMA_Close( sst ); sst = NULL; }
+      /* Starting exactly where the input ends. */
+      OV_ACCEPT( "TA_SMA_OpenAndFill(outReal abuts inReal from above)",
+                 TA_SMA_OpenAndFill( &sst, in, 252, 30, &beg, &nb, in + 252 ) );
+      if( sst ) { TA_SMA_Close( sst ); sst = NULL; }
+
+      /* A call that produces nothing measures its destination over one element,
+       * not none, so this stays TA_BAD_PARAM while the disjoint control gets the
+       * short-history answer. */
+      OV_REJECT( "TA_SMA_OpenAndFill(outReal = inReal, history below lookback)",
+                 TA_SMA_OpenAndFill( &sst, in, 5, 30, &beg, &nb, in ) );
+      {
+         TA_RetCode rc__ = TA_SMA_OpenAndFill( &sst, in, 5, 30, &beg, &nb, &packed[0] );
+         if( rc__ != TA_INSUFFICIENT_HISTORY )
+         {
+            printf( "\nFailed: a disjoint short-history fill returned %d, expected "
+                    "TA_INSUFFICIENT_HISTORY (%d)\n",
+                    (int)rc__, (int)TA_INSUFFICIENT_HISTORY );
+            return TA_BATCH_ARG_CONTROL;
+         }
+         ovAccept++;
+      }
+
+      /* Two outputs, from the same argument list. */
+      lb = TA_MAMA_Lookback( 0.5, 0.05 );
+      fillNb = 252 - lb;
+      if( lb < 1 || fillNb < 2 || fillNb > 250 )
+      {
+         printf( "\nFailed: the overlap gate's MAMA extent is unusable (%d, %d)\n",
+                 lb, fillNb );
+         return TA_BATCH_ARG_VACUOUS;
+      }
+      OV_REJECT( "TA_MAMA_OpenAndFill(outFAMA = outMAMA + 1)",
+                 TA_MAMA_OpenAndFill( &mst, in, 252, 0.5, 0.05, &beg, &nb,
+                                      &packed[0], &packed[1] ) );
+      OV_ACCEPT( "TA_MAMA_OpenAndFill(outFAMA abuts outMAMA)",
+                 TA_MAMA_OpenAndFill( &mst, in, 252, 0.5, 0.05, &beg, &nb,
+                                      &packed[0], &packed[fillNb] ) );
+      if( mst ) { TA_MAMA_Close( mst ); mst = NULL; }
    }
 
    /* Rule U6a: a nullable output may be declined at Update too, and the choice
@@ -1086,6 +1192,12 @@ static ErrorNumber testBatchArgumentContract( void )
    if( s4Reject < 12 || s4Accept < 5 )
    {
       printf( "\nFailed: the streaming argument gate ran fewer checks than it "
+              "was written with\n" );
+      return TA_BATCH_ARG_VACUOUS;
+   }
+   if( ovReject < 4 || ovAccept < 4 )
+   {
+      printf( "\nFailed: the fill overlap gate ran fewer checks than it "
               "was written with\n" );
       return TA_BATCH_ARG_VACUOUS;
    }

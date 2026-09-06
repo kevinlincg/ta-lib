@@ -1442,12 +1442,16 @@ TA_LIB_API TA_RetCode TA_HT_PHASOR_Open( TA_HT_PHASOR_Stream **stream, const dou
 
 TA_LIB_API TA_RetCode TA_HT_PHASOR_OpenAndFill( TA_HT_PHASOR_Stream **stream, const double inReal[], int historyLen, int *outBegIdx, int *outNBElement, double outInPhase[], double outQuadrature[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outInPhase || !outQuadrature ) return TA_BAD_PARAM;
-   if( (const void *)outInPhase == (const void *)inReal || (const void *)outQuadrature == (const void *)inReal || (const void *)outInPhase == (const void *)outQuadrature ) return TA_BAD_PARAM;
+   fillNb = TA_HT_PHASOR_Lookback();
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outInPhase, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outQuadrature, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outInPhase, fillNb, outQuadrature, fillNb ) ) return TA_BAD_PARAM;
    return TA_HT_PHASOR_OpenAndFillInternal( stream, inReal, 0, historyLen, outBegIdx, outNBElement, outInPhase, outQuadrature );
 }
 

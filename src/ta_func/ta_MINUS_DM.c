@@ -916,12 +916,16 @@ TA_LIB_API TA_RetCode TA_MINUS_DM_Open( TA_MINUS_DM_Stream **stream, const doubl
 
 TA_LIB_API TA_RetCode TA_MINUS_DM_OpenAndFill( TA_MINUS_DM_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow ) return TA_BAD_PARAM;
+   fillNb = TA_MINUS_DM_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inLow, historyLen ) ) return TA_BAD_PARAM;
    return TA_MINUS_DM_OpenAndFillInternal( stream, inHigh, inLow, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
 }
 

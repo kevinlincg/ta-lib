@@ -47,8 +47,11 @@
  *  071926 MF,CC  Remove dead .NET/Java preprocessor branches (plain C only)
  *  072726 MF,CC  Bound TA_Set/GetUnstablePeriod below as well as above (#144)
  *  072826 MF,CC  Range-check against TA_FUNC_UNST_COUNT; ALL is now INT_MAX
+ *  090626 MF,CC  TA_BytesOverlap: the fill's aliasing reject reads extents (#386)
  *
  */
+
+#include <stdint.h>
 
 #include "ta_utility.h"
 #include "ta_func.h"
@@ -129,3 +132,19 @@ TA_Compatibility TA_GetCompatibility( void )
    return TA_GLOBALS_COMPATIBILITY;
 }
 
+int TA_BytesOverlap( const void *a, size_t aBytes,
+                     const void *b, size_t bBytes )
+{
+   /* Ordering pointers into different objects is undefined and `a + aBytes` can
+    * pass the end of its own object, so subtract only from the lower address.
+    */
+   uintptr_t pa = (uintptr_t)a;
+   uintptr_t pb = (uintptr_t)b;
+
+   if( aBytes == 0 || bBytes == 0 )
+      return 0;
+
+   if( pa <= pb )
+      return (uintptr_t)(pb - pa) < (uintptr_t)aBytes;
+   return (uintptr_t)(pa - pb) < (uintptr_t)bBytes;
+}

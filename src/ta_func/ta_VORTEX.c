@@ -906,12 +906,16 @@ TA_LIB_API TA_RetCode TA_VORTEX_Open( TA_VORTEX_Stream **stream, const double in
 
 TA_LIB_API TA_RetCode TA_VORTEX_OpenAndFill( TA_VORTEX_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outPlusVI[], double outMinusVI[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outPlusVI || !outMinusVI ) return TA_BAD_PARAM;
-   if( (const void *)outPlusVI == (const void *)inHigh || (const void *)outPlusVI == (const void *)inLow || (const void *)outPlusVI == (const void *)inClose || (const void *)outMinusVI == (const void *)inHigh || (const void *)outMinusVI == (const void *)inLow || (const void *)outMinusVI == (const void *)inClose || (const void *)outPlusVI == (const void *)outMinusVI ) return TA_BAD_PARAM;
+   fillNb = TA_VORTEX_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outPlusVI, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outPlusVI, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outPlusVI, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outMinusVI, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outMinusVI, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outMinusVI, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outPlusVI, fillNb, outMinusVI, fillNb ) ) return TA_BAD_PARAM;
    return TA_VORTEX_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outPlusVI, outMinusVI );
 }
 

@@ -230,19 +230,75 @@ fn fill_wrapper_keeps_output_aliasing_guards() {
     let src = stream_c("accbands");
     let fill = body_of(&src, "TA_RetCode TA_ACCBANDS_OpenAndFill(");
     assert!(
-        fill.contains("(const void *)outRealUpperBand == (const void *)inHigh"),
+        fill.contains("TA_RANGES_OVERLAP( outRealUpperBand, fillNb, inHigh, historyLen )"),
         "output-vs-input aliasing guard survives:\n{fill}"
     );
     assert!(
-        fill.contains("(const void *)outRealUpperBand == (const void *)outRealMiddleBand"),
+        fill.contains("TA_RANGES_OVERLAP( outRealUpperBand, fillNb, outRealMiddleBand, fillNb )"),
         "output-vs-output aliasing guard survives:\n{fill}"
     );
     // ...and the scalar wrapper must NOT inherit them: its sink is a local.
     let scalar = body_of(&src, "TA_RetCode TA_ACCBANDS_OpenInternal(");
     assert!(
-        !scalar.contains("(const void *)"),
+        !scalar.contains("TA_RANGES_OVERLAP"),
         "Open has no aliasing hazard and must not pay for the check:\n{scalar}"
     );
+}
+
+/// The two extents the reject is measured over.
+///
+/// Which calls a guard refuses is invisible to every value gate — no accepted
+/// call computes differently — so the extents are pinned on the emitted text,
+/// and in both directions: a destination read as `historyLen` refuses legal
+/// calls, a source read as the fill count admits overlapping ones.
+#[test]
+fn fill_aliasing_reject_measures_written_extent_against_history() {
+    let mut checked = 0usize;
+    for name in streaming_funcs() {
+        let (func, _) = load(&name);
+        let src = stream_c(&name);
+        let upper = name.to_uppercase();
+        let fill = strip_comments(&body_of(&src, &format!("TA_RetCode TA_{upper}_OpenAndFill(")));
+        assert!(
+            fill.contains("TA_RANGES_OVERLAP"),
+            "{upper}: the public fill lost its aliasing reject:\n{fill}"
+        );
+        assert!(
+            fill.contains(&format!("fillNb = TA_{upper}_Lookback(")),
+            "{upper}: the written extent must come from the function's own Lookback:\n{fill}"
+        );
+        assert!(
+            fill.contains(
+                "fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;"
+            ),
+            "{upper}: a call that writes nothing falls back to one element, so a \
+             destination that IS an input keeps the code it has today:\n{fill}"
+        );
+        // Every operand carries its OWN extent: an input is read over the whole
+        // history, an output written over the fill count. Neither may be spelled
+        // as the other.
+        for inp in ta_codegen_lib::streaming::input_array_names(&func) {
+            assert!(
+                fill.contains(&format!("{inp}, historyLen )")),
+                "{upper}: input {inp} must be measured over the history it reads:\n{fill}"
+            );
+            assert!(
+                !fill.contains(&format!("{inp}, fillNb")),
+                "{upper}: input {inp} is read over the whole history, not the fill \
+                 count:\n{fill}"
+            );
+        }
+        for out in &func.outputs {
+            assert!(
+                !fill.contains(&format!("{}, historyLen", out.name)),
+                "{upper}: output {} is written over the fill count, not the whole \
+                 history:\n{fill}",
+                out.name
+            );
+        }
+        checked += 1;
+    }
+    assert!(checked > 150, "the sweep saw only {checked} streaming functions");
 }
 
 // ---------------------------------------------------------------------------
@@ -327,12 +383,12 @@ fn dispatch_open_modes_differ_only_where_intended() {
     // The aliasing rejection belongs to the PUBLIC fill alone: the internal one
     // is only ever called for a sub-call already proven non-aliasing (#192), and
     // the scalar sink cannot alias an input.
-    assert!(fill.contains("(const void *)"), "the public fill must reject aliasing:\n{fill}");
+    assert!(fill.contains("TA_RANGES_OVERLAP"), "the public fill must reject aliasing:\n{fill}");
     assert!(
-        !internal.contains("(const void *)"),
+        !internal.contains("TA_RANGES_OVERLAP"),
         "OpenAndFillInternal must NOT carry the aliasing guard:\n{internal}"
     );
-    assert!(!scalar.contains("(const void *)"), "the scalar open has no aliasing hazard:\n{scalar}");
+    assert!(!scalar.contains("TA_RANGES_OVERLAP"), "the scalar open has no aliasing hazard:\n{scalar}");
 
     // Only the startIdx-anchored fill clamps its anchor; the public one has no
     // startIdx at all.

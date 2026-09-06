@@ -662,12 +662,16 @@ TA_LIB_API TA_RetCode TA_KC_Open( TA_KC_Stream **stream, const double inHigh[], 
 
 TA_LIB_API TA_RetCode TA_KC_OpenAndFill( TA_KC_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int optInTimePeriod, int optInATRPeriod, double optInNbDev, int *outBegIdx, int *outNBElement, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( (const void *)outRealUpperBand == (const void *)inHigh || (const void *)outRealUpperBand == (const void *)inLow || (const void *)outRealUpperBand == (const void *)inClose || (const void *)outRealMiddleBand == (const void *)inHigh || (const void *)outRealMiddleBand == (const void *)inLow || (const void *)outRealMiddleBand == (const void *)inClose || (const void *)outRealLowerBand == (const void *)inHigh || (const void *)outRealLowerBand == (const void *)inLow || (const void *)outRealLowerBand == (const void *)inClose || (const void *)outRealUpperBand == (const void *)outRealMiddleBand || (const void *)outRealUpperBand == (const void *)outRealLowerBand || (const void *)outRealMiddleBand == (const void *)outRealLowerBand ) return TA_BAD_PARAM;
+   fillNb = TA_KC_Lookback( optInTimePeriod, optInATRPeriod, optInNbDev );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outRealUpperBand, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outRealLowerBand, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outRealLowerBand, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outRealLowerBand, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, outRealMiddleBand, fillNb ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, outRealLowerBand, fillNb ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, outRealLowerBand, fillNb ) ) return TA_BAD_PARAM;
    return TA_KC_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, optInTimePeriod, optInATRPeriod, optInNbDev, outBegIdx, outNBElement, outRealUpperBand, outRealMiddleBand, outRealLowerBand );
 }
 

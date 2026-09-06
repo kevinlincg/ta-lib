@@ -463,12 +463,16 @@ TA_LIB_API TA_RetCode TA_KDJ_Open( TA_KDJ_Stream **stream, const double inHigh[]
 
 TA_LIB_API TA_RetCode TA_KDJ_OpenAndFill( TA_KDJ_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int optInFastK_Period, int optInSlowK_Period, TA_MAType optInSlowK_MAType, int optInSlowD_Period, TA_MAType optInSlowD_MAType, int *outBegIdx, int *outNBElement, double outK[], double outD[], double outJ[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outK || !outD || !outJ ) return TA_BAD_PARAM;
-   if( (const void *)outK == (const void *)inHigh || (const void *)outK == (const void *)inLow || (const void *)outK == (const void *)inClose || (const void *)outD == (const void *)inHigh || (const void *)outD == (const void *)inLow || (const void *)outD == (const void *)inClose || (const void *)outJ == (const void *)inHigh || (const void *)outJ == (const void *)inLow || (const void *)outJ == (const void *)inClose || (const void *)outK == (const void *)outD || (const void *)outK == (const void *)outJ || (const void *)outD == (const void *)outJ ) return TA_BAD_PARAM;
+   fillNb = TA_KDJ_Lookback( optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outK, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outK, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outK, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outD, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outD, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outD, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outJ, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outJ, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outJ, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outK, fillNb, outD, fillNb ) || TA_RANGES_OVERLAP( outK, fillNb, outJ, fillNb ) || TA_RANGES_OVERLAP( outD, fillNb, outJ, fillNb ) ) return TA_BAD_PARAM;
    return TA_KDJ_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, outBegIdx, outNBElement, outK, outD, outJ );
 }
 

@@ -1044,12 +1044,16 @@ TA_LIB_API TA_RetCode TA_BBANDS_Open( TA_BBANDS_Stream **stream, const double in
 
 TA_LIB_API TA_RetCode TA_BBANDS_OpenAndFill( TA_BBANDS_Stream **stream, const double inReal[], int historyLen, int optInTimePeriod, double optInNbDevUp, double optInNbDevDn, TA_MAType optInMAType, int *outBegIdx, int *outNBElement, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( (const void *)outRealUpperBand == (const void *)inReal || (const void *)outRealMiddleBand == (const void *)inReal || (const void *)outRealLowerBand == (const void *)inReal || (const void *)outRealUpperBand == (const void *)outRealMiddleBand || (const void *)outRealUpperBand == (const void *)outRealLowerBand || (const void *)outRealMiddleBand == (const void *)outRealLowerBand ) return TA_BAD_PARAM;
+   fillNb = TA_BBANDS_Lookback( optInTimePeriod, optInNbDevUp, optInNbDevDn, optInMAType );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outRealUpperBand, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outRealLowerBand, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, outRealMiddleBand, fillNb ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, outRealLowerBand, fillNb ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, outRealLowerBand, fillNb ) ) return TA_BAD_PARAM;
    return TA_BBANDS_OpenAndFillInternal( stream, inReal, 0, historyLen, optInTimePeriod, optInNbDevUp, optInNbDevDn, optInMAType, outBegIdx, outNBElement, outRealUpperBand, outRealMiddleBand, outRealLowerBand );
 }
 

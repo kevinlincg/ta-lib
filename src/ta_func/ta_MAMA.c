@@ -1677,12 +1677,16 @@ TA_LIB_API TA_RetCode TA_MAMA_Open( TA_MAMA_Stream **stream, const double inReal
 
 TA_LIB_API TA_RetCode TA_MAMA_OpenAndFill( TA_MAMA_Stream **stream, const double inReal[], int historyLen, double optInFastLimit, double optInSlowLimit, int *outBegIdx, int *outNBElement, double outMAMA[], double outFAMA[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outMAMA ) return TA_BAD_PARAM;
-   if( (const void *)outMAMA == (const void *)inReal || (outFAMA != NULL && (const void *)outFAMA == (const void *)inReal) || (outFAMA != NULL && (const void *)outMAMA == (const void *)outFAMA) ) return TA_BAD_PARAM;
+   fillNb = TA_MAMA_Lookback( optInFastLimit, optInSlowLimit );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outMAMA, fillNb, inReal, historyLen ) || (outFAMA != NULL && TA_RANGES_OVERLAP( outFAMA, fillNb, inReal, historyLen )) || (outFAMA != NULL && TA_RANGES_OVERLAP( outMAMA, fillNb, outFAMA, fillNb )) ) return TA_BAD_PARAM;
    return TA_MAMA_OpenAndFillInternal( stream, inReal, 0, historyLen, optInFastLimit, optInSlowLimit, outBegIdx, outNBElement, outMAMA, outFAMA );
 }
 

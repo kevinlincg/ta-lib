@@ -550,12 +550,16 @@ TA_LIB_API TA_RetCode TA_FRACTAL_Open( TA_FRACTAL_Stream **stream, const double 
 
 TA_LIB_API TA_RetCode TA_FRACTAL_OpenAndFill( TA_FRACTAL_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInLeftBars, int optInRightBars, int *outBegIdx, int *outNBElement, int outSwingHigh[], int outSwingLow[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !outBegIdx || !outNBElement || !outSwingHigh || !outSwingLow ) return TA_BAD_PARAM;
-   if( (const void *)outSwingHigh == (const void *)inHigh || (const void *)outSwingHigh == (const void *)inLow || (const void *)outSwingLow == (const void *)inHigh || (const void *)outSwingLow == (const void *)inLow || (const void *)outSwingHigh == (const void *)outSwingLow ) return TA_BAD_PARAM;
+   fillNb = TA_FRACTAL_Lookback( optInLeftBars, optInRightBars );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outSwingHigh, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outSwingHigh, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outSwingLow, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outSwingLow, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outSwingHigh, fillNb, outSwingLow, fillNb ) ) return TA_BAD_PARAM;
    return TA_FRACTAL_OpenAndFillInternal( stream, inHigh, inLow, 0, historyLen, optInLeftBars, optInRightBars, outBegIdx, outNBElement, outSwingHigh, outSwingLow );
 }
 

@@ -1090,12 +1090,16 @@ TA_LIB_API TA_RetCode TA_CORREL_Open( TA_CORREL_Stream **stream, const double in
 
 TA_LIB_API TA_RetCode TA_CORREL_OpenAndFill( TA_CORREL_Stream **stream, const double inReal0[], const double inReal1[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal0 || !inReal1 || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal0 || (const void *)outReal == (const void *)inReal1 ) return TA_BAD_PARAM;
+   fillNb = TA_CORREL_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inReal0, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inReal1, historyLen ) ) return TA_BAD_PARAM;
    return TA_CORREL_OpenAndFillInternal( stream, inReal0, inReal1, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
 }
 

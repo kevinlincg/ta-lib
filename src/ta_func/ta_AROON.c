@@ -620,12 +620,16 @@ TA_LIB_API TA_RetCode TA_AROON_Open( TA_AROON_Stream **stream, const double inHi
 
 TA_LIB_API TA_RetCode TA_AROON_OpenAndFill( TA_AROON_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outAroonDown[], double outAroonUp[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !outBegIdx || !outNBElement || !outAroonDown || !outAroonUp ) return TA_BAD_PARAM;
-   if( (const void *)outAroonDown == (const void *)inHigh || (const void *)outAroonDown == (const void *)inLow || (const void *)outAroonUp == (const void *)inHigh || (const void *)outAroonUp == (const void *)inLow || (const void *)outAroonDown == (const void *)outAroonUp ) return TA_BAD_PARAM;
+   fillNb = TA_AROON_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outAroonDown, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outAroonDown, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outAroonUp, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outAroonUp, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outAroonDown, fillNb, outAroonUp, fillNb ) ) return TA_BAD_PARAM;
    return TA_AROON_OpenAndFillInternal( stream, inHigh, inLow, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outAroonDown, outAroonUp );
 }
 

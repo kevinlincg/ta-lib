@@ -1009,12 +1009,16 @@ TA_LIB_API TA_RetCode TA_STOCHF_Open( TA_STOCHF_Stream **stream, const double in
 
 TA_LIB_API TA_RetCode TA_STOCHF_OpenAndFill( TA_STOCHF_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int optInFastK_Period, int optInFastD_Period, TA_MAType optInFastD_MAType, int *outBegIdx, int *outNBElement, double outFastK[], double outFastD[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outFastK || !outFastD ) return TA_BAD_PARAM;
-   if( (const void *)outFastK == (const void *)inHigh || (const void *)outFastK == (const void *)inLow || (const void *)outFastK == (const void *)inClose || (const void *)outFastD == (const void *)inHigh || (const void *)outFastD == (const void *)inLow || (const void *)outFastD == (const void *)inClose || (const void *)outFastK == (const void *)outFastD ) return TA_BAD_PARAM;
+   fillNb = TA_STOCHF_Lookback( optInFastK_Period, optInFastD_Period, optInFastD_MAType );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outFastK, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outFastK, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outFastK, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outFastD, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outFastD, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outFastD, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outFastK, fillNb, outFastD, fillNb ) ) return TA_BAD_PARAM;
    return TA_STOCHF_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, optInFastK_Period, optInFastD_Period, optInFastD_MAType, outBegIdx, outNBElement, outFastK, outFastD );
 }
 

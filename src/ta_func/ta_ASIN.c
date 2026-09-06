@@ -207,12 +207,16 @@ TA_LIB_API TA_RetCode TA_ASIN_Open( TA_ASIN_Stream **stream, const double inReal
 
 TA_LIB_API TA_RetCode TA_ASIN_OpenAndFill( TA_ASIN_Stream **stream, const double inReal[], int historyLen, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inReal ) return TA_BAD_PARAM;
+   fillNb = TA_ASIN_Lookback();
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inReal, historyLen ) ) return TA_BAD_PARAM;
    return TA_ASIN_OpenAndFillInternal( stream, inReal, 0, historyLen, outBegIdx, outNBElement, outReal );
 }
 

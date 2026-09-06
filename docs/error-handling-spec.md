@@ -180,7 +180,7 @@ has what happens instead.
 | S3 | An optional parameter is outside its documented range | `TA_BAD_PARAM` | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
 | S4 | A required argument was not supplied — the handle, any declared input, any output | `TA_BAD_PARAM` | ✅<br>&nbsp; | —<br>[1] | ✅<br>[6] | —<br>[2] |
 | S5 | A buffer is too short: every declared input must be the history's length, and an `OpenAndFill` output must hold `historyLen - lookback`, the count the fill writes | `TA_BAD_PARAM` ⚠️ | ⚠️<br>[3] | ✅<br>[7] | ✅<br>[7] | ✅<br>[7] |
-| S6 | (`OpenAndFill`) an output aliases an input, or another output | `TA_BAD_PARAM` | ✅<br>&nbsp; | —<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
+| S6 | (`OpenAndFill`) an output **overlaps** an input, or another output — in C over the extents each is read and written over, elsewhere over whatever the language can express (Appendix E) | `TA_BAD_PARAM` | ✅<br>&nbsp; | —<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
 | S6a | (`OpenAndFill`) an output is **declined** — null, or zero-length where the language cannot spell null. Accepted only where the .yaml marks that output `nullable` (Appendix F) | `TA_BAD_PARAM` | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; | ✅<br>&nbsp; |
 | S7 | The history holds fewer than `lookback + 1` bars | `TA_INSUFFICIENT_HISTORY` | ✅<br>[8] | ✅<br>[8] | ✅<br>[8] | ✅<br>[8] |
 | S8 | *(withdrawn — the warm-up history is an input array; see "Non-finite input")* [9] | — | —<br>&nbsp; | —<br>&nbsp; | —<br>&nbsp; | —<br>&nbsp; |
@@ -203,15 +203,16 @@ still carries the `retCode != TA_SUCCESS` half — that backend answers a
 cross-call rejection by propagating the code rather than at the call site — so
 the arm cannot be rewritten without splitting the guard, and C mints the handle.
 
-Unlike the batch tier, `OpenAndFill` outputs may **not** be the same buffer as
-the inputs (no in-place execution). Not because it would compute the wrong
+Unlike the batch tier, `OpenAndFill` outputs may **not** share memory with the
+inputs — not the same buffer, and in C not a slice of one either (no in-place
+execution). Not because it would compute the wrong
 answer — measured, it does not: the fill's writes stop where the handle's
 warm-up seeds begin, or overlap them by the single slot the next `Update`
 rewrites first. The ban is there because that margin is an accident of every
 body's arithmetic that nothing states or asserts, and supporting in-place would
 promise it for every function in four backends, permanently.
 
-**Test Coverage** (S1, S2, S4, S5, S6a and S7; the rest of this tier is not yet mapped):
+**Test Coverage** (S1, S2, S4, S5, S6, S6a and S7; the rest of this tier is not yet mapped):
 `testStreamShortHistory` drives S1, S2's rejecting side and S7 in C — 9, 3 and 8
 rejections, with S7's 16 controls. Three of S1's cases are *also* an absent
 argument, which is what makes them about the order and not only the code.
@@ -240,6 +241,15 @@ Corpus-wide, the width is pinned by the three `*_public_*fill*` /
 from the function's own lookback rather than from the history's length, that the
 bound REJECT rather than merely exist, and that a `nullable` output be bounded
 conditionally while every other output is not.
+
+S6 is probed in C from both sides too, and the pairs are one element apart:
+a destination overlapping an input by one element rejected, the same destination
+moved one element clear accepted (`testBatchArgumentContract`, counted apart
+from S4's). Neither half alone says anything — an address comparison passes the
+accepted half, and a destination measured over `historyLen` rather than over what
+the fill writes passes the rejected one. Corpus-wide the two extents are pinned
+on the emitted text by `fill_aliasing_reject_measures_written_extent_against_history`,
+because which calls a guard refuses is invisible to every value gate.
 
 **A declined output** (rule S6a, Appendix F) has its own probe in each of
 the three, beside S5's: `MAMA_OpenAndFill` with `outFAMA` declined must be
@@ -811,8 +821,17 @@ supported.
 
 **What is unspecified.** Anything in between — the same memory reached through
 buffers that start at different offsets (rule N8). Not detected, not promised, and
-not a diagnosis you will get. Decided in **#225**: the library detects buffer
+not a diagnosis you will get. Decided in **#225**: the batch tier detects buffer
 identity and nothing finer.
+
+**The streaming fill is the deliberate exception (rule S6, #386).** There, an
+output that is an input is *forbidden* rather than supported, so a stronger check
+costs no legal call — and the two extents it needs are both at hand, since the
+opener already knows `historyLen` and its own `Lookback`. C therefore compares
+byte ranges (`TA_RANGES_OVERLAP`, laundered through `uintptr_t` exactly as the
+row below says a conforming check would have to), which is what the other three
+already do by construction or by `Overlaps`. The batch tier keeps the identity
+rule: the same widening there would refuse the in-place calls rule N4 supports.
 
 **Why the line is drawn at identity, and not further.** The four backends do not
 even *agree on whether a partial overlap can exist*, so a stronger rule could not be

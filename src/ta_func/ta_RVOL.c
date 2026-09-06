@@ -383,12 +383,16 @@ TA_LIB_API TA_RetCode TA_RVOL_Open( TA_RVOL_Stream **stream, const double inVolu
 
 TA_LIB_API TA_RetCode TA_RVOL_OpenAndFill( TA_RVOL_Stream **stream, const double inVolume[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inVolume || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inVolume ) return TA_BAD_PARAM;
+   fillNb = TA_RVOL_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inVolume, historyLen ) ) return TA_BAD_PARAM;
    return TA_RVOL_OpenAndFillInternal( stream, inVolume, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outReal );
 }
 

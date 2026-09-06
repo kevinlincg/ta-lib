@@ -838,12 +838,16 @@ TA_LIB_API TA_RetCode TA_MINMAX_Open( TA_MINMAX_Stream **stream, const double in
 
 TA_LIB_API TA_RetCode TA_MINMAX_OpenAndFill( TA_MINMAX_Stream **stream, const double inReal[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outMin[], double outMax[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inReal || !outBegIdx || !outNBElement || !outMin || !outMax ) return TA_BAD_PARAM;
-   if( (const void *)outMin == (const void *)inReal || (const void *)outMax == (const void *)inReal || (const void *)outMin == (const void *)outMax ) return TA_BAD_PARAM;
+   fillNb = TA_MINMAX_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outMin, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outMax, fillNb, inReal, historyLen ) || TA_RANGES_OVERLAP( outMin, fillNb, outMax, fillNb ) ) return TA_BAD_PARAM;
    return TA_MINMAX_OpenAndFillInternal( stream, inReal, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outMin, outMax );
 }
 

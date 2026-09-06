@@ -659,12 +659,16 @@ TA_LIB_API TA_RetCode TA_DONCHIAN_Open( TA_DONCHIAN_Stream **stream, const doubl
 
 TA_LIB_API TA_RetCode TA_DONCHIAN_OpenAndFill( TA_DONCHIAN_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outRealUpperBand[], double outRealMiddleBand[], double outRealLowerBand[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !outBegIdx || !outNBElement || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( (const void *)outRealUpperBand == (const void *)inHigh || (const void *)outRealUpperBand == (const void *)inLow || (const void *)outRealMiddleBand == (const void *)inHigh || (const void *)outRealMiddleBand == (const void *)inLow || (const void *)outRealLowerBand == (const void *)inHigh || (const void *)outRealLowerBand == (const void *)inLow || (const void *)outRealUpperBand == (const void *)outRealMiddleBand || (const void *)outRealUpperBand == (const void *)outRealLowerBand || (const void *)outRealMiddleBand == (const void *)outRealLowerBand ) return TA_BAD_PARAM;
+   fillNb = TA_DONCHIAN_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outRealUpperBand, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outRealLowerBand, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outRealLowerBand, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, outRealMiddleBand, fillNb ) || TA_RANGES_OVERLAP( outRealUpperBand, fillNb, outRealLowerBand, fillNb ) || TA_RANGES_OVERLAP( outRealMiddleBand, fillNb, outRealLowerBand, fillNb ) ) return TA_BAD_PARAM;
    return TA_DONCHIAN_OpenAndFillInternal( stream, inHigh, inLow, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outRealUpperBand, outRealMiddleBand, outRealLowerBand );
 }
 

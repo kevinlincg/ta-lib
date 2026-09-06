@@ -408,12 +408,16 @@ TA_LIB_API TA_RetCode TA_WAD_Open( TA_WAD_Stream **stream, const double inHigh[]
 
 TA_LIB_API TA_RetCode TA_WAD_OpenAndFill( TA_WAD_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int *outBegIdx, int *outNBElement, double outReal[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outReal ) return TA_BAD_PARAM;
-   if( (const void *)outReal == (const void *)inHigh || (const void *)outReal == (const void *)inLow || (const void *)outReal == (const void *)inClose ) return TA_BAD_PARAM;
+   fillNb = TA_WAD_Lookback();
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outReal, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outReal, fillNb, inClose, historyLen ) ) return TA_BAD_PARAM;
    return TA_WAD_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, outBegIdx, outNBElement, outReal );
 }
 

@@ -652,7 +652,7 @@ fn test_mama_nullable_fama_is_declinable_at_the_opener_in_every_backend() {
          body's guard is not evidence about this one"
     );
     assert!(
-        c_open.contains("(outFAMA != NULL && (const void *)outMAMA == (const void *)outFAMA)"),
+        c_open.contains("(outFAMA != NULL && TA_RANGES_OVERLAP( outMAMA, fillNb, outFAMA, fillNb ))"),
         "C: the opener's distinctness guard treats a declined output as aliasing nothing"
     );
 
@@ -830,7 +830,7 @@ fn test_synth10_two_nullable_outputs_are_declinable_at_the_opener() {
         "Java: an alias term over two declinable operands guards both"
     );
     assert!(
-        c.contains("(outFirstOptional != NULL && outSecondOptional != NULL && (const void *)outFirstOptional == (const void *)outSecondOptional)"),
+        c.contains("(outFirstOptional != NULL && outSecondOptional != NULL && TA_RANGES_OVERLAP( outFirstOptional, fillNb, outSecondOptional, fillNb ))"),
         "C: an alias term over two declinable operands guards both"
     );
     assert!(

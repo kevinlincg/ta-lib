@@ -1125,12 +1125,16 @@ TA_LIB_API TA_RetCode TA_STOCH_Open( TA_STOCH_Stream **stream, const double inHi
 
 TA_LIB_API TA_RetCode TA_STOCH_OpenAndFill( TA_STOCH_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int optInFastK_Period, int optInSlowK_Period, TA_MAType optInSlowK_MAType, int optInSlowD_Period, TA_MAType optInSlowD_MAType, int *outBegIdx, int *outNBElement, double outSlowK[], double outSlowD[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outSlowK || !outSlowD ) return TA_BAD_PARAM;
-   if( (const void *)outSlowK == (const void *)inHigh || (const void *)outSlowK == (const void *)inLow || (const void *)outSlowK == (const void *)inClose || (const void *)outSlowD == (const void *)inHigh || (const void *)outSlowD == (const void *)inLow || (const void *)outSlowD == (const void *)inClose || (const void *)outSlowK == (const void *)outSlowD ) return TA_BAD_PARAM;
+   fillNb = TA_STOCH_Lookback( optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outSlowK, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outSlowK, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outSlowK, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outSlowD, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outSlowD, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outSlowD, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outSlowK, fillNb, outSlowD, fillNb ) ) return TA_BAD_PARAM;
    return TA_STOCH_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, outBegIdx, outNBElement, outSlowK, outSlowD );
 }
 

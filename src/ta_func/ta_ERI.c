@@ -602,12 +602,16 @@ TA_LIB_API TA_RetCode TA_ERI_Open( TA_ERI_Stream **stream, const double inHigh[]
 
 TA_LIB_API TA_RetCode TA_ERI_OpenAndFill( TA_ERI_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], int historyLen, int optInTimePeriod, int *outBegIdx, int *outNBElement, double outBullPower[], double outBearPower[] )
 {
+   int fillNb;
+
    if( !stream ) return TA_BAD_PARAM;
    *stream = NULL;
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_MAX_INDEX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !outBegIdx || !outNBElement || !outBullPower || !outBearPower ) return TA_BAD_PARAM;
-   if( (const void *)outBullPower == (const void *)inHigh || (const void *)outBullPower == (const void *)inLow || (const void *)outBullPower == (const void *)inClose || (const void *)outBearPower == (const void *)inHigh || (const void *)outBearPower == (const void *)inLow || (const void *)outBearPower == (const void *)inClose || (const void *)outBullPower == (const void *)outBearPower ) return TA_BAD_PARAM;
+   fillNb = TA_ERI_Lookback( optInTimePeriod );
+   fillNb = ( fillNb >= 0 && fillNb < historyLen ) ? historyLen - fillNb : 1;
+   if( TA_RANGES_OVERLAP( outBullPower, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outBullPower, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outBullPower, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outBearPower, fillNb, inHigh, historyLen ) || TA_RANGES_OVERLAP( outBearPower, fillNb, inLow, historyLen ) || TA_RANGES_OVERLAP( outBearPower, fillNb, inClose, historyLen ) || TA_RANGES_OVERLAP( outBullPower, fillNb, outBearPower, fillNb ) ) return TA_BAD_PARAM;
    return TA_ERI_OpenAndFillInternal( stream, inHigh, inLow, inClose, 0, historyLen, optInTimePeriod, outBegIdx, outNBElement, outBullPower, outBearPower );
 }
 
