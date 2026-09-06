@@ -6189,7 +6189,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AC_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_AC_Close(stf);
         }
@@ -6263,14 +6263,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_AC_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_AC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_AC_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -6329,8 +6329,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_AC_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_AC_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_AC_Close(cA);
                 if( cB ) TA_AC_Close(cB);
@@ -6353,7 +6353,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_AC_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_AC_Close(stA);
                     if( !ok ) allOk = 0;
@@ -6450,7 +6450,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ACCBANDS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ACCBANDS_Close(stf);
         }
@@ -6541,14 +6541,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ACCBANDS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ACCBANDS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ACCBANDS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ACCBANDS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -6615,8 +6615,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ACCBANDS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ACCBANDS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ACCBANDS_Close(cA);
                 if( cB ) TA_ACCBANDS_Close(cB);
@@ -6643,7 +6643,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ACCBANDS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ACCBANDS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -6731,7 +6731,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ACOS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ACOS_Close(stf);
         }
@@ -6805,14 +6805,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ACOS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ACOS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ACOS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ACOS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -6871,8 +6871,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ACOS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ACOS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ACOS_Close(cA);
                 if( cB ) TA_ACOS_Close(cB);
@@ -6895,7 +6895,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ACOS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ACOS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -6983,7 +6983,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_AD_Close(stf);
         }
@@ -7057,14 +7057,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_AD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_AD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_AD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -7123,8 +7123,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_AD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_AD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_AD_Close(cA);
                 if( cB ) TA_AD_Close(cB);
@@ -7147,7 +7147,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_AD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_AD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -7235,7 +7235,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ADD_Close(stf);
         }
@@ -7309,14 +7309,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ADD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ADD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ADD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -7375,8 +7375,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ADD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ADD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ADD_Close(cA);
                 if( cB ) TA_ADD_Close(cB);
@@ -7399,7 +7399,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ADD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ADD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -7491,7 +7491,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADOSC_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ADOSC_Close(stf);
         }
@@ -7565,14 +7565,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ADOSC_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ADOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ADOSC_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -7631,8 +7631,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ADOSC_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ADOSC_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ADOSC_Close(cA);
                 if( cB ) TA_ADOSC_Close(cB);
@@ -7655,7 +7655,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ADOSC_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ADOSC_Close(stA);
                     if( !ok ) allOk = 0;
@@ -7745,7 +7745,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ADR_Close(stf);
         }
@@ -7819,14 +7819,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ADR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ADR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ADR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -7885,8 +7885,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ADR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ADR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ADR_Close(cA);
                 if( cB ) TA_ADR_Close(cB);
@@ -7909,7 +7909,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ADR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ADR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -8000,7 +8000,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ADX_Close(stf);
         }
@@ -8074,14 +8074,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ADX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ADX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ADX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -8140,8 +8140,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ADX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ADX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ADX_Close(cA);
                 if( cB ) TA_ADX_Close(cB);
@@ -8164,7 +8164,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ADX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ADX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -8256,7 +8256,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADXR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ADXR_Close(stf);
         }
@@ -8330,14 +8330,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ADXR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ADXR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ADXR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ADXR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -8396,8 +8396,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ADXR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ADXR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ADXR_Close(cA);
                 if( cB ) TA_ADXR_Close(cB);
@@ -8420,7 +8420,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ADXR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ADXR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -8511,7 +8511,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AO_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_AO_Close(stf);
         }
@@ -8585,14 +8585,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_AO_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_AO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_AO_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -8651,8 +8651,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_AO_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_AO_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_AO_Close(cA);
                 if( cB ) TA_AO_Close(cB);
@@ -8675,7 +8675,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_AO_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_AO_Close(stA);
                     if( !ok ) allOk = 0;
@@ -8776,7 +8776,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_APO_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_APO_Close(stf);
         }
@@ -8850,14 +8850,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_APO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_APO_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_APO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_APO_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -8916,8 +8916,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_APO_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_APO_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_APO_Close(cA);
                 if( cB ) TA_APO_Close(cB);
@@ -8940,7 +8940,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_APO_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_APO_Close(stA);
                     if( !ok ) allOk = 0;
@@ -9038,7 +9038,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AROON_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_AROON_Close(stf);
         }
@@ -9124,14 +9124,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AROON_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_AROON_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_AROON_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_AROON_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -9194,8 +9194,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_AROON_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_AROON_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_AROON_Close(cA);
                 if( cB ) TA_AROON_Close(cB);
@@ -9220,7 +9220,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_AROON_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_AROON_Close(stA);
                     if( !ok ) allOk = 0;
@@ -9309,7 +9309,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AROONOSC_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_AROONOSC_Close(stf);
         }
@@ -9383,14 +9383,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AROONOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_AROONOSC_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_AROONOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_AROONOSC_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -9449,8 +9449,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_AROONOSC_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_AROONOSC_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_AROONOSC_Close(cA);
                 if( cB ) TA_AROONOSC_Close(cB);
@@ -9473,7 +9473,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_AROONOSC_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_AROONOSC_Close(stA);
                     if( !ok ) allOk = 0;
@@ -9561,7 +9561,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ASIN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ASIN_Close(stf);
         }
@@ -9635,14 +9635,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ASIN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ASIN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ASIN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ASIN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -9701,8 +9701,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ASIN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ASIN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ASIN_Close(cA);
                 if( cB ) TA_ASIN_Close(cB);
@@ -9725,7 +9725,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ASIN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ASIN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -9813,7 +9813,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ATAN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ATAN_Close(stf);
         }
@@ -9887,14 +9887,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ATAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ATAN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ATAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ATAN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -9953,8 +9953,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ATAN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ATAN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ATAN_Close(cA);
                 if( cB ) TA_ATAN_Close(cB);
@@ -9977,7 +9977,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ATAN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ATAN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -10068,7 +10068,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ATR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ATR_Close(stf);
         }
@@ -10142,14 +10142,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ATR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ATR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ATR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ATR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -10208,8 +10208,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ATR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ATR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ATR_Close(cA);
                 if( cB ) TA_ATR_Close(cB);
@@ -10232,7 +10232,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ATR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ATR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -10322,7 +10322,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AVGDEV_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_AVGDEV_Close(stf);
         }
@@ -10396,14 +10396,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AVGDEV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_AVGDEV_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_AVGDEV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_AVGDEV_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -10462,8 +10462,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_AVGDEV_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_AVGDEV_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_AVGDEV_Close(cA);
                 if( cB ) TA_AVGDEV_Close(cB);
@@ -10486,7 +10486,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_AVGDEV_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_AVGDEV_Close(stA);
                     if( !ok ) allOk = 0;
@@ -10574,7 +10574,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AVGPRICE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_AVGPRICE_Close(stf);
         }
@@ -10648,14 +10648,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_AVGPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_AVGPRICE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_AVGPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_AVGPRICE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -10714,8 +10714,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_AVGPRICE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_AVGPRICE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_AVGPRICE_Close(cA);
                 if( cB ) TA_AVGPRICE_Close(cB);
@@ -10738,7 +10738,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_AVGPRICE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_AVGPRICE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -10848,7 +10848,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_BBANDS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_BBANDS_Close(stf);
         }
@@ -10939,14 +10939,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_BBANDS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_BBANDS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_BBANDS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_BBANDS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -11013,8 +11013,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_BBANDS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_BBANDS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_BBANDS_Close(cA);
                 if( cB ) TA_BBANDS_Close(cB);
@@ -11041,7 +11041,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_BBANDS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_BBANDS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -11135,7 +11135,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_BETA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_BETA_Close(stf);
         }
@@ -11209,14 +11209,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_BETA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_BETA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_BETA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_BETA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -11275,8 +11275,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_BETA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_BETA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_BETA_Close(cA);
                 if( cB ) TA_BETA_Close(cB);
@@ -11299,7 +11299,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_BETA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_BETA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -11387,7 +11387,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_BOP_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_BOP_Close(stf);
         }
@@ -11461,14 +11461,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_BOP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_BOP_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_BOP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_BOP_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -11527,8 +11527,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_BOP_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_BOP_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_BOP_Close(cA);
                 if( cB ) TA_BOP_Close(cB);
@@ -11551,7 +11551,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_BOP_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_BOP_Close(stA);
                     if( !ok ) allOk = 0;
@@ -11640,7 +11640,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CCI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CCI_Close(stf);
         }
@@ -11714,14 +11714,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CCI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CCI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CCI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CCI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -11780,8 +11780,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CCI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CCI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CCI_Close(cA);
                 if( cB ) TA_CCI_Close(cB);
@@ -11804,7 +11804,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CCI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CCI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -11900,7 +11900,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL2CROWS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDL2CROWS_Close(stf);
         }
@@ -11966,14 +11966,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL2CROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDL2CROWS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDL2CROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDL2CROWS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -12033,8 +12033,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDL2CROWS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDL2CROWS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDL2CROWS_Close(cA);
                 if( cB ) TA_CDL2CROWS_Close(cB);
@@ -12059,7 +12059,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDL2CROWS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDL2CROWS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -12155,7 +12155,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3BLACKCROWS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDL3BLACKCROWS_Close(stf);
         }
@@ -12221,14 +12221,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3BLACKCROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDL3BLACKCROWS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDL3BLACKCROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDL3BLACKCROWS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -12288,8 +12288,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDL3BLACKCROWS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDL3BLACKCROWS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDL3BLACKCROWS_Close(cA);
                 if( cB ) TA_CDL3BLACKCROWS_Close(cB);
@@ -12314,7 +12314,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDL3BLACKCROWS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDL3BLACKCROWS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -12410,7 +12410,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3INSIDE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDL3INSIDE_Close(stf);
         }
@@ -12476,14 +12476,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3INSIDE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDL3INSIDE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDL3INSIDE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDL3INSIDE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -12543,8 +12543,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDL3INSIDE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDL3INSIDE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDL3INSIDE_Close(cA);
                 if( cB ) TA_CDL3INSIDE_Close(cB);
@@ -12569,7 +12569,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDL3INSIDE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDL3INSIDE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -12665,7 +12665,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3LINESTRIKE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDL3LINESTRIKE_Close(stf);
         }
@@ -12731,14 +12731,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3LINESTRIKE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDL3LINESTRIKE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDL3LINESTRIKE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDL3LINESTRIKE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -12798,8 +12798,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDL3LINESTRIKE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDL3LINESTRIKE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDL3LINESTRIKE_Close(cA);
                 if( cB ) TA_CDL3LINESTRIKE_Close(cB);
@@ -12824,7 +12824,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDL3LINESTRIKE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDL3LINESTRIKE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -12920,7 +12920,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3OUTSIDE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDL3OUTSIDE_Close(stf);
         }
@@ -12986,14 +12986,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3OUTSIDE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDL3OUTSIDE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDL3OUTSIDE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDL3OUTSIDE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -13053,8 +13053,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDL3OUTSIDE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDL3OUTSIDE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDL3OUTSIDE_Close(cA);
                 if( cB ) TA_CDL3OUTSIDE_Close(cB);
@@ -13079,7 +13079,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDL3OUTSIDE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDL3OUTSIDE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -13175,7 +13175,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3STARSINSOUTH_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDL3STARSINSOUTH_Close(stf);
         }
@@ -13241,14 +13241,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3STARSINSOUTH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDL3STARSINSOUTH_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDL3STARSINSOUTH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDL3STARSINSOUTH_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -13308,8 +13308,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDL3STARSINSOUTH_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDL3STARSINSOUTH_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDL3STARSINSOUTH_Close(cA);
                 if( cB ) TA_CDL3STARSINSOUTH_Close(cB);
@@ -13334,7 +13334,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDL3STARSINSOUTH_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDL3STARSINSOUTH_Close(stA);
                     if( !ok ) allOk = 0;
@@ -13430,7 +13430,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3WHITESOLDIERS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDL3WHITESOLDIERS_Close(stf);
         }
@@ -13496,14 +13496,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDL3WHITESOLDIERS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDL3WHITESOLDIERS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDL3WHITESOLDIERS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDL3WHITESOLDIERS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -13563,8 +13563,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDL3WHITESOLDIERS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDL3WHITESOLDIERS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDL3WHITESOLDIERS_Close(cA);
                 if( cB ) TA_CDL3WHITESOLDIERS_Close(cB);
@@ -13589,7 +13589,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDL3WHITESOLDIERS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDL3WHITESOLDIERS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -13686,7 +13686,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLABANDONEDBABY_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLABANDONEDBABY_Close(stf);
         }
@@ -13752,14 +13752,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLABANDONEDBABY_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLABANDONEDBABY_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLABANDONEDBABY_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLABANDONEDBABY_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -13819,8 +13819,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLABANDONEDBABY_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLABANDONEDBABY_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLABANDONEDBABY_Close(cA);
                 if( cB ) TA_CDLABANDONEDBABY_Close(cB);
@@ -13845,7 +13845,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLABANDONEDBABY_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLABANDONEDBABY_Close(stA);
                     if( !ok ) allOk = 0;
@@ -13941,7 +13941,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLADVANCEBLOCK_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLADVANCEBLOCK_Close(stf);
         }
@@ -14007,14 +14007,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLADVANCEBLOCK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLADVANCEBLOCK_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLADVANCEBLOCK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLADVANCEBLOCK_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -14074,8 +14074,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLADVANCEBLOCK_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLADVANCEBLOCK_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLADVANCEBLOCK_Close(cA);
                 if( cB ) TA_CDLADVANCEBLOCK_Close(cB);
@@ -14100,7 +14100,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLADVANCEBLOCK_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLADVANCEBLOCK_Close(stA);
                     if( !ok ) allOk = 0;
@@ -14196,7 +14196,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLBELTHOLD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLBELTHOLD_Close(stf);
         }
@@ -14262,14 +14262,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLBELTHOLD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLBELTHOLD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLBELTHOLD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLBELTHOLD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -14329,8 +14329,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLBELTHOLD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLBELTHOLD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLBELTHOLD_Close(cA);
                 if( cB ) TA_CDLBELTHOLD_Close(cB);
@@ -14355,7 +14355,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLBELTHOLD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLBELTHOLD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -14451,7 +14451,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLBREAKAWAY_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLBREAKAWAY_Close(stf);
         }
@@ -14517,14 +14517,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLBREAKAWAY_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLBREAKAWAY_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLBREAKAWAY_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLBREAKAWAY_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -14584,8 +14584,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLBREAKAWAY_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLBREAKAWAY_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLBREAKAWAY_Close(cA);
                 if( cB ) TA_CDLBREAKAWAY_Close(cB);
@@ -14610,7 +14610,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLBREAKAWAY_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLBREAKAWAY_Close(stA);
                     if( !ok ) allOk = 0;
@@ -14706,7 +14706,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLCLOSINGMARUBOZU_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLCLOSINGMARUBOZU_Close(stf);
         }
@@ -14772,14 +14772,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLCLOSINGMARUBOZU_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLCLOSINGMARUBOZU_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLCLOSINGMARUBOZU_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLCLOSINGMARUBOZU_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -14839,8 +14839,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLCLOSINGMARUBOZU_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLCLOSINGMARUBOZU_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLCLOSINGMARUBOZU_Close(cA);
                 if( cB ) TA_CDLCLOSINGMARUBOZU_Close(cB);
@@ -14865,7 +14865,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLCLOSINGMARUBOZU_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLCLOSINGMARUBOZU_Close(stA);
                     if( !ok ) allOk = 0;
@@ -14961,7 +14961,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLCONCEALBABYSWALL_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLCONCEALBABYSWALL_Close(stf);
         }
@@ -15027,14 +15027,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLCONCEALBABYSWALL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLCONCEALBABYSWALL_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLCONCEALBABYSWALL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLCONCEALBABYSWALL_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -15094,8 +15094,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLCONCEALBABYSWALL_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLCONCEALBABYSWALL_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLCONCEALBABYSWALL_Close(cA);
                 if( cB ) TA_CDLCONCEALBABYSWALL_Close(cB);
@@ -15120,7 +15120,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLCONCEALBABYSWALL_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLCONCEALBABYSWALL_Close(stA);
                     if( !ok ) allOk = 0;
@@ -15216,7 +15216,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLCOUNTERATTACK_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLCOUNTERATTACK_Close(stf);
         }
@@ -15282,14 +15282,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLCOUNTERATTACK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLCOUNTERATTACK_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLCOUNTERATTACK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLCOUNTERATTACK_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -15349,8 +15349,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLCOUNTERATTACK_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLCOUNTERATTACK_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLCOUNTERATTACK_Close(cA);
                 if( cB ) TA_CDLCOUNTERATTACK_Close(cB);
@@ -15375,7 +15375,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLCOUNTERATTACK_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLCOUNTERATTACK_Close(stA);
                     if( !ok ) allOk = 0;
@@ -15472,7 +15472,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDARKCLOUDCOVER_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLDARKCLOUDCOVER_Close(stf);
         }
@@ -15538,14 +15538,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDARKCLOUDCOVER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLDARKCLOUDCOVER_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLDARKCLOUDCOVER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLDARKCLOUDCOVER_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -15605,8 +15605,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLDARKCLOUDCOVER_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLDARKCLOUDCOVER_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLDARKCLOUDCOVER_Close(cA);
                 if( cB ) TA_CDLDARKCLOUDCOVER_Close(cB);
@@ -15631,7 +15631,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLDARKCLOUDCOVER_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLDARKCLOUDCOVER_Close(stA);
                     if( !ok ) allOk = 0;
@@ -15727,7 +15727,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDOJI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLDOJI_Close(stf);
         }
@@ -15793,14 +15793,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLDOJI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLDOJI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -15860,8 +15860,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLDOJI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLDOJI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLDOJI_Close(cA);
                 if( cB ) TA_CDLDOJI_Close(cB);
@@ -15886,7 +15886,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLDOJI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLDOJI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -15982,7 +15982,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDOJISTAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLDOJISTAR_Close(stf);
         }
@@ -16048,14 +16048,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDOJISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLDOJISTAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLDOJISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLDOJISTAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -16115,8 +16115,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLDOJISTAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLDOJISTAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLDOJISTAR_Close(cA);
                 if( cB ) TA_CDLDOJISTAR_Close(cB);
@@ -16141,7 +16141,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLDOJISTAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLDOJISTAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -16237,7 +16237,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDRAGONFLYDOJI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLDRAGONFLYDOJI_Close(stf);
         }
@@ -16303,14 +16303,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLDRAGONFLYDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLDRAGONFLYDOJI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLDRAGONFLYDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLDRAGONFLYDOJI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -16370,8 +16370,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLDRAGONFLYDOJI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLDRAGONFLYDOJI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLDRAGONFLYDOJI_Close(cA);
                 if( cB ) TA_CDLDRAGONFLYDOJI_Close(cB);
@@ -16396,7 +16396,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLDRAGONFLYDOJI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLDRAGONFLYDOJI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -16492,7 +16492,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLENGULFING_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLENGULFING_Close(stf);
         }
@@ -16558,14 +16558,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLENGULFING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLENGULFING_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLENGULFING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLENGULFING_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -16625,8 +16625,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLENGULFING_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLENGULFING_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLENGULFING_Close(cA);
                 if( cB ) TA_CDLENGULFING_Close(cB);
@@ -16651,7 +16651,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLENGULFING_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLENGULFING_Close(stA);
                     if( !ok ) allOk = 0;
@@ -16748,7 +16748,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLEVENINGDOJISTAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLEVENINGDOJISTAR_Close(stf);
         }
@@ -16814,14 +16814,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLEVENINGDOJISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLEVENINGDOJISTAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLEVENINGDOJISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLEVENINGDOJISTAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -16881,8 +16881,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLEVENINGDOJISTAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLEVENINGDOJISTAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLEVENINGDOJISTAR_Close(cA);
                 if( cB ) TA_CDLEVENINGDOJISTAR_Close(cB);
@@ -16907,7 +16907,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLEVENINGDOJISTAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLEVENINGDOJISTAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -17004,7 +17004,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLEVENINGSTAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLEVENINGSTAR_Close(stf);
         }
@@ -17070,14 +17070,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLEVENINGSTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLEVENINGSTAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLEVENINGSTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLEVENINGSTAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -17137,8 +17137,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLEVENINGSTAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLEVENINGSTAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLEVENINGSTAR_Close(cA);
                 if( cB ) TA_CDLEVENINGSTAR_Close(cB);
@@ -17163,7 +17163,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLEVENINGSTAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLEVENINGSTAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -17259,7 +17259,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLGAPSIDESIDEWHITE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLGAPSIDESIDEWHITE_Close(stf);
         }
@@ -17325,14 +17325,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLGAPSIDESIDEWHITE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLGAPSIDESIDEWHITE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLGAPSIDESIDEWHITE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLGAPSIDESIDEWHITE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -17392,8 +17392,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLGAPSIDESIDEWHITE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLGAPSIDESIDEWHITE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLGAPSIDESIDEWHITE_Close(cA);
                 if( cB ) TA_CDLGAPSIDESIDEWHITE_Close(cB);
@@ -17418,7 +17418,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLGAPSIDESIDEWHITE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLGAPSIDESIDEWHITE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -17514,7 +17514,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLGRAVESTONEDOJI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLGRAVESTONEDOJI_Close(stf);
         }
@@ -17580,14 +17580,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLGRAVESTONEDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLGRAVESTONEDOJI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLGRAVESTONEDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLGRAVESTONEDOJI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -17647,8 +17647,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLGRAVESTONEDOJI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLGRAVESTONEDOJI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLGRAVESTONEDOJI_Close(cA);
                 if( cB ) TA_CDLGRAVESTONEDOJI_Close(cB);
@@ -17673,7 +17673,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLGRAVESTONEDOJI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLGRAVESTONEDOJI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -17769,7 +17769,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHAMMER_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHAMMER_Close(stf);
         }
@@ -17835,14 +17835,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHAMMER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHAMMER_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHAMMER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHAMMER_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -17902,8 +17902,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHAMMER_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHAMMER_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHAMMER_Close(cA);
                 if( cB ) TA_CDLHAMMER_Close(cB);
@@ -17928,7 +17928,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHAMMER_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHAMMER_Close(stA);
                     if( !ok ) allOk = 0;
@@ -18024,7 +18024,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHANGINGMAN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHANGINGMAN_Close(stf);
         }
@@ -18090,14 +18090,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHANGINGMAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHANGINGMAN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHANGINGMAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHANGINGMAN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -18157,8 +18157,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHANGINGMAN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHANGINGMAN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHANGINGMAN_Close(cA);
                 if( cB ) TA_CDLHANGINGMAN_Close(cB);
@@ -18183,7 +18183,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHANGINGMAN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHANGINGMAN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -18279,7 +18279,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHARAMI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHARAMI_Close(stf);
         }
@@ -18345,14 +18345,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHARAMI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHARAMI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHARAMI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHARAMI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -18412,8 +18412,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHARAMI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHARAMI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHARAMI_Close(cA);
                 if( cB ) TA_CDLHARAMI_Close(cB);
@@ -18438,7 +18438,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHARAMI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHARAMI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -18534,7 +18534,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHARAMICROSS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHARAMICROSS_Close(stf);
         }
@@ -18600,14 +18600,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHARAMICROSS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHARAMICROSS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHARAMICROSS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHARAMICROSS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -18667,8 +18667,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHARAMICROSS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHARAMICROSS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHARAMICROSS_Close(cA);
                 if( cB ) TA_CDLHARAMICROSS_Close(cB);
@@ -18693,7 +18693,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHARAMICROSS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHARAMICROSS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -18789,7 +18789,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHIGHWAVE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHIGHWAVE_Close(stf);
         }
@@ -18855,14 +18855,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHIGHWAVE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHIGHWAVE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHIGHWAVE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHIGHWAVE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -18922,8 +18922,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHIGHWAVE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHIGHWAVE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHIGHWAVE_Close(cA);
                 if( cB ) TA_CDLHIGHWAVE_Close(cB);
@@ -18948,7 +18948,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHIGHWAVE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHIGHWAVE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -19044,7 +19044,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHIKKAKE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHIKKAKE_Close(stf);
         }
@@ -19110,14 +19110,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHIKKAKE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHIKKAKE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHIKKAKE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHIKKAKE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -19177,8 +19177,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHIKKAKE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHIKKAKE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHIKKAKE_Close(cA);
                 if( cB ) TA_CDLHIKKAKE_Close(cB);
@@ -19203,7 +19203,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHIKKAKE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHIKKAKE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -19299,7 +19299,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHIKKAKEMOD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHIKKAKEMOD_Close(stf);
         }
@@ -19365,14 +19365,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHIKKAKEMOD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHIKKAKEMOD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHIKKAKEMOD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHIKKAKEMOD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -19432,8 +19432,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHIKKAKEMOD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHIKKAKEMOD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHIKKAKEMOD_Close(cA);
                 if( cB ) TA_CDLHIKKAKEMOD_Close(cB);
@@ -19458,7 +19458,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHIKKAKEMOD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHIKKAKEMOD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -19554,7 +19554,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHOMINGPIGEON_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLHOMINGPIGEON_Close(stf);
         }
@@ -19620,14 +19620,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLHOMINGPIGEON_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLHOMINGPIGEON_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLHOMINGPIGEON_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLHOMINGPIGEON_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -19687,8 +19687,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLHOMINGPIGEON_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLHOMINGPIGEON_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLHOMINGPIGEON_Close(cA);
                 if( cB ) TA_CDLHOMINGPIGEON_Close(cB);
@@ -19713,7 +19713,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLHOMINGPIGEON_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLHOMINGPIGEON_Close(stA);
                     if( !ok ) allOk = 0;
@@ -19809,7 +19809,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLIDENTICAL3CROWS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLIDENTICAL3CROWS_Close(stf);
         }
@@ -19875,14 +19875,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLIDENTICAL3CROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLIDENTICAL3CROWS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLIDENTICAL3CROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLIDENTICAL3CROWS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -19942,8 +19942,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLIDENTICAL3CROWS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLIDENTICAL3CROWS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLIDENTICAL3CROWS_Close(cA);
                 if( cB ) TA_CDLIDENTICAL3CROWS_Close(cB);
@@ -19968,7 +19968,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLIDENTICAL3CROWS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLIDENTICAL3CROWS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -20064,7 +20064,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLINNECK_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLINNECK_Close(stf);
         }
@@ -20130,14 +20130,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLINNECK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLINNECK_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLINNECK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLINNECK_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -20197,8 +20197,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLINNECK_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLINNECK_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLINNECK_Close(cA);
                 if( cB ) TA_CDLINNECK_Close(cB);
@@ -20223,7 +20223,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLINNECK_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLINNECK_Close(stA);
                     if( !ok ) allOk = 0;
@@ -20319,7 +20319,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLINVERTEDHAMMER_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLINVERTEDHAMMER_Close(stf);
         }
@@ -20385,14 +20385,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLINVERTEDHAMMER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLINVERTEDHAMMER_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLINVERTEDHAMMER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLINVERTEDHAMMER_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -20452,8 +20452,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLINVERTEDHAMMER_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLINVERTEDHAMMER_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLINVERTEDHAMMER_Close(cA);
                 if( cB ) TA_CDLINVERTEDHAMMER_Close(cB);
@@ -20478,7 +20478,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLINVERTEDHAMMER_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLINVERTEDHAMMER_Close(stA);
                     if( !ok ) allOk = 0;
@@ -20574,7 +20574,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLKICKING_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLKICKING_Close(stf);
         }
@@ -20640,14 +20640,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLKICKING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLKICKING_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLKICKING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLKICKING_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -20707,8 +20707,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLKICKING_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLKICKING_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLKICKING_Close(cA);
                 if( cB ) TA_CDLKICKING_Close(cB);
@@ -20733,7 +20733,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLKICKING_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLKICKING_Close(stA);
                     if( !ok ) allOk = 0;
@@ -20829,7 +20829,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLKICKINGBYLENGTH_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLKICKINGBYLENGTH_Close(stf);
         }
@@ -20895,14 +20895,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLKICKINGBYLENGTH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLKICKINGBYLENGTH_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLKICKINGBYLENGTH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLKICKINGBYLENGTH_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -20962,8 +20962,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLKICKINGBYLENGTH_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLKICKINGBYLENGTH_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLKICKINGBYLENGTH_Close(cA);
                 if( cB ) TA_CDLKICKINGBYLENGTH_Close(cB);
@@ -20988,7 +20988,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLKICKINGBYLENGTH_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLKICKINGBYLENGTH_Close(stA);
                     if( !ok ) allOk = 0;
@@ -21084,7 +21084,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLLADDERBOTTOM_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLLADDERBOTTOM_Close(stf);
         }
@@ -21150,14 +21150,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLLADDERBOTTOM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLLADDERBOTTOM_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLLADDERBOTTOM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLLADDERBOTTOM_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -21217,8 +21217,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLLADDERBOTTOM_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLLADDERBOTTOM_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLLADDERBOTTOM_Close(cA);
                 if( cB ) TA_CDLLADDERBOTTOM_Close(cB);
@@ -21243,7 +21243,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLLADDERBOTTOM_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLLADDERBOTTOM_Close(stA);
                     if( !ok ) allOk = 0;
@@ -21339,7 +21339,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLLONGLEGGEDDOJI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLLONGLEGGEDDOJI_Close(stf);
         }
@@ -21405,14 +21405,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLLONGLEGGEDDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLLONGLEGGEDDOJI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLLONGLEGGEDDOJI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLLONGLEGGEDDOJI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -21472,8 +21472,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLLONGLEGGEDDOJI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLLONGLEGGEDDOJI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLLONGLEGGEDDOJI_Close(cA);
                 if( cB ) TA_CDLLONGLEGGEDDOJI_Close(cB);
@@ -21498,7 +21498,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLLONGLEGGEDDOJI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLLONGLEGGEDDOJI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -21594,7 +21594,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLLONGLINE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLLONGLINE_Close(stf);
         }
@@ -21660,14 +21660,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLLONGLINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLLONGLINE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLLONGLINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLLONGLINE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -21727,8 +21727,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLLONGLINE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLLONGLINE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLLONGLINE_Close(cA);
                 if( cB ) TA_CDLLONGLINE_Close(cB);
@@ -21753,7 +21753,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLLONGLINE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLLONGLINE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -21849,7 +21849,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMARUBOZU_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLMARUBOZU_Close(stf);
         }
@@ -21915,14 +21915,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMARUBOZU_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLMARUBOZU_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLMARUBOZU_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLMARUBOZU_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -21982,8 +21982,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLMARUBOZU_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLMARUBOZU_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLMARUBOZU_Close(cA);
                 if( cB ) TA_CDLMARUBOZU_Close(cB);
@@ -22008,7 +22008,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLMARUBOZU_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLMARUBOZU_Close(stA);
                     if( !ok ) allOk = 0;
@@ -22104,7 +22104,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMATCHINGLOW_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLMATCHINGLOW_Close(stf);
         }
@@ -22170,14 +22170,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMATCHINGLOW_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLMATCHINGLOW_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLMATCHINGLOW_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLMATCHINGLOW_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -22237,8 +22237,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLMATCHINGLOW_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLMATCHINGLOW_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLMATCHINGLOW_Close(cA);
                 if( cB ) TA_CDLMATCHINGLOW_Close(cB);
@@ -22263,7 +22263,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLMATCHINGLOW_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLMATCHINGLOW_Close(stA);
                     if( !ok ) allOk = 0;
@@ -22360,7 +22360,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMATHOLD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLMATHOLD_Close(stf);
         }
@@ -22426,14 +22426,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMATHOLD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLMATHOLD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLMATHOLD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLMATHOLD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -22493,8 +22493,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLMATHOLD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLMATHOLD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLMATHOLD_Close(cA);
                 if( cB ) TA_CDLMATHOLD_Close(cB);
@@ -22519,7 +22519,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLMATHOLD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLMATHOLD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -22616,7 +22616,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMORNINGDOJISTAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLMORNINGDOJISTAR_Close(stf);
         }
@@ -22682,14 +22682,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMORNINGDOJISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLMORNINGDOJISTAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLMORNINGDOJISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLMORNINGDOJISTAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -22749,8 +22749,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLMORNINGDOJISTAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLMORNINGDOJISTAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLMORNINGDOJISTAR_Close(cA);
                 if( cB ) TA_CDLMORNINGDOJISTAR_Close(cB);
@@ -22775,7 +22775,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLMORNINGDOJISTAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLMORNINGDOJISTAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -22872,7 +22872,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMORNINGSTAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLMORNINGSTAR_Close(stf);
         }
@@ -22938,14 +22938,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLMORNINGSTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLMORNINGSTAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLMORNINGSTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLMORNINGSTAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -23005,8 +23005,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLMORNINGSTAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLMORNINGSTAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLMORNINGSTAR_Close(cA);
                 if( cB ) TA_CDLMORNINGSTAR_Close(cB);
@@ -23031,7 +23031,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLMORNINGSTAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLMORNINGSTAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -23127,7 +23127,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLONNECK_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLONNECK_Close(stf);
         }
@@ -23193,14 +23193,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLONNECK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLONNECK_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLONNECK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLONNECK_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -23260,8 +23260,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLONNECK_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLONNECK_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLONNECK_Close(cA);
                 if( cB ) TA_CDLONNECK_Close(cB);
@@ -23286,7 +23286,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLONNECK_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLONNECK_Close(stA);
                     if( !ok ) allOk = 0;
@@ -23382,7 +23382,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLPIERCING_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLPIERCING_Close(stf);
         }
@@ -23448,14 +23448,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLPIERCING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLPIERCING_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLPIERCING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLPIERCING_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -23515,8 +23515,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLPIERCING_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLPIERCING_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLPIERCING_Close(cA);
                 if( cB ) TA_CDLPIERCING_Close(cB);
@@ -23541,7 +23541,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLPIERCING_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLPIERCING_Close(stA);
                     if( !ok ) allOk = 0;
@@ -23637,7 +23637,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLRICKSHAWMAN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLRICKSHAWMAN_Close(stf);
         }
@@ -23703,14 +23703,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLRICKSHAWMAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLRICKSHAWMAN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLRICKSHAWMAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLRICKSHAWMAN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -23770,8 +23770,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLRICKSHAWMAN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLRICKSHAWMAN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLRICKSHAWMAN_Close(cA);
                 if( cB ) TA_CDLRICKSHAWMAN_Close(cB);
@@ -23796,7 +23796,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLRICKSHAWMAN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLRICKSHAWMAN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -23892,7 +23892,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLRISEFALL3METHODS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLRISEFALL3METHODS_Close(stf);
         }
@@ -23958,14 +23958,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLRISEFALL3METHODS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLRISEFALL3METHODS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLRISEFALL3METHODS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLRISEFALL3METHODS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -24025,8 +24025,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLRISEFALL3METHODS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLRISEFALL3METHODS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLRISEFALL3METHODS_Close(cA);
                 if( cB ) TA_CDLRISEFALL3METHODS_Close(cB);
@@ -24051,7 +24051,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLRISEFALL3METHODS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLRISEFALL3METHODS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -24147,7 +24147,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSEPARATINGLINES_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLSEPARATINGLINES_Close(stf);
         }
@@ -24213,14 +24213,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSEPARATINGLINES_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLSEPARATINGLINES_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLSEPARATINGLINES_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLSEPARATINGLINES_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -24280,8 +24280,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLSEPARATINGLINES_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLSEPARATINGLINES_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLSEPARATINGLINES_Close(cA);
                 if( cB ) TA_CDLSEPARATINGLINES_Close(cB);
@@ -24306,7 +24306,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLSEPARATINGLINES_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLSEPARATINGLINES_Close(stA);
                     if( !ok ) allOk = 0;
@@ -24402,7 +24402,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSHOOTINGSTAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLSHOOTINGSTAR_Close(stf);
         }
@@ -24468,14 +24468,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSHOOTINGSTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLSHOOTINGSTAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLSHOOTINGSTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLSHOOTINGSTAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -24535,8 +24535,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLSHOOTINGSTAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLSHOOTINGSTAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLSHOOTINGSTAR_Close(cA);
                 if( cB ) TA_CDLSHOOTINGSTAR_Close(cB);
@@ -24561,7 +24561,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLSHOOTINGSTAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLSHOOTINGSTAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -24657,7 +24657,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSHORTLINE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLSHORTLINE_Close(stf);
         }
@@ -24723,14 +24723,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSHORTLINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLSHORTLINE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLSHORTLINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLSHORTLINE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -24790,8 +24790,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLSHORTLINE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLSHORTLINE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLSHORTLINE_Close(cA);
                 if( cB ) TA_CDLSHORTLINE_Close(cB);
@@ -24816,7 +24816,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLSHORTLINE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLSHORTLINE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -24912,7 +24912,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSPINNINGTOP_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLSPINNINGTOP_Close(stf);
         }
@@ -24978,14 +24978,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSPINNINGTOP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLSPINNINGTOP_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLSPINNINGTOP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLSPINNINGTOP_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -25045,8 +25045,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLSPINNINGTOP_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLSPINNINGTOP_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLSPINNINGTOP_Close(cA);
                 if( cB ) TA_CDLSPINNINGTOP_Close(cB);
@@ -25071,7 +25071,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLSPINNINGTOP_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLSPINNINGTOP_Close(stA);
                     if( !ok ) allOk = 0;
@@ -25167,7 +25167,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSTALLEDPATTERN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLSTALLEDPATTERN_Close(stf);
         }
@@ -25233,14 +25233,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSTALLEDPATTERN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLSTALLEDPATTERN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLSTALLEDPATTERN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLSTALLEDPATTERN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -25300,8 +25300,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLSTALLEDPATTERN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLSTALLEDPATTERN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLSTALLEDPATTERN_Close(cA);
                 if( cB ) TA_CDLSTALLEDPATTERN_Close(cB);
@@ -25326,7 +25326,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLSTALLEDPATTERN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLSTALLEDPATTERN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -25422,7 +25422,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSTICKSANDWICH_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLSTICKSANDWICH_Close(stf);
         }
@@ -25488,14 +25488,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLSTICKSANDWICH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLSTICKSANDWICH_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLSTICKSANDWICH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLSTICKSANDWICH_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -25555,8 +25555,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLSTICKSANDWICH_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLSTICKSANDWICH_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLSTICKSANDWICH_Close(cA);
                 if( cB ) TA_CDLSTICKSANDWICH_Close(cB);
@@ -25581,7 +25581,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLSTICKSANDWICH_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLSTICKSANDWICH_Close(stA);
                     if( !ok ) allOk = 0;
@@ -25677,7 +25677,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTAKURI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLTAKURI_Close(stf);
         }
@@ -25743,14 +25743,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTAKURI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLTAKURI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLTAKURI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLTAKURI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -25810,8 +25810,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLTAKURI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLTAKURI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLTAKURI_Close(cA);
                 if( cB ) TA_CDLTAKURI_Close(cB);
@@ -25836,7 +25836,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLTAKURI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLTAKURI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -25932,7 +25932,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTASUKIGAP_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLTASUKIGAP_Close(stf);
         }
@@ -25998,14 +25998,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTASUKIGAP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLTASUKIGAP_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLTASUKIGAP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLTASUKIGAP_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -26065,8 +26065,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLTASUKIGAP_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLTASUKIGAP_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLTASUKIGAP_Close(cA);
                 if( cB ) TA_CDLTASUKIGAP_Close(cB);
@@ -26091,7 +26091,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLTASUKIGAP_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLTASUKIGAP_Close(stA);
                     if( !ok ) allOk = 0;
@@ -26187,7 +26187,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTHRUSTING_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLTHRUSTING_Close(stf);
         }
@@ -26253,14 +26253,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTHRUSTING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLTHRUSTING_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLTHRUSTING_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLTHRUSTING_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -26320,8 +26320,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLTHRUSTING_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLTHRUSTING_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLTHRUSTING_Close(cA);
                 if( cB ) TA_CDLTHRUSTING_Close(cB);
@@ -26346,7 +26346,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLTHRUSTING_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLTHRUSTING_Close(stA);
                     if( !ok ) allOk = 0;
@@ -26442,7 +26442,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTRISTAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLTRISTAR_Close(stf);
         }
@@ -26508,14 +26508,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLTRISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLTRISTAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLTRISTAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLTRISTAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -26575,8 +26575,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLTRISTAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLTRISTAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLTRISTAR_Close(cA);
                 if( cB ) TA_CDLTRISTAR_Close(cB);
@@ -26601,7 +26601,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLTRISTAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLTRISTAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -26697,7 +26697,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLUNIQUE3RIVER_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLUNIQUE3RIVER_Close(stf);
         }
@@ -26763,14 +26763,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLUNIQUE3RIVER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLUNIQUE3RIVER_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLUNIQUE3RIVER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLUNIQUE3RIVER_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -26830,8 +26830,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLUNIQUE3RIVER_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLUNIQUE3RIVER_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLUNIQUE3RIVER_Close(cA);
                 if( cB ) TA_CDLUNIQUE3RIVER_Close(cB);
@@ -26856,7 +26856,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLUNIQUE3RIVER_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLUNIQUE3RIVER_Close(stA);
                     if( !ok ) allOk = 0;
@@ -26952,7 +26952,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLUPSIDEGAP2CROWS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLUPSIDEGAP2CROWS_Close(stf);
         }
@@ -27018,14 +27018,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLUPSIDEGAP2CROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLUPSIDEGAP2CROWS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLUPSIDEGAP2CROWS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLUPSIDEGAP2CROWS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -27085,8 +27085,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLUPSIDEGAP2CROWS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLUPSIDEGAP2CROWS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLUPSIDEGAP2CROWS_Close(cA);
                 if( cB ) TA_CDLUPSIDEGAP2CROWS_Close(cB);
@@ -27111,7 +27111,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLUPSIDEGAP2CROWS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLUPSIDEGAP2CROWS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -27207,7 +27207,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLXSIDEGAP3METHODS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CDLXSIDEGAP3METHODS_Close(stf);
         }
@@ -27273,14 +27273,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CDLXSIDEGAP3METHODS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CDLXSIDEGAP3METHODS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CDLXSIDEGAP3METHODS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CDLXSIDEGAP3METHODS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", lgi, P, lgi, ok, lgi, pkOk);
@@ -27340,8 +27340,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CDLXSIDEGAP3METHODS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CDLXSIDEGAP3METHODS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CDLXSIDEGAP3METHODS_Close(cA);
                 if( cB ) TA_CDLXSIDEGAP3METHODS_Close(cB);
@@ -27366,7 +27366,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CDLXSIDEGAP3METHODS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CDLXSIDEGAP3METHODS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -27454,7 +27454,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CEIL_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CEIL_Close(stf);
         }
@@ -27528,14 +27528,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CEIL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CEIL_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CEIL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CEIL_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -27594,8 +27594,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CEIL_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CEIL_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CEIL_Close(cA);
                 if( cB ) TA_CEIL_Close(cB);
@@ -27618,7 +27618,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CEIL_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CEIL_Close(stA);
                     if( !ok ) allOk = 0;
@@ -27707,7 +27707,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CMF_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CMF_Close(stf);
         }
@@ -27781,14 +27781,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CMF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CMF_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CMF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CMF_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -27847,8 +27847,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CMF_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CMF_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CMF_Close(cA);
                 if( cB ) TA_CMF_Close(cB);
@@ -27871,7 +27871,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CMF_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CMF_Close(stA);
                     if( !ok ) allOk = 0;
@@ -27962,7 +27962,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CMO_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CMO_Close(stf);
         }
@@ -28036,14 +28036,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CMO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CMO_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CMO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CMO_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -28102,8 +28102,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CMO_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CMO_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CMO_Close(cA);
                 if( cB ) TA_CMO_Close(cB);
@@ -28126,7 +28126,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CMO_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CMO_Close(stA);
                     if( !ok ) allOk = 0;
@@ -28216,7 +28216,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CMOU_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CMOU_Close(stf);
         }
@@ -28290,14 +28290,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CMOU_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CMOU_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CMOU_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CMOU_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -28356,8 +28356,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CMOU_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CMOU_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CMOU_Close(cA);
                 if( cB ) TA_CMOU_Close(cB);
@@ -28380,7 +28380,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CMOU_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CMOU_Close(stA);
                     if( !ok ) allOk = 0;
@@ -28471,7 +28471,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_COPPOCK_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_COPPOCK_Close(stf);
         }
@@ -28545,14 +28545,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_COPPOCK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_COPPOCK_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_COPPOCK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_COPPOCK_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -28611,8 +28611,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_COPPOCK_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_COPPOCK_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_COPPOCK_Close(cA);
                 if( cB ) TA_COPPOCK_Close(cB);
@@ -28635,7 +28635,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_COPPOCK_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_COPPOCK_Close(stA);
                     if( !ok ) allOk = 0;
@@ -28724,7 +28724,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CORREL_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CORREL_Close(stf);
         }
@@ -28798,14 +28798,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CORREL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CORREL_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CORREL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CORREL_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -28864,8 +28864,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CORREL_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CORREL_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CORREL_Close(cA);
                 if( cB ) TA_CORREL_Close(cB);
@@ -28888,7 +28888,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CORREL_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CORREL_Close(stA);
                     if( !ok ) allOk = 0;
@@ -28976,7 +28976,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_COS_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_COS_Close(stf);
         }
@@ -29050,14 +29050,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_COS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_COS_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_COS_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_COS_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -29116,8 +29116,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_COS_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_COS_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_COS_Close(cA);
                 if( cB ) TA_COS_Close(cB);
@@ -29140,7 +29140,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_COS_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_COS_Close(stA);
                     if( !ok ) allOk = 0;
@@ -29228,7 +29228,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_COSH_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_COSH_Close(stf);
         }
@@ -29302,14 +29302,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_COSH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_COSH_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_COSH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_COSH_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -29368,8 +29368,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_COSH_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_COSH_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_COSH_Close(cA);
                 if( cB ) TA_COSH_Close(cB);
@@ -29392,7 +29392,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_COSH_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_COSH_Close(stA);
                     if( !ok ) allOk = 0;
@@ -29480,7 +29480,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CUMSUM_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CUMSUM_Close(stf);
         }
@@ -29554,14 +29554,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CUMSUM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CUMSUM_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CUMSUM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CUMSUM_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -29620,8 +29620,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CUMSUM_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CUMSUM_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CUMSUM_Close(cA);
                 if( cB ) TA_CUMSUM_Close(cB);
@@ -29644,7 +29644,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CUMSUM_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CUMSUM_Close(stA);
                     if( !ok ) allOk = 0;
@@ -29736,7 +29736,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CVI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_CVI_Close(stf);
         }
@@ -29810,14 +29810,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_CVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_CVI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_CVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_CVI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -29876,8 +29876,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_CVI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_CVI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_CVI_Close(cA);
                 if( cB ) TA_CVI_Close(cB);
@@ -29900,7 +29900,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_CVI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_CVI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -29992,7 +29992,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DEMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_DEMA_Close(stf);
         }
@@ -30066,14 +30066,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DEMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_DEMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_DEMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_DEMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -30132,8 +30132,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_DEMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_DEMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_DEMA_Close(cA);
                 if( cB ) TA_DEMA_Close(cB);
@@ -30156,7 +30156,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_DEMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_DEMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -30245,7 +30245,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DIV_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_DIV_Close(stf);
         }
@@ -30319,14 +30319,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DIV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_DIV_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_DIV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_DIV_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -30385,8 +30385,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_DIV_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_DIV_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_DIV_Close(cA);
                 if( cB ) TA_DIV_Close(cB);
@@ -30409,7 +30409,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_DIV_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_DIV_Close(stA);
                     if( !ok ) allOk = 0;
@@ -30506,7 +30506,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DONCHIAN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_DONCHIAN_Close(stf);
         }
@@ -30597,14 +30597,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DONCHIAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_DONCHIAN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_DONCHIAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_DONCHIAN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -30671,8 +30671,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_DONCHIAN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_DONCHIAN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_DONCHIAN_Close(cA);
                 if( cB ) TA_DONCHIAN_Close(cB);
@@ -30699,7 +30699,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_DONCHIAN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_DONCHIAN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -30788,7 +30788,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DPO_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_DPO_Close(stf);
         }
@@ -30862,14 +30862,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DPO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_DPO_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_DPO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_DPO_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -30928,8 +30928,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_DPO_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_DPO_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_DPO_Close(cA);
                 if( cB ) TA_DPO_Close(cB);
@@ -30952,7 +30952,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_DPO_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_DPO_Close(stA);
                     if( !ok ) allOk = 0;
@@ -31043,7 +31043,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_DX_Close(stf);
         }
@@ -31117,14 +31117,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_DX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_DX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_DX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_DX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -31183,8 +31183,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_DX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_DX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_DX_Close(cA);
                 if( cB ) TA_DX_Close(cB);
@@ -31207,7 +31207,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_DX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_DX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -31297,7 +31297,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_EFI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_EFI_Close(stf);
         }
@@ -31371,14 +31371,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_EFI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_EFI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_EFI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_EFI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -31437,8 +31437,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_EFI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_EFI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_EFI_Close(cA);
                 if( cB ) TA_EFI_Close(cB);
@@ -31461,7 +31461,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_EFI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_EFI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -31552,7 +31552,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_EMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_EMA_Close(stf);
         }
@@ -31626,14 +31626,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_EMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_EMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_EMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_EMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -31692,8 +31692,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_EMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_EMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_EMA_Close(cA);
                 if( cB ) TA_EMA_Close(cB);
@@ -31716,7 +31716,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_EMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_EMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -31806,7 +31806,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ER_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ER_Close(stf);
         }
@@ -31880,14 +31880,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ER_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ER_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ER_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -31946,8 +31946,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ER_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ER_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ER_Close(cA);
                 if( cB ) TA_ER_Close(cB);
@@ -31970,7 +31970,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ER_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ER_Close(stA);
                     if( !ok ) allOk = 0;
@@ -32065,7 +32065,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ERI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ERI_Close(stf);
         }
@@ -32151,14 +32151,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ERI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ERI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ERI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ERI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -32221,8 +32221,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ERI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ERI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ERI_Close(cA);
                 if( cB ) TA_ERI_Close(cB);
@@ -32247,7 +32247,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ERI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ERI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -32336,7 +32336,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_EXP_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_EXP_Close(stf);
         }
@@ -32410,14 +32410,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_EXP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_EXP_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_EXP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_EXP_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -32476,8 +32476,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_EXP_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_EXP_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_EXP_Close(cA);
                 if( cB ) TA_EXP_Close(cB);
@@ -32500,7 +32500,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_EXP_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_EXP_Close(stA);
                     if( !ok ) allOk = 0;
@@ -32588,7 +32588,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_FLOOR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_FLOOR_Close(stf);
         }
@@ -32662,14 +32662,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_FLOOR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_FLOOR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_FLOOR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_FLOOR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -32728,8 +32728,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_FLOOR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_FLOOR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_FLOOR_Close(cA);
                 if( cB ) TA_FLOOR_Close(cB);
@@ -32752,7 +32752,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_FLOOR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_FLOOR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -32841,7 +32841,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_FOSC_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_FOSC_Close(stf);
         }
@@ -32915,14 +32915,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_FOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_FOSC_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_FOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_FOSC_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -32981,8 +32981,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_FOSC_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_FOSC_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_FOSC_Close(cA);
                 if( cB ) TA_FOSC_Close(cB);
@@ -33005,7 +33005,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_FOSC_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_FOSC_Close(stA);
                     if( !ok ) allOk = 0;
@@ -33099,7 +33099,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_FRACTAL_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_FRACTAL_Close(stf);
         }
@@ -33178,14 +33178,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_FRACTAL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_FRACTAL_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_FRACTAL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_FRACTAL_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -33248,8 +33248,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_FRACTAL_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_FRACTAL_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_FRACTAL_Close(cA);
                 if( cB ) TA_FRACTAL_Close(cB);
@@ -33274,7 +33274,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_FRACTAL_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_FRACTAL_Close(stA);
                     if( !ok ) allOk = 0;
@@ -33376,7 +33376,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HA_Close(stf);
         }
@@ -33472,14 +33472,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -33550,8 +33550,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HA_Close(cA);
                 if( cB ) TA_HA_Close(cB);
@@ -33580,7 +33580,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -33670,7 +33670,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HMA_Close(stf);
         }
@@ -33744,14 +33744,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -33810,8 +33810,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HMA_Close(cA);
                 if( cB ) TA_HMA_Close(cB);
@@ -33834,7 +33834,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -33924,7 +33924,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_DCPERIOD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HT_DCPERIOD_Close(stf);
         }
@@ -33998,14 +33998,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_DCPERIOD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HT_DCPERIOD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HT_DCPERIOD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HT_DCPERIOD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -34064,8 +34064,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HT_DCPERIOD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HT_DCPERIOD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HT_DCPERIOD_Close(cA);
                 if( cB ) TA_HT_DCPERIOD_Close(cB);
@@ -34088,7 +34088,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HT_DCPERIOD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HT_DCPERIOD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -34179,7 +34179,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_DCPHASE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HT_DCPHASE_Close(stf);
         }
@@ -34253,14 +34253,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_DCPHASE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HT_DCPHASE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HT_DCPHASE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HT_DCPHASE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -34319,8 +34319,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HT_DCPHASE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HT_DCPHASE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HT_DCPHASE_Close(cA);
                 if( cB ) TA_HT_DCPHASE_Close(cB);
@@ -34343,7 +34343,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HT_DCPHASE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HT_DCPHASE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -34438,7 +34438,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_PHASOR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HT_PHASOR_Close(stf);
         }
@@ -34524,14 +34524,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_PHASOR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HT_PHASOR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HT_PHASOR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HT_PHASOR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -34594,8 +34594,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HT_PHASOR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HT_PHASOR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HT_PHASOR_Close(cA);
                 if( cB ) TA_HT_PHASOR_Close(cB);
@@ -34620,7 +34620,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HT_PHASOR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HT_PHASOR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -34715,7 +34715,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_SINE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HT_SINE_Close(stf);
         }
@@ -34801,14 +34801,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_SINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HT_SINE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HT_SINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HT_SINE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -34871,8 +34871,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HT_SINE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HT_SINE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HT_SINE_Close(cA);
                 if( cB ) TA_HT_SINE_Close(cB);
@@ -34897,7 +34897,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HT_SINE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HT_SINE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -34988,7 +34988,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_TRENDLINE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HT_TRENDLINE_Close(stf);
         }
@@ -35062,14 +35062,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_TRENDLINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HT_TRENDLINE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HT_TRENDLINE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HT_TRENDLINE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -35128,8 +35128,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HT_TRENDLINE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HT_TRENDLINE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HT_TRENDLINE_Close(cA);
                 if( cB ) TA_HT_TRENDLINE_Close(cB);
@@ -35152,7 +35152,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HT_TRENDLINE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HT_TRENDLINE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -35243,7 +35243,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_TRENDMODE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_HT_TRENDMODE_Close(stf);
         }
@@ -35310,14 +35310,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_HT_TRENDMODE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_HT_TRENDMODE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_HT_TRENDMODE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_HT_TRENDMODE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -35376,8 +35376,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_HT_TRENDMODE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_HT_TRENDMODE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_HT_TRENDMODE_Close(cA);
                 if( cB ) TA_HT_TRENDMODE_Close(cB);
@@ -35400,7 +35400,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_HT_TRENDMODE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_HT_TRENDMODE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -35490,7 +35490,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_IMI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_IMI_Close(stf);
         }
@@ -35564,14 +35564,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_IMI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_IMI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_IMI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_IMI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -35630,8 +35630,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_IMI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_IMI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_IMI_Close(cA);
                 if( cB ) TA_IMI_Close(cB);
@@ -35654,7 +35654,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_IMI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_IMI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -35745,7 +35745,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_KAMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_KAMA_Close(stf);
         }
@@ -35819,14 +35819,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_KAMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_KAMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_KAMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_KAMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -35885,8 +35885,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_KAMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_KAMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_KAMA_Close(cA);
                 if( cB ) TA_KAMA_Close(cB);
@@ -35909,7 +35909,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_KAMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_KAMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -36013,7 +36013,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_KC_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_KC_Close(stf);
         }
@@ -36104,14 +36104,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_KC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_KC_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_KC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_KC_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -36178,8 +36178,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_KC_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_KC_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_KC_Close(cA);
                 if( cB ) TA_KC_Close(cB);
@@ -36206,7 +36206,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_KC_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_KC_Close(stA);
                     if( !ok ) allOk = 0;
@@ -36319,7 +36319,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_KDJ_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_KDJ_Close(stf);
         }
@@ -36410,14 +36410,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_KDJ_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_KDJ_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_KDJ_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_KDJ_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -36484,8 +36484,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_KDJ_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_KDJ_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_KDJ_Close(cA);
                 if( cB ) TA_KDJ_Close(cB);
@@ -36512,7 +36512,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_KDJ_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_KDJ_Close(stA);
                     if( !ok ) allOk = 0;
@@ -36606,7 +36606,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_LINEARREG_Close(stf);
         }
@@ -36680,14 +36680,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_LINEARREG_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_LINEARREG_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_LINEARREG_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -36746,8 +36746,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_LINEARREG_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_LINEARREG_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_LINEARREG_Close(cA);
                 if( cB ) TA_LINEARREG_Close(cB);
@@ -36770,7 +36770,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_LINEARREG_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_LINEARREG_Close(stA);
                     if( !ok ) allOk = 0;
@@ -36859,7 +36859,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_ANGLE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_LINEARREG_ANGLE_Close(stf);
         }
@@ -36933,14 +36933,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_ANGLE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_LINEARREG_ANGLE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_LINEARREG_ANGLE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_LINEARREG_ANGLE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -36999,8 +36999,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_LINEARREG_ANGLE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_LINEARREG_ANGLE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_LINEARREG_ANGLE_Close(cA);
                 if( cB ) TA_LINEARREG_ANGLE_Close(cB);
@@ -37023,7 +37023,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_LINEARREG_ANGLE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_LINEARREG_ANGLE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -37112,7 +37112,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_INTERCEPT_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_LINEARREG_INTERCEPT_Close(stf);
         }
@@ -37186,14 +37186,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_INTERCEPT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_LINEARREG_INTERCEPT_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_LINEARREG_INTERCEPT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_LINEARREG_INTERCEPT_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -37252,8 +37252,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_LINEARREG_INTERCEPT_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_LINEARREG_INTERCEPT_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_LINEARREG_INTERCEPT_Close(cA);
                 if( cB ) TA_LINEARREG_INTERCEPT_Close(cB);
@@ -37276,7 +37276,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_LINEARREG_INTERCEPT_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_LINEARREG_INTERCEPT_Close(stA);
                     if( !ok ) allOk = 0;
@@ -37365,7 +37365,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_SLOPE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_LINEARREG_SLOPE_Close(stf);
         }
@@ -37439,14 +37439,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LINEARREG_SLOPE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_LINEARREG_SLOPE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_LINEARREG_SLOPE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_LINEARREG_SLOPE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -37505,8 +37505,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_LINEARREG_SLOPE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_LINEARREG_SLOPE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_LINEARREG_SLOPE_Close(cA);
                 if( cB ) TA_LINEARREG_SLOPE_Close(cB);
@@ -37529,7 +37529,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_LINEARREG_SLOPE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_LINEARREG_SLOPE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -37617,7 +37617,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_LN_Close(stf);
         }
@@ -37691,14 +37691,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_LN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_LN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_LN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -37757,8 +37757,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_LN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_LN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_LN_Close(cA);
                 if( cB ) TA_LN_Close(cB);
@@ -37781,7 +37781,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_LN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_LN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -37869,7 +37869,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LOG10_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_LOG10_Close(stf);
         }
@@ -37943,14 +37943,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_LOG10_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_LOG10_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_LOG10_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_LOG10_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -38009,8 +38009,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_LOG10_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_LOG10_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_LOG10_Close(cA);
                 if( cB ) TA_LOG10_Close(cB);
@@ -38033,7 +38033,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_LOG10_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_LOG10_Close(stA);
                     if( !ok ) allOk = 0;
@@ -38133,7 +38133,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MA_Close(stf);
         }
@@ -38207,14 +38207,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -38273,8 +38273,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MA_Close(cA);
                 if( cB ) TA_MA_Close(cB);
@@ -38297,7 +38297,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -38403,7 +38403,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MACD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MACD_Close(stf);
         }
@@ -38494,14 +38494,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MACD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MACD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MACD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MACD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -38568,8 +38568,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MACD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MACD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MACD_Close(cA);
                 if( cB ) TA_MACD_Close(cB);
@@ -38596,7 +38596,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MACD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MACD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -38709,7 +38709,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MACDEXT_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MACDEXT_Close(stf);
         }
@@ -38800,14 +38800,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MACDEXT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MACDEXT_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MACDEXT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MACDEXT_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -38874,8 +38874,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MACDEXT_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MACDEXT_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MACDEXT_Close(cA);
                 if( cB ) TA_MACDEXT_Close(cB);
@@ -38902,7 +38902,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MACDEXT_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MACDEXT_Close(stA);
                     if( !ok ) allOk = 0;
@@ -39006,7 +39006,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MACDFIX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MACDFIX_Close(stf);
         }
@@ -39097,14 +39097,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MACDFIX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MACDFIX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MACDFIX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MACDFIX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -39171,8 +39171,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MACDFIX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MACDFIX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MACDFIX_Close(cA);
                 if( cB ) TA_MACDFIX_Close(cB);
@@ -39199,7 +39199,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MACDFIX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MACDFIX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -39296,7 +39296,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MAMA_Close(stf);
         }
@@ -39382,14 +39382,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MAMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MAMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MAMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -39452,8 +39452,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MAMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MAMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MAMA_Close(cA);
                 if( cB ) TA_MAMA_Close(cB);
@@ -39478,7 +39478,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MAMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MAMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -39567,7 +39567,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MARKETFI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MARKETFI_Close(stf);
         }
@@ -39641,14 +39641,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MARKETFI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MARKETFI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MARKETFI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MARKETFI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -39707,8 +39707,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MARKETFI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MARKETFI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MARKETFI_Close(cA);
                 if( cB ) TA_MARKETFI_Close(cB);
@@ -39731,7 +39731,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MARKETFI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MARKETFI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -39823,7 +39823,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MASSI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MASSI_Close(stf);
         }
@@ -39897,14 +39897,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MASSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MASSI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MASSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MASSI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -39963,8 +39963,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MASSI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MASSI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MASSI_Close(cA);
                 if( cB ) TA_MASSI_Close(cB);
@@ -39987,7 +39987,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MASSI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MASSI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -40090,7 +40090,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAVP_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MAVP_Close(stf);
         }
@@ -40164,14 +40164,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAVP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MAVP_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MAVP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MAVP_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -40230,8 +40230,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MAVP_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MAVP_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MAVP_Close(cA);
                 if( cB ) TA_MAVP_Close(cB);
@@ -40254,7 +40254,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MAVP_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MAVP_Close(stA);
                     if( !ok ) allOk = 0;
@@ -40348,7 +40348,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MAX_Close(stf);
         }
@@ -40422,14 +40422,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MAX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MAX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MAX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -40488,8 +40488,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MAX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MAX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MAX_Close(cA);
                 if( cB ) TA_MAX_Close(cB);
@@ -40512,7 +40512,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MAX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MAX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -40601,7 +40601,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAXINDEX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MAXINDEX_Close(stf);
         }
@@ -40668,14 +40668,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MAXINDEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MAXINDEX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MAXINDEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MAXINDEX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -40734,8 +40734,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MAXINDEX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MAXINDEX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MAXINDEX_Close(cA);
                 if( cB ) TA_MAXINDEX_Close(cB);
@@ -40758,7 +40758,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MAXINDEX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MAXINDEX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -40846,7 +40846,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MEDPRICE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MEDPRICE_Close(stf);
         }
@@ -40920,14 +40920,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MEDPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MEDPRICE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MEDPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MEDPRICE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -40986,8 +40986,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MEDPRICE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MEDPRICE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MEDPRICE_Close(cA);
                 if( cB ) TA_MEDPRICE_Close(cB);
@@ -41010,7 +41010,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MEDPRICE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MEDPRICE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -41099,7 +41099,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MFI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MFI_Close(stf);
         }
@@ -41173,14 +41173,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MFI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MFI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MFI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MFI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -41239,8 +41239,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MFI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MFI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MFI_Close(cA);
                 if( cB ) TA_MFI_Close(cB);
@@ -41263,7 +41263,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MFI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MFI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -41352,7 +41352,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MIDPOINT_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MIDPOINT_Close(stf);
         }
@@ -41426,14 +41426,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MIDPOINT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MIDPOINT_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MIDPOINT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MIDPOINT_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -41492,8 +41492,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MIDPOINT_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MIDPOINT_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MIDPOINT_Close(cA);
                 if( cB ) TA_MIDPOINT_Close(cB);
@@ -41516,7 +41516,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MIDPOINT_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MIDPOINT_Close(stA);
                     if( !ok ) allOk = 0;
@@ -41605,7 +41605,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MIDPRICE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MIDPRICE_Close(stf);
         }
@@ -41679,14 +41679,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MIDPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MIDPRICE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MIDPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MIDPRICE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -41745,8 +41745,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MIDPRICE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MIDPRICE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MIDPRICE_Close(cA);
                 if( cB ) TA_MIDPRICE_Close(cB);
@@ -41769,7 +41769,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MIDPRICE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MIDPRICE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -41858,7 +41858,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MIN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MIN_Close(stf);
         }
@@ -41932,14 +41932,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MIN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MIN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MIN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MIN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -41998,8 +41998,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MIN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MIN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MIN_Close(cA);
                 if( cB ) TA_MIN_Close(cB);
@@ -42022,7 +42022,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MIN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MIN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -42111,7 +42111,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MININDEX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MININDEX_Close(stf);
         }
@@ -42178,14 +42178,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MININDEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MININDEX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MININDEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MININDEX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -42244,8 +42244,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MININDEX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MININDEX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MININDEX_Close(cA);
                 if( cB ) TA_MININDEX_Close(cB);
@@ -42268,7 +42268,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MININDEX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MININDEX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -42361,7 +42361,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINMAX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MINMAX_Close(stf);
         }
@@ -42447,14 +42447,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINMAX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MINMAX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MINMAX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MINMAX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -42517,8 +42517,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MINMAX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MINMAX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MINMAX_Close(cA);
                 if( cB ) TA_MINMAX_Close(cB);
@@ -42543,7 +42543,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MINMAX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MINMAX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -42636,7 +42636,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINMAXINDEX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MINMAXINDEX_Close(stf);
         }
@@ -42715,14 +42715,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINMAXINDEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MINMAXINDEX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MINMAXINDEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MINMAXINDEX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -42785,8 +42785,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MINMAXINDEX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MINMAXINDEX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MINMAXINDEX_Close(cA);
                 if( cB ) TA_MINMAXINDEX_Close(cB);
@@ -42811,7 +42811,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MINMAXINDEX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MINMAXINDEX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -42902,7 +42902,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINUS_DI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MINUS_DI_Close(stf);
         }
@@ -42976,14 +42976,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINUS_DI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MINUS_DI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MINUS_DI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MINUS_DI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -43042,8 +43042,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MINUS_DI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MINUS_DI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MINUS_DI_Close(cA);
                 if( cB ) TA_MINUS_DI_Close(cB);
@@ -43066,7 +43066,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MINUS_DI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MINUS_DI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -43158,7 +43158,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINUS_DM_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MINUS_DM_Close(stf);
         }
@@ -43232,14 +43232,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MINUS_DM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MINUS_DM_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MINUS_DM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MINUS_DM_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -43298,8 +43298,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MINUS_DM_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MINUS_DM_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MINUS_DM_Close(cA);
                 if( cB ) TA_MINUS_DM_Close(cB);
@@ -43322,7 +43322,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MINUS_DM_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MINUS_DM_Close(stA);
                     if( !ok ) allOk = 0;
@@ -43412,7 +43412,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MOM_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MOM_Close(stf);
         }
@@ -43486,14 +43486,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MOM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MOM_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MOM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MOM_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -43552,8 +43552,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MOM_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MOM_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MOM_Close(cA);
                 if( cB ) TA_MOM_Close(cB);
@@ -43576,7 +43576,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MOM_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MOM_Close(stA);
                     if( !ok ) allOk = 0;
@@ -43664,7 +43664,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MULT_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_MULT_Close(stf);
         }
@@ -43738,14 +43738,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_MULT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_MULT_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_MULT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_MULT_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -43804,8 +43804,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_MULT_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_MULT_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_MULT_Close(cA);
                 if( cB ) TA_MULT_Close(cB);
@@ -43828,7 +43828,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_MULT_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_MULT_Close(stA);
                     if( !ok ) allOk = 0;
@@ -43919,7 +43919,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_NATR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_NATR_Close(stf);
         }
@@ -43993,14 +43993,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_NATR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_NATR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_NATR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_NATR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -44059,8 +44059,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_NATR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_NATR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_NATR_Close(cA);
                 if( cB ) TA_NATR_Close(cB);
@@ -44083,7 +44083,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_NATR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_NATR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -44172,7 +44172,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_NVI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_NVI_Close(stf);
         }
@@ -44246,14 +44246,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_NVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_NVI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_NVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_NVI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -44312,8 +44312,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_NVI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_NVI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_NVI_Close(cA);
                 if( cB ) TA_NVI_Close(cB);
@@ -44336,7 +44336,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_NVI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_NVI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -44424,7 +44424,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_OBV_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_OBV_Close(stf);
         }
@@ -44498,14 +44498,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_OBV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_OBV_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_OBV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_OBV_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -44564,8 +44564,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_OBV_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_OBV_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_OBV_Close(cA);
                 if( cB ) TA_OBV_Close(cB);
@@ -44588,7 +44588,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_OBV_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_OBV_Close(stA);
                     if( !ok ) allOk = 0;
@@ -44678,7 +44678,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PERCENTILE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PERCENTILE_Close(stf);
         }
@@ -44752,14 +44752,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PERCENTILE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PERCENTILE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PERCENTILE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PERCENTILE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -44818,8 +44818,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PERCENTILE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PERCENTILE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PERCENTILE_Close(cA);
                 if( cB ) TA_PERCENTILE_Close(cB);
@@ -44842,7 +44842,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PERCENTILE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PERCENTILE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -44931,7 +44931,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PERCENTRANK_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PERCENTRANK_Close(stf);
         }
@@ -45005,14 +45005,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PERCENTRANK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PERCENTRANK_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PERCENTRANK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PERCENTRANK_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -45071,8 +45071,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PERCENTRANK_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PERCENTRANK_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PERCENTRANK_Close(cA);
                 if( cB ) TA_PERCENTRANK_Close(cB);
@@ -45095,7 +45095,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PERCENTRANK_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PERCENTRANK_Close(stA);
                     if( !ok ) allOk = 0;
@@ -45186,7 +45186,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PLUS_DI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PLUS_DI_Close(stf);
         }
@@ -45260,14 +45260,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PLUS_DI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PLUS_DI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PLUS_DI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PLUS_DI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -45326,8 +45326,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PLUS_DI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PLUS_DI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PLUS_DI_Close(cA);
                 if( cB ) TA_PLUS_DI_Close(cB);
@@ -45350,7 +45350,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PLUS_DI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PLUS_DI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -45442,7 +45442,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PLUS_DM_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PLUS_DM_Close(stf);
         }
@@ -45516,14 +45516,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PLUS_DM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PLUS_DM_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PLUS_DM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PLUS_DM_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -45582,8 +45582,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PLUS_DM_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PLUS_DM_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PLUS_DM_Close(cA);
                 if( cB ) TA_PLUS_DM_Close(cB);
@@ -45606,7 +45606,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PLUS_DM_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PLUS_DM_Close(stA);
                     if( !ok ) allOk = 0;
@@ -45708,7 +45708,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PPO_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PPO_Close(stf);
         }
@@ -45782,14 +45782,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PPO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PPO_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PPO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PPO_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -45848,8 +45848,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PPO_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PPO_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PPO_Close(cA);
                 if( cB ) TA_PPO_Close(cB);
@@ -45872,7 +45872,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PPO_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PPO_Close(stA);
                     if( !ok ) allOk = 0;
@@ -45965,7 +45965,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PVI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PVI_Close(stf);
         }
@@ -46039,14 +46039,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PVI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PVI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -46105,8 +46105,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PVI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PVI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PVI_Close(cA);
                 if( cB ) TA_PVI_Close(cB);
@@ -46129,7 +46129,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PVI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PVI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -46230,7 +46230,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PVO_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PVO_Close(stf);
         }
@@ -46304,14 +46304,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PVO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PVO_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PVO_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PVO_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -46370,8 +46370,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PVO_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PVO_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PVO_Close(cA);
                 if( cB ) TA_PVO_Close(cB);
@@ -46394,7 +46394,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PVO_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PVO_Close(stA);
                     if( !ok ) allOk = 0;
@@ -46487,7 +46487,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PVT_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_PVT_Close(stf);
         }
@@ -46561,14 +46561,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_PVT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_PVT_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_PVT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_PVT_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -46627,8 +46627,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_PVT_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_PVT_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_PVT_Close(cA);
                 if( cB ) TA_PVT_Close(cB);
@@ -46651,7 +46651,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_PVT_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_PVT_Close(stA);
                     if( !ok ) allOk = 0;
@@ -46740,7 +46740,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_QSTICK_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_QSTICK_Close(stf);
         }
@@ -46814,14 +46814,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_QSTICK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_QSTICK_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_QSTICK_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_QSTICK_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -46880,8 +46880,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_QSTICK_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_QSTICK_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_QSTICK_Close(cA);
                 if( cB ) TA_QSTICK_Close(cB);
@@ -46904,7 +46904,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_QSTICK_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_QSTICK_Close(stA);
                     if( !ok ) allOk = 0;
@@ -46995,7 +46995,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_RMA_Close(stf);
         }
@@ -47069,14 +47069,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_RMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_RMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_RMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -47135,8 +47135,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_RMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_RMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_RMA_Close(cA);
                 if( cB ) TA_RMA_Close(cB);
@@ -47159,7 +47159,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_RMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_RMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -47249,7 +47249,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROC_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ROC_Close(stf);
         }
@@ -47323,14 +47323,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ROC_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ROC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ROC_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -47389,8 +47389,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ROC_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ROC_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ROC_Close(cA);
                 if( cB ) TA_ROC_Close(cB);
@@ -47413,7 +47413,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ROC_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ROC_Close(stA);
                     if( !ok ) allOk = 0;
@@ -47502,7 +47502,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROCP_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ROCP_Close(stf);
         }
@@ -47576,14 +47576,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROCP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ROCP_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ROCP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ROCP_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -47642,8 +47642,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ROCP_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ROCP_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ROCP_Close(cA);
                 if( cB ) TA_ROCP_Close(cB);
@@ -47666,7 +47666,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ROCP_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ROCP_Close(stA);
                     if( !ok ) allOk = 0;
@@ -47755,7 +47755,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROCR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ROCR_Close(stf);
         }
@@ -47829,14 +47829,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROCR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ROCR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ROCR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ROCR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -47895,8 +47895,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ROCR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ROCR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ROCR_Close(cA);
                 if( cB ) TA_ROCR_Close(cB);
@@ -47919,7 +47919,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ROCR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ROCR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -48008,7 +48008,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROCR100_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ROCR100_Close(stf);
         }
@@ -48082,14 +48082,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ROCR100_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ROCR100_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ROCR100_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ROCR100_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -48148,8 +48148,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ROCR100_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ROCR100_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ROCR100_Close(cA);
                 if( cB ) TA_ROCR100_Close(cB);
@@ -48172,7 +48172,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ROCR100_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ROCR100_Close(stA);
                     if( !ok ) allOk = 0;
@@ -48263,7 +48263,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RSI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_RSI_Close(stf);
         }
@@ -48337,14 +48337,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_RSI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_RSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_RSI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -48403,8 +48403,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_RSI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_RSI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_RSI_Close(cA);
                 if( cB ) TA_RSI_Close(cB);
@@ -48427,7 +48427,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_RSI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_RSI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -48520,7 +48520,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RVI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_RVI_Close(stf);
         }
@@ -48594,14 +48594,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_RVI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_RVI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_RVI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -48660,8 +48660,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_RVI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_RVI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_RVI_Close(cA);
                 if( cB ) TA_RVI_Close(cB);
@@ -48684,7 +48684,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_RVI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_RVI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -48774,7 +48774,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RVOL_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_RVOL_Close(stf);
         }
@@ -48848,14 +48848,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_RVOL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_RVOL_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_RVOL_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_RVOL_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -48914,8 +48914,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_RVOL_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_RVOL_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_RVOL_Close(cA);
                 if( cB ) TA_RVOL_Close(cB);
@@ -48938,7 +48938,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_RVOL_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_RVOL_Close(stA);
                     if( !ok ) allOk = 0;
@@ -49028,7 +49028,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SAR_Close(stf);
         }
@@ -49102,14 +49102,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -49168,8 +49168,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SAR_Close(cA);
                 if( cB ) TA_SAR_Close(cB);
@@ -49192,7 +49192,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -49288,7 +49288,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SAREXT_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SAREXT_Close(stf);
         }
@@ -49362,14 +49362,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SAREXT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SAREXT_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SAREXT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SAREXT_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -49428,8 +49428,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SAREXT_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SAREXT_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SAREXT_Close(cA);
                 if( cB ) TA_SAREXT_Close(cB);
@@ -49452,7 +49452,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SAREXT_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SAREXT_Close(stA);
                     if( !ok ) allOk = 0;
@@ -49540,7 +49540,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SIN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SIN_Close(stf);
         }
@@ -49614,14 +49614,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SIN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SIN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SIN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SIN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -49680,8 +49680,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SIN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SIN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SIN_Close(cA);
                 if( cB ) TA_SIN_Close(cB);
@@ -49704,7 +49704,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SIN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SIN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -49792,7 +49792,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SINH_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SINH_Close(stf);
         }
@@ -49866,14 +49866,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SINH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SINH_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SINH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SINH_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -49932,8 +49932,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SINH_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SINH_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SINH_Close(cA);
                 if( cB ) TA_SINH_Close(cB);
@@ -49956,7 +49956,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SINH_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SINH_Close(stA);
                     if( !ok ) allOk = 0;
@@ -50045,7 +50045,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SMA_Close(stf);
         }
@@ -50119,14 +50119,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -50185,8 +50185,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SMA_Close(cA);
                 if( cB ) TA_SMA_Close(cB);
@@ -50209,7 +50209,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -50307,7 +50307,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SMI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SMI_Close(stf);
         }
@@ -50393,14 +50393,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SMI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SMI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SMI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SMI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -50463,8 +50463,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SMI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SMI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SMI_Close(cA);
                 if( cB ) TA_SMI_Close(cB);
@@ -50489,7 +50489,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SMI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SMI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -50578,7 +50578,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SQRT_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SQRT_Close(stf);
         }
@@ -50652,14 +50652,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SQRT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SQRT_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SQRT_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SQRT_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -50718,8 +50718,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SQRT_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SQRT_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SQRT_Close(cA);
                 if( cB ) TA_SQRT_Close(cB);
@@ -50742,7 +50742,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SQRT_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SQRT_Close(stA);
                     if( !ok ) allOk = 0;
@@ -50832,7 +50832,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STDDEV_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_STDDEV_Close(stf);
         }
@@ -50906,14 +50906,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STDDEV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_STDDEV_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_STDDEV_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_STDDEV_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -50972,8 +50972,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_STDDEV_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_STDDEV_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_STDDEV_Close(cA);
                 if( cB ) TA_STDDEV_Close(cB);
@@ -50996,7 +50996,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_STDDEV_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_STDDEV_Close(stA);
                     if( !ok ) allOk = 0;
@@ -51103,7 +51103,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STOCH_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_STOCH_Close(stf);
         }
@@ -51189,14 +51189,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STOCH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_STOCH_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_STOCH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_STOCH_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -51259,8 +51259,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_STOCH_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_STOCH_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_STOCH_Close(cA);
                 if( cB ) TA_STOCH_Close(cB);
@@ -51285,7 +51285,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_STOCH_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_STOCH_Close(stA);
                     if( !ok ) allOk = 0;
@@ -51395,7 +51395,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STOCHF_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_STOCHF_Close(stf);
         }
@@ -51481,14 +51481,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STOCHF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_STOCHF_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_STOCHF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_STOCHF_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -51551,8 +51551,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_STOCHF_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_STOCHF_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_STOCHF_Close(cA);
                 if( cB ) TA_STOCHF_Close(cB);
@@ -51577,7 +51577,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_STOCHF_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_STOCHF_Close(stA);
                     if( !ok ) allOk = 0;
@@ -51690,7 +51690,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STOCHRSI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_STOCHRSI_Close(stf);
         }
@@ -51776,14 +51776,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_STOCHRSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_STOCHRSI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_STOCHRSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_STOCHRSI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -51846,8 +51846,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_STOCHRSI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_STOCHRSI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_STOCHRSI_Close(cA);
                 if( cB ) TA_STOCHRSI_Close(cB);
@@ -51872,7 +51872,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_STOCHRSI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_STOCHRSI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -51966,7 +51966,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SUB_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SUB_Close(stf);
         }
@@ -52040,14 +52040,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SUB_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SUB_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SUB_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SUB_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -52106,8 +52106,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SUB_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SUB_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SUB_Close(cA);
                 if( cB ) TA_SUB_Close(cB);
@@ -52130,7 +52130,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SUB_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SUB_Close(stA);
                     if( !ok ) allOk = 0;
@@ -52219,7 +52219,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SUM_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SUM_Close(stf);
         }
@@ -52293,14 +52293,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SUM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SUM_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SUM_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SUM_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -52359,8 +52359,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SUM_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SUM_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SUM_Close(cA);
                 if( cB ) TA_SUM_Close(cB);
@@ -52383,7 +52383,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SUM_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SUM_Close(stA);
                     if( !ok ) allOk = 0;
@@ -52479,7 +52479,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SUPERTREND_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_SUPERTREND_Close(stf);
         }
@@ -52558,14 +52558,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_SUPERTREND_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_SUPERTREND_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_SUPERTREND_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_SUPERTREND_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -52628,8 +52628,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_SUPERTREND_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_SUPERTREND_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_SUPERTREND_Close(cA);
                 if( cB ) TA_SUPERTREND_Close(cB);
@@ -52654,7 +52654,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_SUPERTREND_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_SUPERTREND_Close(stA);
                     if( !ok ) allOk = 0;
@@ -52747,7 +52747,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_T3_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_T3_Close(stf);
         }
@@ -52821,14 +52821,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_T3_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_T3_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_T3_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_T3_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -52887,8 +52887,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_T3_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_T3_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_T3_Close(cA);
                 if( cB ) TA_T3_Close(cB);
@@ -52911,7 +52911,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_T3_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_T3_Close(stA);
                     if( !ok ) allOk = 0;
@@ -53000,7 +53000,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TAN_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TAN_Close(stf);
         }
@@ -53074,14 +53074,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TAN_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TAN_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TAN_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -53140,8 +53140,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TAN_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TAN_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TAN_Close(cA);
                 if( cB ) TA_TAN_Close(cB);
@@ -53164,7 +53164,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TAN_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TAN_Close(stA);
                     if( !ok ) allOk = 0;
@@ -53252,7 +53252,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TANH_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TANH_Close(stf);
         }
@@ -53326,14 +53326,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TANH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TANH_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TANH_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TANH_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -53392,8 +53392,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TANH_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TANH_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TANH_Close(cA);
                 if( cB ) TA_TANH_Close(cB);
@@ -53416,7 +53416,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TANH_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TANH_Close(stA);
                     if( !ok ) allOk = 0;
@@ -53507,7 +53507,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TEMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TEMA_Close(stf);
         }
@@ -53581,14 +53581,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TEMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TEMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TEMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TEMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -53647,8 +53647,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TEMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TEMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TEMA_Close(cA);
                 if( cB ) TA_TEMA_Close(cB);
@@ -53671,7 +53671,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TEMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TEMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -53760,7 +53760,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TRANGE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TRANGE_Close(stf);
         }
@@ -53834,14 +53834,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TRANGE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TRANGE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TRANGE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TRANGE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -53900,8 +53900,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TRANGE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TRANGE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TRANGE_Close(cA);
                 if( cB ) TA_TRANGE_Close(cB);
@@ -53924,7 +53924,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TRANGE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TRANGE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -54013,7 +54013,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TRIMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TRIMA_Close(stf);
         }
@@ -54087,14 +54087,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TRIMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TRIMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TRIMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TRIMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -54153,8 +54153,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TRIMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TRIMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TRIMA_Close(cA);
                 if( cB ) TA_TRIMA_Close(cB);
@@ -54177,7 +54177,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TRIMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TRIMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -54268,7 +54268,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TRIX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TRIX_Close(stf);
         }
@@ -54342,14 +54342,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TRIX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TRIX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TRIX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TRIX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -54408,8 +54408,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TRIX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TRIX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TRIX_Close(cA);
                 if( cB ) TA_TRIX_Close(cB);
@@ -54432,7 +54432,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TRIX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TRIX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -54522,7 +54522,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TSF_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TSF_Close(stf);
         }
@@ -54596,14 +54596,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TSF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TSF_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TSF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TSF_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -54662,8 +54662,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TSF_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TSF_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TSF_Close(cA);
                 if( cB ) TA_TSF_Close(cB);
@@ -54686,7 +54686,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TSF_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TSF_Close(stA);
                     if( !ok ) allOk = 0;
@@ -54778,7 +54778,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TSI_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TSI_Close(stf);
         }
@@ -54852,14 +54852,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TSI_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TSI_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TSI_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -54918,8 +54918,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TSI_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TSI_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TSI_Close(cA);
                 if( cB ) TA_TSI_Close(cB);
@@ -54942,7 +54942,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TSI_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TSI_Close(stA);
                     if( !ok ) allOk = 0;
@@ -55031,7 +55031,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TYPPRICE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_TYPPRICE_Close(stf);
         }
@@ -55105,14 +55105,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_TYPPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_TYPPRICE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_TYPPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_TYPPRICE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -55171,8 +55171,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_TYPPRICE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_TYPPRICE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_TYPPRICE_Close(cA);
                 if( cB ) TA_TYPPRICE_Close(cB);
@@ -55195,7 +55195,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_TYPPRICE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_TYPPRICE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -55286,7 +55286,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ULTOSC_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ULTOSC_Close(stf);
         }
@@ -55360,14 +55360,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ULTOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ULTOSC_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ULTOSC_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ULTOSC_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -55426,8 +55426,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ULTOSC_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ULTOSC_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ULTOSC_Close(cA);
                 if( cB ) TA_ULTOSC_Close(cB);
@@ -55450,7 +55450,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ULTOSC_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ULTOSC_Close(stA);
                     if( !ok ) allOk = 0;
@@ -55540,7 +55540,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VAR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_VAR_Close(stf);
         }
@@ -55614,14 +55614,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_VAR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_VAR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_VAR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -55680,8 +55680,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_VAR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_VAR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_VAR_Close(cA);
                 if( cB ) TA_VAR_Close(cB);
@@ -55704,7 +55704,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_VAR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_VAR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -55793,7 +55793,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VHF_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_VHF_Close(stf);
         }
@@ -55867,14 +55867,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VHF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_VHF_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_VHF_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_VHF_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -55933,8 +55933,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_VHF_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_VHF_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_VHF_Close(cA);
                 if( cB ) TA_VHF_Close(cB);
@@ -55957,7 +55957,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_VHF_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_VHF_Close(stA);
                     if( !ok ) allOk = 0;
@@ -56050,7 +56050,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VORTEX_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_VORTEX_Close(stf);
         }
@@ -56136,14 +56136,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VORTEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_VORTEX_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_VORTEX_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_VORTEX_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -56206,8 +56206,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_VORTEX_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_VORTEX_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_VORTEX_Close(cA);
                 if( cB ) TA_VORTEX_Close(cB);
@@ -56232,7 +56232,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_VORTEX_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_VORTEX_Close(stA);
                     if( !ok ) allOk = 0;
@@ -56320,7 +56320,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VWAP_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_VWAP_Close(stf);
         }
@@ -56394,14 +56394,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VWAP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_VWAP_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_VWAP_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_VWAP_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -56460,8 +56460,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_VWAP_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_VWAP_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_VWAP_Close(cA);
                 if( cB ) TA_VWAP_Close(cB);
@@ -56484,7 +56484,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_VWAP_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_VWAP_Close(stA);
                     if( !ok ) allOk = 0;
@@ -56573,7 +56573,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VWMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_VWMA_Close(stf);
         }
@@ -56647,14 +56647,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_VWMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_VWMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_VWMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_VWMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -56713,8 +56713,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_VWMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_VWMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_VWMA_Close(cA);
                 if( cB ) TA_VWMA_Close(cB);
@@ -56737,7 +56737,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_VWMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_VWMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -56825,7 +56825,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WAD_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_WAD_Close(stf);
         }
@@ -56899,14 +56899,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WAD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_WAD_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_WAD_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_WAD_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -56965,8 +56965,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_WAD_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_WAD_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_WAD_Close(cA);
                 if( cB ) TA_WAD_Close(cB);
@@ -56989,7 +56989,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_WAD_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_WAD_Close(stA);
                     if( !ok ) allOk = 0;
@@ -57077,7 +57077,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WCLPRICE_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_WCLPRICE_Close(stf);
         }
@@ -57151,14 +57151,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WCLPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_WCLPRICE_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_WCLPRICE_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_WCLPRICE_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -57217,8 +57217,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_WCLPRICE_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_WCLPRICE_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_WCLPRICE_Close(cA);
                 if( cB ) TA_WCLPRICE_Close(cB);
@@ -57241,7 +57241,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_WCLPRICE_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_WCLPRICE_Close(stA);
                     if( !ok ) allOk = 0;
@@ -57330,7 +57330,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WILLR_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_WILLR_Close(stf);
         }
@@ -57404,14 +57404,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WILLR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_WILLR_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_WILLR_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_WILLR_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -57470,8 +57470,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_WILLR_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_WILLR_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_WILLR_Close(cA);
                 if( cB ) TA_WILLR_Close(cB);
@@ -57494,7 +57494,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_WILLR_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_WILLR_Close(stA);
                     if( !ok ) allOk = 0;
@@ -57583,7 +57583,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_WMA_Close(stf);
         }
@@ -57657,14 +57657,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_WMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_WMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_WMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_WMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -57723,8 +57723,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_WMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_WMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_WMA_Close(cA);
                 if( cB ) TA_WMA_Close(cB);
@@ -57747,7 +57747,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_WMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_WMA_Close(stA);
                     if( !ok ) allOk = 0;
@@ -57838,7 +57838,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 1;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ZLEMA_OutRange( stf, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
             if( stf ) TA_ZLEMA_Close(stf);
         }
@@ -57912,14 +57912,14 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 2;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
+                if( TA_ZLEMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb ) rangeOk = 0;
             }
-            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;
+            if( ok && st && TA_ZLEMA_Advance( st ) != TA_SUCCESS ) rangeOk = 0;
             if( ok && st )
             {
                 rangeChecked = 1; rangeLegs++; rangeSites |= 16;
                 rB = -1; rN = -1;
-                if( TA_StreamOutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
+                if( TA_ZLEMA_OutRange( st, &rB, &rN ) != TA_SUCCESS || rB != svBeg || rN != svNb + 1 ) rangeOk = 0;
             }
             if( st ) TA_ZLEMA_Close(st);
             pos = json_appendf(resp, resp_size, pos, ",\"p%d\":%d,\"match%d\":%d,\"peek%d\":%d", li, P, li, ok, li, pkOk);
@@ -57978,8 +57978,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 {
                     int rbA = -1, rnA = -1, rbB = -1, rnB = -1;
                     rangeChecked = 1; rangeLegs++; rangeSites |= 8;
-                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
-                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
+                    if( TA_ZLEMA_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = "the original's range moved"; }
+                    if( TA_ZLEMA_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = "the fork's range is not the batch range"; }
                 }
                 if( cA ) TA_ZLEMA_Close(cA);
                 if( cB ) TA_ZLEMA_Close(cB);
@@ -58002,7 +58002,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                     {
                         rangeChecked = 1; rangeLegs++; rangeSites |= 4;
                         rB = -1; rN = -1;
-                        if( TA_StreamOutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
+                        if( TA_ZLEMA_OutRange( stA, &rB, &rN ) != TA_SUCCESS || rB != svBegS || rN != svNbS ) rangeOk = 0;
                     }
                     if( stA ) TA_ZLEMA_Close(stA);
                     if( !ok ) allOk = 0;

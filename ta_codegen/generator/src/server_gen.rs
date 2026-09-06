@@ -258,20 +258,6 @@ pub fn generate_c_stream_private_header(funcs: &[FuncDef]) -> String {
     s.push_str("   #include \"ta_defs.h\"\n");
     s.push_str("#endif\n\n");
 
-    // The range head every generated stream struct leads with (issue #241).
-    // TA_StreamOutRange reads a handle through this type, which is what lets ONE
-    // public accessor serve every stream instead of one typed accessor per
-    // function. Rendered from the same field list the structs are, so the two
-    // cannot drift.
-    s.push_str("/* The leading members of every struct TA_<N>_Stream, in order: the range of\n");
-    s.push_str(" * bars the handle has an output for. TA_StreamOutRange (ta_utility.c)\n");
-    s.push_str(" * copies a handle's head out through this type. */\n");
-    s.push_str("typedef struct\n{\n");
-    for decl in crate::backends::c_stream::RANGE_HEAD_FIELDS {
-        s.push_str(&format!("   {decl}\n"));
-    }
-    s.push_str("} TA_StreamRangeHead;\n\n");
-
     // TA_<N>_OpenInternal is the startIdx-aware worker behind the public
     // TA_<N>_Open (a thin wrapper passing startIdx=0). Only generated code — a
     // composed function opening a sub-stream — calls it, and it does so cross-TU,
@@ -1689,7 +1675,7 @@ enum SvRangeSite {
     /// driven to the end (#287). Every server, C included since it gained
     /// `TA_<N>_Clone`.
     Copy = 3,
-    /// The prefix handle after one `TA_StreamAdvance` (#384) — the only call
+    /// The prefix handle after one `TA_<N>_Advance` (#384) — the only call
     /// that moves the range without a bar, and the one place its cross-language
     /// contract is stated: exactly +1, in every backend. Runs everywhere.
     Advance = 4,
@@ -1743,7 +1729,7 @@ const SV_RANGE_MASK_RUST: u32 =
 /// for the same bars. `guard` is the leg's own success condition — a leg that
 /// already failed has a handle short of the bars it was supposed to consume.
 fn emit_sv_range_check(
-    s: &mut String, indent: &str, handle: &str, guard: &str, beg: &str, nb: &str,
+    s: &mut String, name: &str, indent: &str, handle: &str, guard: &str, beg: &str, nb: &str,
     site: SvRangeSite,
 ) {
     let _ = writeln!(s, "{indent}if( {guard} )");
@@ -1756,7 +1742,7 @@ fn emit_sv_range_check(
     let _ = writeln!(s, "{indent}    rB = -1; rN = -1;");
     let _ = writeln!(
         s,
-        "{indent}    if( TA_StreamOutRange( {handle}, &rB, &rN ) != TA_SUCCESS || rB != {beg} || rN != {nb} ) rangeOk = 0;"
+        "{indent}    if( TA_{name}_OutRange( {handle}, &rB, &rN ) != TA_SUCCESS || rB != {beg} || rN != {nb} ) rangeOk = 0;"
     );
     let _ = writeln!(s, "{indent}}}");
 }
@@ -2122,8 +2108,8 @@ fn emit_sv_clone_leg(
         "                    rangeChecked = 1; rangeLegs++; rangeSites |= {};",
         sv_range_bit(SvRangeSite::Copy, SV_RANGE_MASK_C)
     );
-    s.push_str("                    if( TA_StreamOutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) { rangeOk = 0; cloneBad = \"the original's range moved\"; }\n");
-    s.push_str("                    if( TA_StreamOutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) { rangeOk = 0; cloneBad = \"the fork's range is not the batch range\"; }\n");
+    let _ = writeln!(s, "                    if( TA_{name}_OutRange( cA, &rbA, &rnA ) != TA_SUCCESS || rbA != svBeg || rnA != svNb ) {{ rangeOk = 0; cloneBad = \"the original's range moved\"; }}");
+    let _ = writeln!(s, "                    if( TA_{name}_OutRange( cB, &rbB, &rnB ) != TA_SUCCESS || rbB != svBeg || rnB != svNb ) {{ rangeOk = 0; cloneBad = \"the fork's range is not the batch range\"; }}");
     s.push_str("                }\n");
     let _ = writeln!(s, "                if( cA ) TA_{name}_Close(cA);");
     let _ = writeln!(s, "                if( cB ) TA_{name}_Close(cB);");
@@ -2520,7 +2506,7 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
             // buffer at full history and reads only [0, nb), so a write past
             // `nb` lands in `lookback` elements of unread space.
             s.push_str(&c_canary_check(&fbuf, &out_is_int));
-            emit_sv_range_check(&mut s, "            ", "stf", "frc == TA_SUCCESS && stf", "svBeg", "svNb", SvRangeSite::Fill);
+            emit_sv_range_check(&mut s, name, "            ", "stf", "frc == TA_SUCCESS && stf", "svBeg", "svNb", SvRangeSite::Fill);
             s.push_str(&format!("            if( stf ) TA_{name}_Close(stf);\n"));
             s.push_str("        }\n");
 
@@ -2690,12 +2676,12 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
         emit_sv_state_compare(&mut s, name, steq);
         // Open(P) + (svN - P) updates: whatever P was, the handle has consumed
         // svN bars and must report exactly what batch(0, svN-1) did.
-        emit_sv_range_check(&mut s, "            ", "st", "ok && st", "svBeg", "svNb", SvRangeSite::Prefix);
-        // One TA_StreamAdvance, LAST on this handle: it deliberately leaves the
+        emit_sv_range_check(&mut s, name, "            ", "st", "ok && st", "svBeg", "svNb", SvRangeSite::Prefix);
+        // One TA_<N>_Advance, LAST on this handle: it deliberately leaves the
         // batch range behind, so anything reading `st` after this reads a range
         // that is one ahead on purpose.
-        s.push_str("            if( ok && st && TA_StreamAdvance( st ) != TA_SUCCESS ) rangeOk = 0;\n");
-        emit_sv_range_check(&mut s, "            ", "st", "ok && st", "svBeg", "svNb + 1", SvRangeSite::Advance);
+        s.push_str(&format!("            if( ok && st && TA_{name}_Advance( st ) != TA_SUCCESS ) rangeOk = 0;\n"));
+        emit_sv_range_check(&mut s, name, "            ", "st", "ok && st", "svBeg", "svNb + 1", SvRangeSite::Advance);
         s.push_str(&format!("            if( st ) TA_{name}_Close(st);\n"));
         if candle {
             s.push_str("            pos = json_appendf(resp, resp_size, pos, \",\\\"p%d\\\":%d,\\\"match%d\\\":%d,\\\"peek%d\\\":%d\", lgi, P, lgi, ok, lgi, pkOk);\n");
@@ -2744,7 +2730,7 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
             ));
             s.push_str("                    if( arc != TA_SUCCESS || !stA ) ok = 0;\n");
             emit_sv_compare(&mut s, &out_is_int, &bbuf, "                    ", "(svN - 1) - svBegS", "svN - 1", "ok &&");
-            emit_sv_range_check(&mut s, "                    ", "stA", "ok && stA", "svBegS", "svNbS", SvRangeSite::Anchored);
+            emit_sv_range_check(&mut s, name, "                    ", "stA", "ok && stA", "svBegS", "svNbS", SvRangeSite::Anchored);
 
             s.push_str(&format!("                    if( stA ) TA_{name}_Close(stA);\n"));
             s.push_str("                    if( !ok ) allOk = 0;\n");

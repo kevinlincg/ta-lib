@@ -856,7 +856,7 @@ static ErrorNumber testBatchArgumentContract( void )
       for( k = 0; !bad && k < 8; k++ )
          bad = ( TA_MAMA_Update( st, stepBars[k], &refM[k], &refF[k] ) != TA_SUCCESS );
       if( bad ||
-          TA_StreamOutRange( st, &begRef, &nbRef ) != TA_SUCCESS ||
+          TA_MAMA_OutRange( st, &begRef, &nbRef ) != TA_SUCCESS ||
           TA_MAMA_Peek( st, bars[251], &rpm, &rpf ) != TA_SUCCESS )
       {
          printf( "\nFailed: the U6a oracle did not run\n" );
@@ -884,7 +884,7 @@ static ErrorNumber testBatchArgumentContract( void )
          for( k = 0; !bad && k < 8; k++ )
             bad = ( TA_MAMA_Update( st, stepBars[k], &gotM[k], NULL ) != TA_SUCCESS );
          if( bad ||
-             TA_StreamOutRange( st, &beg2, &nb2 ) != TA_SUCCESS ||
+             TA_MAMA_OutRange( st, &beg2, &nb2 ) != TA_SUCCESS ||
              TA_MAMA_Peek( st, bars[251], &pm, &pf ) != TA_SUCCESS )
          {
             printf( "\nFailed: declining outFAMA at Update was rejected "
@@ -996,8 +996,8 @@ static ErrorNumber testBatchArgumentContract( void )
                TA_MAMA_Close( altRef );
                return TA_BATCH_ARG_WRONG_CODE;
             }
-            TA_StreamOutRange( alt, &altBeg, &altNb );
-            TA_StreamOutRange( altRef, &refBeg, &refNb );
+            TA_MAMA_OutRange( alt, &altBeg, &altNb );
+            TA_MAMA_OutRange( altRef, &refBeg, &refNb );
             if( altBeg != refBeg || altNb != refNb )
             {
                printf( "\nFailed: an alternating bar moved the range (bar %d)\n", k );
@@ -1056,7 +1056,7 @@ static ErrorNumber testBatchArgumentContract( void )
          printf( "\nFailed: the U6a control open did not run\n" );
          return TA_BATCH_ARG_CONTROL;
       }
-      TA_StreamOutRange( st, &beg2, &nbBefore );
+      TA_MAMA_OutRange( st, &beg2, &nbBefore );
       if( TA_MAMA_Update( st, stepBars[0], NULL, NULL ) != TA_BAD_PARAM )
       {
          printf( "\nFailed: an absent outMAMA is still an absent argument\n" );
@@ -1064,7 +1064,7 @@ static ErrorNumber testBatchArgumentContract( void )
          return TA_BATCH_ARG_WRONG_CODE;
       }
       u6aUpd++;
-      TA_StreamOutRange( st, &beg2, &nb2 );
+      TA_MAMA_OutRange( st, &beg2, &nb2 );
       TA_MAMA_Close( st );
       st = NULL;
       if( nb2 != nbBefore )
