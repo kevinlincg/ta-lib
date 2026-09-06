@@ -832,17 +832,22 @@ C — and C is the one language where the check is not merely expensive but not
 straightforwardly expressible. Java and Rust satisfy the stronger rule for free by
 making the state unreachable, which is not the same as enforcing it.
 
-**Outputs of different element types: C compares them, the other three cannot.**
-A `double` output and an `int` output can only be the same buffer through a cast,
-and three of the four backends cannot express the comparison at all —
-`double[] == int[]` is "incomparable types" in Java, `*const f64 == *const i32`
-is a type error in Rust, and C#'s `Overlaps` is not defined across element types.
-In C the pair is expressible and **is** checked: the guard compares both through
-`const void *`, which is well defined and is not the `double * == int *`
-constraint violation that reading suggests. C's streaming frames have always done
-this; the batch tier joined them with `SUPERTREND` (#272).
+**Outputs of different element types: C and C# compare them, Java and Rust
+cannot.** A `double` output and an `int` output can only be the same buffer
+through a cast, and two of the four backends cannot express the comparison at
+all — `double[] == int[]` is "incomparable types" in Java, and
+`*const f64 == *const i32` is a type error in Rust. In C the pair is expressible
+and **is** checked: the guard compares both through `const void *`, which is well
+defined and is not the `double * == int *` constraint violation that reading
+suggests. C's streaming frames have always done this; the batch tier joined them
+with `SUPERTREND` (#272). C# compares the two **byte projections**
+(`MemoryMarshal.AsBytes`), in both tiers: `Overlaps` is generic in the element
+type, but that bounds what a span is read as and not what memory it covers, and
+`MemoryMarshal.Cast` lays one type over the other in safe code — so "different
+element type" was never "cannot alias", and until #386 the pair passed every
+guard and both bodies wrote the same bytes.
 
-**Why C is allowed to detect more here.** Two claims used to close this paragraph
+**Why those two are allowed to detect more here.** Two claims used to close this paragraph
 and both are retired: that nothing in the corpus mixes the two types, and that
 the frames assert nothing does. `SUPERTREND` mixes them, and the frames carry no
 per-function `outIsInteger` flag at all — `ta_variant_frame` indexes `outReal[]`
@@ -853,7 +858,7 @@ pair answers `TA_BAD_PARAM`, and the one pair a caller has to cast to build
 answered `TA_SUCCESS` and wrote through both. Detecting it is the same asymmetry
 C# already carries below for a partial input↔output overlap — a superset of the
 guarantee, kept because the language can answer the question cheaply. **Callers
-must not rely on it**, for the same reason: three backends cannot say it.
+must not rely on it**, for the same reason: two backends cannot say it.
 
 **Still not detected, in any backend:** two outputs of different types that
 *partially* overlap. That is rule N8, and it is not special to mixed types —
@@ -863,7 +868,10 @@ identity; everything finer is unspecified.
 
 **Test coverage:** `checkOutputAliasRejected` (`test_abstract.c`) sweeps every
 ordered output pair of every function, cross-typed pairs included, binding both
-onto one buffer and requiring `TA_BAD_PARAM`.
+onto one buffer and requiring `TA_BAD_PARAM`. That drives the C library, so the
+cross-typed pair in the other three is a render pin instead —
+`csharp_rejects_a_cross_typed_output_pair`, which requires the byte projection
+where the types differ and the typed `Overlaps` where they do not.
 
 **C# currently detects more than this specifies.** Its generated guard is
 `if (outReal.Overlaps(inReal) && outReal != inReal)`, which rejects a partial

@@ -268,9 +268,11 @@ Shape rules that are not visible in those lines:
   objection prescribes is a copy constructor, which is what every backend
   already emits.
 - `OpenAndFill` rejects output↔input and output↔output aliasing by reference
-  equality in Java (arrays are identical or disjoint, so that is complete) and by
-  `ReferenceEquals` in C#, which additionally compiles for cross-typed
-  `double[]`/`int[]` output pairs where `==` would not.
+  equality in Java — arrays are identical or disjoint, so that is complete — and
+  by `Span.Overlaps` in C#, where a slice makes partial overlap expressible and
+  identity would call it unrelated. A cross-typed C# output pair goes through its
+  byte projection, since `Overlaps` is generic in the element type while the
+  memory a caller can hand it is not.
 - `Integer.MIN_VALUE` keeps its batch meaning — use the documented default — in a
   streaming open, and the gate asserts `open(MIN_VALUE) == open(default)`
   bitwise.

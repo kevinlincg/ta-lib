@@ -67,7 +67,8 @@ use crate::streaming::{self, StreamModel, StreamPlan};
 
 use super::common::{pascal_words, CANDLE_FNS};
 use super::csharp::{
-    cs_series_in, cs_series_out, cs_type_str, emit_opt_param_validation, opt_param_type_str,
+    cross_typed_overlap, cs_series_in, cs_series_out, cs_type_str, emit_opt_param_validation,
+    opt_param_type_str,
     render_csharp_switch_label, render_expr, render_hoisted_blocks, render_statement_ctx,
     CsRenderCtx,
 };
@@ -1696,9 +1697,9 @@ fn emit_extrema_rebase(o: &mut String, model: &StreamModel, indent: usize) {
 /// the wrong arm and write through its own input. Rejecting overlap up front is
 /// what keeps those branches sound.
 ///
-/// Cross-typed output pairs (`Span<double>` against `Span<int>`) cannot alias
-/// and are skipped: `Overlaps` is not defined across element types, and the
-/// runtime cannot place them on the same memory anyway.
+/// A cross-typed output pair (`Span<double>` against `Span<int>`) is compared
+/// through [`cross_typed_overlap`] instead. Element type does not bound what
+/// memory a span covers, so such a pair can alias and the reject has to see it.
 fn alias_condition(func: &FuncDef, inputs: &[String]) -> Option<String> {
     let outs: Vec<&str> = func.outputs.iter().map(|out| out.name.as_str()).collect();
     let mut pairs: Vec<String> = Vec::new();
@@ -1713,10 +1714,11 @@ fn alias_condition(func: &FuncDef, inputs: &[String]) -> Option<String> {
     }
     for i in 0..outs.len() {
         for b in &outs[i + 1..] {
-            if out_is_int(func, outs[i]) != out_is_int(func, b) {
-                continue;
+            if out_is_int(func, outs[i]) == out_is_int(func, b) {
+                pairs.push(format!("{}.Overlaps({b})", outs[i]));
+            } else {
+                pairs.push(cross_typed_overlap(outs[i], b));
             }
-            pairs.push(format!("{}.Overlaps({b})", outs[i]));
         }
     }
     if pairs.is_empty() { None } else { Some(pairs.join(" || ")) }

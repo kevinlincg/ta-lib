@@ -1739,3 +1739,123 @@ fn test_wma_lookback_uses_time_period() {
 }
 
 // ---------------------------------------------------------------------------
+
+/// Rule B6 over a **cross-typed** output pair, in C#.
+///
+/// `Overlaps` is generic in the element type, so it cannot compare a
+/// `Span<double>` with a `Span<int>` — and that was read as the pair being
+/// unable to alias. It is not: `MemoryMarshal.Cast` lays one over the other in
+/// safe code, so the pair reached both bodies and they wrote the same bytes,
+/// answering `Success` where C answers `TA_BAD_PARAM`. Comparing the byte
+/// projections asks the question the typed call cannot.
+///
+/// Swept over the corpus rather than pinned on `SUPERTREND`: it is the only
+/// mixed function today, and the point of a sweep is that the second one cannot
+/// arrive unguarded. C is asserted in the same loop because it is the reference
+/// C# is brought level with — a revert on either side fails here.
+///
+/// The same-typed half is what keeps the change narrow. Replacing every term
+/// with the byte projection would satisfy the cross-typed half alone, so the
+/// plain spelling is required to survive where the types already match.
+#[test]
+fn csharp_rejects_a_cross_typed_output_pair() {
+    let registry = make_registry();
+    let helpers = HelperRegistry::empty();
+    let byte_overlap = |a: &str, b: &str| {
+        format!(
+            "System.Runtime.InteropServices.MemoryMarshal.AsBytes({a})\
+             .Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes({b}))"
+        )
+    };
+    let (mut cross_pairs, mut same_pairs, mut stream_tiers) = (0, 0, 0);
+
+    for name in discover_indicators() {
+        let (func, enums) = load_indicator(&name);
+        if func.outputs.len() < 2 {
+            continue;
+        }
+        // Both backends land the streaming section inside the same file, so the
+        // tiers have to be cut apart — a search over the whole file would let
+        // either tier's term satisfy an assertion about the other.
+        let split = |file: &'_ str, section: &str| -> String {
+            if section.is_empty() {
+                return file.to_string();
+            }
+            let at = file.find(section).unwrap_or_else(|| {
+                panic!(
+                    "{name}: the streaming section is no longer spliced verbatim, \
+                     so the tiers cannot be cut apart"
+                )
+            });
+            file[..at].to_string()
+        };
+        // C's section cannot be cut by re-rendering it: `c::generate` scrubs the
+        // finished file, so the section it holds is not the emitter's own text.
+        // Its banner is the boundary instead.
+        let c_file = backends::c::generate(&func, &enums, &registry, &helpers);
+        let c = match c_file.find("/**** Streaming API *****/") {
+            Some(at) => c_file[..at].to_string(),
+            None => {
+                assert!(!func.streaming, "{name}: the C streaming banner has been renamed");
+                c_file.clone()
+            }
+        };
+        let stream = if func.streaming {
+            backends::csharp_stream::generate(&func, &enums, &registry, &helpers)
+        } else {
+            String::new()
+        };
+        let batch = split(
+            &backends::csharp::generate(&func, &enums, &registry, &helpers),
+            &stream,
+        );
+        // Only a tier that rejects SOMETHING is asked about this pair — the two
+        // hand-rolled stream tiers build their own fill body.
+        let stream_rejects = stream.contains(".Overlaps(");
+
+        for i in 0..func.outputs.len() {
+            for j in (i + 1)..func.outputs.len() {
+                let (a, b) = (&func.outputs[i].name, &func.outputs[j].name);
+                let cross = (func.outputs[i].param_type == ir::ParamType::Integer)
+                    != (func.outputs[j].param_type == ir::ParamType::Integer);
+                let bytes = byte_overlap(a, b);
+                if cross {
+                    cross_pairs += 1;
+                    assert!(
+                        batch.contains(&bytes),
+                        "{name}: C# batch must reject the cross-typed pair {a}/{b} \
+                         through its byte projection"
+                    );
+                    assert!(
+                        c.contains(&format!("(const void *){a} == (const void *){b}")),
+                        "{name}: C is what C# is level with here, and its \
+                         const-void-star comparison of {a}/{b} has gone"
+                    );
+                    if stream_rejects {
+                        stream_tiers += 1;
+                        assert!(
+                            stream.contains(&bytes),
+                            "{name}: the streaming fill takes the same caller buffers \
+                             and must reject {a}/{b} too"
+                        );
+                    }
+                } else {
+                    same_pairs += 1;
+                    assert!(
+                        !batch.contains(&bytes),
+                        "{name}: {a}/{b} are the same element type — the typed \
+                         `Overlaps` answers it, so the byte projection is noise"
+                    );
+                }
+            }
+        }
+    }
+
+    // Literal floors: a derived one moves with whatever the sweep happens to find.
+    assert!(cross_pairs >= 1, "no cross-typed output pair was scanned");
+    assert!(stream_tiers >= 1, "the streaming half of the sweep was vacuous");
+    assert!(
+        same_pairs >= 40,
+        "only {same_pairs} same-typed pairs — the narrowness half is barely covered"
+    );
+}

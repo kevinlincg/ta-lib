@@ -294,22 +294,13 @@ fn panic_message(err: &Box<dyn std::any::Any + Send>) -> String {
         .unwrap_or_default()
 }
 
-/// Rule B6, Appendix E: a **cross-typed** output pair is out of scope, so the
-/// distinctness guard skips it in every backend.
-///
-/// Not reachable from a fixture, which is why it is a render pin. Three of the
-/// four backends cannot even compile such a term — `double * == int *` is a
-/// constraint violation in C, `double[] == int[]` is "incomparable types" in
-/// Java, `*const f64 == *const i32` is a type error in Rust — and C# has always
-/// skipped them because `Overlaps` is not defined across element types.
-/// SYNTH12 does declare a mixed-type function now, but it cannot stand in for
-/// this pin: its cross-typed pairs are exactly the ones the emitters drop, so
-/// the fixture shows the term ABSENT and never shows it absent *for this
-/// reason*. Re-typing an output here is what makes the omission attributable.
+/// Rule B6, Appendix E over a **cross-typed** output pair: C and C# reject it,
+/// Java and Rust cannot spell the comparison, so their guard drops the term
+/// (`double[] == int[]` is "incomparable types"; `*const f64 == *const i32` is a
+/// type error). What is pinned here is the frame side of that.
 ///
 /// MINMAXINDEX is the vehicle: two integer outputs, one of them re-typed here,
-/// which turns its single same-typed pair into a single cross-typed one. The
-/// guard must then disappear entirely rather than emit an uncompilable term.
+/// which turns its single same-typed pair into a single cross-typed one.
 /// The two frame emitters subscript `outReal[]` / `outInteger[]` by the output's
 /// DECLARATION position, and describe each output's type in a per-output
 /// `TA_VOutIsInt_<N>[]`.

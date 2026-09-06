@@ -223,6 +223,24 @@ pub(crate) fn cs_series_out(elem: &str) -> String {
     format!("Span<{elem}>")
 }
 
+/// The overlap test for two spans of DIFFERENT element type.
+///
+/// `Overlaps` is generic in the element type, so it cannot compare a
+/// `Span<double>` with a `Span<int>` — but a caller can still lay both over one
+/// buffer (`MemoryMarshal.Cast` is safe, non-`unsafe` code), so "different type"
+/// is not "cannot alias". Comparing the byte projections asks the question the
+/// typed call cannot: same memory, whatever it is read as.
+///
+/// Fully qualified because the generated files carry `using System;` alone, and
+/// this is the only construct in the corpus that needs the interop namespace.
+///
+/// Empty operands stay accepted here as everywhere else — `Overlaps` is false
+/// when either side is empty, and `AsBytes` of an empty span is empty.
+pub(crate) fn cross_typed_overlap(a: &str, b: &str) -> String {
+    const AS_BYTES: &str = "System.Runtime.InteropServices.MemoryMarshal.AsBytes";
+    format!("{AS_BYTES}({a}).Overlaps({AS_BYTES}({b}))")
+}
+
 /// C# type name for a scalar or pointer `VarType`.
 pub(crate) fn cs_type_str(var_type: &VarType) -> &'static str {
     match var_type {
@@ -909,18 +927,19 @@ fn gen_func_inner(
         // unspellable, since an empty span is how a C# caller declines a nullable
         // output (B6a).
         //
-        // Cross-typed pairs are skipped: `Span<double>` and `Span<int>` cannot
-        // be laid over the same memory, and `Overlaps` is not defined across
-        // element types.
+        // A cross-typed pair goes through [`cross_typed_overlap`]: element type
+        // does not bound what memory a span covers, so `Span<double>` and
+        // `Span<int>` over one buffer is expressible and must be rejected too.
         if func.outputs.len() >= 2 {
             let mut pairs: Vec<String> = Vec::new();
             for i in 0..func.outputs.len() {
                 for j in (i + 1)..func.outputs.len() {
                     let (a, b) = (&func.outputs[i], &func.outputs[j]);
-                    if (a.param_type == ParamType::Integer) != (b.param_type == ParamType::Integer) {
-                        continue;
+                    if (a.param_type == ParamType::Integer) == (b.param_type == ParamType::Integer) {
+                        pairs.push(format!("{}.Overlaps({})", a.name, b.name));
+                    } else {
+                        pairs.push(cross_typed_overlap(&a.name, &b.name));
                     }
-                    pairs.push(format!("{}.Overlaps({})", a.name, b.name));
                 }
             }
             if !pairs.is_empty() {
