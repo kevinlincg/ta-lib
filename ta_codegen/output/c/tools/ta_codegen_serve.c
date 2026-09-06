@@ -5504,7 +5504,6 @@ static int sv_steq_TA_STOCH( const struct TA_STOCH_Stream *a, const struct TA_ST
    if( a->optInSlowD_MAType != b->optInSlowD_MAType ) { *w = "optInSlowD_MAType"; return 1; }
    if( sv_xtier_ne(a->lowest, b->lowest, z) ) { *w = "lowest"; return 1; }
    if( sv_xtier_ne(a->highest, b->highest, z) ) { *w = "highest"; return 1; }
-   if( sv_xtier_ne(a->diff, b->diff, z) ) { *w = "diff"; return 1; }
    if( a->lowestIdx != b->lowestIdx ) { *w = "lowestIdx"; return 1; }
    if( a->highestIdx != b->highestIdx ) { *w = "highestIdx"; return 1; }
    if( a->trailingIdx != b->trailingIdx ) { *w = "trailingIdx"; return 1; }
@@ -5551,7 +5550,6 @@ static int sv_steq_TA_STOCHF( const struct TA_STOCHF_Stream *a, const struct TA_
    if( a->optInFastD_MAType != b->optInFastD_MAType ) { *w = "optInFastD_MAType"; return 1; }
    if( sv_xtier_ne(a->lowest, b->lowest, z) ) { *w = "lowest"; return 1; }
    if( sv_xtier_ne(a->highest, b->highest, z) ) { *w = "highest"; return 1; }
-   if( sv_xtier_ne(a->diff, b->diff, z) ) { *w = "diff"; return 1; }
    if( a->lowestIdx != b->lowestIdx ) { *w = "lowestIdx"; return 1; }
    if( a->highestIdx != b->highestIdx ) { *w = "highestIdx"; return 1; }
    if( a->trailingIdx != b->trailingIdx ) { *w = "trailingIdx"; return 1; }
