@@ -678,11 +678,7 @@ TA_RetCode TA_DONCHIAN_OpenAndFillInternal( struct TA_DONCHIAN_Stream **stream, 
 TA_LIB_API TA_RetCode TA_DONCHIAN_Update( TA_DONCHIAN_Stream *stream, double inHigh, double inLow, double *outRealUpperBand, double *outRealMiddleBand, double *outRealLowerBand )
 {
    if( !stream || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
    TA_DONCHIAN_StepImpl( stream, inHigh, inLow, outRealUpperBand, outRealMiddleBand, outRealLowerBand );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;

@@ -1071,13 +1071,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#AC} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AcStream( AcStream other ) {
          this.core = other.core;
@@ -1107,22 +1117,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("AC update: BadParam", RetCode.BadParam);
-         }
          core.acStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -2069,13 +2076,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ACCBANDS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(AccbandsOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AccbandsStream( AccbandsStream other ) {
          this.core = other.core;
@@ -2100,12 +2117,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(AccbandsOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(AccbandsOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -2113,10 +2129,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, AccbandsOut out ) {
          requireArgument("ACCBANDS update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("ACCBANDS update: BadParam", RetCode.BadParam);
-         }
          core.accbandsStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.realUpperBand = this.cur_outRealUpperBand;
@@ -2772,13 +2786,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ACOS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AcosStream( AcosStream other ) {
          this.core = other.core;
@@ -2792,22 +2816,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ACOS update: BadParam", RetCode.BadParam);
-         }
          core.acosStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -3266,13 +3287,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#AD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AdStream( AdStream other ) {
          this.core = other.core;
@@ -3287,22 +3318,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose, double inVolume ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("AD update: BadParam", RetCode.BadParam);
-         }
          core.adStepImpl(this, inHigh, inLow, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -3756,13 +3784,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ADD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AddStream( AddStream other ) {
          this.core = other.core;
@@ -3776,22 +3814,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal0, double inReal1 ) {
-         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) )
             throw new TaLibArgumentException("ADD update: BadParam", RetCode.BadParam);
-         }
          core.addStepImpl(this, inReal0, inReal1);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -4447,13 +4482,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ADOSC} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AdoscStream( AdoscStream other ) {
          this.core = other.core;
@@ -4476,22 +4521,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose, double inVolume ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("ADOSC update: BadParam", RetCode.BadParam);
-         }
          core.adoscStepImpl(this, inHigh, inLow, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -5211,13 +5253,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ADR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AdrStream( AdrStream other ) {
          this.core = other.core;
@@ -5236,22 +5288,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("ADR update: BadParam", RetCode.BadParam);
-         }
          core.adrStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -6350,13 +6399,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ADX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AdxStream( AdxStream other ) {
          this.core = other.core;
@@ -6378,22 +6437,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("ADX update: BadParam", RetCode.BadParam);
-         }
          core.adxStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -7380,13 +7436,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ADXR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AdxrStream( AdxrStream other ) {
          this.core = other.core;
@@ -7405,22 +7471,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("ADXR update: BadParam", RetCode.BadParam);
-         }
          core.adxrStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -8125,13 +8188,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#AO} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AoStream( AoStream other ) {
          this.core = other.core;
@@ -8155,22 +8228,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("AO update: BadParam", RetCode.BadParam);
-         }
          core.aoStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -8931,13 +9001,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#APO} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       ApoStream( ApoStream other ) {
          this.core = other.core;
@@ -8956,22 +9036,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("APO update: BadParam", RetCode.BadParam);
-         }
          core.apoStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -9651,13 +9728,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#AROON} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(AroonOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AroonStream( AroonStream other ) {
          this.core = other.core;
@@ -9684,12 +9771,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(AroonOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(AroonOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -9697,10 +9783,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, AroonOut out ) {
          requireArgument("AROON update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("AROON update: BadParam", RetCode.BadParam);
-         }
          core.aroonStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.aroonDown = this.cur_outAroonDown;
@@ -10559,13 +10643,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#AROONOSC} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AroonoscStream( AroonoscStream other ) {
          this.core = other.core;
@@ -10591,22 +10685,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("AROONOSC update: BadParam", RetCode.BadParam);
-         }
          core.aroonoscStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -11255,13 +11346,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ASIN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AsinStream( AsinStream other ) {
          this.core = other.core;
@@ -11275,22 +11376,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ASIN update: BadParam", RetCode.BadParam);
-         }
          core.asinStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -11664,13 +11762,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ATAN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AtanStream( AtanStream other ) {
          this.core = other.core;
@@ -11684,22 +11792,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ATAN update: BadParam", RetCode.BadParam);
-         }
          core.atanStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -12359,13 +12464,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ATR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AtrStream( AtrStream other ) {
          this.core = other.core;
@@ -12384,22 +12499,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("ATR update: BadParam", RetCode.BadParam);
-         }
          core.atrStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -13059,13 +13171,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#AVGDEV} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AvgdevStream( AvgdevStream other ) {
          this.core = other.core;
@@ -13083,22 +13205,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("AVGDEV update: BadParam", RetCode.BadParam);
-         }
          core.avgdevStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -13579,13 +13698,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#AVGPRICE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       AvgpriceStream( AvgpriceStream other ) {
          this.core = other.core;
@@ -13599,22 +13728,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("AVGPRICE update: BadParam", RetCode.BadParam);
-         }
          core.avgpriceStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -14618,13 +14744,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#BBANDS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(BbandsOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       BbandsStream( BbandsStream other ) {
          this.core = other.core;
@@ -14646,12 +14782,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(BbandsOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(BbandsOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -14659,10 +14794,8 @@ public final class Core {
        */
       public void update( double inReal, BbandsOut out ) {
          requireArgument("BBANDS update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("BBANDS update: BadParam", RetCode.BadParam);
-         }
          core.bbandsStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.realUpperBand = this.cur_outRealUpperBand;
@@ -15816,13 +15949,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#BETA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       BetaStream( BetaStream other ) {
          this.core = other.core;
@@ -15858,22 +16001,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal0, double inReal1 ) {
-         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) )
             throw new TaLibArgumentException("BETA update: BadParam", RetCode.BadParam);
-         }
          core.betaStepImpl(this, inReal0, inReal1);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -17053,13 +17193,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#BOP} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       BopStream( BopStream other ) {
          this.core = other.core;
@@ -17073,22 +17223,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("BOP update: BadParam", RetCode.BadParam);
-         }
          core.bopStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -17733,13 +17880,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CCI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CciStream( CciStream other ) {
          this.core = other.core;
@@ -17758,22 +17915,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CCI update: BadParam", RetCode.BadParam);
-         }
          core.cciStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -18495,13 +18649,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDL2CROWS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdl2crowsStream( Cdl2crowsStream other ) {
          this.core = other.core;
@@ -18530,22 +18694,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL2CROWS update: BadParam", RetCode.BadParam);
-         }
          core.cdl2crowsStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -19240,13 +19401,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDL3BLACKCROWS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdl3blackcrowsStream( Cdl3blackcrowsStream other ) {
          this.core = other.core;
@@ -19279,22 +19450,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL3BLACKCROWS update: BadParam", RetCode.BadParam);
-         }
          core.cdl3blackcrowsStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -20042,13 +20210,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDL3INSIDE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdl3insideStream( Cdl3insideStream other ) {
          this.core = other.core;
@@ -20084,22 +20262,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL3INSIDE update: BadParam", RetCode.BadParam);
-         }
          core.cdl3insideStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -20849,13 +21024,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDL3LINESTRIKE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdl3linestrikeStream( Cdl3linestrikeStream other ) {
          this.core = other.core;
@@ -20889,22 +21074,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL3LINESTRIKE update: BadParam", RetCode.BadParam);
-         }
          core.cdl3linestrikeStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -21575,13 +21757,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDL3OUTSIDE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdl3outsideStream( Cdl3outsideStream other ) {
          this.core = other.core;
@@ -21599,22 +21791,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL3OUTSIDE update: BadParam", RetCode.BadParam);
-         }
          core.cdl3outsideStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -22370,13 +22559,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDL3STARSINSOUTH} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdl3starsinsouthStream( Cdl3starsinsouthStream other ) {
          this.core = other.core;
@@ -22429,22 +22628,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL3STARSINSOUTH update: BadParam", RetCode.BadParam);
-         }
          core.cdl3starsinsouthStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -23436,13 +23632,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDL3WHITESOLDIERS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdl3whitesoldiersStream( Cdl3whitesoldiersStream other ) {
          this.core = other.core;
@@ -23495,22 +23701,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDL3WHITESOLDIERS update: BadParam", RetCode.BadParam);
-         }
          core.cdl3whitesoldiersStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -24473,13 +24676,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLABANDONEDBABY} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlabandonedbabyStream( CdlabandonedbabyStream other ) {
          this.core = other.core;
@@ -24523,22 +24736,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLABANDONEDBABY update: BadParam", RetCode.BadParam);
-         }
          core.cdlabandonedbabyStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -25533,13 +25743,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLADVANCEBLOCK} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdladvanceblockStream( CdladvanceblockStream other ) {
          this.core = other.core;
@@ -25601,22 +25821,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLADVANCEBLOCK update: BadParam", RetCode.BadParam);
-         }
          core.cdladvanceblockStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -26557,13 +26774,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLBELTHOLD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlbeltholdStream( CdlbeltholdStream other ) {
          this.core = other.core;
@@ -26591,22 +26818,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLBELTHOLD update: BadParam", RetCode.BadParam);
-         }
          core.cdlbeltholdStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -27317,13 +27541,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLBREAKAWAY} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlbreakawayStream( CdlbreakawayStream other ) {
          this.core = other.core;
@@ -27361,22 +27595,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLBREAKAWAY update: BadParam", RetCode.BadParam);
-         }
          core.cdlbreakawayStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -28127,13 +28358,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLCLOSINGMARUBOZU} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlclosingmarubozuStream( CdlclosingmarubozuStream other ) {
          this.core = other.core;
@@ -28161,22 +28402,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLCLOSINGMARUBOZU update: BadParam", RetCode.BadParam);
-         }
          core.cdlclosingmarubozuStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -28883,13 +29121,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLCONCEALBABYSWALL} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlconcealbabyswallStream( CdlconcealbabyswallStream other ) {
          this.core = other.core;
@@ -28923,22 +29171,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLCONCEALBABYSWALL update: BadParam", RetCode.BadParam);
-         }
          core.cdlconcealbabyswallStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -29682,13 +29927,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLCOUNTERATTACK} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlcounterattackStream( CdlcounterattackStream other ) {
          this.core = other.core;
@@ -29722,22 +29977,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLCOUNTERATTACK update: BadParam", RetCode.BadParam);
-         }
          core.cdlcounterattackStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -30462,13 +30714,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLDARKCLOUDCOVER} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdldarkcloudcoverStream( CdldarkcloudcoverStream other ) {
          this.core = other.core;
@@ -30495,22 +30757,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLDARKCLOUDCOVER update: BadParam", RetCode.BadParam);
-         }
          core.cdldarkcloudcoverStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -31148,13 +31407,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLDOJI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdldojiStream( CdldojiStream other ) {
          this.core = other.core;
@@ -31175,22 +31444,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLDOJI update: BadParam", RetCode.BadParam);
-         }
          core.cdldojiStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -31866,13 +32132,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLDOJISTAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdldojistarStream( CdldojistarStream other ) {
          this.core = other.core;
@@ -31904,22 +32180,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLDOJISTAR update: BadParam", RetCode.BadParam);
-         }
          core.cdldojistarStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -32654,13 +32927,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLDRAGONFLYDOJI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdldragonflydojiStream( CdldragonflydojiStream other ) {
          this.core = other.core;
@@ -32688,22 +32971,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLDRAGONFLYDOJI update: BadParam", RetCode.BadParam);
-         }
          core.cdldragonflydojiStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -33349,13 +33629,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLENGULFING} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlengulfingStream( CdlengulfingStream other ) {
          this.core = other.core;
@@ -33371,22 +33661,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLENGULFING update: BadParam", RetCode.BadParam);
-         }
          core.cdlengulfingStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -34125,13 +34412,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLEVENINGDOJISTAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdleveningdojistarStream( CdleveningdojistarStream other ) {
          this.core = other.core;
@@ -34175,22 +34472,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLEVENINGDOJISTAR update: BadParam", RetCode.BadParam);
-         }
          core.cdleveningdojistarStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -35033,13 +35327,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLEVENINGSTAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdleveningstarStream( CdleveningstarStream other ) {
          this.core = other.core;
@@ -35078,22 +35382,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLEVENINGSTAR update: BadParam", RetCode.BadParam);
-         }
          core.cdleveningstarStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -35863,13 +36164,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLGAPSIDESIDEWHITE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlgapsidesidewhiteStream( CdlgapsidesidewhiteStream other ) {
          this.core = other.core;
@@ -35905,22 +36216,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLGAPSIDESIDEWHITE update: BadParam", RetCode.BadParam);
-         }
          core.cdlgapsidesidewhiteStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -36671,13 +36979,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLGRAVESTONEDOJI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlgravestonedojiStream( CdlgravestonedojiStream other ) {
          this.core = other.core;
@@ -36705,22 +37023,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLGRAVESTONEDOJI update: BadParam", RetCode.BadParam);
-         }
          core.cdlgravestonedojiStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -37498,13 +37813,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHAMMER} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlhammerStream( CdlhammerStream other ) {
          this.core = other.core;
@@ -37550,22 +37875,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHAMMER update: BadParam", RetCode.BadParam);
-         }
          core.cdlhammerStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -38456,13 +38778,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHANGINGMAN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlhangingmanStream( CdlhangingmanStream other ) {
          this.core = other.core;
@@ -38508,22 +38840,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHANGINGMAN update: BadParam", RetCode.BadParam);
-         }
          core.cdlhangingmanStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -39363,13 +39692,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHARAMI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlharamiStream( CdlharamiStream other ) {
          this.core = other.core;
@@ -39401,22 +39740,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHARAMI update: BadParam", RetCode.BadParam);
-         }
          core.cdlharamiStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -40205,13 +40541,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHARAMICROSS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlharamicrossStream( CdlharamicrossStream other ) {
          this.core = other.core;
@@ -40243,22 +40589,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHARAMICROSS update: BadParam", RetCode.BadParam);
-         }
          core.cdlharamicrossStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -41018,13 +41361,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHIGHWAVE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlhighwaveStream( CdlhighwaveStream other ) {
          this.core = other.core;
@@ -41052,22 +41405,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHIGHWAVE update: BadParam", RetCode.BadParam);
-         }
          core.cdlhighwaveStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -41787,13 +42137,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHIKKAKE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlhikkakeStream( CdlhikkakeStream other ) {
          this.core = other.core;
@@ -41815,22 +42175,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHIKKAKE update: BadParam", RetCode.BadParam);
-         }
          core.cdlhikkakeStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -42633,13 +42990,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHIKKAKEMOD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlhikkakemodStream( CdlhikkakemodStream other ) {
          this.core = other.core;
@@ -42675,22 +43042,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHIKKAKEMOD update: BadParam", RetCode.BadParam);
-         }
          core.cdlhikkakemodStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -43500,13 +43864,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLHOMINGPIGEON} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlhomingpigeonStream( CdlhomingpigeonStream other ) {
          this.core = other.core;
@@ -43539,22 +43913,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLHOMINGPIGEON update: BadParam", RetCode.BadParam);
-         }
          core.cdlhomingpigeonStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -44320,13 +44691,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLIDENTICAL3CROWS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdlidentical3crowsStream( Cdlidentical3crowsStream other ) {
          this.core = other.core;
@@ -44364,22 +44745,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLIDENTICAL3CROWS update: BadParam", RetCode.BadParam);
-         }
          core.cdlidentical3crowsStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -45163,13 +45541,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLINNECK} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlinneckStream( CdlinneckStream other ) {
          this.core = other.core;
@@ -45203,22 +45591,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLINNECK update: BadParam", RetCode.BadParam);
-         }
          core.cdlinneckStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -45978,13 +46363,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLINVERTEDHAMMER} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlinvertedhammerStream( CdlinvertedhammerStream other ) {
          this.core = other.core;
@@ -46021,22 +46416,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLINVERTEDHAMMER update: BadParam", RetCode.BadParam);
-         }
          core.cdlinvertedhammerStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -46818,13 +47210,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLKICKING} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlkickingStream( CdlkickingStream other ) {
          this.core = other.core;
@@ -46858,22 +47260,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLKICKING update: BadParam", RetCode.BadParam);
-         }
          core.cdlkickingStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -47637,13 +48036,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLKICKINGBYLENGTH} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlkickingbylengthStream( CdlkickingbylengthStream other ) {
          this.core = other.core;
@@ -47677,22 +48086,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLKICKINGBYLENGTH update: BadParam", RetCode.BadParam);
-         }
          core.cdlkickingbylengthStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -48425,13 +48831,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLLADDERBOTTOM} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlladderbottomStream( CdlladderbottomStream other ) {
          this.core = other.core;
@@ -48463,22 +48879,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLLADDERBOTTOM update: BadParam", RetCode.BadParam);
-         }
          core.cdlladderbottomStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -49189,13 +49602,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLLONGLEGGEDDOJI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdllongleggeddojiStream( CdllongleggeddojiStream other ) {
          this.core = other.core;
@@ -49223,22 +49646,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLLONGLEGGEDDOJI update: BadParam", RetCode.BadParam);
-         }
          core.cdllongleggeddojiStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -49919,13 +50339,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLLONGLINE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdllonglineStream( CdllonglineStream other ) {
          this.core = other.core;
@@ -49953,22 +50383,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLLONGLINE update: BadParam", RetCode.BadParam);
-         }
          core.cdllonglineStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -50660,13 +51087,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLMARUBOZU} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlmarubozuStream( CdlmarubozuStream other ) {
          this.core = other.core;
@@ -50694,22 +51131,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLMARUBOZU update: BadParam", RetCode.BadParam);
-         }
          core.cdlmarubozuStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -51374,13 +51808,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLMATCHINGLOW} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlmatchinglowStream( CdlmatchinglowStream other ) {
          this.core = other.core;
@@ -51406,22 +51850,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLMATCHINGLOW update: BadParam", RetCode.BadParam);
-         }
          core.cdlmatchinglowStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -52170,13 +52611,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLMATHOLD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlmatholdStream( CdlmatholdStream other ) {
          this.core = other.core;
@@ -52222,22 +52673,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLMATHOLD update: BadParam", RetCode.BadParam);
-         }
          core.cdlmatholdStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -53124,13 +53572,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLMORNINGDOJISTAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlmorningdojistarStream( CdlmorningdojistarStream other ) {
          this.core = other.core;
@@ -53174,22 +53632,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLMORNINGDOJISTAR update: BadParam", RetCode.BadParam);
-         }
          core.cdlmorningdojistarStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -54040,13 +54495,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLMORNINGSTAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlmorningstarStream( CdlmorningstarStream other ) {
          this.core = other.core;
@@ -54085,22 +54550,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLMORNINGSTAR update: BadParam", RetCode.BadParam);
-         }
          core.cdlmorningstarStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -54865,13 +55327,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLONNECK} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlonneckStream( CdlonneckStream other ) {
          this.core = other.core;
@@ -54905,22 +55377,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLONNECK update: BadParam", RetCode.BadParam);
-         }
          core.cdlonneckStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -55622,13 +56091,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLPIERCING} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlpiercingStream( CdlpiercingStream other ) {
          this.core = other.core;
@@ -55654,22 +56133,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLPIERCING update: BadParam", RetCode.BadParam);
-         }
          core.cdlpiercingStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -56395,13 +56871,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLRICKSHAWMAN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlrickshawmanStream( CdlrickshawmanStream other ) {
          this.core = other.core;
@@ -56436,22 +56922,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLRICKSHAWMAN update: BadParam", RetCode.BadParam);
-         }
          core.cdlrickshawmanStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -57267,13 +57750,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLRISEFALL3METHODS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdlrisefall3methodsStream( Cdlrisefall3methodsStream other ) {
          this.core = other.core;
@@ -57318,22 +57811,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLRISEFALL3METHODS update: BadParam", RetCode.BadParam);
-         }
          core.cdlrisefall3methodsStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -58182,13 +58672,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLSEPARATINGLINES} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlseparatinglinesStream( CdlseparatinglinesStream other ) {
          this.core = other.core;
@@ -58228,22 +58728,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLSEPARATINGLINES update: BadParam", RetCode.BadParam);
-         }
          core.cdlseparatinglinesStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -59059,13 +59556,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLSHOOTINGSTAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlshootingstarStream( CdlshootingstarStream other ) {
          this.core = other.core;
@@ -59102,22 +59609,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLSHOOTINGSTAR update: BadParam", RetCode.BadParam);
-         }
          core.cdlshootingstarStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -59876,13 +60380,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLSHORTLINE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlshortlineStream( CdlshortlineStream other ) {
          this.core = other.core;
@@ -59910,22 +60424,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLSHORTLINE update: BadParam", RetCode.BadParam);
-         }
          core.cdlshortlineStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -60573,13 +61084,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLSPINNINGTOP} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlspinningtopStream( CdlspinningtopStream other ) {
          this.core = other.core;
@@ -60600,22 +61121,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLSPINNINGTOP update: BadParam", RetCode.BadParam);
-         }
          core.cdlspinningtopStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -61384,13 +61902,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLSTALLEDPATTERN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlstalledpatternStream( CdlstalledpatternStream other ) {
          this.core = other.core;
@@ -61443,22 +61971,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLSTALLEDPATTERN update: BadParam", RetCode.BadParam);
-         }
          core.cdlstalledpatternStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -62284,13 +62809,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLSTICKSANDWICH} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlsticksandwichStream( CdlsticksandwichStream other ) {
          this.core = other.core;
@@ -62320,22 +62855,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLSTICKSANDWICH update: BadParam", RetCode.BadParam);
-         }
          core.cdlsticksandwichStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -63058,13 +63590,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLTAKURI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdltakuriStream( CdltakuriStream other ) {
          this.core = other.core;
@@ -63099,22 +63641,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLTAKURI update: BadParam", RetCode.BadParam);
-         }
          core.cdltakuriStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -63842,13 +64381,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLTASUKIGAP} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdltasukigapStream( CdltasukigapStream other ) {
          this.core = other.core;
@@ -63876,22 +64425,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLTASUKIGAP update: BadParam", RetCode.BadParam);
-         }
          core.cdltasukigapStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -64621,13 +65167,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLTHRUSTING} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdlthrustingStream( CdlthrustingStream other ) {
          this.core = other.core;
@@ -64661,22 +65217,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLTHRUSTING update: BadParam", RetCode.BadParam);
-         }
          core.cdlthrustingStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -65387,13 +65940,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLTRISTAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CdltristarStream( CdltristarStream other ) {
          this.core = other.core;
@@ -65422,22 +65985,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLTRISTAR update: BadParam", RetCode.BadParam);
-         }
          core.cdltristarStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -66159,13 +66719,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLUNIQUE3RIVER} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdlunique3riverStream( Cdlunique3riverStream other ) {
          this.core = other.core;
@@ -66201,22 +66771,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLUNIQUE3RIVER update: BadParam", RetCode.BadParam);
-         }
          core.cdlunique3riverStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -66975,13 +67542,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLUPSIDEGAP2CROWS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdlupsidegap2crowsStream( Cdlupsidegap2crowsStream other ) {
          this.core = other.core;
@@ -67017,22 +67594,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLUPSIDEGAP2CROWS update: BadParam", RetCode.BadParam);
-         }
          core.cdlupsidegap2crowsStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -67714,13 +68288,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CDLXSIDEGAP3METHODS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Cdlxsidegap3methodsStream( Cdlxsidegap3methodsStream other ) {
          this.core = other.core;
@@ -67738,22 +68322,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inOpen, double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("CDLXSIDEGAP3METHODS update: BadParam", RetCode.BadParam);
-         }
          core.cdlxsidegap3methodsStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -68228,13 +68809,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CEIL} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CeilStream( CeilStream other ) {
          this.core = other.core;
@@ -68248,22 +68839,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("CEIL update: BadParam", RetCode.BadParam);
-         }
          core.ceilStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -68928,13 +69516,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CMF} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CmfStream( CmfStream other ) {
          this.core = other.core;
@@ -68956,22 +69554,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose, double inVolume ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("CMF update: BadParam", RetCode.BadParam);
-         }
          core.cmfStepImpl(this, inHigh, inLow, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -69815,13 +70410,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CMO} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CmoStream( CmoStream other ) {
          this.core = other.core;
@@ -69839,22 +70444,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("CMO update: BadParam", RetCode.BadParam);
-         }
          core.cmoStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -70706,13 +71308,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CMOU} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CmouStream( CmouStream other ) {
          this.core = other.core;
@@ -70735,22 +71347,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("CMOU update: BadParam", RetCode.BadParam);
-         }
          core.cmouStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -71777,13 +72386,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#COPPOCK} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CoppockStream( CoppockStream other ) {
          this.core = other.core;
@@ -71816,22 +72435,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("COPPOCK update: BadParam", RetCode.BadParam);
-         }
          core.coppockStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -73001,13 +73617,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CORREL} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CorrelStream( CorrelStream other ) {
          this.core = other.core;
@@ -73040,22 +73666,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal0, double inReal1 ) {
-         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) )
             throw new TaLibArgumentException("CORREL update: BadParam", RetCode.BadParam);
-         }
          core.correlStepImpl(this, inReal0, inReal1);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -74024,13 +74647,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#COS} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CosStream( CosStream other ) {
          this.core = other.core;
@@ -74044,22 +74677,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("COS update: BadParam", RetCode.BadParam);
-         }
          core.cosStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -74432,13 +75062,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#COSH} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CoshStream( CoshStream other ) {
          this.core = other.core;
@@ -74452,22 +75092,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("COSH update: BadParam", RetCode.BadParam);
-         }
          core.coshStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -74886,13 +75523,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CUMSUM} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CumsumStream( CumsumStream other ) {
          this.core = other.core;
@@ -74907,22 +75554,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("CUMSUM update: BadParam", RetCode.BadParam);
-         }
          core.cumsumStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -75563,13 +76207,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#CVI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       CviStream( CviStream other ) {
          this.core = other.core;
@@ -75591,22 +76245,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("CVI update: BadParam", RetCode.BadParam);
-         }
          core.cviStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -76340,13 +76991,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#DEMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       DemaStream( DemaStream other ) {
          this.core = other.core;
@@ -76364,22 +77025,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("DEMA update: BadParam", RetCode.BadParam);
-         }
          core.demaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -76920,13 +77578,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#DIV} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       DivStream( DivStream other ) {
          this.core = other.core;
@@ -76940,22 +77608,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal0, double inReal1 ) {
-         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) )
             throw new TaLibArgumentException("DIV update: BadParam", RetCode.BadParam);
-         }
          core.divStepImpl(this, inReal0, inReal1);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -77590,13 +78255,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#DONCHIAN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(DonchianOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       DonchianStream( DonchianStream other ) {
          this.core = other.core;
@@ -77623,12 +78298,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(DonchianOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(DonchianOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -77636,10 +78310,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, DonchianOut out ) {
          requireArgument("DONCHIAN update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("DONCHIAN update: BadParam", RetCode.BadParam);
-         }
          core.donchianStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.realUpperBand = this.cur_outRealUpperBand;
@@ -78435,13 +79107,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#DPO} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       DpoStream( DpoStream other ) {
          this.core = other.core;
@@ -78463,22 +79145,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("DPO update: BadParam", RetCode.BadParam);
-         }
          core.dpoStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -79499,13 +80178,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#DX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       DxStream( DxStream other ) {
          this.core = other.core;
@@ -79527,22 +80216,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("DX update: BadParam", RetCode.BadParam);
-         }
          core.dxStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -80569,13 +81255,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#EFI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       EfiStream( EfiStream other ) {
          this.core = other.core;
@@ -80593,22 +81289,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inClose, double inVolume ) {
-         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("EFI update: BadParam", RetCode.BadParam);
-         }
          core.efiStepImpl(this, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -81361,13 +82054,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#EMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       EmaStream( EmaStream other ) {
          this.core = other.core;
@@ -81384,22 +82087,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("EMA update: BadParam", RetCode.BadParam);
-         }
          core.emaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -82121,13 +82821,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ER} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       ErStream( ErStream other ) {
          this.core = other.core;
@@ -82149,22 +82859,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ER update: BadParam", RetCode.BadParam);
-         }
          core.erStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -82984,13 +83691,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ERI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(EriOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       EriStream( EriStream other ) {
          this.core = other.core;
@@ -83008,12 +83725,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(EriOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(EriOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -83021,10 +83737,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, EriOut out ) {
          requireArgument("ERI update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("ERI update: BadParam", RetCode.BadParam);
-         }
          core.eriStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.bullPower = this.cur_outBullPower;
@@ -83615,13 +84329,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#EXP} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       ExpStream( ExpStream other ) {
          this.core = other.core;
@@ -83635,22 +84359,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("EXP update: BadParam", RetCode.BadParam);
-         }
          core.expStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -84021,13 +84742,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#FLOOR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       FloorStream( FloorStream other ) {
          this.core = other.core;
@@ -84041,22 +84772,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("FLOOR update: BadParam", RetCode.BadParam);
-         }
          core.floorStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -84676,13 +85404,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#FOSC} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       FoscStream( FoscStream other ) {
          this.core = other.core;
@@ -84711,22 +85449,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("FOSC update: BadParam", RetCode.BadParam);
-         }
          core.foscStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -85571,13 +86306,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#FRACTAL} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(FractalOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       FractalStream( FractalStream other ) {
          this.core = other.core;
@@ -85598,12 +86343,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(FractalOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(FractalOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -85611,10 +86355,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, FractalOut out ) {
          requireArgument("FRACTAL update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("FRACTAL update: BadParam", RetCode.BadParam);
-         }
          core.fractalStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.swingHigh = this.cur_outSwingHigh;
@@ -86491,13 +87233,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(HaOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HaStream( HaStream other ) {
          this.core = other.core;
@@ -86516,12 +87268,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(HaOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(HaOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -86529,10 +87280,8 @@ public final class Core {
        */
       public void update( double inOpen, double inHigh, double inLow, double inClose, HaOut out ) {
          requireArgument("HA update", "out", out);
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("HA update: BadParam", RetCode.BadParam);
-         }
          core.haStepImpl(this, inOpen, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.haOpen = this.cur_outHAOpen;
@@ -87822,13 +88571,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HmaStream( HmaStream other ) {
          this.core = other.core;
@@ -87879,22 +88638,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HMA update: BadParam", RetCode.BadParam);
-         }
          core.hmaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -89810,13 +90566,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HT_DCPERIOD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HtDcperiodStream( HtDcperiodStream other ) {
          this.core = other.core;
@@ -89875,22 +90641,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HT_DCPERIOD update: BadParam", RetCode.BadParam);
-         }
          core.htDcperiodStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -91735,13 +92498,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HT_DCPHASE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HtDcphaseStream( HtDcphaseStream other ) {
          this.core = other.core;
@@ -91806,22 +92579,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HT_DCPHASE update: BadParam", RetCode.BadParam);
-         }
          core.htDcphaseStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -93744,13 +94514,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HT_PHASOR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(HtPhasorOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HtPhasorStream( HtPhasorStream other ) {
          this.core = other.core;
@@ -93809,12 +94589,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(HtPhasorOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(HtPhasorOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -93822,10 +94601,8 @@ public final class Core {
        */
       public void update( double inReal, HtPhasorOut out ) {
          requireArgument("HT_PHASOR update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HT_PHASOR update: BadParam", RetCode.BadParam);
-         }
          core.htPhasorStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.inPhase = this.cur_outInPhase;
@@ -95668,13 +96445,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HT_SINE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(HtSineOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HtSineStream( HtSineStream other ) {
          this.core = other.core;
@@ -95741,12 +96528,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(HtSineOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(HtSineOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -95754,10 +96540,8 @@ public final class Core {
        */
       public void update( double inReal, HtSineOut out ) {
          requireArgument("HT_SINE update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HT_SINE update: BadParam", RetCode.BadParam);
-         }
          core.htSineStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.sine = this.cur_outSine;
@@ -97768,13 +98552,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HT_TRENDLINE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HtTrendlineStream( HtTrendlineStream other ) {
          this.core = other.core;
@@ -97839,22 +98633,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HT_TRENDLINE update: BadParam", RetCode.BadParam);
-         }
          core.htTrendlineStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -99979,13 +100770,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#HT_TRENDMODE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       HtTrendmodeStream( HtTrendmodeStream other ) {
          this.core = other.core;
@@ -100060,22 +100861,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("HT_TRENDMODE update: BadParam", RetCode.BadParam);
-         }
          core.htTrendmodeStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -101660,13 +102458,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#IMI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       ImiStream( ImiStream other ) {
          this.core = other.core;
@@ -101685,22 +102493,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inOpen, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("IMI update: BadParam", RetCode.BadParam);
-         }
          core.imiStepImpl(this, inOpen, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -102594,13 +103399,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#KAMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       KamaStream( KamaStream other ) {
          this.core = other.core;
@@ -102625,22 +103440,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("KAMA update: BadParam", RetCode.BadParam);
-         }
          core.kamaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -103646,13 +104458,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#KC} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(KcOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       KcStream( KcStream other ) {
          this.core = other.core;
@@ -103674,12 +104496,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(KcOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(KcOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -103687,10 +104508,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, KcOut out ) {
          requireArgument("KC update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("KC update: BadParam", RetCode.BadParam);
-         }
          core.kcStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.realUpperBand = this.cur_outRealUpperBand;
@@ -104489,13 +105308,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#KDJ} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(KdjOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       KdjStream( KdjStream other ) {
          this.core = other.core;
@@ -104517,12 +105346,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(KdjOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(KdjOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -104530,10 +105358,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, KdjOut out ) {
          requireArgument("KDJ update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("KDJ update: BadParam", RetCode.BadParam);
-         }
          core.kdjStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.k = this.cur_outK;
@@ -105325,13 +106151,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#LINEARREG} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       LinearregStream( LinearregStream other ) {
          this.core = other.core;
@@ -105359,22 +106195,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("LINEARREG update: BadParam", RetCode.BadParam);
-         }
          core.linearregStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -106439,13 +107272,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#LINEARREG_ANGLE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       LinearregAngleStream( LinearregAngleStream other ) {
          this.core = other.core;
@@ -106473,22 +107316,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("LINEARREG_ANGLE update: BadParam", RetCode.BadParam);
-         }
          core.linearregAngleStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -107545,13 +108385,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#LINEARREG_INTERCEPT} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       LinearregInterceptStream( LinearregInterceptStream other ) {
          this.core = other.core;
@@ -107579,22 +108429,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("LINEARREG_INTERCEPT update: BadParam", RetCode.BadParam);
-         }
          core.linearregInterceptStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -108647,13 +109494,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#LINEARREG_SLOPE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       LinearregSlopeStream( LinearregSlopeStream other ) {
          this.core = other.core;
@@ -108681,22 +109538,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("LINEARREG_SLOPE update: BadParam", RetCode.BadParam);
-         }
          core.linearregSlopeStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -109464,13 +110318,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#LN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       LnStream( LnStream other ) {
          this.core = other.core;
@@ -109484,22 +110348,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("LN update: BadParam", RetCode.BadParam);
-         }
          core.lnStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -109878,13 +110739,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#LOG10} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Log10Stream( Log10Stream other ) {
          this.core = other.core;
@@ -109898,22 +110769,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("LOG10 update: BadParam", RetCode.BadParam);
-         }
          core.log10StepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -110642,13 +111510,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MaStream( MaStream other ) {
          this.core = other.core;
@@ -110709,22 +111587,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MA update: BadParam", RetCode.BadParam);
-         }
          core.maStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -112015,13 +112890,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MACD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(MacdOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MacdStream( MacdStream other ) {
          this.core = other.core;
@@ -112046,12 +112931,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(MacdOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(MacdOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -112059,10 +112943,8 @@ public final class Core {
        */
       public void update( double inReal, MacdOut out ) {
          requireArgument("MACD update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MACD update: BadParam", RetCode.BadParam);
-         }
          core.macdStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.macd = this.cur_outMACD;
@@ -113096,13 +113978,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MACDEXT} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(MacdextOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MacdextStream( MacdextStream other ) {
          this.core = other.core;
@@ -113127,12 +114019,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(MacdextOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(MacdextOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -113140,10 +114031,8 @@ public final class Core {
        */
       public void update( double inReal, MacdextOut out ) {
          requireArgument("MACDEXT update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MACDEXT update: BadParam", RetCode.BadParam);
-         }
          core.macdextStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.macd = this.cur_outMACD;
@@ -114039,13 +114928,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MACDFIX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(MacdfixOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MacdfixStream( MacdfixStream other ) {
          this.core = other.core;
@@ -114068,12 +114967,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(MacdfixOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(MacdfixOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -114081,10 +114979,8 @@ public final class Core {
        */
       public void update( double inReal, MacdfixOut out ) {
          requireArgument("MACDFIX update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MACDFIX update: BadParam", RetCode.BadParam);
-         }
          core.macdfixStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.macd = this.cur_outMACD;
@@ -115499,13 +116395,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MAMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(MamaOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MamaStream( MamaStream other ) {
          this.core = other.core;
@@ -115569,12 +116475,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(MamaOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(MamaOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -115582,10 +116487,8 @@ public final class Core {
        */
       public void update( double inReal, MamaOut out ) {
          requireArgument("MAMA update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MAMA update: BadParam", RetCode.BadParam);
-         }
          core.mamaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.mama = this.cur_outMAMA;
@@ -116836,13 +117739,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MARKETFI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MarketfiStream( MarketfiStream other ) {
          this.core = other.core;
@@ -116856,22 +117769,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inVolume ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("MARKETFI update: BadParam", RetCode.BadParam);
-         }
          core.marketfiStepImpl(this, inHigh, inLow, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -117670,13 +118580,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MASSI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MassiStream( MassiStream other ) {
          this.core = other.core;
@@ -117700,22 +118620,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("MASSI update: BadParam", RetCode.BadParam);
-         }
          core.massiStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -118787,13 +119704,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MAVP} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MavpStream( MavpStream other ) {
          this.core = other.core;
@@ -118814,22 +119741,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal, double inPeriods ) {
-         if( !Double.isFinite(inReal) || !Double.isFinite(inPeriods) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) || !Double.isFinite(inPeriods) )
             throw new TaLibArgumentException("MAVP update: BadParam", RetCode.BadParam);
-         }
          core.mavpStepImpl(this, inReal, inPeriods);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -119565,13 +120489,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MAX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MaxStream( MaxStream other ) {
          this.core = other.core;
@@ -119593,22 +120527,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MAX update: BadParam", RetCode.BadParam);
-         }
          core.maxStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -120270,13 +121201,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MAXINDEX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MaxindexStream( MaxindexStream other ) {
          this.core = other.core;
@@ -120298,22 +121239,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MAXINDEX update: BadParam", RetCode.BadParam);
-         }
          core.maxindexStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -120848,13 +121786,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MEDPRICE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MedpriceStream( MedpriceStream other ) {
          this.core = other.core;
@@ -120868,22 +121816,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("MEDPRICE update: BadParam", RetCode.BadParam);
-         }
          core.medpriceStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -121608,13 +122553,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MFI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MfiStream( MfiStream other ) {
          this.core = other.core;
@@ -121638,22 +122593,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose, double inVolume ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("MFI update: BadParam", RetCode.BadParam);
-         }
          core.mfiStepImpl(this, inHigh, inLow, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -122610,13 +123562,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MIDPOINT} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MidpointStream( MidpointStream other ) {
          this.core = other.core;
@@ -122640,22 +123602,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MIDPOINT update: BadParam", RetCode.BadParam);
-         }
          core.midpointStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -123588,13 +124547,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MIDPRICE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MidpriceStream( MidpriceStream other ) {
          this.core = other.core;
@@ -123619,22 +124588,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("MIDPRICE update: BadParam", RetCode.BadParam);
-         }
          core.midpriceStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -124481,13 +125447,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MIN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MinStream( MinStream other ) {
          this.core = other.core;
@@ -124509,22 +125485,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MIN update: BadParam", RetCode.BadParam);
-         }
          core.minStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -125184,13 +126157,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MININDEX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MinindexStream( MinindexStream other ) {
          this.core = other.core;
@@ -125212,22 +126195,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public int update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MININDEX update: BadParam", RetCode.BadParam);
-         }
          core.minindexStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outInteger;
@@ -126075,13 +127055,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MINMAX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(MinmaxOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MinmaxStream( MinmaxStream other ) {
          this.core = other.core;
@@ -126106,12 +127096,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(MinmaxOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(MinmaxOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -126119,10 +127108,8 @@ public final class Core {
        */
       public void update( double inReal, MinmaxOut out ) {
          requireArgument("MINMAX update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MINMAX update: BadParam", RetCode.BadParam);
-         }
          core.minmaxStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.min = this.cur_outMin;
@@ -126951,13 +127938,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MINMAXINDEX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(MinmaxindexOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MinmaxindexStream( MinmaxindexStream other ) {
          this.core = other.core;
@@ -126982,12 +127979,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(MinmaxindexOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(MinmaxindexOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -126995,10 +127991,8 @@ public final class Core {
        */
       public void update( double inReal, MinmaxindexOut out ) {
          requireArgument("MINMAXINDEX update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MINMAXINDEX update: BadParam", RetCode.BadParam);
-         }
          core.minmaxindexStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.minIdx = this.cur_outMinIdx;
@@ -128154,13 +129148,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MINUS_DI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MinusDiStream( MinusDiStream other ) {
          this.core = other.core;
@@ -128180,22 +129184,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("MINUS_DI update: BadParam", RetCode.BadParam);
-         }
          core.minusDiStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -129515,13 +130516,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MINUS_DM} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MinusDmStream( MinusDmStream other ) {
          this.core = other.core;
@@ -129539,22 +130550,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("MINUS_DM update: BadParam", RetCode.BadParam);
-         }
          core.minusDmStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -130406,13 +131414,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MOM} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MomStream( MomStream other ) {
          this.core = other.core;
@@ -130430,22 +131448,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("MOM update: BadParam", RetCode.BadParam);
-         }
          core.momStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -130916,13 +131931,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#MULT} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       MultStream( MultStream other ) {
          this.core = other.core;
@@ -130936,22 +131961,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal0, double inReal1 ) {
-         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) )
             throw new TaLibArgumentException("MULT update: BadParam", RetCode.BadParam);
-         }
          core.multStepImpl(this, inReal0, inReal1);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -131690,13 +132712,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#NATR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       NatrStream( NatrStream other ) {
          this.core = other.core;
@@ -131715,22 +132747,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("NATR update: BadParam", RetCode.BadParam);
-         }
          core.natrStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -132461,13 +133490,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#NVI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       NviStream( NviStream other ) {
          this.core = other.core;
@@ -132484,22 +133523,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inClose, double inVolume ) {
-         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("NVI update: BadParam", RetCode.BadParam);
-         }
          core.nviStepImpl(this, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -133015,13 +134051,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#OBV} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       ObvStream( ObvStream other ) {
          this.core = other.core;
@@ -133037,22 +134083,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal, double inVolume ) {
-         if( !Double.isFinite(inReal) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("OBV update: BadParam", RetCode.BadParam);
-         }
          core.obvStepImpl(this, inReal, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -133741,13 +134784,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PERCENTILE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PercentileStream( PercentileStream other ) {
          this.core = other.core;
@@ -133773,22 +134826,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("PERCENTILE update: BadParam", RetCode.BadParam);
-         }
          core.percentileStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -134478,13 +135528,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PERCENTRANK} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PercentrankStream( PercentrankStream other ) {
          this.core = other.core;
@@ -134502,22 +135562,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("PERCENTRANK update: BadParam", RetCode.BadParam);
-         }
          core.percentrankStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -135525,13 +136582,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PLUS_DI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PlusDiStream( PlusDiStream other ) {
          this.core = other.core;
@@ -135551,22 +136618,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("PLUS_DI update: BadParam", RetCode.BadParam);
-         }
          core.plusDiStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -136885,13 +137949,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PLUS_DM} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PlusDmStream( PlusDmStream other ) {
          this.core = other.core;
@@ -136909,22 +137983,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("PLUS_DM update: BadParam", RetCode.BadParam);
-         }
          core.plusDmStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -137865,13 +138936,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PPO} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PpoStream( PpoStream other ) {
          this.core = other.core;
@@ -137890,22 +138971,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("PPO update: BadParam", RetCode.BadParam);
-         }
          core.ppoStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -138476,13 +139554,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PVI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PviStream( PviStream other ) {
          this.core = other.core;
@@ -138499,22 +139587,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inClose, double inVolume ) {
-         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("PVI update: BadParam", RetCode.BadParam);
-         }
          core.pviStepImpl(this, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -139181,13 +140266,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PVO} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PvoStream( PvoStream other ) {
          this.core = other.core;
@@ -139206,22 +140301,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inVolume ) {
-         if( !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("PVO update: BadParam", RetCode.BadParam);
-         }
          core.pvoStepImpl(this, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -139770,13 +140862,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#PVT} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       PvtStream( PvtStream other ) {
          this.core = other.core;
@@ -139792,22 +140894,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inClose, double inVolume ) {
-         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("PVT update: BadParam", RetCode.BadParam);
-         }
          core.pvtStepImpl(this, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -140370,13 +141469,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#QSTICK} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       QstickStream( QstickStream other ) {
          this.core = other.core;
@@ -140395,22 +141504,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inOpen, double inClose ) {
-         if( !Double.isFinite(inOpen) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inOpen) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("QSTICK update: BadParam", RetCode.BadParam);
-         }
          core.qstickStepImpl(this, inOpen, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -141082,13 +142188,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#RMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       RmaStream( RmaStream other ) {
          this.core = other.core;
@@ -141106,22 +142222,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("RMA update: BadParam", RetCode.BadParam);
-         }
          core.rmaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -141680,13 +142793,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ROC} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       RocStream( RocStream other ) {
          this.core = other.core;
@@ -141704,22 +142827,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ROC update: BadParam", RetCode.BadParam);
-         }
          core.rocStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -142302,13 +143422,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ROCP} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       RocpStream( RocpStream other ) {
          this.core = other.core;
@@ -142326,22 +143456,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ROCP update: BadParam", RetCode.BadParam);
-         }
          core.rocpStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -142927,13 +144054,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ROCR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       RocrStream( RocrStream other ) {
          this.core = other.core;
@@ -142951,22 +144088,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ROCR update: BadParam", RetCode.BadParam);
-         }
          core.rocrStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -143554,13 +144688,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ROCR100} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       Rocr100Stream( Rocr100Stream other ) {
          this.core = other.core;
@@ -143578,22 +144722,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ROCR100 update: BadParam", RetCode.BadParam);
-         }
          core.rocr100StepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -144384,13 +145525,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#RSI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       RsiStream( RsiStream other ) {
          this.core = other.core;
@@ -144408,22 +145559,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("RSI update: BadParam", RetCode.BadParam);
-         }
          core.rsiStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -145578,13 +146726,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#RVI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       RviStream( RviStream other ) {
          this.core = other.core;
@@ -145617,22 +146775,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("RVI update: BadParam", RetCode.BadParam);
-         }
          core.rviStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -146554,13 +147709,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#RVOL} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       RvolStream( RvolStream other ) {
          this.core = other.core;
@@ -146579,22 +147744,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inVolume ) {
-         if( !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("RVOL update: BadParam", RetCode.BadParam);
-         }
          core.rvolStepImpl(this, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -147486,13 +148648,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SarStream( SarStream other ) {
          this.core = other.core;
@@ -147514,22 +148686,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("SAR update: BadParam", RetCode.BadParam);
-         }
          core.sarStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -149053,13 +150222,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SAREXT} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SarextStream( SarextStream other ) {
          this.core = other.core;
@@ -149088,22 +150267,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) )
             throw new TaLibArgumentException("SAREXT update: BadParam", RetCode.BadParam);
-         }
          core.sarextStepImpl(this, inHigh, inLow);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -150061,13 +151237,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SIN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SinStream( SinStream other ) {
          this.core = other.core;
@@ -150081,22 +151267,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("SIN update: BadParam", RetCode.BadParam);
-         }
          core.sinStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -150467,13 +151650,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SINH} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SinhStream( SinhStream other ) {
          this.core = other.core;
@@ -150487,22 +151680,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("SINH update: BadParam", RetCode.BadParam);
-         }
          core.sinhStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -150993,13 +152183,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SmaStream( SmaStream other ) {
          this.core = other.core;
@@ -151018,22 +152218,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("SMA update: BadParam", RetCode.BadParam);
-         }
          core.smaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -152143,13 +153340,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SMI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(SmiOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SmiStream( SmiStream other ) {
          this.core = other.core;
@@ -152187,12 +153394,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(SmiOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(SmiOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -152200,10 +153406,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, SmiOut out ) {
          requireArgument("SMI update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("SMI update: BadParam", RetCode.BadParam);
-         }
          core.smiStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.smi = this.cur_outSMI;
@@ -153099,13 +154303,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SQRT} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SqrtStream( SqrtStream other ) {
          this.core = other.core;
@@ -153119,22 +154333,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("SQRT update: BadParam", RetCode.BadParam);
-         }
          core.sqrtStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -153627,13 +154838,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#STDDEV} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       StddevStream( StddevStream other ) {
          this.core = other.core;
@@ -153650,22 +154871,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("STDDEV update: BadParam", RetCode.BadParam);
-         }
          core.stddevStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -154628,13 +155846,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#STOCH} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(StochOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       StochStream( StochStream other ) {
          this.core = other.core;
@@ -154668,12 +155896,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(StochOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(StochOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -154681,10 +155908,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, StochOut out ) {
          requireArgument("STOCH update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("STOCH update: BadParam", RetCode.BadParam);
-         }
          core.stochStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.slowK = this.cur_outSlowK;
@@ -155953,13 +157178,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#STOCHF} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(StochfOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       StochfStream( StochfStream other ) {
          this.core = other.core;
@@ -155990,12 +157225,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(StochfOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(StochfOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -156003,10 +157237,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, StochfOut out ) {
          requireArgument("STOCHF update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("STOCHF update: BadParam", RetCode.BadParam);
-         }
          core.stochfStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.fastK = this.cur_outFastK;
@@ -157061,13 +158293,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#STOCHRSI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(StochrsiOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       StochrsiStream( StochrsiStream other ) {
          this.core = other.core;
@@ -157088,12 +158330,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(StochrsiOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(StochrsiOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -157101,10 +158342,8 @@ public final class Core {
        */
       public void update( double inReal, StochrsiOut out ) {
          requireArgument("STOCHRSI update", "out", out);
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("STOCHRSI update: BadParam", RetCode.BadParam);
-         }
          core.stochrsiStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.fastK = this.cur_outFastK;
@@ -157632,13 +158871,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SUB} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SubStream( SubStream other ) {
          this.core = other.core;
@@ -157652,22 +158901,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal0, double inReal1 ) {
-         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal0) || !Double.isFinite(inReal1) )
             throw new TaLibArgumentException("SUB update: BadParam", RetCode.BadParam);
-         }
          core.subStepImpl(this, inReal0, inReal1);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -158141,13 +159387,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SUM} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SumStream( SumStream other ) {
          this.core = other.core;
@@ -158166,22 +159422,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("SUM update: BadParam", RetCode.BadParam);
-         }
          core.sumStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -159049,13 +160302,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#SUPERTREND} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(SupertrendOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       SupertrendStream( SupertrendStream other ) {
          this.core = other.core;
@@ -159080,12 +160343,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(SupertrendOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(SupertrendOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -159093,10 +160355,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, SupertrendOut out ) {
          requireArgument("SUPERTREND update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("SUPERTREND update: BadParam", RetCode.BadParam);
-         }
          core.supertrendStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.real = this.cur_outReal;
@@ -160166,13 +161426,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#T3} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       T3Stream( T3Stream other ) {
          this.core = other.core;
@@ -160200,22 +161470,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("T3 update: BadParam", RetCode.BadParam);
-         }
          core.t3StepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -160796,13 +162063,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TAN} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TanStream( TanStream other ) {
          this.core = other.core;
@@ -160816,22 +162093,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("TAN update: BadParam", RetCode.BadParam);
-         }
          core.tanStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -161204,13 +162478,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TANH} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TanhStream( TanhStream other ) {
          this.core = other.core;
@@ -161224,22 +162508,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("TANH update: BadParam", RetCode.BadParam);
-         }
          core.tanhStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -161881,13 +163162,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TEMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TemaStream( TemaStream other ) {
          this.core = other.core;
@@ -161906,22 +163197,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("TEMA update: BadParam", RetCode.BadParam);
-         }
          core.temaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -162584,13 +163872,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TRANGE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TrangeStream( TrangeStream other ) {
          this.core = other.core;
@@ -162605,22 +163903,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("TRANGE update: BadParam", RetCode.BadParam);
-         }
          core.trangeStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -163502,13 +164797,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TRIMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TrimaStream( TrimaStream other ) {
          this.core = other.core;
@@ -163534,22 +164839,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("TRIMA update: BadParam", RetCode.BadParam);
-         }
          core.trimaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -164695,13 +165997,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TRIX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TrixStream( TrixStream other ) {
          this.core = other.core;
@@ -164720,22 +166032,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("TRIX update: BadParam", RetCode.BadParam);
-         }
          core.trixStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -165531,13 +166840,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TSF} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TsfStream( TsfStream other ) {
          this.core = other.core;
@@ -165565,22 +166884,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("TSF update: BadParam", RetCode.BadParam);
-         }
          core.tsfStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -166706,13 +168022,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TSI} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TsiStream( TsiStream other ) {
          this.core = other.core;
@@ -166735,22 +168061,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("TSI update: BadParam", RetCode.BadParam);
-         }
          core.tsiStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -167345,13 +168668,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#TYPPRICE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       TyppriceStream( TyppriceStream other ) {
          this.core = other.core;
@@ -167365,22 +168698,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("TYPPRICE update: BadParam", RetCode.BadParam);
-         }
          core.typpriceStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -168340,13 +169670,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ULTOSC} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       UltoscStream( UltoscStream other ) {
          this.core = other.core;
@@ -168378,22 +169718,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("ULTOSC update: BadParam", RetCode.BadParam);
-         }
          core.ultoscStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -169579,13 +170916,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#VAR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       VarStream( VarStream other ) {
          this.core = other.core;
@@ -169613,22 +170960,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("VAR update: BadParam", RetCode.BadParam);
-         }
          core.varStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -170589,13 +171933,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#VHF} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       VhfStream( VhfStream other ) {
          this.core = other.core;
@@ -170613,22 +171967,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("VHF update: BadParam", RetCode.BadParam);
-         }
          core.vhfStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -171522,13 +172873,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#VORTEX} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value(VortexOut)} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       VortexStream( VortexStream other ) {
          this.core = other.core;
@@ -171557,12 +172918,11 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value(VortexOut)} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value(VortexOut)} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
@@ -171570,10 +172930,8 @@ public final class Core {
        */
       public void update( double inHigh, double inLow, double inClose, VortexOut out ) {
          requireArgument("VORTEX update", "out", out);
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("VORTEX update: BadParam", RetCode.BadParam);
-         }
          core.vortexStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          out.plusVI = this.cur_outPlusVI;
@@ -172593,13 +173951,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#VWAP} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       VwapStream( VwapStream other ) {
          this.core = other.core;
@@ -172616,22 +173984,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose, double inVolume ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("VWAP update: BadParam", RetCode.BadParam);
-         }
          core.vwapStepImpl(this, inHigh, inLow, inClose, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -173509,13 +174874,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#VWMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       VwmaStream( VwmaStream other ) {
          this.core = other.core;
@@ -173536,22 +174911,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal, double inVolume ) {
-         if( !Double.isFinite(inReal) || !Double.isFinite(inVolume) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) || !Double.isFinite(inVolume) )
             throw new TaLibArgumentException("VWMA update: BadParam", RetCode.BadParam);
-         }
          core.vwmaStepImpl(this, inReal, inVolume);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -174263,13 +175635,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#WAD} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       WadStream( WadStream other ) {
          this.core = other.core;
@@ -174285,22 +175667,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("WAD update: BadParam", RetCode.BadParam);
-         }
          core.wadStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -174806,13 +176185,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#WCLPRICE} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       WclpriceStream( WclpriceStream other ) {
          this.core = other.core;
@@ -174826,22 +176215,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("WCLPRICE update: BadParam", RetCode.BadParam);
-         }
          core.wclpriceStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -175591,13 +176977,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#WILLR} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       WillrStream( WillrStream other ) {
          this.core = other.core;
@@ -175624,22 +177020,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inHigh, double inLow, double inClose ) {
-         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inHigh) || !Double.isFinite(inLow) || !Double.isFinite(inClose) )
             throw new TaLibArgumentException("WILLR update: BadParam", RetCode.BadParam);
-         }
          core.willrStepImpl(this, inHigh, inLow, inClose);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -176581,13 +177974,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#WMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       WmaStream( WmaStream other ) {
          this.core = other.core;
@@ -176614,22 +178017,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("WMA update: BadParam", RetCode.BadParam);
-         }
          core.wmaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;
@@ -177605,13 +179005,23 @@ public final class Core {
        * coordinates: {@code [begIdx, begIdx + count)}.
        * <p>It is what {@link Core#ZLEMA} reports over the same bars: the
        * opener sets it to {@code (lookback, historyLen - lookback)}, every
-       * {@code update} adds one to the count — a bar rejected for being
-       * non-finite included, because it still happened — {@code peek} leaves
-       * it alone, and {@code clone()} carries it verbatim. A plain
+       * accepted {@code update} adds one to the count — a rejected one
+       * changes nothing, and neither does {@code peek} — and
+       * {@code clone()} carries it verbatim. A plain
        * {@code open} hands back only the last value, a subset of this range,
        * because the caller chose not to take the fill.
        */
       public OutRange outRange() { return new OutRange(outRangeBegIdx, outRangeCount); }
+
+      /**
+       * Count one bar this stream was not fed: {@link #outRange()} advances
+       * by one and nothing else moves — {@link #value()} keeps answering the previous
+       * output, which is this bar's output too.
+       * <p>For a bar the caller leaves out: one an {@code update} rejected
+       * and that will not be re-fed, or a session with no print. Without it
+       * two handles on one feed drift a bar apart when only one of them skips.
+       */
+      public void advance() { if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++; }
 
       ZlemaStream( ZlemaStream other ) {
          this.core = other.core;
@@ -177631,22 +179041,19 @@ public final class Core {
        * Never allocates handle state.
        * <p>Throws {@link IllegalArgumentException} if any bar value is not
        * finite (NaN or an infinity). That check runs before anything is
-       * written, so the state is left exactly as it was: the rejected bar's
-       * output is the previous value, held, and {@link #value()} answers it.
-       * The stream stays usable, so skip the bar or re-open on a clean
-       * history. {@link #outRange()} does advance: the bar happened and
-       * occupies a position in the series, so the handle counts it, which is
-       * what keeps two handles on one feed aligned when only one rejects.
+       * written, so nothing moves — {@link #outRange()} included — and
+       * {@link #value()} still answers the previous value. Re-feed the bar when a
+       * corrected value arrives, or call {@link #advance()} to count it and
+       * carry on; two handles on one feed drift a bar apart if neither
+       * happens.
        * This is the one place the streaming tier is stricter than
        * the batch API, which computes on whatever it is given: a handle
        * retains its state, so a single non-finite bar would poison every
        * later value it produces.
        */
       public double update( double inReal ) {
-         if( !Double.isFinite(inReal) ) {
-            if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
+         if( !Double.isFinite(inReal) )
             throw new TaLibArgumentException("ZLEMA update: BadParam", RetCode.BadParam);
-         }
          core.zlemaStepImpl(this, inReal);
          if( this.outRangeCount < MAX_INDEX ) this.outRangeCount++;
          return this.cur_outReal;

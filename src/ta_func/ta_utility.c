@@ -48,6 +48,7 @@
  *  072726 MF,CC  Bound TA_Set/GetUnstablePeriod below as well as above (#144)
  *  072826 MF,CC  Range-check against TA_FUNC_UNST_COUNT; ALL is now INT_MAX
  *  082126 MF,CC  TA_StreamOutRange: the range every stream handle carries (#241)
+ *  090526 MF,CC  TA_StreamAdvance: count a bar the handle was not fed (#384)
  *
  */
 
@@ -151,5 +152,21 @@ TA_RetCode TA_StreamOutRange( const void *stream,
    memcpy( &head, stream, sizeof(head) );
    *outBegIdx = head.outRangeBegIdx;
    *outNBElement = head.outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_RetCode TA_StreamAdvance( void *stream )
+{
+   TA_StreamRangeHead head;
+
+   if( !stream )
+      return TA_BAD_PARAM;
+
+   memcpy( &head, stream, sizeof(head) );
+   if( head.outRangeCount < TA_MAX_INDEX )
+   {
+      head.outRangeCount++;
+      memcpy( stream, &head, sizeof(head) );
+   }
    return TA_SUCCESS;
 }

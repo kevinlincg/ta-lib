@@ -543,11 +543,7 @@ TA_LIB_API TA_RetCode TA_PVO_Update( TA_PVO_Stream *stream, double inVolume, dou
    TA_RetCode retCode;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inVolume ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inVolume ) ) return TA_BAD_PARAM;
    retCode = TA_PVO_StepImpl( stream, inVolume, outReal );
    if( retCode != TA_SUCCESS ) return retCode;
    stream->cur_outReal = *outReal;

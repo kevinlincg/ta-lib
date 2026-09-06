@@ -1461,11 +1461,7 @@ TA_RetCode TA_HT_PHASOR_OpenAndFillInternal( struct TA_HT_PHASOR_Stream **stream
 TA_LIB_API TA_RetCode TA_HT_PHASOR_Update( TA_HT_PHASOR_Stream *stream, double inReal, double *outInPhase, double *outQuadrature )
 {
    if( !stream || !outInPhase || !outQuadrature ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    TA_HT_PHASOR_StepImpl( stream, inReal, outInPhase, outQuadrature );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;

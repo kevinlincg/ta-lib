@@ -43,6 +43,8 @@
  *  081626 MF,CC  First version. The streaming tier's non-finite input
  *                rejection.
  *  083026 MF,CC  Rule U3 asserted absolutely, not as a tier equivalence.
+ *  090526 MF,CC  A rejection costs nothing; TA_StreamAdvance counts a skipped
+ *                bar (#384).
  */
 
 /* Description:
@@ -76,9 +78,11 @@
  *       the same two comparisons inverted, `!(x >= min && x <= max)`.
  *   (d) The numbers themselves. (b) is an EQUIVALENCE, so it cannot see a change
  *       that moves both sides. (d) offers one bad bar to one handle and demands
- *       the exact range: BadParam, begIdx put, count exactly one higher, output
- *       untouched; then a good bar, which must still produce a value; and the
- *       mirror in Peek, which advances nothing either way.
+ *       the exact range: BadParam and NOTHING moved -- begIdx, count and output
+ *       all put; then the same bar re-fed good, which must produce a value and
+ *       count ONCE; then TA_StreamAdvance, which counts a bar that was never
+ *       fed and holds the value; and the mirror in Peek, which moves nothing
+ *       either way.
  *
  * Coverage is by STREAM TIER, not by function count. The check is emitted from
  * one place per language, but into six different code paths in c_stream.rs, so
@@ -420,21 +424,21 @@ static ErrorNumber sf_cdldoji( void )
  * it.
  *
  * So this leg compares against no control at all. It reads the range, offers
- * exactly one bad bar, and demands the exact numbers: TA_BAD_PARAM, begIdx
- * unmoved, count exactly one higher -- the bar happened, so it is counted --
- * and the caller's output slot untouched.
+ * exactly one bad bar, and demands the exact numbers: TA_BAD_PARAM, begIdx and
+ * count both unmoved, and the caller's output slot untouched. A rejection costs
+ * the caller nothing but the call (#384).
  *
- * Both halves are asserted on the SAME call, deliberately. A change that
- * stepped the state and skipped the count, or counted and stepped, satisfies
- * either half alone; only the pair pins "counted but not committed".
+ * Then the SAME bar re-fed good, which must produce a value and add exactly one
+ * -- the retry an always-counting rejection could not express, since it charged
+ * one real bar twice.
  *
- * Then a good bar, which must still produce a value and advance by one:
- * refusing a bar is better than computing on it only if the handle survives
- * the refusal.
+ * Then TA_StreamAdvance, the one call that moves the range without a bar: +1
+ * exactly, and Value still answering the bar before it, because a skipped bar's
+ * output is the previous one held.
  *
- * The mirror is Peek, which advances NOTHING -- rejected or not. It is the
- * half most likely to regress silently, because a Peek that started counting
- * would break no value anywhere.
+ * The mirror is Peek, which moves NOTHING -- rejected or not. It is the half
+ * most likely to regress silently, because a Peek that started counting would
+ * break no value anywhere.
  */
 
 /* Counters, one per property, each incremented AT its assertion. */
@@ -445,6 +449,10 @@ static int sfAdvValues;     /* a slot that good bar filled */
 static int sfAdvPeekStills; /* a Peek, good or rejected, moved nothing */
 static int sfAdvValueHolds; /* Value across the rejection: same bits */
 static int sfAdvValueTracks;/* Value after the next good bar: that bar's value */
+static int sfAdvSkips;      /* TA_StreamAdvance: exactly +1, begIdx put */
+static int sfAdvSkipHolds;  /* Value across TA_StreamAdvance: same bits */
+static int sfAdvNullRejects;/* TA_StreamAdvance(NULL) */
+static int sfAdvSaturates;  /* the count stopping at TA_MAX_INDEX */
 
 /* An output slot is seeded with this, never with zero: a rejected call that
  * left the slot alone and one that wrote a plausible zero are the same reading
@@ -474,10 +482,10 @@ static int sfAdvValueTracks;/* Value after the next good bar: that bar's value *
          return TA_STREAM_ADVANCE_NOT_REJECTED;                               \
       }                                                                       \
       SF_ADV_READ( fname, (h), b1_, n1_ );                                    \
-      if( b1_ != b0_ || n1_ != n0_ + 1 )                                      \
+      if( b1_ != b0_ || n1_ != n0_ )                                          \
       {                                                                       \
-         printf( "  %s: a rejected Update left (%d,%d), expected (%d,%d)\n",  \
-                 fname, b1_, n1_, b0_, n0_ + 1 );                             \
+         printf( "  %s: a rejected Update moved (%d,%d) -> (%d,%d)\n",        \
+                 fname, b0_, n0_, b1_, n1_ );                                 \
          return TA_STREAM_ADVANCE_WRONG_COUNT;                                \
       }                                                                       \
       sfAdvRejects++;                                                         \
@@ -503,6 +511,41 @@ static int sfAdvValueTracks;/* Value after the next good bar: that bar's value *
          return TA_STREAM_ADVANCE_WRONG_COUNT;                                \
       }                                                                       \
       sfAdvResumes++;                                                         \
+   } while( 0 )
+
+/* TA_StreamAdvance: the one call that moves the range without a bar. Generic
+ * over any handle, so it is driven through the same void * every tier uses. */
+#define SF_ADV_SKIP( fname, h )                                               \
+   do {                                                                       \
+      int b0_, n0_, b1_, n1_;                                                 \
+      TA_RetCode rc_;                                                         \
+      SF_ADV_READ( fname, (h), b0_, n0_ );                                    \
+      rc_ = TA_StreamAdvance( (h) );                                          \
+      if( rc_ != TA_SUCCESS )                                                 \
+      {                                                                       \
+         printf( "  %s: TA_StreamAdvance failed (retCode %d)\n",              \
+                 fname, (int)rc_ );                                           \
+         return TA_STREAM_ADVANCE_SETUP_FAILED;                               \
+      }                                                                       \
+      SF_ADV_READ( fname, (h), b1_, n1_ );                                    \
+      if( b1_ != b0_ || n1_ != n0_ + 1 )                                      \
+      {                                                                       \
+         printf( "  %s: TA_StreamAdvance left (%d,%d), expected (%d,%d)\n",   \
+                 fname, b1_, n1_, b0_, n0_ + 1 );                             \
+         return TA_STREAM_ADVANCE_WRONG_COUNT;                                \
+      }                                                                       \
+      sfAdvSkips++;                                                           \
+   } while( 0 )
+
+/* memcmp rather than ==, so the same macro serves the int outputs. */
+#define SF_ADV_SKIP_HELD( fname, pre, post )                                  \
+   do {                                                                       \
+      if( memcmp( &(pre), &(post), sizeof(pre) ) != 0 )                       \
+      {                                                                       \
+         printf( "  %s: Value moved across TA_StreamAdvance\n", fname );      \
+         return TA_STREAM_ADVANCE_VALUE_NOT_HELD;                             \
+      }                                                                       \
+      sfAdvSkipHolds++;                                                       \
    } while( 0 )
 
 /* Peek advances NOTHING -- rejected or not. The retCode is asserted in the
@@ -661,6 +704,9 @@ static ErrorNumber sf_advance( void )
          SF_ADV_PRODUCED( "SMA", v );
          SF_ADV_VALUE( "SMA", TA_SMA_Value( s, &vq ) );
          SF_ADV_VALUE_TRACKS( "SMA", v, vq );
+         SF_ADV_SKIP( "SMA", s );
+         SF_ADV_VALUE( "SMA(skip)", TA_SMA_Value( s, &vq ) );
+         SF_ADV_SKIP_HELD( "SMA", v, vq );
          TA_SMA_Close( s );
       }
       /* Dual-mode tier, three price inputs. */
@@ -686,6 +732,9 @@ static ErrorNumber sf_advance( void )
          SF_ADV_PRODUCED( "MINUS_DI", v );
          SF_ADV_VALUE( "MINUS_DI", TA_MINUS_DI_Value( s, &vq ) );
          SF_ADV_VALUE_TRACKS( "MINUS_DI", v, vq );
+         SF_ADV_SKIP( "MINUS_DI", s );
+         SF_ADV_VALUE( "MINUS_DI(skip)", TA_MINUS_DI_Value( s, &vq ) );
+         SF_ADV_SKIP_HELD( "MINUS_DI", v, vq );
          TA_MINUS_DI_Close( s );
       }
       /* Dispatch tier, both arms: period 1 is the identity loop, which never
@@ -712,6 +761,9 @@ static ErrorNumber sf_advance( void )
             SF_ADV_PRODUCED( "MA", v );
             SF_ADV_VALUE( "MA", TA_MA_Value( s, &vq ) );
             SF_ADV_VALUE_TRACKS( "MA", v, vq );
+            SF_ADV_SKIP( "MA", s );
+            SF_ADV_VALUE( "MA(skip)", TA_MA_Value( s, &vq ) );
+            SF_ADV_SKIP_HELD( "MA", v, vq );
             TA_MA_Close( s );
          }
       }
@@ -737,6 +789,9 @@ static ErrorNumber sf_advance( void )
          SF_ADV_PRODUCED( "MAVP", v );
          SF_ADV_VALUE( "MAVP", TA_MAVP_Value( s, &vq ) );
          SF_ADV_VALUE_TRACKS( "MAVP", v, vq );
+         SF_ADV_SKIP( "MAVP", s );
+         SF_ADV_VALUE( "MAVP(skip)", TA_MAVP_Value( s, &vq ) );
+         SF_ADV_SKIP_HELD( "MAVP", v, vq );
          TA_MAVP_Close( s );
       }
       /* Composed tier, three outputs: the rejection must leave all three. */
@@ -771,6 +826,11 @@ static ErrorNumber sf_advance( void )
          SF_ADV_VALUE_TRACKS( "BBANDS.upper",  u, uq );
          SF_ADV_VALUE_TRACKS( "BBANDS.middle", m, mq );
          SF_ADV_VALUE_TRACKS( "BBANDS.lower",  l, lq );
+         SF_ADV_SKIP( "BBANDS", s );
+         SF_ADV_VALUE( "BBANDS(skip)", TA_BBANDS_Value( s, &uq, &mq, &lq ) );
+         SF_ADV_SKIP_HELD( "BBANDS.upper",  u, uq );
+         SF_ADV_SKIP_HELD( "BBANDS.middle", m, mq );
+         SF_ADV_SKIP_HELD( "BBANDS.lower",  l, lq );
          TA_BBANDS_Close( s );
       }
       /* Composed, multi-output, one sub feeding the next. */
@@ -802,6 +862,10 @@ static ErrorNumber sf_advance( void )
          SF_ADV_VALUE( "STOCH", TA_STOCH_Value( s, &kq, &dq ) );
          SF_ADV_VALUE_TRACKS( "STOCH.slowK", kv, kq );
          SF_ADV_VALUE_TRACKS( "STOCH.slowD", dv, dq );
+         SF_ADV_SKIP( "STOCH", s );
+         SF_ADV_VALUE( "STOCH(skip)", TA_STOCH_Value( s, &kq, &dq ) );
+         SF_ADV_SKIP_HELD( "STOCH.slowK", kv, kq );
+         SF_ADV_SKIP_HELD( "STOCH.slowD", dv, dq );
          TA_STOCH_Close( s );
       }
       /* Integer output over four price inputs. */
@@ -829,8 +893,50 @@ static ErrorNumber sf_advance( void )
          SF_ADV_PRODUCED_I( "CDLDOJI", v );
          SF_ADV_VALUE( "CDLDOJI", TA_CDLDOJI_Value( s, &vq ) );
          SF_ADV_VALUE_TRACKS_I( "CDLDOJI", v, vq );
+         SF_ADV_SKIP( "CDLDOJI", s );
+         SF_ADV_VALUE( "CDLDOJI(skip)", TA_CDLDOJI_Value( s, &vq ) );
+         SF_ADV_SKIP_HELD( "CDLDOJI", v, vq );
          TA_CDLDOJI_Close( s );
       }
+   }
+
+   /* The two arms the tier loop above cannot reach. Both are in the ONE
+    * hand-written TA_StreamAdvance, so one handle covers the corpus. */
+   if( TA_StreamAdvance( NULL ) != TA_BAD_PARAM )
+   {
+      printf( "  TA_StreamAdvance(NULL) was not TA_BAD_PARAM\n" );
+      return TA_STREAM_ADVANCE_NOT_REJECTED;
+   }
+   sfAdvNullRejects++;
+
+   /* Saturation, which no feed reaches: TA_MAX_INDEX is 100 million bars, and
+    * this is the only call that moves the count without O(period) work. The
+    * first compare fails an advance that stopped moving the count at all, the
+    * second one that lost the ceiling. */
+   {
+      TA_SMA_Stream *s = NULL;
+      double seed = 0.0;
+      int b0, n0, b1, n1;
+      if( TA_SMA_Open( &s, sfClose, warm, 10, &seed ) != TA_SUCCESS )
+         return TA_STREAM_ADVANCE_SETUP_FAILED;
+      for( k = 0; k < TA_MAX_INDEX; k++ )
+         TA_StreamAdvance( s );
+      SF_ADV_READ( "SMA(saturate)", s, b0, n0 );
+      if( n0 != TA_MAX_INDEX )
+      {
+         printf( "  SMA(saturate): the count reached %d, expected %d\n", n0, TA_MAX_INDEX );
+         TA_SMA_Close( s );
+         return TA_STREAM_ADVANCE_WRONG_COUNT;
+      }
+      TA_StreamAdvance( s );
+      SF_ADV_READ( "SMA(saturate)", s, b1, n1 );
+      TA_SMA_Close( s );
+      if( b1 != b0 || n1 != TA_MAX_INDEX )
+      {
+         printf( "  SMA(saturate): the count did not saturate (%d,%d)\n", b1, n1 );
+         return TA_STREAM_ADVANCE_WRONG_COUNT;
+      }
+      sfAdvSaturates++;
    }
    return TA_TEST_PASS;
 }
@@ -847,6 +953,8 @@ ErrorNumber test_func_stream_finite( TA_History *history )
    sfBarRejects = sfStateHolds = sfParamRejects = 0;
    sfAdvRejects = sfAdvHolds = sfAdvResumes = sfAdvValues = sfAdvPeekStills = 0;
    sfAdvValueHolds = sfAdvValueTracks = 0;
+   sfAdvSkips = sfAdvSkipHolds = 0;
+   sfAdvNullRejects = sfAdvSaturates = 0;
 
    if( ( errNb = sf_sma()       ) != TA_TEST_PASS ) return errNb;
    if( ( errNb = sf_minus_di()  ) != TA_TEST_PASS ) return errNb;
@@ -868,7 +976,9 @@ ErrorNumber test_func_stream_finite( TA_History *history )
    }
    if( sfAdvRejects < 24 || sfAdvHolds < 66 || sfAdvResumes < 24 ||
        sfAdvValues < 33 || sfAdvPeekStills < 48 ||
-       sfAdvValueHolds < 33 || sfAdvValueTracks < 33 )
+       sfAdvValueHolds < 33 || sfAdvValueTracks < 33 ||
+       sfAdvSkips < 24 || sfAdvSkipHolds < 33 ||
+       sfAdvNullRejects < 1 || sfAdvSaturates < 1 )
    {
       printf( "  Failed: the rejected-Update advance gate ran fewer checks "
               "than it was written with\n" );

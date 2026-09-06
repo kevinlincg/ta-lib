@@ -320,7 +320,7 @@ of floors: every streaming function must report a non-zero `peek_reps`, and
 refusals outnumbering completed probes on one request is a failure of its own.
 
 | **state equivalence** | the whole handle after `Open(P)` + `n-P` updates vs the handle after `Open(n)` | a defect present in BOTH tiers |
-| **range** | the handle's `OutRange` against the batch range, at four sites: the `OpenAndFill` handle, `Open(P)` + updates, the anchored `OpenInternal`, and the forked handle | an anchor the history does not reach — every site keeps `lb < Sidx < svN - 1`, so the post-clamp history re-check is pinned in the generator instead |
+| **range** | the handle's `OutRange` against the batch range, at five sites: the `OpenAndFill` handle, `Open(P)` + updates, the anchored `OpenInternal`, the forked handle, and the same prefix handle after one `TA_StreamAdvance` (which must report exactly one more) | an anchor the history does not reach — every site keeps `lb < Sidx < svN - 1`, so the post-clamp history re-check is pinned in the generator instead |
 
 Of the five value families, two delegate to the batch transcription — the
 `OpenAndFill` and anchored `OpenInternal` legs — leaving the prefix sweep's
@@ -341,8 +341,8 @@ C-only nor a value comparison — it compares a number pair, so it sees what eve
 value leg is structurally blind to — and the first with a per-SITE ratchet rather
 than a total. Each server reports which of its own sites fired (`range_sites`)
 and which set it has (`range_sites_all`); the driver ORs the mask across the run
-and demands every bit, because a total cannot see one site of four stop. Rust
-declares three: its server is a separate crate and cannot reach the `pub(crate)`
+and demands every bit, because a total cannot see one site of five stop. Rust
+declares four: its server is a separate crate and cannot reach the `pub(crate)`
 `_OpenInternal` seam, so it says so rather than pretending.
 `sv_range_sites_mask_matches_the_declared_set` checks the bits a server ORs in
 against the set it declares, on emitted text, since a site added without joining

@@ -1065,11 +1065,7 @@ TA_LIB_API TA_RetCode TA_BBANDS_Update( TA_BBANDS_Stream *stream, double inReal,
    TA_RetCode retCode;
 
    if( !stream || !outRealUpperBand || !outRealMiddleBand || !outRealLowerBand ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    retCode = TA_BBANDS_StepImpl( stream, inReal, outRealUpperBand, outRealMiddleBand, outRealLowerBand );
    if( retCode != TA_SUCCESS ) return retCode;
    stream->cur_outRealUpperBand = *outRealUpperBand;

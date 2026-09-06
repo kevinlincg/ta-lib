@@ -428,11 +428,7 @@ TA_LIB_API TA_RetCode TA_STDDEV_Update( TA_STDDEV_Stream *stream, double inReal,
    TA_RetCode retCode;
 
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    retCode = TA_STDDEV_StepImpl( stream, inReal, outReal );
    if( retCode != TA_SUCCESS ) return retCode;
    stream->cur_outReal = *outReal;

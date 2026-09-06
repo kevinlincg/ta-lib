@@ -484,11 +484,7 @@ TA_LIB_API TA_RetCode TA_KDJ_Update( TA_KDJ_Stream *stream, double inHigh, doubl
    TA_RetCode retCode;
 
    if( !stream || !outK || !outD || !outJ ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) || !TA_IS_FINITE( inClose ) ) return TA_BAD_PARAM;
    retCode = TA_KDJ_StepImpl( stream, inHigh, inLow, inClose, outK, outD, outJ );
    if( retCode != TA_SUCCESS ) return retCode;
    stream->cur_outK = *outK;

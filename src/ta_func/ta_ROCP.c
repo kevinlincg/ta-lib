@@ -429,11 +429,7 @@ TA_RetCode TA_ROCP_OpenAndFillInternal( struct TA_ROCP_Stream **stream, const do
 TA_LIB_API TA_RetCode TA_ROCP_Update( TA_ROCP_Stream *stream, double inReal, double *outReal )
 {
    if( !stream || !outReal ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    TA_ROCP_StepImpl( stream, inReal, outReal );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;

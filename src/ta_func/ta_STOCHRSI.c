@@ -572,11 +572,7 @@ TA_LIB_API TA_RetCode TA_STOCHRSI_Update( TA_STOCHRSI_Stream *stream, double inR
    TA_RetCode retCode;
 
    if( !stream || !outFastK || !outFastD ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    retCode = TA_STOCHRSI_StepImpl( stream, inReal, outFastK, outFastD );
    if( retCode != TA_SUCCESS ) return retCode;
    stream->cur_outFastK = *outFastK;

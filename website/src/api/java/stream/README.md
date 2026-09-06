@@ -46,7 +46,7 @@ double v = s.update(newClose);                  // throws only on a non-finite b
 double provisional = s.peek(formingClose);      // state left unchanged
 ```
 
-`open` returns the stream directly; its `value()` starts at the last history bar's value. After a successful `open`, the only thing `update` and `peek` reject is invalid input such as NaN or ±Inf. A rejected bar leaves the stream's **state** untouched — nothing is committed — but a rejected `update` still advances `outRange()` by one, its output being the previous one, held; `value()` answers the value(s) at the last bar the stream counted (see [Utility Calls](#utility-calls)). `peek` advances nothing.
+`open` returns the stream directly; its `value()` starts at the last history bar's value. After a successful `open`, the only thing `update` and `peek` reject is invalid input such as NaN or ±Inf. A rejection changes nothing at all — no state, no value, and no range. To count a rejected bar rather than re-feed it, call `advance()`; `value()` then answers the value(s) at the last bar the stream counted (see [Utility Calls](#utility-calls)).
 
 ## Rules
 
@@ -115,6 +115,7 @@ The optional parameters and output arrays are exactly the [batch method](/api/ja
 | `stream.value()` / `stream.value(out)` | any time | the value(s) at the last bar the stream counted, without recomputing |
 | `stream.clone()` | any time | an independent fork of the stream, at the same bar |
 | `stream.outRange()` | any time | the bars the stream has an output for — the batch range over the same bars |
+| `stream.advance()` | after a bar you will not feed | counts that bar and nothing else |
 
 ```java
 Core.SmaStream s = core.smaOpen(history, 30);
@@ -122,14 +123,15 @@ Core.SmaStream s = core.smaOpen(history, 30);
 double v = s.value();               // the value at the last bar s counted
 Core.SmaStream fork = s.clone();    // independent from here on
 OutRange r = s.outRange();          // the bars s has an output for
+s.advance();                        // a bar you skipped, counted
 ```
 
 `value()` hands back what `open` or the last `update` already gave you: it
 recomputes nothing and takes no bar. A single-output function returns `double`; a
 multi-output one takes a `Core.<Name>Out` and writes every output into it at
-once. `open` seeds it, an accepted bar replaces it, and a rejected bar holds it —
-a held value is that bar's output — while `peek` leaves it alone. So it always
-names the bar `outRange()` reports.
+once. `open` seeds it, an accepted bar replaces it, and a bar you skip with
+`advance()` holds it — a held value is that bar's output — while `peek` and a
+rejected bar leave it alone. So it always names the bar `outRange()` reports.
 
 `clone()` gives a second, independent stream at the same bar: arrays are copied and
 sub-streams cloned recursively, and the fork carries the value and the range
@@ -141,12 +143,15 @@ the warm-up history is gone once `open` returns — and it is what makes `value(
 worth having, since a fork has no call that handed you its value.
 
 `outRange()` reports the bars the stream has an output for: `(lookback,
-historyLen - lookback)` at `open`, then one more for every bar the call accepts
-as data, whether the step computes on it or it is turned down as non-finite — it
-happened and holds a position in the series, and its output is the previous one,
-held. That is what keeps two streams on the same feed positionally aligned when
-one rejects a bar the other accepts. `peek` counts nothing, and neither does a
-malformed call — a fault in the call is not a bar.
+historyLen - lookback)` at `open`, then one more for every bar `update` accepts. A
+rejected `update` adds nothing, and neither does `peek`.
+
+`advance()` counts a bar the stream was never fed — one an `update` rejected and
+that will not be re-fed, or a session with no print. It moves the range by one and
+nothing else: the state is untouched and `value()` keeps answering the previous
+output, which is that bar's output. Without it two streams on one feed drift a bar
+apart the moment one of them skips, so decide at the rejection: re-feed the bar
+with the corrected value, or count it here.
 
 See [Rules](#rules) for when concurrent reads of these are safe.
 
@@ -155,8 +160,8 @@ See [Rules](#rules) for when concurrent reads of these are safe.
 | Call | Behaviour |
 |------|-----------|
 | `<name>Open` / `<name>OpenAndFill` | Too little history throws `InsufficientHistoryException` (a subclass of `IllegalArgumentException` — catch it to accumulate more bars and retry). Out-of-range parameters throw plain `IllegalArgumentException`. |
-| `update` / `peek` | `IllegalArgumentException` on invalid input such as NaN or ±Inf. The stream's state is untouched — nothing is committed — but a rejected `update` still advances `outRange()` by one, and `value()` answers the value(s) at the last bar the stream counted; `peek` advances nothing. Nothing else throws after a successful `open` (see the note below for the one composed-indicator corner). |
-| `value` / `clone` / `outRange` | Never throw. |
+| `update` / `peek` | `IllegalArgumentException` on invalid input such as NaN or ±Inf. A rejection changes nothing at all — no state, no value, and no range — so to count a rejected bar rather than re-feed it, call `advance()`. Nothing else throws after a successful `open` (see the note below for the one composed-indicator corner). |
+| `value` / `clone` / `outRange` / `advance` | Never throw. |
 
 ## Discovering streamable functions
 

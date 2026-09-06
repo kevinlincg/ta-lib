@@ -1417,20 +1417,21 @@ fn identity_anchor_clamps_before_it_rechecks_in_every_backend() {
 /// The sets differ, which is why the declaration is a mask and not a count (see
 /// `SvRangeSite`): C, Java and C# reach the anchored `_OpenInternal` seam and
 /// Rust's server, a separate crate, cannot. All four can fork a live stream
-/// since C gained `TA_<N>_Clone` (#287), so Rust is the one server whose set is
-/// a strict subset — and a count could not say WHICH sites it has.
+/// since C gained `TA_<N>_Clone` (#287), and all four advance a handle without a
+/// bar (#384), so Rust is the one server whose set is a strict subset — and a
+/// count could not say WHICH sites it has.
 #[test]
 fn sv_range_sites_mask_matches_the_declared_set() {
     let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../ta_codegen/input");
     let enums = parser::enums::load_enums(&base.join("enums.yaml"));
     let funcs: Vec<ir::FuncDef> = discover_indicators().iter().map(|n| load_indicator(n).0).collect();
 
-    // Fill = 1, Prefix = 2, Anchored = 4, Copy = 8.
+    // Fill = 1, Prefix = 2, Anchored = 4, Copy = 8, Advance = 16.
     let servers = [
-        ("c", ta_codegen_lib::server_gen::generate_c_server(&funcs, &enums), 1 | 2 | 4 | 8u32),
-        ("java", ta_codegen_lib::server_gen::generate_java_server(&funcs, &enums), 1 | 2 | 4 | 8),
-        ("csharp", ta_codegen_lib::server_gen::generate_csharp_server(&funcs, &enums), 1 | 2 | 4 | 8),
-        ("rust", ta_codegen_lib::server_gen::generate_rust_server(&funcs, &enums), 1 | 2 | 8),
+        ("c", ta_codegen_lib::server_gen::generate_c_server(&funcs, &enums), 1 | 2 | 4 | 8 | 16u32),
+        ("java", ta_codegen_lib::server_gen::generate_java_server(&funcs, &enums), 1 | 2 | 4 | 8 | 16),
+        ("csharp", ta_codegen_lib::server_gen::generate_csharp_server(&funcs, &enums), 1 | 2 | 4 | 8 | 16),
+        ("rust", ta_codegen_lib::server_gen::generate_rust_server(&funcs, &enums), 1 | 2 | 8 | 16),
     ];
 
     for (lang, src, want_all) in servers {

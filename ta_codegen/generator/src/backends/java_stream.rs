@@ -692,14 +692,28 @@ fn emit_handle_class_with_members(
          \x20      * coordinates: {{@code [begIdx, begIdx + count)}}.\n\
          \x20      * <p>It is what {{@link Core#{base}}} reports over the same bars: the\n\
          \x20      * opener sets it to {{@code (lookback, historyLen - lookback)}}, every\n\
-         \x20      * {{@code update}} adds one to the count — a bar rejected for being\n\
-         \x20      * non-finite included, because it still happened — {{@code peek}} leaves\n\
-         \x20      * it alone, and {{@code clone()}} carries it verbatim. A plain\n\
+         \x20      * accepted {{@code update}} adds one to the count — a rejected one\n\
+         \x20      * changes nothing, and neither does {{@code peek}} — and\n\
+         \x20      * {{@code clone()}} carries it verbatim. A plain\n\
          \x20      * {{@code open}} hands back only the last value, a subset of this range,\n\
          \x20      * because the caller chose not to take the fill.\n\
          \x20      */\n\
          \x20     public OutRange outRange() {{ return new OutRange(outRangeBegIdx, outRangeCount); }}",
         base = base_name(func)
+    );
+    let _ = writeln!(
+        o,
+        "\n      /**\n\
+         \x20      * Count one bar this stream was not fed: {{@link #outRange()}} advances\n\
+         \x20      * by one and nothing else moves — {vlink} keeps answering the previous\n\
+         \x20      * output, which is this bar's output too.\n\
+         \x20      * <p>For a bar the caller leaves out: one an {{@code update}} rejected\n\
+         \x20      * and that will not be re-fed, or a session with no print. Without it\n\
+         \x20      * two handles on one feed drift a bar apart when only one of them skips.\n\
+         \x20      */\n\
+         \x20     public void advance() {{ {} }}",
+        advance_out_range(),
+        vlink = value_link(func)
     );
 
     // Deep-copy constructor: scalars assign, arrays clone (element-wise for
@@ -857,15 +871,12 @@ fn advance_out_range() -> &'static str {
 /// retained: one non-finite bar poisons every recursive accumulator in it for
 /// the rest of its life, long after the feed recovers.
 ///
-/// `advance` is rule U3's other half: a non-finite bar is still a bar, so the
-/// committing entry points count it before throwing — which is what keeps two
-/// handles driven off one feed positionally aligned when one rejects a bar the
-/// other accepts. `peek` passes `false`; a peek that moved the count would be a
-/// peek that wrote the handle.
+/// The rejection changes nothing at all — the produced-bar count included.
+/// Counting a bar the caller declined to commit is `advance()`'s job.
 ///
 /// `IllegalArgumentException` carrying the same `"<NAME> <what>: "` prefix the
 /// open rejections use, so one catch clause covers the whole tier.
-fn finite_bar_check(func: &FuncDef, indent: &str, what: &str, advance: bool) -> String {
+fn finite_bar_check(func: &FuncDef, indent: &str, what: &str) -> String {
     let bars = streaming::input_array_names(func);
     if bars.is_empty() {
         return String::new();
@@ -875,14 +886,7 @@ fn finite_bar_check(func: &FuncDef, indent: &str, what: &str, advance: bool) -> 
     let cond = conds.join(" || ");
     let throw =
         format!("throw new TaLibArgumentException(\"{n} {what}: BadParam\", RetCode.BadParam);");
-    if advance {
-        format!(
-            "{indent}if( {cond} ) {{\n{indent}   {}\n{indent}   {throw}\n{indent}}}\n",
-            advance_out_range()
-        )
-    } else {
-        format!("{indent}if( {cond} )\n{indent}   {throw}\n")
-    }
+    format!("{indent}if( {cond} )\n{indent}   {throw}\n")
 }
 
 
@@ -922,12 +926,11 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
          \x20      * Never allocates handle state.\n\
          \x20      * <p>Throws {{@link IllegalArgumentException}} if any bar value is not\n\
          \x20      * finite (NaN or an infinity). That check runs before anything is\n\
-         \x20      * written, so the state is left exactly as it was: the rejected bar's\n\
-         \x20      * output is the previous value, held, and {vlink} answers it.\n\
-         \x20      * The stream stays usable, so skip the bar or re-open on a clean\n\
-         \x20      * history. {{@link #outRange()}} does advance: the bar happened and\n\
-         \x20      * occupies a position in the series, so the handle counts it, which is\n\
-         \x20      * what keeps two handles on one feed aligned when only one rejects.\n\
+         \x20      * written, so nothing moves — {{@link #outRange()}} included — and\n\
+         \x20      * {vlink} still answers the previous value. Re-feed the bar when a\n\
+         \x20      * corrected value arrives, or call {{@link #advance()}} to count it and\n\
+         \x20      * carry on; two handles on one feed drift a bar apart if neither\n\
+         \x20      * happens.\n\
          \x20      * This is the one place the streaming tier is stricter than\n\
          \x20      * the batch API, which computes on whatever it is given: a handle\n\
          \x20      * retains its state, so a single non-finite bar would poison every\n\
@@ -935,14 +938,11 @@ fn emit_update_method(o: &mut String, func: &FuncDef) {
          \x20      */"
     );
     let _ = writeln!(o, "      public {vt} update( {sig_bars}{sink} ) {{");
-    // Ahead of the finite-bar check, which counts the bar it rejects: an absent
-    // sink is a caller fault, not a bar, and must not move `outRange`.
+    // U2 before U3: an absent sink is a fault in the call, not in the bar.
     o.push_str(&require_sink(func, "         ", "update"));
-    o.push_str(&finite_bar_check(func, "         ", "update", true));
+    o.push_str(&finite_bar_check(func, "         ", "update"));
     let _ = writeln!(o, "         core.{base}StepImpl(this, {fwd_bars});");
-    // After the step, so a bar the step throws out of is not counted. The
-    // finite-bar reject above counts its own bar and is the only rejection that
-    // does; `peek` runs a frame that commits nothing and reaches neither.
+    // After the step, so a bar the step throws out of is not counted.
     let _ = writeln!(o, "         {}", advance_out_range());
     if multi {
         o.push_str(&write_out_stmts(func, "out", "this", "         "));
@@ -1002,7 +1002,7 @@ fn emit_peek_method(o: &mut String, func: &FuncDef, frame: Option<&str>) {
     // Ahead of the frame, not left to the transition: a rejected bar must not
     // run any of it.
     o.push_str(&require_sink(func, "         ", "peek"));
-    o.push_str(&finite_bar_check(func, "         ", "peek", false));
+    o.push_str(&finite_bar_check(func, "         ", "peek"));
     let body = frame.expect("every tier emits a peek frame");
     let _ = writeln!(o, "         {class} sp = this;");
     o.push_str(body);

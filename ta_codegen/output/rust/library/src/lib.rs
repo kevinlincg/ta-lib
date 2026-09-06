@@ -100,20 +100,26 @@
 //! assert_eq!(sma.update(16.0)?, 15.0);
 //! assert_eq!(sma.out_range().count, 4);
 //!
-//! // A non-finite bar is rejected, and still counted: the handle's output for
-//! // it is the previous one, held, and its state is untouched.
+//! // A non-finite bar is rejected, and the rejection costs nothing at all:
+//! // no state, no value, no range.
 //! assert!(sma.update(f64::NAN).is_err());
+//! assert_eq!(sma.out_range().count, 4);
+//!
+//! // Re-feed the bar when a corrected value arrives, or — when none is coming —
+//! // count it and carry on. Its output is the previous one, held.
+//! sma.advance();
 //! assert_eq!(sma.out_range().count, 5);
+//! assert_eq!(sma.value(), 15.0);
 //! # Ok::<(), ta_lib::RetCode>(())
 //! ```
 //!
 //! The handle's value at every bar is bit-identical to what the batch call
 //! reports for that bar. [`SmaStream::out_range`] carries the same
 //! [`OutRange`] the batch tier returns — the bars the handle has an output for
-//! — and every bar handed to [`SmaStream::update`] advances it by one, a bar
-//! rejected as non-finite included: its output is the previous one, held.
-//! [`SmaStream::peek`] leaves it alone; cloning a handle forks an independent
-//! stream, and dropping it closes the stream.
+//! — and every bar [`SmaStream::update`] accepts advances it by one. A rejected
+//! bar advances nothing; [`SmaStream::advance`] is how a caller counts one it
+//! decided not to feed. [`SmaStream::peek`] leaves it alone; cloning a handle
+//! forks an independent stream, and dropping it closes the stream.
 //!
 //! The full function reference, grouped by category, is at
 //! [ta-lib.org/functions](https://ta-lib.org/functions/); the guides are at

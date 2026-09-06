@@ -1696,11 +1696,7 @@ TA_RetCode TA_MAMA_OpenAndFillInternal( struct TA_MAMA_Stream **stream, const do
 TA_LIB_API TA_RetCode TA_MAMA_Update( TA_MAMA_Stream *stream, double inReal, double *outMAMA, double *outFAMA )
 {
    if( !stream || !outMAMA ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    TA_MAMA_StepImpl( stream, inReal, outMAMA, outFAMA );
    if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;

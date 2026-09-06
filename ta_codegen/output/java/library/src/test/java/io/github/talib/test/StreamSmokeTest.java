@@ -388,6 +388,8 @@ public class StreamSmokeTest {
     private static int advResumes = 0;
     private static int advValues = 0;
     private static int advPeekStills = 0;
+    private static int advSkips = 0;
+    private static int advSkipHolds = 0;
 
     /** Reads one handle's range. Handles share no supertype, so the caller hands
      *  over the accessor rather than the handle. */
@@ -397,9 +399,9 @@ public class StreamSmokeTest {
         final OutRange before = range.get();
         check(rejects(bad), what + ": update must reject a non-finite bar");
         final OutRange after = range.get();
-        check(after.begIdx() == before.begIdx() && after.count() == before.count() + 1,
-              what + ": a rejected update left (" + after.begIdx() + "," + after.count()
-              + "), expected (" + before.begIdx() + "," + (before.count() + 1) + ")");
+        check(after.begIdx() == before.begIdx() && after.count() == before.count(),
+              what + ": a rejected update moved (" + before.begIdx() + "," + before.count()
+              + ") -> (" + after.begIdx() + "," + after.count() + ")");
         advRejects++;
     }
 
@@ -433,6 +435,23 @@ public class StreamSmokeTest {
         advValues++;
     }
 
+    /** {@code advance()} — the one call that moves the range without a bar. */
+    private static void advSkip(String what, Range range, Runnable adv) {
+        final OutRange before = range.get();
+        adv.run();
+        final OutRange after = range.get();
+        check(after.begIdx() == before.begIdx() && after.count() == before.count() + 1,
+              what + ": advance() left (" + after.begIdx() + "," + after.count()
+              + "), expected (" + before.begIdx() + "," + (before.count() + 1) + ")");
+        advSkips++;
+    }
+
+    private static void advSkipHeld(String what, double before, double after) {
+        check(bitEq(before, after),
+              what + ": advance() moved value() (" + before + " -> " + after + ")");
+        advSkipHolds++;
+    }
+
     private static void advPeekStill(String what, Range range, Call c, boolean mustReject) {
         final OutRange before = range.get();
         if (mustReject) {
@@ -452,32 +471,34 @@ public class StreamSmokeTest {
     }
 
     /**
-     * What ONE rejected {@code update} costs, in absolute numbers.
+     * What ONE rejected {@code update} costs, in absolute numbers: nothing (#384).
      *
      * <p>The non-finite gate above pins a rejected {@code update} against a
      * control handle. That is an EQUIVALENCE, and therefore symmetric: it cannot
-     * see a change that moves both sides equally. Delete the advance from the emitted
-     * reject arm and both handles move at once, so the whole suite — here, in C
-     * and in C# — stays green, leaving the rule pinned only by the generator's source-text gate.
-     * This method compares against no control at all: it reads
-     * {@code outRange()}, offers one bad bar, and demands the exact numbers.
+     * see a change that moves both sides equally — put the advance back on the
+     * emitted reject arm and both handles move at once, so the whole suite —
+     * here, in C and in C# — stays green, leaving the rule pinned only by the
+     * generator's source-text gate. This method compares against no control at
+     * all: it reads {@code outRange()}, offers one bad bar, and demands the
+     * exact numbers.
      *
-     * <p>Both halves of U3 are asserted on the SAME call — the count moved by
-     * exactly one AND {@code value()} did not move. A change that stepped the
-     * state without counting, or counted while stepping, satisfies either half
-     * alone; only the pair pins "counted, not committed".
+     * <p>Both halves are asserted on the SAME call — the count did not move AND
+     * {@code value()} did not move — so a change that stepped the state while
+     * leaving the count, or the reverse, fails here rather than half-passing.
      *
-     * <p>Then a good bar, which must still produce a value and advance by one:
-     * refusing a bar beats computing on it only if the handle survives the
-     * refusal. And the mirror — {@code peek} advances NOTHING, rejected or not.
-     * That half regresses silently, because a counting peek breaks no value
-     * anywhere.
+     * <p>Then a good bar, which must produce a value and advance by exactly one:
+     * that is the retry, and it is the case an always-counting rejection could
+     * not express, since it charged one real bar twice. Then {@code advance()},
+     * the one call that moves the range without a bar: +1, with {@code value()}
+     * still answering the bar before it. And the mirror — {@code peek} moves
+     * NOTHING, rejected or not. That half regresses silently, because a counting
+     * peek breaks no value anywhere.
      *
      * <p>Coverage is by stream TIER, as everywhere else in this file: the loop
      * tier, dual-mode, both dispatch arms, the period bank, two composed
      * multi-output functions, and an integer output over four price inputs.
      */
-    private static void aRejectedUpdateCostsExactlyOneBar(
+    private static void aRejectedUpdateCostsNothingAndAdvanceCostsOneBar(
             Core core, double[] open, double[] high, double[] low, double[] close) {
         final double[] bad = { Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY };
         final int warm = 60;
@@ -505,6 +526,8 @@ public class StreamSmokeTest {
                 got[0] = s.update(close[warm]);
             });
             advProduced("SMA", got[0], s.value());
+            advSkip("SMA", s::outRange, s::advance);
+            advSkipHeld("SMA", got[0], s.value());
 
             /* --- dual-mode tier, three price inputs ------------------------ */
             final Core.MinusDiStream d = core.minusDiOpen(hw, lw, cw, 14);
@@ -521,6 +544,8 @@ public class StreamSmokeTest {
                 got[0] = d.update(high[warm], low[warm], close[warm]);
             });
             advProduced("MINUS_DI", got[0], d.value());
+            advSkip("MINUS_DI", d::outRange, d::advance);
+            advSkipHeld("MINUS_DI", got[0], d.value());
 
             /* --- dispatch, both arms; period 1 is the identity loop, which
              * never reaches a sub-stream and carries its own advance --------- */
@@ -538,6 +563,8 @@ public class StreamSmokeTest {
                     got[0] = m.update(close[warm]);
                 });
                 advProduced("MA(" + period + ")", got[0], m.value());
+                advSkip("MA(" + period + ")", m::outRange, m::advance);
+                advSkipHeld("MA(" + period + ")", got[0], m.value());
             }
 
             /* --- period bank; the poisoned slot is the PERIOD, the input that
@@ -554,6 +581,8 @@ public class StreamSmokeTest {
                 got[0] = p.update(close[warm], pw[0]);
             });
             advProduced("MAVP", got[0], p.value());
+            advSkip("MAVP", p::outRange, p::advance);
+            advSkipHeld("MAVP", got[0], p.value());
 
             /* --- composed, three outputs: all three must be left alone ----- */
             final Core.BbandsStream b = core.bbandsOpen(cw, 20, 2.0, 2.0, MAType.SMA);
@@ -584,6 +613,11 @@ public class StreamSmokeTest {
             advProduced("BBANDS.upper", gotB.realUpperBand, bNow.realUpperBand);
             advProduced("BBANDS.middle", gotB.realMiddleBand, bNow.realMiddleBand);
             advProduced("BBANDS.lower", gotB.realLowerBand, bNow.realLowerBand);
+            advSkip("BBANDS", b::outRange, b::advance);
+            b.value(bNow);
+            advSkipHeld("BBANDS.upper", gotB.realUpperBand, bNow.realUpperBand);
+            advSkipHeld("BBANDS.middle", gotB.realMiddleBand, bNow.realMiddleBand);
+            advSkipHeld("BBANDS.lower", gotB.realLowerBand, bNow.realLowerBand);
 
             /* --- composed, one sub feeding the next ------------------------ */
             final Core.StochStream k = core.stochOpen(hw, lw, cw, 5, 3, MAType.SMA, 3, MAType.SMA);
@@ -610,6 +644,10 @@ public class StreamSmokeTest {
             k.value(kNow);
             advProduced("STOCH.slowK", gotK.slowK, kNow.slowK);
             advProduced("STOCH.slowD", gotK.slowD, kNow.slowD);
+            advSkip("STOCH", k::outRange, k::advance);
+            k.value(kNow);
+            advSkipHeld("STOCH.slowK", gotK.slowK, kNow.slowK);
+            advSkipHeld("STOCH.slowD", gotK.slowD, kNow.slowD);
 
             /* --- integer output over four price inputs --------------------- */
             final Core.CdldojiStream j = core.cdldojiOpen(ow, hw, lw, cw);
@@ -634,21 +672,25 @@ public class StreamSmokeTest {
             check(gotJ[0] == 100 && j.value() == gotJ[0],
                   "CDLDOJI: the bar after the rejection produced " + gotJ[0]);
             advValues++;
+            advSkip("CDLDOJI", j::outRange, j::advance);
+            advSkipHeld("CDLDOJI", gotJ[0], j.value());
         }
 
         System.out.println("  Rejected-update advance gate (U3, absolute): "
-            + advRejects + " rejection(s) counted once, " + advHolds
+            + advRejects + " rejection(s) that cost nothing, " + advHolds
             + " untouched value(s), " + advResumes + " resumed bar(s), "
             + advValues + " value(s) produced, " + advPeekStills
-            + " peek(s) that moved nothing");
+            + " peek(s) that moved nothing, " + advSkips + " advance(s), "
+            + advSkipHolds + " value(s) held across one");
 
         /* Non-vacuity. Literal floors, every counter incremented at its own
          * assertion. */
         check(advRejects >= 24 && advHolds >= 66 && advResumes >= 24
-              && advValues >= 33 && advPeekStills >= 48,
+              && advValues >= 33 && advPeekStills >= 48
+              && advSkips >= 24 && advSkipHolds >= 33,
               "the rejected-update advance gate ran fewer checks than it was written with ("
               + advRejects + "/" + advHolds + "/" + advResumes + "/" + advValues
-              + "/" + advPeekStills + ")");
+              + "/" + advPeekStills + "/" + advSkips + "/" + advSkipHolds + ")");
     }
 
     /* ---- the registry-wide peek/copy sweep (#172 C4) --------------------- */
@@ -1009,9 +1051,11 @@ public class StreamSmokeTest {
             java.lang.reflect.Method copy = methodNamed(handle, "clone");
             java.lang.reflect.Method value = methodNamed(handle, "value");
             java.lang.reflect.Method range = methodNamed(handle, "outRange");
-            if (open == null || update == null || peek == null
-                    || copy == null || value == null || range == null) {
-                unhandled.add(name + ": handle is missing one of open/update/peek/clone/value/outRange");
+            java.lang.reflect.Method advance = methodNamed(handle, "advance");
+            if (open == null || update == null || peek == null || copy == null
+                    || value == null || range == null || advance == null) {
+                unhandled.add(name
+                    + ": handle is missing one of open/update/peek/clone/value/outRange/advance");
                 continue;
             }
 
@@ -1507,7 +1551,7 @@ public class StreamSmokeTest {
               "candle settings captured per Core instance");
 
         nonFiniteInputsAreRejected(core, open, high, low, close);
-        aRejectedUpdateCostsExactlyOneBar(core, open, high, low, close);
+        aRejectedUpdateCostsNothingAndAdvanceCostsOneBar(core, open, high, low, close);
         peekAndCopyHoldOnEveryHandle(core);
 
 

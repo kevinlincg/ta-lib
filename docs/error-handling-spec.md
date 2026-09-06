@@ -49,19 +49,17 @@ Within a tier the rules are listed **in the order they are evaluated**. A call
 that violates several rules reports the **first** one listed. This is what makes
 a multi-fault call predictable for automated tests.
 
-Two consequences worth stating outright:
+Three consequences worth stating outright:
 
 - **One error per call.** A call reports one condition and stops; it never
   accumulates.
-- **Checks precede writes**, except where a bar was accepted as data: a U3
-  rejection still counts its bar (§2.4). Every other rejection leaves each
-  caller-owned buffer, and `OutRange`, exactly as it found them.
-- **Order matters where the codes differ — and where the count does.** Rules
-  answering the same code are otherwise mutually unordered in practice: a caller
-  cannot tell which of them fired, so swapping two is invisible. U3 is the
-  exception, being the one rejection a caller can identify by reading
-  `OutRange`. What has to hold is that all four backends answer the **same code
-  for the same call**, which `--xlang-hash` compares over the whole corpus.
+- **Checks precede writes.** A rejection leaves each caller-owned buffer, and
+  `OutRange`, exactly as it found them.
+- **Order matters where the codes differ.** Rules answering the same code are
+  mutually unordered in practice: a caller cannot tell which of them fired, so
+  swapping two is invisible. What has to hold is that all four backends answer
+  the **same code for the same call**, which `--xlang-hash` compares over the
+  whole corpus.
 
 ### Vocabulary
 
@@ -115,12 +113,12 @@ undefined are collected in Part 3.
 | Rule | Condition | Result |
 |---|---|---|
 | N1 | A **valid range shorter than the lookback** | Success, zero values produced, an empty `OutRange`. Never an error. |
-| N2 | Anywhere outside the reported `OutRange` | Untouched. The library never pads, and never emits a fill value. The converse — everything *inside* the range was written — holds everywhere but a U3 rejection, which counts a bar without handing its value over: the held value **is** that bar's output and only the write is suppressed, so `Value` still answers for it (§2.4). |
+| N2 | Anywhere outside the reported `OutRange` | Untouched. The library never pads, and never emits a fill value. The converse — everything *inside* the range was written — holds everywhere but a bar counted by `TA_StreamAdvance`, which the caller declined to feed: the held value **is** that bar's output, so `Value` still answers for it (§2.4). |
 | N3 | An optional parameter set to its **default sentinel** | The documented default is substituted, then validated like any other value. |
 | N4 | An output buffer that **is** an input buffer (whole-buffer, in place) | Allowed, in the batch tier. Several bodies are written for it. |
 | N5 | A **negative** candlestick `factor` | Legal. It does not "never match" — it makes the comparison unconditionally true. |
 | N6 | The set-all / restore-all **wildcards**, where a setter documents one | Legal on those setters, and rejected on the ones that name a single target (rule G1). |
-| N7 | **Peeking** a forming bar, any number of times | Never advances the stream and never writes the handle. It can still be *rejected* (U3), and a rejected peek changes nothing either. |
+| N7 | **Peeking** a forming bar, any number of times | Never advances the stream and never writes the handle. It can still be *rejected* (U3), which changes nothing either. |
 | N8 | Buffers that **partially** overlap — same memory, different start | **Unspecified.** Only *identical* buffers are detected (rule B6). See Appendix E before assuming a diagnosis. |
 
 ---
@@ -224,7 +222,7 @@ the condition is a zero-length span and so is S1. Rust cannot express S4, and
 `tests/stream_open_contract.rs` covers S1 there.
 `scripts/check_stream_retcodes.py` carries S1 and S7 over the whole generated
 corpus in all four backends — a probe names one function, and this is what
-covers the other 175. It reads the *core's* arm, which in Java and C# the public
+covers the rest. It reads the *core's* arm, which in Java and C# the public
 frame makes unreachable, so those two frames are covered corpus-wide by
 `java_public_openers_check_arguments_then_the_index_pair` and
 `csharp_public_openers_reject_an_empty_history_as_an_index_fault` instead.
@@ -310,17 +308,17 @@ and nothing is written out (footnote [6], Appendix F).
 [8] All four converge on `TA_INSUFFICIENT_HISTORY`, which leaves a history
 *longer* than `MAX_INDEX + 1` (rule S2) as the only producer of
 `TA_OUT_OF_RANGE_END_INDEX` in this tier. Verified as uniform, not incidental:
-across all 176 streaming functions per backend, every short-history arm reports
+across every streaming function in every backend, each short-history arm reports
 this code and no other. What the four answered before the code existed, and why
 the borrowed one was wrong on its face, is Appendix D item 8.
 
 [9] **Withdrawn.** The warm-up history is an input *array*, and the library
 does not scan those. Until this was removed it was the only array in the library
-that was checked — 176 of 176 `Open` and 176 of 176 `OpenAndFill` entry points,
-in all four backends — which made "arrays are never scanned" a rule with one
-exception rather than a rule. What the scan cost, and why folding it into the
-fill loop was not the alternative, are in `docs/streaming-api-design.md`. U3 is
-untouched: a bar handed to `Update` or `Peek` is a single value.
+that was checked — every `Open` and every `OpenAndFill` entry point, in all four
+backends — which made "arrays are never scanned" a rule with one exception rather
+than a rule. What the scan cost, and why folding it into the fill loop was not
+the alternative, are in `docs/streaming-api-design.md`. U3 is untouched: a bar
+handed to `Update` or `Peek` is a single value.
 
 ### 2.4 Streaming tier — advancing (`Update`, `Peek`)
 
@@ -334,13 +332,23 @@ untouched: a bar handed to `Update` or `Peek` is a single value.
 [10] The other three have no component to decline at this tier: Rust and C#
 return the value, and Java writes every field of a caller-owned sink.
 
-**A bar the call accepts as data advances the count, whether the step computes on
-it or U3 turns it down.** `OutRange` counts the bars this handle has an output
-for, and a bar U3 turned down has one: the previous output, held. So `Value`
-always answers for bar `begIdx + count - 1`, however many times a value repeats,
-and the handle's *state* is what a rejection leaves untouched — no accumulator
-moves — which is the whole point of rejecting rather than computing. `Peek`
-produces no output and counts nothing, under any outcome.
+**A rejection changes nothing at all.** No accumulator moves, no output is
+written, and `OutRange` does not advance — a rejected `Update` costs the caller
+nothing but the call, and the handle is intact and usable for the next bar, so a
+transient bad print clears itself. `Peek` is the same, under any outcome.
+
+That leaves the caller two ways to answer a bar `Update` turned down, and having
+to pick one is the point. **Re-feed** it when a corrected value arrives — that is
+`Update` again, and the only path that reaches the state. Or **count** it with
+`TA_StreamAdvance` (`advance()`, `advance()`, `Advance()`) when no corrected
+value is coming: that moves the count by one and nothing else, so the bar's
+output is the previous one, held, and `Value` still answers for bar
+`begIdx + count - 1`.
+
+Neither is automatic, and doing neither drifts: two handles driven off one feed,
+one rejecting a bar the other accepts, end a bar apart permanently. The drift is
+detectable, which is why the choice sits with the caller — the error is in hand at
+the moment of decision, and `OutRange` is readable.
 
 The failure is still reported, and it is reported *only* as a failure: no backend
 publishes the held value through the call's own result, because Rust's
@@ -349,26 +357,11 @@ backends could honour and one could not would be worse than the accessor. `Value
 is how a caller reaches the hold, and whether to accept it or override it is the
 caller's business, at the caller's layer — never the stream's internal state.
 
-**U3 is the one rejection that advances `OutRange`.** U1 and U2 do not: they are
-faults in the *call* rather than in the data — no bar was ever handed over — and
-they leave the handle exactly as it was.
-
-The mirror case is a function whose *output* is legitimately non-finite: the eight
+The mirror case is a function whose *output* is legitimately non-finite: those
 carrying `TA_FUNC_FLG_NAN_INF_OUT` succeed, so the state **is** touched, `Value`
-answers that non-finite value, and `OutRange` advances by one exactly as above.
-Both directions leave the caller the same job — override the output at their own
-layer, or don't — which is why they are one model and not two rules.
-
-Advancing is what keeps two handles driven off the same feed positionally aligned
-when one rejects a bar the other accepts. Without it a caller composing indicators
-by hand — the upstream one legitimately producing NaN under `TA_FUNC_FLG_NAN_INF_OUT`,
-the downstream one rejecting it — ends up with two handles a bar apart, permanently,
-with no error to see and plausible numbers still coming out.
-
-What the caller does about the non-finite value is the caller's, and the streaming
-tier deliberately does not decide it: the bar is counted, the error is reported,
-and the state is intact and usable for the next bar — so a transient bad print
-clears itself.
+answers that non-finite value, and `OutRange` advances by one as any accepted bar
+does. Both directions leave the caller the same job — override the output at their
+own layer, or don't.
 
 **A declination is a property of the call.** U6a is S6a at this tier, and the two
 are independent: the set an `Update` declines may differ from the set the opener
@@ -416,21 +409,26 @@ Java's and C#'s `clone()`/`Clone()` and Rust's derived `Clone` cannot fail
 short of the runtime's own allocation failure, which is not a `RetCode`.
 
 U3 is checked with an explicit finite test, so it rejects NaN and both
-infinities alike. Verified: 176 of 176 `Update` and `Peek` entry points check
-their bar.
+infinities alike. Verified: every `Update` and every `Peek` entry point checks
+its bar.
 
 **Reading the range** has an error surface in C alone, where it is a function
 rather than a field: `TA_StreamOutRange` answers `TA_BAD_PARAM` for a NULL
 handle **and** for either NULL out-parameter. The other three read a field on an
 object that cannot be absent.
 
+**Advancing it** the same way: `TA_StreamAdvance` answers `TA_BAD_PARAM` for a
+NULL handle and nothing else; the other three take no argument to reject. Like
+the accessor it is generic over any handle — one call, not one per function — and
+the count it moves saturates at `TA_MAX_INDEX` exactly as `Update`'s does.
+
 **One documented hole.** A composed function drives its sub-streams through their
 *public* entry points, so a sub-stream re-checks a value the library itself
 produced. If such an intermediate were ever non-finite the sub-stream would
 reject it, and the rejection would surface after earlier sub-streams in the
-pipeline had already advanced — leaving the handle partway through a bar, and
-the rejecting sub-stream's own `OutRange` counting a bar the parent's does not,
-alongside any sibling that already ran.
+pipeline had already stepped and counted their own bar — leaving the handle
+partway through a bar, with those siblings' `OutRange` one ahead of both the
+parent's and the rejecting sub-stream's.
 Reaching it requires an intermediate to overflow to ±Inf, i.e. input magnitudes
 around 1e306. Out of scope by the same reasoning as issue #191; recorded so it is
 not rediscovered. All four backends agree on the behaviour, and the reported
@@ -510,7 +508,7 @@ not on which function was called.
 | Where a non-finite value arrives | What the library does | Rule |
 |---|---|:---:|
 | Inside an **input array**: a batch input series, or the warm-up history handed to `Open` / `OpenAndFill` | Nothing. **Undefined behaviour** — not detected, not rejected, nothing promised about the output or about a handle opened from it. Do not do it. | — |
-| As a **bar** handed to `Update` / `Peek` | **An error**: the bar is non-finite. It is still counted, its output being the previous one held. | U3 |
+| As a **bar** handed to `Update` / `Peek` | **An error**: the bar is non-finite. Nothing moves — re-feed the bar, or count it with `TA_StreamAdvance`. | U3 |
 | As a **real optional parameter** | **An error**: outside the parameter's range. | B3, S3 |
 | As a candlestick **`factor`** — a global setting rather than a call parameter | **An error for NaN.** An infinity is accepted, and G6 says why. | G6 |
 
@@ -697,26 +695,26 @@ Each ✅ rests on two independent checks; neither alone is enough.
    size threshold, against a non-allocating control that must still succeed.
 
 2. **A structural check over the whole generated corpus** — a probe on one
-   function says nothing about the other 173. Verified mechanically, from the
+   function says nothing about the rest. Verified mechanically, from the
    generated sources:
 
    | Claim | Result |
    |---|---|
-   | C batch: `startIdx` guard, then `endIdx` guard, before any other return | 176 / 176 |
-   | C batch: parameter validation, then every input, the `OutRange` pointers and every output null-checked, inputs before outputs | 352 / 352 |
-   | Rust batch: `startIdx` guard → `endIdx` guard → lookback (which returns B3) → every input, then every output length-checked | 176 / 176 |
-   | Rust numerics: `startIdx` guard → `endIdx` guard → bounds asserts (following the FMA dispatcher to the real core) | 176 / 176 |
-   | Java batch: clamp (which raises B3), then every length check, then the core | 352 / 352 |
-   | C# batch: clamp, then every length check, then the core | 352 / 352 |
+   | C batch: `startIdx` guard, then `endIdx` guard, before any other return | every function |
+   | C batch: parameter validation, then every input, the `OutRange` pointers and every output null-checked, inputs before outputs | every function, both overloads |
+   | Rust batch: `startIdx` guard → `endIdx` guard → lookback (which returns B3) → every input, then every output length-checked | every function |
+   | Rust numerics: `startIdx` guard → `endIdx` guard → bounds asserts (following the FMA dispatcher to the real core) | every function |
+   | Java batch: clamp (which raises B3), then every length check, then the core | every function, both overloads |
+   | C# batch: clamp, then every length check, then the core | every function, both overloads |
    | C# cores carrying an overlap guard wherever one is expressible | no core unguarded where the type expresses it |
-   | Short-history arm reports `TA_INSUFFICIENT_HISTORY` | 176 streaming functions per backend, no backend mixing it with anything else |
+   | Short-history arm reports `TA_INSUFFICIENT_HISTORY` | every streaming function, per backend, no backend mixing it with anything else |
    | Empty-history arm reports `TA_OUT_OF_RANGE_START_INDEX` | every opener arm in all four backends, no backend mixing it with anything else |
-   | Java public opener: the history's null test, then the index pair, then every other argument | 176 `Open` + 176 `OpenAndFill` |
-   | C# public opener: an empty history is the index fault, ahead of every other input | 176 `Open` + 176 `OpenAndFill` |
-   | Rust/Java/C# public `OpenAndFill`: every output bounded by `historyLen - <N>_Lookback(...)` | 176 per backend |
+   | Java public opener: the history's null test, then the index pair, then every other argument | every `Open` and `OpenAndFill` |
+   | C# public opener: an empty history is the index fault, ahead of every other input | every `Open` and `OpenAndFill` |
+   | Rust/Java/C# public `OpenAndFill`: every output bounded by `historyLen - <N>_Lookback(...)` | every one, per backend |
 
-   Every 352 is the 176 definitions in `ta_codegen/input/` × the double and
-   float overloads, so the float surface is covered by the same evidence.
+   The "both overloads" rows are every definition in `ta_codegen/input/` taken
+   twice, once per overload, so the float surface rests on the same evidence.
 
 Most of these probes are not committed. They are throwaway drivers: the shipped
 gates cover values, and these cover the failure paths once, to produce this

@@ -860,11 +860,7 @@ TA_LIB_API TA_RetCode TA_MACDEXT_Update( TA_MACDEXT_Stream *stream, double inRea
    TA_RetCode retCode;
 
    if( !stream || !outMACD || !outMACDSignal || !outMACDHist ) return TA_BAD_PARAM;
-   if( !TA_IS_FINITE( inReal ) )
-   {
-      if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
-      return TA_BAD_PARAM;
-   }
+   if( !TA_IS_FINITE( inReal ) ) return TA_BAD_PARAM;
    retCode = TA_MACDEXT_StepImpl( stream, inReal, outMACD, outMACDSignal, outMACDHist );
    if( retCode != TA_SUCCESS ) return retCode;
    stream->cur_outMACD = *outMACD;
