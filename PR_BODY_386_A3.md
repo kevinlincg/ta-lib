@@ -108,19 +108,19 @@ overlapping ones.
 
 ## Verification
 
-- `cargo test` in `ta_codegen/generator`: 936 passed, 0 failed. `cargo clippy
+Rebased onto dev `6255df5b` (after #387's typed accessors and #390's divisor
+fix), one commit, and re-run there from scratch:
+
+- `cargo test` in `ta_codegen/generator`: 938 passed, 0 failed. `cargo clippy
   --all-targets` clean.
-- `./ta_regtest` green (the full hand-written C suite, including the streaming
-  gates and the frozen v0.6.4 leg).
-- `ta_regtest --codegen --language=c` green over the whole corpus (161 pass, 0
-  fail), on this branch merged to dev tip `7625e259`, and `./ta_regtest` green
-  again on that merge. An earlier run at `f0f89e1c` could reach no verdict at
-  all: the short-history leg reported a false
-  `open accepted a history shorter than one output` on every unstable-period
-  function until `7625e259` fixed it.
-- Regenerated: the diff is `src/ta_func/*.c` plus the emitter; `output/rust`,
-  `output/java` and `output/csharp` regenerate byte-identical, and no generated
-  server or bench file moves.
+- `./ta_regtest` green — the full hand-written C suite, including the streaming
+  gates and the frozen v0.6.4 leg.
+- `ta_regtest --codegen --language=c` green over the whole corpus, 161 pass / 0
+  fail, no mismatches.
+- Regenerating on the rebased tree changes nothing: the diff is `src/ta_func/*.c`
+  plus the emitter, `ta_utility.{c,h}`, the runtime gate and two doc files.
+  `output/rust`, `output/java` and `output/csharp` regenerate byte-identical, and
+  no generated server or bench file moves.
 - **Not run here:** the cross-language `--codegen` legs for Rust/Java/C#, and the
   nightly `--xlang-hash` and `--fuzz-064`. No value path changes and the three
   ported backends' sources are byte-identical, but I did not exercise them.
