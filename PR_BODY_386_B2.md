@@ -23,7 +23,7 @@ Coverage after the change: 201 of 201 streaming functions report the leg on Java
 
 ## Verification
 
-Tree at dev `69ffb01b`. gcc 13.3 / Release, OpenJDK 21.
+Branch is based on dev `51fb0968`; every run below was made at `69ffb01b`, the commit before it — the one commit between them touches `scripts/python-dev.py` and `scripts/README.md` only, so nothing here was re-measured on it. gcc 13.3 / Release, OpenJDK 21.
 
 | what | result |
 |---|---|
