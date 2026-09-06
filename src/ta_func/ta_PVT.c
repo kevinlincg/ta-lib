@@ -161,7 +161,7 @@ TA_RetCode TA_S_PVT( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_PVT_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -325,6 +325,21 @@ TA_LIB_API TA_RetCode TA_PVT_Peek( const TA_PVT_Stream *stream, double inClose, 
 TA_LIB_API TA_RetCode TA_PVT_Close( TA_PVT_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_PVT_OutRange( const TA_PVT_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_PVT_Advance( TA_PVT_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

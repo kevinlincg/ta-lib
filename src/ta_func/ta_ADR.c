@@ -242,7 +242,7 @@ TA_RetCode TA_S_ADR( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_ADR_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -485,6 +485,21 @@ TA_LIB_API TA_RetCode TA_ADR_Peek( const TA_ADR_Stream *stream, double inHigh, d
 TA_LIB_API TA_RetCode TA_ADR_Close( TA_ADR_Stream *stream )
 {
    TA_ADR_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ADR_OutRange( const TA_ADR_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ADR_Advance( TA_ADR_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

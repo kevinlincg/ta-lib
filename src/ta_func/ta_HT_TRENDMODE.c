@@ -1055,7 +1055,7 @@ TA_RetCode TA_S_HT_TRENDMODE( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_HT_TRENDMODE_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -2477,6 +2477,21 @@ TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Peek( const TA_HT_TRENDMODE_Stream *stream
 TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Close( TA_HT_TRENDMODE_Stream *stream )
 {
    TA_HT_TRENDMODE_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_HT_TRENDMODE_OutRange( const TA_HT_TRENDMODE_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Advance( TA_HT_TRENDMODE_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

@@ -113,7 +113,7 @@ undefined are collected in Part 3.
 | Rule | Condition | Result |
 |---|---|---|
 | N1 | A **valid range shorter than the lookback** | Success, zero values produced, an empty `OutRange`. Never an error. |
-| N2 | Anywhere outside the reported `OutRange` | Untouched. The library never pads, and never emits a fill value. The converse — everything *inside* the range was written — holds everywhere but a bar counted by `TA_StreamAdvance`, which the caller declined to feed: the held value **is** that bar's output, so `Value` still answers for it (§2.4). |
+| N2 | Anywhere outside the reported `OutRange` | Untouched. The library never pads, and never emits a fill value. The converse — everything *inside* the range was written — holds everywhere but a bar counted by `TA_<NAME>_Advance`, which the caller declined to feed: the held value **is** that bar's output, so `Value` still answers for it (§2.4). |
 | N3 | An optional parameter set to its **default sentinel** | The documented default is substituted, then validated like any other value. |
 | N4 | An output buffer that **is** an input buffer (whole-buffer, in place) | Allowed, in the batch tier. Several bodies are written for it. |
 | N5 | A **negative** candlestick `factor` | Legal. It does not "never match" — it makes the comparison unconditionally true. |
@@ -340,7 +340,7 @@ transient bad print clears itself. `Peek` is the same, under any outcome.
 That leaves the caller two ways to answer a bar `Update` turned down, and having
 to pick one is the point. **Re-feed** it when a corrected value arrives — that is
 `Update` again, and the only path that reaches the state. Or **count** it with
-`TA_StreamAdvance` (`advance()`, `advance()`, `Advance()`) when no corrected
+`TA_<NAME>_Advance` (`advance()`, `advance()`, `Advance()`) when no corrected
 value is coming: that moves the count by one and nothing else, so the bar's
 output is the previous one, held, and `Value` still answers for bar
 `begIdx + count - 1`.
@@ -413,14 +413,14 @@ infinities alike. Verified: every `Update` and every `Peek` entry point checks
 its bar.
 
 **Reading the range** has an error surface in C alone, where it is a function
-rather than a field: `TA_StreamOutRange` answers `TA_BAD_PARAM` for a NULL
+rather than a field: `TA_<NAME>_OutRange` answers `TA_BAD_PARAM` for a NULL
 handle **and** for either NULL out-parameter. The other three read a field on an
 object that cannot be absent.
 
-**Advancing it** the same way: `TA_StreamAdvance` answers `TA_BAD_PARAM` for a
-NULL handle and nothing else; the other three take no argument to reject. Like
-the accessor it is generic over any handle — one call, not one per function — and
-the count it moves saturates at `TA_MAX_INDEX` exactly as `Update`'s does.
+**Advancing it** the same way: `TA_<NAME>_Advance` answers `TA_BAD_PARAM` for a
+NULL handle and nothing else; the other three take no argument to reject. Both
+are typed per function in every backend since #387, and the count the advance
+moves saturates at `TA_MAX_INDEX` exactly as `Update`'s does.
 
 **One documented hole.** A composed function drives its sub-streams through their
 *public* entry points, so a sub-stream re-checks a value the library itself
@@ -508,7 +508,7 @@ not on which function was called.
 | Where a non-finite value arrives | What the library does | Rule |
 |---|---|:---:|
 | Inside an **input array**: a batch input series, or the warm-up history handed to `Open` / `OpenAndFill` | Nothing. **Undefined behaviour** — not detected, not rejected, nothing promised about the output or about a handle opened from it. Do not do it. | — |
-| As a **bar** handed to `Update` / `Peek` | **An error**: the bar is non-finite. Nothing moves — re-feed the bar, or count it with `TA_StreamAdvance`. | U3 |
+| As a **bar** handed to `Update` / `Peek` | **An error**: the bar is non-finite. Nothing moves — re-feed the bar, or count it with `TA_<NAME>_Advance`. | U3 |
 | As a **real optional parameter** | **An error**: outside the parameter's range. | B3, S3 |
 | As a candlestick **`factor`** — a global setting rather than a call parameter | **An error for NaN.** An infinity is accepted, and G6 says why. | G6 |
 
@@ -573,7 +573,7 @@ reason rule S2 is ⚠️ there (footnote [5]): reaching it needs a
 |---|---|---|---|---|
 | batch | `*outBegIdx`, `*outNBElement` | `Ok(OutRange)` | returns `OutRange` | returns `OutRange` |
 | `OpenAndFill` | the same two out-parameters | `Ok((Stream, OutRange))` | on the handle | on the handle |
-| any live stream | `TA_StreamOutRange(stream, &beg, &nb)` | `out_range()` | `outRange()` | `OutRange` |
+| any live stream | `TA_<NAME>_OutRange(stream, &beg, &nb)` | `out_range()` | `outRange()` | `OutRange` |
 
 The stream accessor answers the same question in all four: the bars this handle
 has an output for. An open over `historyLen` bars starts at `(lookback,

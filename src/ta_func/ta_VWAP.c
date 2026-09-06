@@ -278,7 +278,7 @@ TA_RetCode TA_S_VWAP( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_VWAP_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -697,6 +697,21 @@ TA_LIB_API TA_RetCode TA_VWAP_Peek( const TA_VWAP_Stream *stream, double inHigh,
 TA_LIB_API TA_RetCode TA_VWAP_Close( TA_VWAP_Stream *stream )
 {
    if( stream ) TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_VWAP_OutRange( const TA_VWAP_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_VWAP_Advance( TA_VWAP_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

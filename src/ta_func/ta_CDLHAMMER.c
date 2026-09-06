@@ -320,7 +320,7 @@ TA_RetCode TA_S_CDLHAMMER( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_CDLHAMMER_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -691,6 +691,21 @@ TA_LIB_API TA_RetCode TA_CDLHAMMER_Peek( const TA_CDLHAMMER_Stream *stream, doub
 TA_LIB_API TA_RetCode TA_CDLHAMMER_Close( TA_CDLHAMMER_Stream *stream )
 {
    TA_CDLHAMMER_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLHAMMER_OutRange( const TA_CDLHAMMER_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLHAMMER_Advance( TA_CDLHAMMER_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

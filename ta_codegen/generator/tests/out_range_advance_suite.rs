@@ -2,7 +2,7 @@
 //!
 //! `Update` refuses a non-finite bar, writes no state, and moves no count: the
 //! rejection costs the caller nothing but the call. Counting a bar the caller
-//! decided not to feed is `TA_StreamAdvance`'s job — `advance()`, `advance()`,
+//! decided not to feed is the advance call's job — `advance()`, `advance()`,
 //! `Advance()` — which is what leaves the retry expressible.
 //!
 //! `stream_verify` never feeds a non-finite bar, so it cannot see this at all.
@@ -220,21 +220,22 @@ fn no_advance_on_any_reject(
             0,
             "{what}: the refused bar is counted. A rejection changes nothing at all \
              (#384) — counting a bar the caller declined to feed is what \
-             TA_StreamAdvance is for:\n{body}"
+             advance is for:\n{body}"
         );
     }
     sites.len()
 }
 
-/// The per-handle `advance`, in the three backends that emit one. Matched on its
-/// signature and on the saturating guard in its body, so an accessor that lost
-/// the `MAX_INDEX` bound (#180) does not read as present.
-fn advance_entry_sig(lang: &str) -> Option<&'static str> {
+/// The per-handle `advance`, in all four backends since #387 gave C one per
+/// function too. Matched on its signature and on the saturating guard in its
+/// body, so an accessor that lost the `MAX_INDEX` bound (#180) does not read as
+/// present.
+fn advance_entry_sig(lang: &str, upper: &str) -> String {
     match lang {
-        "c" => None, // one hand-written TA_StreamAdvance, not per function
-        "rust" => Some("pub fn advance(&mut self) {"),
-        "java" => Some("public void advance() {"),
-        "csharp" => Some("public void Advance()"),
+        "c" => format!("TA_LIB_API TA_RetCode TA_{upper}_Advance("),
+        "rust" => "pub fn advance(&mut self) {".to_string(),
+        "java" => "public void advance() {".to_string(),
+        "csharp" => "public void Advance()".to_string(),
         other => panic!("unknown backend {other}"),
     }
 }
@@ -289,11 +290,12 @@ fn only_an_accepted_bar_advances_the_range() {
 
             // The call that DOES count a skipped bar, and the only one left that
             // moves the range without a bar.
-            if let Some(sig) = advance_entry_sig(lang) {
-                let adv = body_of(&s, |l: &str| l.trim_start().starts_with(sig));
+            {
+                let sig = advance_entry_sig(lang, &upper);
+                let adv = body_of(&s, |l: &str| l.trim_start().starts_with(sig.as_str()));
                 assert!(
                     adv.contains(guard),
-                    "{name}: {lang} advance() does not move the count under the \
+                    "{name}: {lang} advance does not move the count under the \
                      MAX_INDEX guard:\n{adv}"
                 );
                 advancers += 1;
@@ -322,7 +324,7 @@ fn only_an_accepted_bar_advances_the_range() {
     assert!(guards >= 700, "only {guards} non-advancing guard checks were made");
     // Its own counter, not a share of the others: `advance` is emitted by three
     // backends, so a sweep that stopped reaching it would still saturate theirs.
-    assert!(advancers >= 600, "only {advancers} advance() bodies were checked");
+    assert!(advancers >= 800, "only {advancers} advance bodies were checked");
     println!(
         "checked {updates} Update reject sites, {peeks} peeks, {guards} guards, \
          {advancers} advance() bodies across {} backends",

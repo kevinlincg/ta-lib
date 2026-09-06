@@ -340,7 +340,7 @@ pub fn open_internal_signature(func: &FuncDef) -> String {
 /// feed recovers. So the streaming tier rejects instead, and rejects *before*
 /// mutating any state, leaving the handle — its produced-bar count included —
 /// exactly as it was. Counting a bar the caller declined to commit is
-/// `TA_StreamAdvance`'s job, not this one's.
+/// `TA_<N>_Advance`'s job, not this one's.
 fn finite_bar_check(func: &FuncDef, indent: &str, fail: &str) -> String {
     let bars = streaming::input_array_names(func);
     if bars.is_empty() {
@@ -840,6 +840,43 @@ fn clone_owned_lines(
     (disown, dup)
 }
 
+/// Public `OutRange` prototype (no trailing `;`). Const handle: reading the
+/// range cannot move it.
+pub fn out_range_signature(func: &FuncDef) -> String {
+    let n = uname(func);
+    format!(
+        "TA_LIB_API TA_RetCode TA_{n}_OutRange( const TA_{n}_Stream *stream, int *outBegIdx, int *outNBElement )"
+    )
+}
+
+/// Public `Advance` prototype (no trailing `;`). Mutable handle: it counts a bar.
+pub fn advance_signature(func: &FuncDef) -> String {
+    let n = uname(func);
+    format!("TA_LIB_API TA_RetCode TA_{n}_Advance( TA_{n}_Stream *stream )")
+}
+
+/// `TA_<N>_OutRange` / `TA_<N>_Advance`: the range accessors, one typed pair per
+/// function (issue #387).
+///
+/// They are emitted into the function's own translation unit, which is the whole
+/// point — the struct is complete here, so each reads a field where the retired
+/// generic pair had to `memcpy` a prefix out of a `void *` no compiler could
+/// check. The saturation rule stays `emit_range_head_advance`'s, shared with
+/// every committing step, so `Advance` cannot come to disagree with `Update`
+/// about what the count does at `TA_MAX_INDEX`.
+fn emit_range_accessors(o: &mut String, func: &FuncDef) {
+    let _ = writeln!(o, "{}\n{{", out_range_signature(func));
+    let _ = writeln!(o, "   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;");
+    let _ = writeln!(o, "   *outBegIdx = stream->outRangeBegIdx;");
+    let _ = writeln!(o, "   *outNBElement = stream->outRangeCount;");
+    let _ = writeln!(o, "   return TA_SUCCESS;\n}}\n");
+
+    let _ = writeln!(o, "{}\n{{", advance_signature(func));
+    let _ = writeln!(o, "   if( !stream ) return TA_BAD_PARAM;");
+    emit_range_head_advance(o, "   ", "stream");
+    let _ = writeln!(o, "   return TA_SUCCESS;\n}}\n");
+}
+
 /// Public `Value` prototype (no trailing `;`). Const source, one out-pointer
 /// per output — the `Peek`/`Update` out-parameter shape, minus the bar.
 pub fn value_signature(func: &FuncDef) -> String {
@@ -941,17 +978,26 @@ pub fn header_decls(func: &FuncDef, lookup: &dyn streaming::CalleeLookup) -> Str
     // Value: declared unconditionally beside the rest — every tier retains the
     // `cur_` fields, so there is no shape that could lack it.
     let value = format!(
-        "\n/*\n * Value: the value(s) at the last bar the stream counted — the bar\n * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by\n * every accepted Update, left alone by Peek.\n */\n{};\n",
+        "\n/*\n * Value: the value(s) at the last bar the stream counted — the bar\n * TA_{n}_OutRange ends on — without recomputing. Seeded by Open, refreshed by\n * every accepted Update, left alone by Peek.\n */\n{};\n",
         value_signature(func)
     );
+    // OutRange / Advance: the range pair, typed per function (#387). Declared
+    // unconditionally for the same reason as Value — the range head leads every
+    // tier's struct.
+    let range = format!(
+        "\n/*\n * OutRange: the bars this handle has an output for, in the input series'\n * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).\n *\n * It is what the batch call over the same bars reports. A handle opened over\n * historyLen bars starts at ( lookback, historyLen - lookback ) and each\n * accepted Update adds one; a rejected Update changes nothing, and neither does\n * Peek. So after the handle has been carried over nbBar bars, by any mix of\n * Open, Update and TA_{n}_Advance, this reports what TA_{n}( 0, nbBar-1, ... )\n * does. The count saturates at TA_MAX_INDEX.\n *\n * Returns TA_BAD_PARAM on a NULL argument.\n */\n{};\n\n/*\n * Advance: count one bar the handle was not fed — the range advances by one and\n * nothing else moves, so TA_{n}_Value keeps answering the previous output, which\n * is this bar's output too.\n *\n * For a bar the caller leaves out: one an Update rejected and that will not be\n * re-fed, or a session with no print. Without it two handles on one feed drift a\n * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.\n *\n * Returns TA_BAD_PARAM on a NULL argument.\n */\n{};\n",
+        out_range_signature(func),
+        advance_signature(func)
+    );
     format!(
-        "\n/*\n * Streaming API for TA_{n} — incremental per-bar evaluation.\n * See docs/streaming-api-design.md.\n{note} */\ntypedef struct TA_{n}_Stream TA_{n}_Stream;\n\n{};\n\n{};\n\n{};\n\n{};\n{}{}{}",
+        "\n/*\n * Streaming API for TA_{n} — incremental per-bar evaluation.\n * See docs/streaming-api-design.md.\n{note} */\ntypedef struct TA_{n}_Stream TA_{n}_Stream;\n\n{};\n\n{};\n\n{};\n\n{};\n{}{}{}{}",
         open_signature(func),
         update_signature(func),
         peek_signature(func),
         close_signature(func),
         open_and_fill,
         value,
+        range,
         clone
     )
 }
@@ -1059,8 +1105,10 @@ pub fn generate(
         }
     }
 
-    // Tier-independent: every tier retains into the same `cur_` fields, so one
-    // call here covers all five and a new tier gets it without being asked.
+    // Tier-independent: every tier leads its struct with the same range head and
+    // retains into the same `cur_` fields, so one call each here covers all five
+    // and a new tier gets them without being asked.
+    emit_range_accessors(&mut o, func);
     emit_value(&mut o, func);
     // Tier-DEPENDENT: what a handle owns differs per tier, so `emit_clone` takes
     // the plan. It is still emitted here rather than per arm so that a tier
@@ -2539,6 +2587,18 @@ fn emit_dispatch_open(
         let _ = writeln!(o, "         {cp}_Stream *sub = NULL;");
         let _ = writeln!(o, "         retCode = {call};");
         let _ = writeln!(o, "         sp->sub = sub;");
+        if !mode.fills() {
+            // The arm's own handle carries the resolved range, and only this arm
+            // knows its type — so the read belongs here, where `sub` still has
+            // one, rather than after the switch where the handle is a bare
+            // `void *`. The filling modes take theirs from the out-params below
+            // instead, so they get no read here.
+            let _ = writeln!(o, "         if( retCode == TA_SUCCESS )");
+            let _ = writeln!(
+                o,
+                "            {cp}_OutRange( sub, &sp->outRangeBegIdx, &sp->outRangeCount );"
+            );
+        }
         let _ = writeln!(o, "      }}");
         let _ = writeln!(o, "      break;");
     }
@@ -2569,15 +2629,11 @@ fn emit_dispatch_open(
             let _ = writeln!(o, "   sp->cur_{name} = {name}[*outNBElement - 1];");
         }
     } else {
-        // The arm's own handle already carries the resolved range, and its
-        // struct is private to the callee's translation unit — so read it back
-        // through the one public accessor, which is exactly what it is for.
-        let _ = writeln!(
-            o,
-            "   TA_StreamOutRange( sp->sub, &sp->outRangeBegIdx, &sp->outRangeCount );"
-        );
-        // The value has no generic accessor to read back through — the callee's
-        // handle is untyped here — but the scalar open just wrote it into the
+        // The range was read inside the arm, where the sub-handle still had a
+        // type. Here `sp->sub` is a bare `void *` and nothing typed remains to
+        // read through — which is why the read moved rather than staying.
+        //
+        // The value needs no read at all: the scalar open just wrote it into the
         // caller's out-pointer, which is the same value.
         for out in &func.outputs {
             let name = &out.name;
@@ -3158,18 +3214,20 @@ fn emit_dual_frame_body(
 /// The two leading members every `struct TA_<N>_Stream` carries: the range of
 /// bars the handle has an output for (issue #241).
 ///
-/// First, and in this order, in every tier — `TA_StreamOutRange` reads the pair
-/// through a `const void *`, which is what lets ONE public accessor serve all
-/// the streams instead of one typed accessor per function. Every tier's struct
-/// emitter calls this immediately after opening the brace, so the layout cannot
-/// drift between tiers; `c_stream_every_tier_leads_with_the_range_head` pins it.
+/// First, and in this order, in every tier. Since #387 the accessors are typed
+/// and read these as fields from inside the same translation unit, so the fixed
+/// prefix is no longer what makes them work — it is now uniformity, kept so that
+/// every tier's struct reads the same way and one emitter can seed, capture and
+/// advance the pair for all five. Every tier's struct emitter calls this
+/// immediately after opening the brace;
+/// `c_stream_every_tier_leads_with_the_range_head` pins it.
 ///
 /// Two ints rather than one: `begIdx` is what the opener resolved
 /// (`max(startIdx, lookback)`), and neither `startIdx` nor the lookback is
 /// otherwise on the handle, so there is nothing to derive it from at accessor
 /// time.
 fn emit_range_head_fields(o: &mut String) {
-    let _ = writeln!(o, "   /* The bars this handle has an output for (see TA_StreamOutRange).");
+    let _ = writeln!(o, "   /* The bars this handle has an output for (see TA_<N>_OutRange).");
     let _ = writeln!(o, "    * Kept first, and in this order, in every stream struct. */");
     for decl in RANGE_HEAD_FIELDS {
         let _ = writeln!(o, "   {decl}");
@@ -3191,15 +3249,20 @@ fn emit_cur_fields(o: &mut String, func: &FuncDef) {
     }
 }
 
-/// The C declarations of the range head, in struct order. `TA_StreamRangeHead`
-/// (rendered into the private header by `server_gen`) is built from this same
-/// list, so the layout the accessor reads through and the layout every stream
-/// struct leads with cannot come apart.
-pub const RANGE_HEAD_FIELDS: [&str; 2] = ["int outRangeBegIdx;", "int outRangeCount;"];
+/// The C declarations of the range head, in struct order — the one list every
+/// tier's struct is seeded from.
+const RANGE_HEAD_FIELDS: [&str; 2] = ["int outRangeBegIdx;", "int outRangeCount;"];
+
+/// `RANGE_HEAD_FIELDS` for the gate that pins the struct layout against it.
+#[must_use]
+pub fn range_head_fields() -> [&'static str; 2] {
+    RANGE_HEAD_FIELDS
+}
 
 /// Advance the handle's count by one bar it has an output for (issue #241).
 /// Every caller is a committing step — a bar the caller declined to feed is
-/// `TA_StreamAdvance`'s.
+/// `TA_<N>_Advance`'s, which shares this emitter so the two cannot come to
+/// disagree about the saturation.
 /// Saturates at `TA_MAX_INDEX`: past that the stream has left the index domain
 /// the batch tier addresses at all, and a signed overflow would be undefined.
 fn emit_range_head_advance(o: &mut String, indent: &str, handle: &str) {

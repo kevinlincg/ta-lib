@@ -220,7 +220,7 @@ TA_RetCode TA_S_STDDEV( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_STDDEV_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -466,6 +466,21 @@ TA_LIB_API TA_RetCode TA_STDDEV_Close( TA_STDDEV_Stream *stream )
    if( !stream ) return TA_SUCCESS;
    TA_VAR_Close( stream->sub0 );
    TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_STDDEV_OutRange( const TA_STDDEV_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_STDDEV_Advance( TA_STDDEV_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

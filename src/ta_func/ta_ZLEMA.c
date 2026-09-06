@@ -276,7 +276,7 @@ TA_RetCode TA_S_ZLEMA( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_ZLEMA_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -556,6 +556,21 @@ TA_LIB_API TA_RetCode TA_ZLEMA_Peek( const TA_ZLEMA_Stream *stream, double inRea
 TA_LIB_API TA_RetCode TA_ZLEMA_Close( TA_ZLEMA_Stream *stream )
 {
    TA_ZLEMA_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ZLEMA_OutRange( const TA_ZLEMA_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ZLEMA_Advance( TA_ZLEMA_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

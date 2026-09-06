@@ -747,7 +747,7 @@ TA_RetCode TA_S_MAVP( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_MAVP_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -966,6 +966,21 @@ TA_LIB_API TA_RetCode TA_MAVP_Close( TA_MAVP_Stream *stream )
       if( stream->scratch ) TA_Free( stream->scratch );
       TA_Free( stream );
    }
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_MAVP_OutRange( const TA_MAVP_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_MAVP_Advance( TA_MAVP_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

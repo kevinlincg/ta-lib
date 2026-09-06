@@ -346,7 +346,7 @@ TA_RetCode TA_S_FOSC( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_FOSC_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -752,6 +752,21 @@ TA_LIB_API TA_RetCode TA_FOSC_Peek( const TA_FOSC_Stream *stream, double inReal,
 TA_LIB_API TA_RetCode TA_FOSC_Close( TA_FOSC_Stream *stream )
 {
    TA_FOSC_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_FOSC_OutRange( const TA_FOSC_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_FOSC_Advance( TA_FOSC_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

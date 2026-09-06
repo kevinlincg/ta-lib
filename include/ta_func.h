@@ -123,10 +123,38 @@ TA_LIB_API TA_RetCode TA_AC_OpenAndFill( TA_AC_Stream **stream, const double inH
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_AC_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_AC_Value( const TA_AC_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_AC_Advance, this reports what TA_AC( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AC_OutRange( const TA_AC_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_AC_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AC_Advance( TA_AC_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -199,10 +227,38 @@ TA_LIB_API TA_RetCode TA_ACCBANDS_OpenAndFill( TA_ACCBANDS_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ACCBANDS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ACCBANDS_Value( const TA_ACCBANDS_Stream *stream, double *outRealUpperBand, double *outRealMiddleBand, double *outRealLowerBand );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ACCBANDS_Advance, this reports what TA_ACCBANDS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ACCBANDS_OutRange( const TA_ACCBANDS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ACCBANDS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ACCBANDS_Advance( TA_ACCBANDS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -259,10 +315,38 @@ TA_LIB_API TA_RetCode TA_ACOS_OpenAndFill( TA_ACOS_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ACOS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ACOS_Value( const TA_ACOS_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ACOS_Advance, this reports what TA_ACOS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ACOS_OutRange( const TA_ACOS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ACOS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ACOS_Advance( TA_ACOS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -325,10 +409,38 @@ TA_LIB_API TA_RetCode TA_AD_OpenAndFill( TA_AD_Stream **stream, const double inH
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_AD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_AD_Value( const TA_AD_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_AD_Advance, this reports what TA_AD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AD_OutRange( const TA_AD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_AD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AD_Advance( TA_AD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -387,10 +499,38 @@ TA_LIB_API TA_RetCode TA_ADD_OpenAndFill( TA_ADD_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ADD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ADD_Value( const TA_ADD_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ADD_Advance, this reports what TA_ADD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADD_OutRange( const TA_ADD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ADD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADD_Advance( TA_ADD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -467,10 +607,38 @@ TA_LIB_API TA_RetCode TA_ADOSC_OpenAndFill( TA_ADOSC_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ADOSC_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ADOSC_Value( const TA_ADOSC_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ADOSC_Advance, this reports what TA_ADOSC( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADOSC_OutRange( const TA_ADOSC_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ADOSC_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADOSC_Advance( TA_ADOSC_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -537,10 +705,38 @@ TA_LIB_API TA_RetCode TA_ADR_OpenAndFill( TA_ADR_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ADR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ADR_Value( const TA_ADR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ADR_Advance, this reports what TA_ADR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADR_OutRange( const TA_ADR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ADR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADR_Advance( TA_ADR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -609,10 +805,38 @@ TA_LIB_API TA_RetCode TA_ADX_OpenAndFill( TA_ADX_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ADX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ADX_Value( const TA_ADX_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ADX_Advance, this reports what TA_ADX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADX_OutRange( const TA_ADX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ADX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADX_Advance( TA_ADX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -681,10 +905,38 @@ TA_LIB_API TA_RetCode TA_ADXR_OpenAndFill( TA_ADXR_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ADXR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ADXR_Value( const TA_ADXR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ADXR_Advance, this reports what TA_ADXR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADXR_OutRange( const TA_ADXR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ADXR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ADXR_Advance( TA_ADXR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -757,10 +1009,38 @@ TA_LIB_API TA_RetCode TA_AO_OpenAndFill( TA_AO_Stream **stream, const double inH
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_AO_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_AO_Value( const TA_AO_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_AO_Advance, this reports what TA_AO( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AO_OutRange( const TA_AO_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_AO_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AO_Advance( TA_AO_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -836,10 +1116,38 @@ TA_LIB_API TA_RetCode TA_APO_OpenAndFill( TA_APO_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_APO_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_APO_Value( const TA_APO_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_APO_Advance, this reports what TA_APO( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_APO_OutRange( const TA_APO_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_APO_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_APO_Advance( TA_APO_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -908,10 +1216,38 @@ TA_LIB_API TA_RetCode TA_AROON_OpenAndFill( TA_AROON_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_AROON_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_AROON_Value( const TA_AROON_Stream *stream, double *outAroonDown, double *outAroonUp );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_AROON_Advance, this reports what TA_AROON( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AROON_OutRange( const TA_AROON_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_AROON_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AROON_Advance( TA_AROON_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -978,10 +1314,38 @@ TA_LIB_API TA_RetCode TA_AROONOSC_OpenAndFill( TA_AROONOSC_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_AROONOSC_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_AROONOSC_Value( const TA_AROONOSC_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_AROONOSC_Advance, this reports what TA_AROONOSC( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AROONOSC_OutRange( const TA_AROONOSC_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_AROONOSC_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AROONOSC_Advance( TA_AROONOSC_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1038,10 +1402,38 @@ TA_LIB_API TA_RetCode TA_ASIN_OpenAndFill( TA_ASIN_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ASIN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ASIN_Value( const TA_ASIN_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ASIN_Advance, this reports what TA_ASIN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ASIN_OutRange( const TA_ASIN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ASIN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ASIN_Advance( TA_ASIN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1098,10 +1490,38 @@ TA_LIB_API TA_RetCode TA_ATAN_OpenAndFill( TA_ATAN_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ATAN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ATAN_Value( const TA_ATAN_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ATAN_Advance, this reports what TA_ATAN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ATAN_OutRange( const TA_ATAN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ATAN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ATAN_Advance( TA_ATAN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1170,10 +1590,38 @@ TA_LIB_API TA_RetCode TA_ATR_OpenAndFill( TA_ATR_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ATR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ATR_Value( const TA_ATR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ATR_Advance, this reports what TA_ATR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ATR_OutRange( const TA_ATR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ATR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ATR_Advance( TA_ATR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1238,10 +1686,38 @@ TA_LIB_API TA_RetCode TA_AVGDEV_OpenAndFill( TA_AVGDEV_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_AVGDEV_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_AVGDEV_Value( const TA_AVGDEV_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_AVGDEV_Advance, this reports what TA_AVGDEV( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AVGDEV_OutRange( const TA_AVGDEV_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_AVGDEV_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AVGDEV_Advance( TA_AVGDEV_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1304,10 +1780,38 @@ TA_LIB_API TA_RetCode TA_AVGPRICE_OpenAndFill( TA_AVGPRICE_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_AVGPRICE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_AVGPRICE_Value( const TA_AVGPRICE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_AVGPRICE_Advance, this reports what TA_AVGPRICE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AVGPRICE_OutRange( const TA_AVGPRICE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_AVGPRICE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_AVGPRICE_Advance( TA_AVGPRICE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1393,10 +1897,38 @@ TA_LIB_API TA_RetCode TA_BBANDS_OpenAndFill( TA_BBANDS_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_BBANDS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_BBANDS_Value( const TA_BBANDS_Stream *stream, double *outRealUpperBand, double *outRealMiddleBand, double *outRealLowerBand );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_BBANDS_Advance, this reports what TA_BBANDS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_BBANDS_OutRange( const TA_BBANDS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_BBANDS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_BBANDS_Advance( TA_BBANDS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1463,10 +1995,38 @@ TA_LIB_API TA_RetCode TA_BETA_OpenAndFill( TA_BETA_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_BETA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_BETA_Value( const TA_BETA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_BETA_Advance, this reports what TA_BETA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_BETA_OutRange( const TA_BETA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_BETA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_BETA_Advance( TA_BETA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1529,10 +2089,38 @@ TA_LIB_API TA_RetCode TA_BOP_OpenAndFill( TA_BOP_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_BOP_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_BOP_Value( const TA_BOP_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_BOP_Advance, this reports what TA_BOP( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_BOP_OutRange( const TA_BOP_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_BOP_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_BOP_Advance( TA_BOP_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1601,10 +2189,38 @@ TA_LIB_API TA_RetCode TA_CCI_OpenAndFill( TA_CCI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CCI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CCI_Value( const TA_CCI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CCI_Advance, this reports what TA_CCI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CCI_OutRange( const TA_CCI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CCI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CCI_Advance( TA_CCI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1667,10 +2283,38 @@ TA_LIB_API TA_RetCode TA_CDL2CROWS_OpenAndFill( TA_CDL2CROWS_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDL2CROWS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDL2CROWS_Value( const TA_CDL2CROWS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDL2CROWS_Advance, this reports what TA_CDL2CROWS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL2CROWS_OutRange( const TA_CDL2CROWS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDL2CROWS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL2CROWS_Advance( TA_CDL2CROWS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1733,10 +2377,38 @@ TA_LIB_API TA_RetCode TA_CDL3BLACKCROWS_OpenAndFill( TA_CDL3BLACKCROWS_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDL3BLACKCROWS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDL3BLACKCROWS_Value( const TA_CDL3BLACKCROWS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDL3BLACKCROWS_Advance, this reports what TA_CDL3BLACKCROWS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3BLACKCROWS_OutRange( const TA_CDL3BLACKCROWS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDL3BLACKCROWS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3BLACKCROWS_Advance( TA_CDL3BLACKCROWS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1799,10 +2471,38 @@ TA_LIB_API TA_RetCode TA_CDL3INSIDE_OpenAndFill( TA_CDL3INSIDE_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDL3INSIDE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDL3INSIDE_Value( const TA_CDL3INSIDE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDL3INSIDE_Advance, this reports what TA_CDL3INSIDE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3INSIDE_OutRange( const TA_CDL3INSIDE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDL3INSIDE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3INSIDE_Advance( TA_CDL3INSIDE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1865,10 +2565,38 @@ TA_LIB_API TA_RetCode TA_CDL3LINESTRIKE_OpenAndFill( TA_CDL3LINESTRIKE_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDL3LINESTRIKE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDL3LINESTRIKE_Value( const TA_CDL3LINESTRIKE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDL3LINESTRIKE_Advance, this reports what TA_CDL3LINESTRIKE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3LINESTRIKE_OutRange( const TA_CDL3LINESTRIKE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDL3LINESTRIKE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3LINESTRIKE_Advance( TA_CDL3LINESTRIKE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1931,10 +2659,38 @@ TA_LIB_API TA_RetCode TA_CDL3OUTSIDE_OpenAndFill( TA_CDL3OUTSIDE_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDL3OUTSIDE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDL3OUTSIDE_Value( const TA_CDL3OUTSIDE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDL3OUTSIDE_Advance, this reports what TA_CDL3OUTSIDE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3OUTSIDE_OutRange( const TA_CDL3OUTSIDE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDL3OUTSIDE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3OUTSIDE_Advance( TA_CDL3OUTSIDE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -1997,10 +2753,38 @@ TA_LIB_API TA_RetCode TA_CDL3STARSINSOUTH_OpenAndFill( TA_CDL3STARSINSOUTH_Strea
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDL3STARSINSOUTH_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDL3STARSINSOUTH_Value( const TA_CDL3STARSINSOUTH_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDL3STARSINSOUTH_Advance, this reports what TA_CDL3STARSINSOUTH( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3STARSINSOUTH_OutRange( const TA_CDL3STARSINSOUTH_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDL3STARSINSOUTH_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3STARSINSOUTH_Advance( TA_CDL3STARSINSOUTH_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2063,10 +2847,38 @@ TA_LIB_API TA_RetCode TA_CDL3WHITESOLDIERS_OpenAndFill( TA_CDL3WHITESOLDIERS_Str
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDL3WHITESOLDIERS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDL3WHITESOLDIERS_Value( const TA_CDL3WHITESOLDIERS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDL3WHITESOLDIERS_Advance, this reports what TA_CDL3WHITESOLDIERS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3WHITESOLDIERS_OutRange( const TA_CDL3WHITESOLDIERS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDL3WHITESOLDIERS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDL3WHITESOLDIERS_Advance( TA_CDL3WHITESOLDIERS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2137,10 +2949,38 @@ TA_LIB_API TA_RetCode TA_CDLABANDONEDBABY_OpenAndFill( TA_CDLABANDONEDBABY_Strea
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLABANDONEDBABY_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLABANDONEDBABY_Value( const TA_CDLABANDONEDBABY_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLABANDONEDBABY_Advance, this reports what TA_CDLABANDONEDBABY( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLABANDONEDBABY_OutRange( const TA_CDLABANDONEDBABY_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLABANDONEDBABY_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLABANDONEDBABY_Advance( TA_CDLABANDONEDBABY_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2203,10 +3043,38 @@ TA_LIB_API TA_RetCode TA_CDLADVANCEBLOCK_OpenAndFill( TA_CDLADVANCEBLOCK_Stream 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLADVANCEBLOCK_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLADVANCEBLOCK_Value( const TA_CDLADVANCEBLOCK_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLADVANCEBLOCK_Advance, this reports what TA_CDLADVANCEBLOCK( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLADVANCEBLOCK_OutRange( const TA_CDLADVANCEBLOCK_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLADVANCEBLOCK_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLADVANCEBLOCK_Advance( TA_CDLADVANCEBLOCK_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2269,10 +3137,38 @@ TA_LIB_API TA_RetCode TA_CDLBELTHOLD_OpenAndFill( TA_CDLBELTHOLD_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLBELTHOLD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLBELTHOLD_Value( const TA_CDLBELTHOLD_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLBELTHOLD_Advance, this reports what TA_CDLBELTHOLD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLBELTHOLD_OutRange( const TA_CDLBELTHOLD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLBELTHOLD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLBELTHOLD_Advance( TA_CDLBELTHOLD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2335,10 +3231,38 @@ TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_OpenAndFill( TA_CDLBREAKAWAY_Stream **stre
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLBREAKAWAY_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Value( const TA_CDLBREAKAWAY_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLBREAKAWAY_Advance, this reports what TA_CDLBREAKAWAY( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_OutRange( const TA_CDLBREAKAWAY_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLBREAKAWAY_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLBREAKAWAY_Advance( TA_CDLBREAKAWAY_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2401,10 +3325,38 @@ TA_LIB_API TA_RetCode TA_CDLCLOSINGMARUBOZU_OpenAndFill( TA_CDLCLOSINGMARUBOZU_S
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLCLOSINGMARUBOZU_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLCLOSINGMARUBOZU_Value( const TA_CDLCLOSINGMARUBOZU_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLCLOSINGMARUBOZU_Advance, this reports what TA_CDLCLOSINGMARUBOZU( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLCLOSINGMARUBOZU_OutRange( const TA_CDLCLOSINGMARUBOZU_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLCLOSINGMARUBOZU_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLCLOSINGMARUBOZU_Advance( TA_CDLCLOSINGMARUBOZU_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2467,10 +3419,38 @@ TA_LIB_API TA_RetCode TA_CDLCONCEALBABYSWALL_OpenAndFill( TA_CDLCONCEALBABYSWALL
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLCONCEALBABYSWALL_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLCONCEALBABYSWALL_Value( const TA_CDLCONCEALBABYSWALL_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLCONCEALBABYSWALL_Advance, this reports what TA_CDLCONCEALBABYSWALL( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLCONCEALBABYSWALL_OutRange( const TA_CDLCONCEALBABYSWALL_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLCONCEALBABYSWALL_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLCONCEALBABYSWALL_Advance( TA_CDLCONCEALBABYSWALL_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2533,10 +3513,38 @@ TA_LIB_API TA_RetCode TA_CDLCOUNTERATTACK_OpenAndFill( TA_CDLCOUNTERATTACK_Strea
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLCOUNTERATTACK_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLCOUNTERATTACK_Value( const TA_CDLCOUNTERATTACK_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLCOUNTERATTACK_Advance, this reports what TA_CDLCOUNTERATTACK( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLCOUNTERATTACK_OutRange( const TA_CDLCOUNTERATTACK_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLCOUNTERATTACK_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLCOUNTERATTACK_Advance( TA_CDLCOUNTERATTACK_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2607,10 +3615,38 @@ TA_LIB_API TA_RetCode TA_CDLDARKCLOUDCOVER_OpenAndFill( TA_CDLDARKCLOUDCOVER_Str
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLDARKCLOUDCOVER_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLDARKCLOUDCOVER_Value( const TA_CDLDARKCLOUDCOVER_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLDARKCLOUDCOVER_Advance, this reports what TA_CDLDARKCLOUDCOVER( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDARKCLOUDCOVER_OutRange( const TA_CDLDARKCLOUDCOVER_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLDARKCLOUDCOVER_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDARKCLOUDCOVER_Advance( TA_CDLDARKCLOUDCOVER_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2673,10 +3709,38 @@ TA_LIB_API TA_RetCode TA_CDLDOJI_OpenAndFill( TA_CDLDOJI_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLDOJI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLDOJI_Value( const TA_CDLDOJI_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLDOJI_Advance, this reports what TA_CDLDOJI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDOJI_OutRange( const TA_CDLDOJI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLDOJI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDOJI_Advance( TA_CDLDOJI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2739,10 +3803,38 @@ TA_LIB_API TA_RetCode TA_CDLDOJISTAR_OpenAndFill( TA_CDLDOJISTAR_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLDOJISTAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLDOJISTAR_Value( const TA_CDLDOJISTAR_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLDOJISTAR_Advance, this reports what TA_CDLDOJISTAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDOJISTAR_OutRange( const TA_CDLDOJISTAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLDOJISTAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDOJISTAR_Advance( TA_CDLDOJISTAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2805,10 +3897,38 @@ TA_LIB_API TA_RetCode TA_CDLDRAGONFLYDOJI_OpenAndFill( TA_CDLDRAGONFLYDOJI_Strea
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLDRAGONFLYDOJI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLDRAGONFLYDOJI_Value( const TA_CDLDRAGONFLYDOJI_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLDRAGONFLYDOJI_Advance, this reports what TA_CDLDRAGONFLYDOJI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDRAGONFLYDOJI_OutRange( const TA_CDLDRAGONFLYDOJI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLDRAGONFLYDOJI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLDRAGONFLYDOJI_Advance( TA_CDLDRAGONFLYDOJI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2871,10 +3991,38 @@ TA_LIB_API TA_RetCode TA_CDLENGULFING_OpenAndFill( TA_CDLENGULFING_Stream **stre
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLENGULFING_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLENGULFING_Value( const TA_CDLENGULFING_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLENGULFING_Advance, this reports what TA_CDLENGULFING( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLENGULFING_OutRange( const TA_CDLENGULFING_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLENGULFING_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLENGULFING_Advance( TA_CDLENGULFING_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -2945,10 +4093,38 @@ TA_LIB_API TA_RetCode TA_CDLEVENINGDOJISTAR_OpenAndFill( TA_CDLEVENINGDOJISTAR_S
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLEVENINGDOJISTAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLEVENINGDOJISTAR_Value( const TA_CDLEVENINGDOJISTAR_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLEVENINGDOJISTAR_Advance, this reports what TA_CDLEVENINGDOJISTAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLEVENINGDOJISTAR_OutRange( const TA_CDLEVENINGDOJISTAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLEVENINGDOJISTAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLEVENINGDOJISTAR_Advance( TA_CDLEVENINGDOJISTAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3019,10 +4195,38 @@ TA_LIB_API TA_RetCode TA_CDLEVENINGSTAR_OpenAndFill( TA_CDLEVENINGSTAR_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLEVENINGSTAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLEVENINGSTAR_Value( const TA_CDLEVENINGSTAR_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLEVENINGSTAR_Advance, this reports what TA_CDLEVENINGSTAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLEVENINGSTAR_OutRange( const TA_CDLEVENINGSTAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLEVENINGSTAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLEVENINGSTAR_Advance( TA_CDLEVENINGSTAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3085,10 +4289,38 @@ TA_LIB_API TA_RetCode TA_CDLGAPSIDESIDEWHITE_OpenAndFill( TA_CDLGAPSIDESIDEWHITE
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLGAPSIDESIDEWHITE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLGAPSIDESIDEWHITE_Value( const TA_CDLGAPSIDESIDEWHITE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLGAPSIDESIDEWHITE_Advance, this reports what TA_CDLGAPSIDESIDEWHITE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLGAPSIDESIDEWHITE_OutRange( const TA_CDLGAPSIDESIDEWHITE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLGAPSIDESIDEWHITE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLGAPSIDESIDEWHITE_Advance( TA_CDLGAPSIDESIDEWHITE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3151,10 +4383,38 @@ TA_LIB_API TA_RetCode TA_CDLGRAVESTONEDOJI_OpenAndFill( TA_CDLGRAVESTONEDOJI_Str
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLGRAVESTONEDOJI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLGRAVESTONEDOJI_Value( const TA_CDLGRAVESTONEDOJI_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLGRAVESTONEDOJI_Advance, this reports what TA_CDLGRAVESTONEDOJI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLGRAVESTONEDOJI_OutRange( const TA_CDLGRAVESTONEDOJI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLGRAVESTONEDOJI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLGRAVESTONEDOJI_Advance( TA_CDLGRAVESTONEDOJI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3217,10 +4477,38 @@ TA_LIB_API TA_RetCode TA_CDLHAMMER_OpenAndFill( TA_CDLHAMMER_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHAMMER_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHAMMER_Value( const TA_CDLHAMMER_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHAMMER_Advance, this reports what TA_CDLHAMMER( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHAMMER_OutRange( const TA_CDLHAMMER_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHAMMER_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHAMMER_Advance( TA_CDLHAMMER_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3283,10 +4571,38 @@ TA_LIB_API TA_RetCode TA_CDLHANGINGMAN_OpenAndFill( TA_CDLHANGINGMAN_Stream **st
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHANGINGMAN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHANGINGMAN_Value( const TA_CDLHANGINGMAN_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHANGINGMAN_Advance, this reports what TA_CDLHANGINGMAN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHANGINGMAN_OutRange( const TA_CDLHANGINGMAN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHANGINGMAN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHANGINGMAN_Advance( TA_CDLHANGINGMAN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3349,10 +4665,38 @@ TA_LIB_API TA_RetCode TA_CDLHARAMI_OpenAndFill( TA_CDLHARAMI_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHARAMI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHARAMI_Value( const TA_CDLHARAMI_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHARAMI_Advance, this reports what TA_CDLHARAMI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHARAMI_OutRange( const TA_CDLHARAMI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHARAMI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHARAMI_Advance( TA_CDLHARAMI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3415,10 +4759,38 @@ TA_LIB_API TA_RetCode TA_CDLHARAMICROSS_OpenAndFill( TA_CDLHARAMICROSS_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHARAMICROSS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHARAMICROSS_Value( const TA_CDLHARAMICROSS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHARAMICROSS_Advance, this reports what TA_CDLHARAMICROSS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHARAMICROSS_OutRange( const TA_CDLHARAMICROSS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHARAMICROSS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHARAMICROSS_Advance( TA_CDLHARAMICROSS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3481,10 +4853,38 @@ TA_LIB_API TA_RetCode TA_CDLHIGHWAVE_OpenAndFill( TA_CDLHIGHWAVE_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHIGHWAVE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHIGHWAVE_Value( const TA_CDLHIGHWAVE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHIGHWAVE_Advance, this reports what TA_CDLHIGHWAVE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHIGHWAVE_OutRange( const TA_CDLHIGHWAVE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHIGHWAVE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHIGHWAVE_Advance( TA_CDLHIGHWAVE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3547,10 +4947,38 @@ TA_LIB_API TA_RetCode TA_CDLHIKKAKE_OpenAndFill( TA_CDLHIKKAKE_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHIKKAKE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHIKKAKE_Value( const TA_CDLHIKKAKE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHIKKAKE_Advance, this reports what TA_CDLHIKKAKE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHIKKAKE_OutRange( const TA_CDLHIKKAKE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHIKKAKE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHIKKAKE_Advance( TA_CDLHIKKAKE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3613,10 +5041,38 @@ TA_LIB_API TA_RetCode TA_CDLHIKKAKEMOD_OpenAndFill( TA_CDLHIKKAKEMOD_Stream **st
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHIKKAKEMOD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHIKKAKEMOD_Value( const TA_CDLHIKKAKEMOD_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHIKKAKEMOD_Advance, this reports what TA_CDLHIKKAKEMOD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHIKKAKEMOD_OutRange( const TA_CDLHIKKAKEMOD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHIKKAKEMOD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHIKKAKEMOD_Advance( TA_CDLHIKKAKEMOD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3679,10 +5135,38 @@ TA_LIB_API TA_RetCode TA_CDLHOMINGPIGEON_OpenAndFill( TA_CDLHOMINGPIGEON_Stream 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLHOMINGPIGEON_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLHOMINGPIGEON_Value( const TA_CDLHOMINGPIGEON_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLHOMINGPIGEON_Advance, this reports what TA_CDLHOMINGPIGEON( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHOMINGPIGEON_OutRange( const TA_CDLHOMINGPIGEON_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLHOMINGPIGEON_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLHOMINGPIGEON_Advance( TA_CDLHOMINGPIGEON_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3745,10 +5229,38 @@ TA_LIB_API TA_RetCode TA_CDLIDENTICAL3CROWS_OpenAndFill( TA_CDLIDENTICAL3CROWS_S
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLIDENTICAL3CROWS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLIDENTICAL3CROWS_Value( const TA_CDLIDENTICAL3CROWS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLIDENTICAL3CROWS_Advance, this reports what TA_CDLIDENTICAL3CROWS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLIDENTICAL3CROWS_OutRange( const TA_CDLIDENTICAL3CROWS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLIDENTICAL3CROWS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLIDENTICAL3CROWS_Advance( TA_CDLIDENTICAL3CROWS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3811,10 +5323,38 @@ TA_LIB_API TA_RetCode TA_CDLINNECK_OpenAndFill( TA_CDLINNECK_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLINNECK_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLINNECK_Value( const TA_CDLINNECK_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLINNECK_Advance, this reports what TA_CDLINNECK( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLINNECK_OutRange( const TA_CDLINNECK_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLINNECK_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLINNECK_Advance( TA_CDLINNECK_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3877,10 +5417,38 @@ TA_LIB_API TA_RetCode TA_CDLINVERTEDHAMMER_OpenAndFill( TA_CDLINVERTEDHAMMER_Str
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLINVERTEDHAMMER_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLINVERTEDHAMMER_Value( const TA_CDLINVERTEDHAMMER_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLINVERTEDHAMMER_Advance, this reports what TA_CDLINVERTEDHAMMER( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLINVERTEDHAMMER_OutRange( const TA_CDLINVERTEDHAMMER_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLINVERTEDHAMMER_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLINVERTEDHAMMER_Advance( TA_CDLINVERTEDHAMMER_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -3943,10 +5511,38 @@ TA_LIB_API TA_RetCode TA_CDLKICKING_OpenAndFill( TA_CDLKICKING_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLKICKING_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLKICKING_Value( const TA_CDLKICKING_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLKICKING_Advance, this reports what TA_CDLKICKING( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLKICKING_OutRange( const TA_CDLKICKING_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLKICKING_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLKICKING_Advance( TA_CDLKICKING_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4009,10 +5605,38 @@ TA_LIB_API TA_RetCode TA_CDLKICKINGBYLENGTH_OpenAndFill( TA_CDLKICKINGBYLENGTH_S
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLKICKINGBYLENGTH_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLKICKINGBYLENGTH_Value( const TA_CDLKICKINGBYLENGTH_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLKICKINGBYLENGTH_Advance, this reports what TA_CDLKICKINGBYLENGTH( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLKICKINGBYLENGTH_OutRange( const TA_CDLKICKINGBYLENGTH_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLKICKINGBYLENGTH_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLKICKINGBYLENGTH_Advance( TA_CDLKICKINGBYLENGTH_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4075,10 +5699,38 @@ TA_LIB_API TA_RetCode TA_CDLLADDERBOTTOM_OpenAndFill( TA_CDLLADDERBOTTOM_Stream 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLLADDERBOTTOM_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLLADDERBOTTOM_Value( const TA_CDLLADDERBOTTOM_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLLADDERBOTTOM_Advance, this reports what TA_CDLLADDERBOTTOM( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLLADDERBOTTOM_OutRange( const TA_CDLLADDERBOTTOM_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLLADDERBOTTOM_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLLADDERBOTTOM_Advance( TA_CDLLADDERBOTTOM_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4141,10 +5793,38 @@ TA_LIB_API TA_RetCode TA_CDLLONGLEGGEDDOJI_OpenAndFill( TA_CDLLONGLEGGEDDOJI_Str
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLLONGLEGGEDDOJI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLLONGLEGGEDDOJI_Value( const TA_CDLLONGLEGGEDDOJI_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLLONGLEGGEDDOJI_Advance, this reports what TA_CDLLONGLEGGEDDOJI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLLONGLEGGEDDOJI_OutRange( const TA_CDLLONGLEGGEDDOJI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLLONGLEGGEDDOJI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLLONGLEGGEDDOJI_Advance( TA_CDLLONGLEGGEDDOJI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4207,10 +5887,38 @@ TA_LIB_API TA_RetCode TA_CDLLONGLINE_OpenAndFill( TA_CDLLONGLINE_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLLONGLINE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLLONGLINE_Value( const TA_CDLLONGLINE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLLONGLINE_Advance, this reports what TA_CDLLONGLINE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLLONGLINE_OutRange( const TA_CDLLONGLINE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLLONGLINE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLLONGLINE_Advance( TA_CDLLONGLINE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4273,10 +5981,38 @@ TA_LIB_API TA_RetCode TA_CDLMARUBOZU_OpenAndFill( TA_CDLMARUBOZU_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLMARUBOZU_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLMARUBOZU_Value( const TA_CDLMARUBOZU_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLMARUBOZU_Advance, this reports what TA_CDLMARUBOZU( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMARUBOZU_OutRange( const TA_CDLMARUBOZU_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLMARUBOZU_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMARUBOZU_Advance( TA_CDLMARUBOZU_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4339,10 +6075,38 @@ TA_LIB_API TA_RetCode TA_CDLMATCHINGLOW_OpenAndFill( TA_CDLMATCHINGLOW_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLMATCHINGLOW_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLMATCHINGLOW_Value( const TA_CDLMATCHINGLOW_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLMATCHINGLOW_Advance, this reports what TA_CDLMATCHINGLOW( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMATCHINGLOW_OutRange( const TA_CDLMATCHINGLOW_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLMATCHINGLOW_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMATCHINGLOW_Advance( TA_CDLMATCHINGLOW_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4413,10 +6177,38 @@ TA_LIB_API TA_RetCode TA_CDLMATHOLD_OpenAndFill( TA_CDLMATHOLD_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLMATHOLD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLMATHOLD_Value( const TA_CDLMATHOLD_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLMATHOLD_Advance, this reports what TA_CDLMATHOLD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMATHOLD_OutRange( const TA_CDLMATHOLD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLMATHOLD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMATHOLD_Advance( TA_CDLMATHOLD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4487,10 +6279,38 @@ TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_OpenAndFill( TA_CDLMORNINGDOJISTAR_S
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLMORNINGDOJISTAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_Value( const TA_CDLMORNINGDOJISTAR_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLMORNINGDOJISTAR_Advance, this reports what TA_CDLMORNINGDOJISTAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_OutRange( const TA_CDLMORNINGDOJISTAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLMORNINGDOJISTAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_Advance( TA_CDLMORNINGDOJISTAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4561,10 +6381,38 @@ TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_OpenAndFill( TA_CDLMORNINGSTAR_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLMORNINGSTAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_Value( const TA_CDLMORNINGSTAR_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLMORNINGSTAR_Advance, this reports what TA_CDLMORNINGSTAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_OutRange( const TA_CDLMORNINGSTAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLMORNINGSTAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLMORNINGSTAR_Advance( TA_CDLMORNINGSTAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4627,10 +6475,38 @@ TA_LIB_API TA_RetCode TA_CDLONNECK_OpenAndFill( TA_CDLONNECK_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLONNECK_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLONNECK_Value( const TA_CDLONNECK_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLONNECK_Advance, this reports what TA_CDLONNECK( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLONNECK_OutRange( const TA_CDLONNECK_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLONNECK_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLONNECK_Advance( TA_CDLONNECK_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4693,10 +6569,38 @@ TA_LIB_API TA_RetCode TA_CDLPIERCING_OpenAndFill( TA_CDLPIERCING_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLPIERCING_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLPIERCING_Value( const TA_CDLPIERCING_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLPIERCING_Advance, this reports what TA_CDLPIERCING( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLPIERCING_OutRange( const TA_CDLPIERCING_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLPIERCING_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLPIERCING_Advance( TA_CDLPIERCING_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4759,10 +6663,38 @@ TA_LIB_API TA_RetCode TA_CDLRICKSHAWMAN_OpenAndFill( TA_CDLRICKSHAWMAN_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLRICKSHAWMAN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLRICKSHAWMAN_Value( const TA_CDLRICKSHAWMAN_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLRICKSHAWMAN_Advance, this reports what TA_CDLRICKSHAWMAN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLRICKSHAWMAN_OutRange( const TA_CDLRICKSHAWMAN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLRICKSHAWMAN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLRICKSHAWMAN_Advance( TA_CDLRICKSHAWMAN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4825,10 +6757,38 @@ TA_LIB_API TA_RetCode TA_CDLRISEFALL3METHODS_OpenAndFill( TA_CDLRISEFALL3METHODS
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLRISEFALL3METHODS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLRISEFALL3METHODS_Value( const TA_CDLRISEFALL3METHODS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLRISEFALL3METHODS_Advance, this reports what TA_CDLRISEFALL3METHODS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLRISEFALL3METHODS_OutRange( const TA_CDLRISEFALL3METHODS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLRISEFALL3METHODS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLRISEFALL3METHODS_Advance( TA_CDLRISEFALL3METHODS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4891,10 +6851,38 @@ TA_LIB_API TA_RetCode TA_CDLSEPARATINGLINES_OpenAndFill( TA_CDLSEPARATINGLINES_S
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLSEPARATINGLINES_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLSEPARATINGLINES_Value( const TA_CDLSEPARATINGLINES_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLSEPARATINGLINES_Advance, this reports what TA_CDLSEPARATINGLINES( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSEPARATINGLINES_OutRange( const TA_CDLSEPARATINGLINES_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLSEPARATINGLINES_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSEPARATINGLINES_Advance( TA_CDLSEPARATINGLINES_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -4957,10 +6945,38 @@ TA_LIB_API TA_RetCode TA_CDLSHOOTINGSTAR_OpenAndFill( TA_CDLSHOOTINGSTAR_Stream 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLSHOOTINGSTAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLSHOOTINGSTAR_Value( const TA_CDLSHOOTINGSTAR_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLSHOOTINGSTAR_Advance, this reports what TA_CDLSHOOTINGSTAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSHOOTINGSTAR_OutRange( const TA_CDLSHOOTINGSTAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLSHOOTINGSTAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSHOOTINGSTAR_Advance( TA_CDLSHOOTINGSTAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5023,10 +7039,38 @@ TA_LIB_API TA_RetCode TA_CDLSHORTLINE_OpenAndFill( TA_CDLSHORTLINE_Stream **stre
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLSHORTLINE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLSHORTLINE_Value( const TA_CDLSHORTLINE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLSHORTLINE_Advance, this reports what TA_CDLSHORTLINE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSHORTLINE_OutRange( const TA_CDLSHORTLINE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLSHORTLINE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSHORTLINE_Advance( TA_CDLSHORTLINE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5089,10 +7133,38 @@ TA_LIB_API TA_RetCode TA_CDLSPINNINGTOP_OpenAndFill( TA_CDLSPINNINGTOP_Stream **
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLSPINNINGTOP_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLSPINNINGTOP_Value( const TA_CDLSPINNINGTOP_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLSPINNINGTOP_Advance, this reports what TA_CDLSPINNINGTOP( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSPINNINGTOP_OutRange( const TA_CDLSPINNINGTOP_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLSPINNINGTOP_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSPINNINGTOP_Advance( TA_CDLSPINNINGTOP_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5155,10 +7227,38 @@ TA_LIB_API TA_RetCode TA_CDLSTALLEDPATTERN_OpenAndFill( TA_CDLSTALLEDPATTERN_Str
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLSTALLEDPATTERN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLSTALLEDPATTERN_Value( const TA_CDLSTALLEDPATTERN_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLSTALLEDPATTERN_Advance, this reports what TA_CDLSTALLEDPATTERN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSTALLEDPATTERN_OutRange( const TA_CDLSTALLEDPATTERN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLSTALLEDPATTERN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSTALLEDPATTERN_Advance( TA_CDLSTALLEDPATTERN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5221,10 +7321,38 @@ TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_OpenAndFill( TA_CDLSTICKSANDWICH_Strea
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLSTICKSANDWICH_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Value( const TA_CDLSTICKSANDWICH_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLSTICKSANDWICH_Advance, this reports what TA_CDLSTICKSANDWICH( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_OutRange( const TA_CDLSTICKSANDWICH_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLSTICKSANDWICH_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLSTICKSANDWICH_Advance( TA_CDLSTICKSANDWICH_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5287,10 +7415,38 @@ TA_LIB_API TA_RetCode TA_CDLTAKURI_OpenAndFill( TA_CDLTAKURI_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLTAKURI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLTAKURI_Value( const TA_CDLTAKURI_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLTAKURI_Advance, this reports what TA_CDLTAKURI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTAKURI_OutRange( const TA_CDLTAKURI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLTAKURI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTAKURI_Advance( TA_CDLTAKURI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5353,10 +7509,38 @@ TA_LIB_API TA_RetCode TA_CDLTASUKIGAP_OpenAndFill( TA_CDLTASUKIGAP_Stream **stre
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLTASUKIGAP_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLTASUKIGAP_Value( const TA_CDLTASUKIGAP_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLTASUKIGAP_Advance, this reports what TA_CDLTASUKIGAP( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTASUKIGAP_OutRange( const TA_CDLTASUKIGAP_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLTASUKIGAP_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTASUKIGAP_Advance( TA_CDLTASUKIGAP_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5419,10 +7603,38 @@ TA_LIB_API TA_RetCode TA_CDLTHRUSTING_OpenAndFill( TA_CDLTHRUSTING_Stream **stre
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLTHRUSTING_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLTHRUSTING_Value( const TA_CDLTHRUSTING_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLTHRUSTING_Advance, this reports what TA_CDLTHRUSTING( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTHRUSTING_OutRange( const TA_CDLTHRUSTING_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLTHRUSTING_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTHRUSTING_Advance( TA_CDLTHRUSTING_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5485,10 +7697,38 @@ TA_LIB_API TA_RetCode TA_CDLTRISTAR_OpenAndFill( TA_CDLTRISTAR_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLTRISTAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLTRISTAR_Value( const TA_CDLTRISTAR_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLTRISTAR_Advance, this reports what TA_CDLTRISTAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTRISTAR_OutRange( const TA_CDLTRISTAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLTRISTAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLTRISTAR_Advance( TA_CDLTRISTAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5551,10 +7791,38 @@ TA_LIB_API TA_RetCode TA_CDLUNIQUE3RIVER_OpenAndFill( TA_CDLUNIQUE3RIVER_Stream 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLUNIQUE3RIVER_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLUNIQUE3RIVER_Value( const TA_CDLUNIQUE3RIVER_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLUNIQUE3RIVER_Advance, this reports what TA_CDLUNIQUE3RIVER( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLUNIQUE3RIVER_OutRange( const TA_CDLUNIQUE3RIVER_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLUNIQUE3RIVER_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLUNIQUE3RIVER_Advance( TA_CDLUNIQUE3RIVER_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5617,10 +7885,38 @@ TA_LIB_API TA_RetCode TA_CDLUPSIDEGAP2CROWS_OpenAndFill( TA_CDLUPSIDEGAP2CROWS_S
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLUPSIDEGAP2CROWS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLUPSIDEGAP2CROWS_Value( const TA_CDLUPSIDEGAP2CROWS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLUPSIDEGAP2CROWS_Advance, this reports what TA_CDLUPSIDEGAP2CROWS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLUPSIDEGAP2CROWS_OutRange( const TA_CDLUPSIDEGAP2CROWS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLUPSIDEGAP2CROWS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLUPSIDEGAP2CROWS_Advance( TA_CDLUPSIDEGAP2CROWS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5683,10 +7979,38 @@ TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_OpenAndFill( TA_CDLXSIDEGAP3METHODS
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CDLXSIDEGAP3METHODS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Value( const TA_CDLXSIDEGAP3METHODS_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CDLXSIDEGAP3METHODS_Advance, this reports what TA_CDLXSIDEGAP3METHODS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_OutRange( const TA_CDLXSIDEGAP3METHODS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CDLXSIDEGAP3METHODS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CDLXSIDEGAP3METHODS_Advance( TA_CDLXSIDEGAP3METHODS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5743,10 +8067,38 @@ TA_LIB_API TA_RetCode TA_CEIL_OpenAndFill( TA_CEIL_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CEIL_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CEIL_Value( const TA_CEIL_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CEIL_Advance, this reports what TA_CEIL( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CEIL_OutRange( const TA_CEIL_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CEIL_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CEIL_Advance( TA_CEIL_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5817,10 +8169,38 @@ TA_LIB_API TA_RetCode TA_CMF_OpenAndFill( TA_CMF_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CMF_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CMF_Value( const TA_CMF_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CMF_Advance, this reports what TA_CMF( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CMF_OutRange( const TA_CMF_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CMF_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CMF_Advance( TA_CMF_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5885,10 +8265,38 @@ TA_LIB_API TA_RetCode TA_CMO_OpenAndFill( TA_CMO_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CMO_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CMO_Value( const TA_CMO_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CMO_Advance, this reports what TA_CMO( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CMO_OutRange( const TA_CMO_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CMO_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CMO_Advance( TA_CMO_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -5953,10 +8361,38 @@ TA_LIB_API TA_RetCode TA_CMOU_OpenAndFill( TA_CMOU_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CMOU_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CMOU_Value( const TA_CMOU_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CMOU_Advance, this reports what TA_CMOU( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CMOU_OutRange( const TA_CMOU_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CMOU_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CMOU_Advance( TA_CMOU_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6033,10 +8469,38 @@ TA_LIB_API TA_RetCode TA_COPPOCK_OpenAndFill( TA_COPPOCK_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_COPPOCK_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_COPPOCK_Value( const TA_COPPOCK_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_COPPOCK_Advance, this reports what TA_COPPOCK( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_COPPOCK_OutRange( const TA_COPPOCK_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_COPPOCK_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_COPPOCK_Advance( TA_COPPOCK_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6103,10 +8567,38 @@ TA_LIB_API TA_RetCode TA_CORREL_OpenAndFill( TA_CORREL_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CORREL_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CORREL_Value( const TA_CORREL_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CORREL_Advance, this reports what TA_CORREL( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CORREL_OutRange( const TA_CORREL_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CORREL_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CORREL_Advance( TA_CORREL_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6163,10 +8655,38 @@ TA_LIB_API TA_RetCode TA_COS_OpenAndFill( TA_COS_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_COS_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_COS_Value( const TA_COS_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_COS_Advance, this reports what TA_COS( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_COS_OutRange( const TA_COS_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_COS_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_COS_Advance( TA_COS_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6223,10 +8743,38 @@ TA_LIB_API TA_RetCode TA_COSH_OpenAndFill( TA_COSH_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_COSH_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_COSH_Value( const TA_COSH_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_COSH_Advance, this reports what TA_COSH( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_COSH_OutRange( const TA_COSH_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_COSH_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_COSH_Advance( TA_COSH_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6283,10 +8831,38 @@ TA_LIB_API TA_RetCode TA_CUMSUM_OpenAndFill( TA_CUMSUM_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CUMSUM_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CUMSUM_Value( const TA_CUMSUM_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CUMSUM_Advance, this reports what TA_CUMSUM( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CUMSUM_OutRange( const TA_CUMSUM_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CUMSUM_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CUMSUM_Advance( TA_CUMSUM_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6359,10 +8935,38 @@ TA_LIB_API TA_RetCode TA_CVI_OpenAndFill( TA_CVI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_CVI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_CVI_Value( const TA_CVI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_CVI_Advance, this reports what TA_CVI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CVI_OutRange( const TA_CVI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_CVI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_CVI_Advance( TA_CVI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6427,10 +9031,38 @@ TA_LIB_API TA_RetCode TA_DEMA_OpenAndFill( TA_DEMA_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_DEMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_DEMA_Value( const TA_DEMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_DEMA_Advance, this reports what TA_DEMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DEMA_OutRange( const TA_DEMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_DEMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DEMA_Advance( TA_DEMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6489,10 +9121,38 @@ TA_LIB_API TA_RetCode TA_DIV_OpenAndFill( TA_DIV_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_DIV_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_DIV_Value( const TA_DIV_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_DIV_Advance, this reports what TA_DIV( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DIV_OutRange( const TA_DIV_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_DIV_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DIV_Advance( TA_DIV_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6563,10 +9223,38 @@ TA_LIB_API TA_RetCode TA_DONCHIAN_OpenAndFill( TA_DONCHIAN_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_DONCHIAN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_DONCHIAN_Value( const TA_DONCHIAN_Stream *stream, double *outRealUpperBand, double *outRealMiddleBand, double *outRealLowerBand );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_DONCHIAN_Advance, this reports what TA_DONCHIAN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DONCHIAN_OutRange( const TA_DONCHIAN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_DONCHIAN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DONCHIAN_Advance( TA_DONCHIAN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6631,10 +9319,38 @@ TA_LIB_API TA_RetCode TA_DPO_OpenAndFill( TA_DPO_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_DPO_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_DPO_Value( const TA_DPO_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_DPO_Advance, this reports what TA_DPO( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DPO_OutRange( const TA_DPO_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_DPO_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DPO_Advance( TA_DPO_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6703,10 +9419,38 @@ TA_LIB_API TA_RetCode TA_DX_OpenAndFill( TA_DX_Stream **stream, const double inH
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_DX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_DX_Value( const TA_DX_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_DX_Advance, this reports what TA_DX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DX_OutRange( const TA_DX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_DX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_DX_Advance( TA_DX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6773,10 +9517,38 @@ TA_LIB_API TA_RetCode TA_EFI_OpenAndFill( TA_EFI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_EFI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_EFI_Value( const TA_EFI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_EFI_Advance, this reports what TA_EFI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_EFI_OutRange( const TA_EFI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_EFI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_EFI_Advance( TA_EFI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6841,10 +9613,38 @@ TA_LIB_API TA_RetCode TA_EMA_OpenAndFill( TA_EMA_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_EMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_EMA_Value( const TA_EMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_EMA_Advance, this reports what TA_EMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_EMA_OutRange( const TA_EMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_EMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_EMA_Advance( TA_EMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6909,10 +9709,38 @@ TA_LIB_API TA_RetCode TA_ER_OpenAndFill( TA_ER_Stream **stream, const double inR
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ER_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ER_Value( const TA_ER_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ER_Advance, this reports what TA_ER( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ER_OutRange( const TA_ER_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ER_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ER_Advance( TA_ER_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -6983,10 +9811,38 @@ TA_LIB_API TA_RetCode TA_ERI_OpenAndFill( TA_ERI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ERI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ERI_Value( const TA_ERI_Stream *stream, double *outBullPower, double *outBearPower );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ERI_Advance, this reports what TA_ERI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ERI_OutRange( const TA_ERI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ERI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ERI_Advance( TA_ERI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7043,10 +9899,38 @@ TA_LIB_API TA_RetCode TA_EXP_OpenAndFill( TA_EXP_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_EXP_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_EXP_Value( const TA_EXP_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_EXP_Advance, this reports what TA_EXP( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_EXP_OutRange( const TA_EXP_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_EXP_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_EXP_Advance( TA_EXP_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7103,10 +9987,38 @@ TA_LIB_API TA_RetCode TA_FLOOR_OpenAndFill( TA_FLOOR_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_FLOOR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_FLOOR_Value( const TA_FLOOR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_FLOOR_Advance, this reports what TA_FLOOR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_FLOOR_OutRange( const TA_FLOOR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_FLOOR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_FLOOR_Advance( TA_FLOOR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7171,10 +10083,38 @@ TA_LIB_API TA_RetCode TA_FOSC_OpenAndFill( TA_FOSC_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_FOSC_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_FOSC_Value( const TA_FOSC_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_FOSC_Advance, this reports what TA_FOSC( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_FOSC_OutRange( const TA_FOSC_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_FOSC_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_FOSC_Advance( TA_FOSC_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7249,10 +10189,38 @@ TA_LIB_API TA_RetCode TA_FRACTAL_OpenAndFill( TA_FRACTAL_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_FRACTAL_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_FRACTAL_Value( const TA_FRACTAL_Stream *stream, int *outSwingHigh, int *outSwingLow );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_FRACTAL_Advance, this reports what TA_FRACTAL( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_FRACTAL_OutRange( const TA_FRACTAL_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_FRACTAL_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_FRACTAL_Advance( TA_FRACTAL_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7321,10 +10289,38 @@ TA_LIB_API TA_RetCode TA_HA_OpenAndFill( TA_HA_Stream **stream, const double inO
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HA_Value( const TA_HA_Stream *stream, double *outHAOpen, double *outHAHigh, double *outHALow, double *outHAClose );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HA_Advance, this reports what TA_HA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HA_OutRange( const TA_HA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HA_Advance( TA_HA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7389,10 +10385,38 @@ TA_LIB_API TA_RetCode TA_HMA_OpenAndFill( TA_HMA_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HMA_Value( const TA_HMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HMA_Advance, this reports what TA_HMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HMA_OutRange( const TA_HMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HMA_Advance( TA_HMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7449,10 +10473,38 @@ TA_LIB_API TA_RetCode TA_HT_DCPERIOD_OpenAndFill( TA_HT_DCPERIOD_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HT_DCPERIOD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HT_DCPERIOD_Value( const TA_HT_DCPERIOD_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HT_DCPERIOD_Advance, this reports what TA_HT_DCPERIOD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_DCPERIOD_OutRange( const TA_HT_DCPERIOD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HT_DCPERIOD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_DCPERIOD_Advance( TA_HT_DCPERIOD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7509,10 +10561,38 @@ TA_LIB_API TA_RetCode TA_HT_DCPHASE_OpenAndFill( TA_HT_DCPHASE_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HT_DCPHASE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HT_DCPHASE_Value( const TA_HT_DCPHASE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HT_DCPHASE_Advance, this reports what TA_HT_DCPHASE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_DCPHASE_OutRange( const TA_HT_DCPHASE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HT_DCPHASE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_DCPHASE_Advance( TA_HT_DCPHASE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7571,10 +10651,38 @@ TA_LIB_API TA_RetCode TA_HT_PHASOR_OpenAndFill( TA_HT_PHASOR_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HT_PHASOR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HT_PHASOR_Value( const TA_HT_PHASOR_Stream *stream, double *outInPhase, double *outQuadrature );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HT_PHASOR_Advance, this reports what TA_HT_PHASOR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_PHASOR_OutRange( const TA_HT_PHASOR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HT_PHASOR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_PHASOR_Advance( TA_HT_PHASOR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7633,10 +10741,38 @@ TA_LIB_API TA_RetCode TA_HT_SINE_OpenAndFill( TA_HT_SINE_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HT_SINE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HT_SINE_Value( const TA_HT_SINE_Stream *stream, double *outSine, double *outLeadSine );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HT_SINE_Advance, this reports what TA_HT_SINE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_SINE_OutRange( const TA_HT_SINE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HT_SINE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_SINE_Advance( TA_HT_SINE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7693,10 +10829,38 @@ TA_LIB_API TA_RetCode TA_HT_TRENDLINE_OpenAndFill( TA_HT_TRENDLINE_Stream **stre
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HT_TRENDLINE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HT_TRENDLINE_Value( const TA_HT_TRENDLINE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HT_TRENDLINE_Advance, this reports what TA_HT_TRENDLINE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_TRENDLINE_OutRange( const TA_HT_TRENDLINE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HT_TRENDLINE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_TRENDLINE_Advance( TA_HT_TRENDLINE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7753,10 +10917,38 @@ TA_LIB_API TA_RetCode TA_HT_TRENDMODE_OpenAndFill( TA_HT_TRENDMODE_Stream **stre
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_HT_TRENDMODE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Value( const TA_HT_TRENDMODE_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_HT_TRENDMODE_Advance, this reports what TA_HT_TRENDMODE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_TRENDMODE_OutRange( const TA_HT_TRENDMODE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_HT_TRENDMODE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_HT_TRENDMODE_Advance( TA_HT_TRENDMODE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7823,10 +11015,38 @@ TA_LIB_API TA_RetCode TA_IMI_OpenAndFill( TA_IMI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_IMI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_IMI_Value( const TA_IMI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_IMI_Advance, this reports what TA_IMI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_IMI_OutRange( const TA_IMI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_IMI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_IMI_Advance( TA_IMI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7891,10 +11111,38 @@ TA_LIB_API TA_RetCode TA_KAMA_OpenAndFill( TA_KAMA_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_KAMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_KAMA_Value( const TA_KAMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_KAMA_Advance, this reports what TA_KAMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_KAMA_OutRange( const TA_KAMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_KAMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_KAMA_Advance( TA_KAMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -7979,10 +11227,38 @@ TA_LIB_API TA_RetCode TA_KC_OpenAndFill( TA_KC_Stream **stream, const double inH
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_KC_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_KC_Value( const TA_KC_Stream *stream, double *outRealUpperBand, double *outRealMiddleBand, double *outRealLowerBand );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_KC_Advance, this reports what TA_KC( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_KC_OutRange( const TA_KC_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_KC_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_KC_Advance( TA_KC_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8078,10 +11354,38 @@ TA_LIB_API TA_RetCode TA_KDJ_OpenAndFill( TA_KDJ_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_KDJ_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_KDJ_Value( const TA_KDJ_Stream *stream, double *outK, double *outD, double *outJ );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_KDJ_Advance, this reports what TA_KDJ( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_KDJ_OutRange( const TA_KDJ_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_KDJ_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_KDJ_Advance( TA_KDJ_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8146,10 +11450,38 @@ TA_LIB_API TA_RetCode TA_LINEARREG_OpenAndFill( TA_LINEARREG_Stream **stream, co
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_LINEARREG_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_LINEARREG_Value( const TA_LINEARREG_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_LINEARREG_Advance, this reports what TA_LINEARREG( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_OutRange( const TA_LINEARREG_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_LINEARREG_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_Advance( TA_LINEARREG_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8214,10 +11546,38 @@ TA_LIB_API TA_RetCode TA_LINEARREG_ANGLE_OpenAndFill( TA_LINEARREG_ANGLE_Stream 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_LINEARREG_ANGLE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_LINEARREG_ANGLE_Value( const TA_LINEARREG_ANGLE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_LINEARREG_ANGLE_Advance, this reports what TA_LINEARREG_ANGLE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_ANGLE_OutRange( const TA_LINEARREG_ANGLE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_LINEARREG_ANGLE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_ANGLE_Advance( TA_LINEARREG_ANGLE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8282,10 +11642,38 @@ TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_OpenAndFill( TA_LINEARREG_INTERCEPT
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_LINEARREG_INTERCEPT_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Value( const TA_LINEARREG_INTERCEPT_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_LINEARREG_INTERCEPT_Advance, this reports what TA_LINEARREG_INTERCEPT( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_OutRange( const TA_LINEARREG_INTERCEPT_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_LINEARREG_INTERCEPT_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_INTERCEPT_Advance( TA_LINEARREG_INTERCEPT_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8350,10 +11738,38 @@ TA_LIB_API TA_RetCode TA_LINEARREG_SLOPE_OpenAndFill( TA_LINEARREG_SLOPE_Stream 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_LINEARREG_SLOPE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_LINEARREG_SLOPE_Value( const TA_LINEARREG_SLOPE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_LINEARREG_SLOPE_Advance, this reports what TA_LINEARREG_SLOPE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_SLOPE_OutRange( const TA_LINEARREG_SLOPE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_LINEARREG_SLOPE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LINEARREG_SLOPE_Advance( TA_LINEARREG_SLOPE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8410,10 +11826,38 @@ TA_LIB_API TA_RetCode TA_LN_OpenAndFill( TA_LN_Stream **stream, const double inR
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_LN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_LN_Value( const TA_LN_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_LN_Advance, this reports what TA_LN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LN_OutRange( const TA_LN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_LN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LN_Advance( TA_LN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8470,10 +11914,38 @@ TA_LIB_API TA_RetCode TA_LOG10_OpenAndFill( TA_LOG10_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_LOG10_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_LOG10_Value( const TA_LOG10_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_LOG10_Advance, this reports what TA_LOG10( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LOG10_OutRange( const TA_LOG10_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_LOG10_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_LOG10_Advance( TA_LOG10_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8543,10 +12015,38 @@ TA_LIB_API TA_RetCode TA_MA_OpenAndFill( TA_MA_Stream **stream, const double inR
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MA_Value( const TA_MA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MA_Advance, this reports what TA_MA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MA_OutRange( const TA_MA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MA_Advance( TA_MA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8627,10 +12127,38 @@ TA_LIB_API TA_RetCode TA_MACD_OpenAndFill( TA_MACD_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MACD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MACD_Value( const TA_MACD_Stream *stream, double *outMACD, double *outMACDSignal, double *outMACDHist );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MACD_Advance, this reports what TA_MACD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MACD_OutRange( const TA_MACD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MACD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MACD_Advance( TA_MACD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8728,10 +12256,38 @@ TA_LIB_API TA_RetCode TA_MACDEXT_OpenAndFill( TA_MACDEXT_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MACDEXT_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MACDEXT_Value( const TA_MACDEXT_Stream *stream, double *outMACD, double *outMACDSignal, double *outMACDHist );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MACDEXT_Advance, this reports what TA_MACDEXT( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MACDEXT_OutRange( const TA_MACDEXT_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MACDEXT_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MACDEXT_Advance( TA_MACDEXT_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8800,10 +12356,38 @@ TA_LIB_API TA_RetCode TA_MACDFIX_OpenAndFill( TA_MACDFIX_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MACDFIX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MACDFIX_Value( const TA_MACDFIX_Stream *stream, double *outMACD, double *outMACDSignal, double *outMACDHist );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MACDFIX_Advance, this reports what TA_MACDFIX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MACDFIX_OutRange( const TA_MACDFIX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MACDFIX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MACDFIX_Advance( TA_MACDFIX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8876,10 +12460,38 @@ TA_LIB_API TA_RetCode TA_MAMA_OpenAndFill( TA_MAMA_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MAMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MAMA_Value( const TA_MAMA_Stream *stream, double *outMAMA, double *outFAMA );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MAMA_Advance, this reports what TA_MAMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAMA_OutRange( const TA_MAMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MAMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAMA_Advance( TA_MAMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -8940,10 +12552,38 @@ TA_LIB_API TA_RetCode TA_MARKETFI_OpenAndFill( TA_MARKETFI_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MARKETFI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MARKETFI_Value( const TA_MARKETFI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MARKETFI_Advance, this reports what TA_MARKETFI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MARKETFI_OutRange( const TA_MARKETFI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MARKETFI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MARKETFI_Advance( TA_MARKETFI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9016,10 +12656,38 @@ TA_LIB_API TA_RetCode TA_MASSI_OpenAndFill( TA_MASSI_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MASSI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MASSI_Value( const TA_MASSI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MASSI_Advance, this reports what TA_MASSI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MASSI_OutRange( const TA_MASSI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MASSI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MASSI_Advance( TA_MASSI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9097,10 +12765,38 @@ TA_LIB_API TA_RetCode TA_MAVP_OpenAndFill( TA_MAVP_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MAVP_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MAVP_Value( const TA_MAVP_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MAVP_Advance, this reports what TA_MAVP( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAVP_OutRange( const TA_MAVP_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MAVP_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAVP_Advance( TA_MAVP_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9165,10 +12861,38 @@ TA_LIB_API TA_RetCode TA_MAX_OpenAndFill( TA_MAX_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MAX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MAX_Value( const TA_MAX_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MAX_Advance, this reports what TA_MAX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAX_OutRange( const TA_MAX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MAX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAX_Advance( TA_MAX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9233,10 +12957,38 @@ TA_LIB_API TA_RetCode TA_MAXINDEX_OpenAndFill( TA_MAXINDEX_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MAXINDEX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MAXINDEX_Value( const TA_MAXINDEX_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MAXINDEX_Advance, this reports what TA_MAXINDEX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAXINDEX_OutRange( const TA_MAXINDEX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MAXINDEX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MAXINDEX_Advance( TA_MAXINDEX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9295,10 +13047,38 @@ TA_LIB_API TA_RetCode TA_MEDPRICE_OpenAndFill( TA_MEDPRICE_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MEDPRICE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MEDPRICE_Value( const TA_MEDPRICE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MEDPRICE_Advance, this reports what TA_MEDPRICE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MEDPRICE_OutRange( const TA_MEDPRICE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MEDPRICE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MEDPRICE_Advance( TA_MEDPRICE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9369,10 +13149,38 @@ TA_LIB_API TA_RetCode TA_MFI_OpenAndFill( TA_MFI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MFI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MFI_Value( const TA_MFI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MFI_Advance, this reports what TA_MFI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MFI_OutRange( const TA_MFI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MFI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MFI_Advance( TA_MFI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9437,10 +13245,38 @@ TA_LIB_API TA_RetCode TA_MIDPOINT_OpenAndFill( TA_MIDPOINT_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MIDPOINT_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MIDPOINT_Value( const TA_MIDPOINT_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MIDPOINT_Advance, this reports what TA_MIDPOINT( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MIDPOINT_OutRange( const TA_MIDPOINT_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MIDPOINT_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MIDPOINT_Advance( TA_MIDPOINT_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9507,10 +13343,38 @@ TA_LIB_API TA_RetCode TA_MIDPRICE_OpenAndFill( TA_MIDPRICE_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MIDPRICE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MIDPRICE_Value( const TA_MIDPRICE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MIDPRICE_Advance, this reports what TA_MIDPRICE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MIDPRICE_OutRange( const TA_MIDPRICE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MIDPRICE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MIDPRICE_Advance( TA_MIDPRICE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9575,10 +13439,38 @@ TA_LIB_API TA_RetCode TA_MIN_OpenAndFill( TA_MIN_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MIN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MIN_Value( const TA_MIN_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MIN_Advance, this reports what TA_MIN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MIN_OutRange( const TA_MIN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MIN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MIN_Advance( TA_MIN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9643,10 +13535,38 @@ TA_LIB_API TA_RetCode TA_MININDEX_OpenAndFill( TA_MININDEX_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MININDEX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MININDEX_Value( const TA_MININDEX_Stream *stream, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MININDEX_Advance, this reports what TA_MININDEX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MININDEX_OutRange( const TA_MININDEX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MININDEX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MININDEX_Advance( TA_MININDEX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9713,10 +13633,38 @@ TA_LIB_API TA_RetCode TA_MINMAX_OpenAndFill( TA_MINMAX_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MINMAX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MINMAX_Value( const TA_MINMAX_Stream *stream, double *outMin, double *outMax );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MINMAX_Advance, this reports what TA_MINMAX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINMAX_OutRange( const TA_MINMAX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MINMAX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINMAX_Advance( TA_MINMAX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9783,10 +13731,38 @@ TA_LIB_API TA_RetCode TA_MINMAXINDEX_OpenAndFill( TA_MINMAXINDEX_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MINMAXINDEX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MINMAXINDEX_Value( const TA_MINMAXINDEX_Stream *stream, int *outMinIdx, int *outMaxIdx );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MINMAXINDEX_Advance, this reports what TA_MINMAXINDEX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINMAXINDEX_OutRange( const TA_MINMAXINDEX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MINMAXINDEX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINMAXINDEX_Advance( TA_MINMAXINDEX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9855,10 +13831,38 @@ TA_LIB_API TA_RetCode TA_MINUS_DI_OpenAndFill( TA_MINUS_DI_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MINUS_DI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MINUS_DI_Value( const TA_MINUS_DI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MINUS_DI_Advance, this reports what TA_MINUS_DI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINUS_DI_OutRange( const TA_MINUS_DI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MINUS_DI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINUS_DI_Advance( TA_MINUS_DI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9925,10 +13929,38 @@ TA_LIB_API TA_RetCode TA_MINUS_DM_OpenAndFill( TA_MINUS_DM_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MINUS_DM_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MINUS_DM_Value( const TA_MINUS_DM_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MINUS_DM_Advance, this reports what TA_MINUS_DM( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINUS_DM_OutRange( const TA_MINUS_DM_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MINUS_DM_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MINUS_DM_Advance( TA_MINUS_DM_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -9993,10 +14025,38 @@ TA_LIB_API TA_RetCode TA_MOM_OpenAndFill( TA_MOM_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MOM_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MOM_Value( const TA_MOM_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MOM_Advance, this reports what TA_MOM( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MOM_OutRange( const TA_MOM_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MOM_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MOM_Advance( TA_MOM_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10055,10 +14115,38 @@ TA_LIB_API TA_RetCode TA_MULT_OpenAndFill( TA_MULT_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_MULT_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_MULT_Value( const TA_MULT_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_MULT_Advance, this reports what TA_MULT( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MULT_OutRange( const TA_MULT_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_MULT_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_MULT_Advance( TA_MULT_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10127,10 +14215,38 @@ TA_LIB_API TA_RetCode TA_NATR_OpenAndFill( TA_NATR_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_NATR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_NATR_Value( const TA_NATR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_NATR_Advance, this reports what TA_NATR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_NATR_OutRange( const TA_NATR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_NATR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_NATR_Advance( TA_NATR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10189,10 +14305,38 @@ TA_LIB_API TA_RetCode TA_NVI_OpenAndFill( TA_NVI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_NVI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_NVI_Value( const TA_NVI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_NVI_Advance, this reports what TA_NVI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_NVI_OutRange( const TA_NVI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_NVI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_NVI_Advance( TA_NVI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10251,10 +14395,38 @@ TA_LIB_API TA_RetCode TA_OBV_OpenAndFill( TA_OBV_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_OBV_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_OBV_Value( const TA_OBV_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_OBV_Advance, this reports what TA_OBV( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_OBV_OutRange( const TA_OBV_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_OBV_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_OBV_Advance( TA_OBV_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10325,10 +14497,38 @@ TA_LIB_API TA_RetCode TA_PERCENTILE_OpenAndFill( TA_PERCENTILE_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PERCENTILE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PERCENTILE_Value( const TA_PERCENTILE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PERCENTILE_Advance, this reports what TA_PERCENTILE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PERCENTILE_OutRange( const TA_PERCENTILE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PERCENTILE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PERCENTILE_Advance( TA_PERCENTILE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10393,10 +14593,38 @@ TA_LIB_API TA_RetCode TA_PERCENTRANK_OpenAndFill( TA_PERCENTRANK_Stream **stream
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PERCENTRANK_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PERCENTRANK_Value( const TA_PERCENTRANK_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PERCENTRANK_Advance, this reports what TA_PERCENTRANK( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PERCENTRANK_OutRange( const TA_PERCENTRANK_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PERCENTRANK_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PERCENTRANK_Advance( TA_PERCENTRANK_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10465,10 +14693,38 @@ TA_LIB_API TA_RetCode TA_PLUS_DI_OpenAndFill( TA_PLUS_DI_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PLUS_DI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PLUS_DI_Value( const TA_PLUS_DI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PLUS_DI_Advance, this reports what TA_PLUS_DI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PLUS_DI_OutRange( const TA_PLUS_DI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PLUS_DI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PLUS_DI_Advance( TA_PLUS_DI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10535,10 +14791,38 @@ TA_LIB_API TA_RetCode TA_PLUS_DM_OpenAndFill( TA_PLUS_DM_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PLUS_DM_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PLUS_DM_Value( const TA_PLUS_DM_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PLUS_DM_Advance, this reports what TA_PLUS_DM( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PLUS_DM_OutRange( const TA_PLUS_DM_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PLUS_DM_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PLUS_DM_Advance( TA_PLUS_DM_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10614,10 +14898,38 @@ TA_LIB_API TA_RetCode TA_PPO_OpenAndFill( TA_PPO_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PPO_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PPO_Value( const TA_PPO_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PPO_Advance, this reports what TA_PPO( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PPO_OutRange( const TA_PPO_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PPO_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PPO_Advance( TA_PPO_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10676,10 +14988,38 @@ TA_LIB_API TA_RetCode TA_PVI_OpenAndFill( TA_PVI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PVI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PVI_Value( const TA_PVI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PVI_Advance, this reports what TA_PVI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PVI_OutRange( const TA_PVI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PVI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PVI_Advance( TA_PVI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10755,10 +15095,38 @@ TA_LIB_API TA_RetCode TA_PVO_OpenAndFill( TA_PVO_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PVO_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PVO_Value( const TA_PVO_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PVO_Advance, this reports what TA_PVO( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PVO_OutRange( const TA_PVO_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PVO_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PVO_Advance( TA_PVO_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10817,10 +15185,38 @@ TA_LIB_API TA_RetCode TA_PVT_OpenAndFill( TA_PVT_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_PVT_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_PVT_Value( const TA_PVT_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_PVT_Advance, this reports what TA_PVT( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PVT_OutRange( const TA_PVT_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_PVT_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_PVT_Advance( TA_PVT_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10887,10 +15283,38 @@ TA_LIB_API TA_RetCode TA_QSTICK_OpenAndFill( TA_QSTICK_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_QSTICK_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_QSTICK_Value( const TA_QSTICK_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_QSTICK_Advance, this reports what TA_QSTICK( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_QSTICK_OutRange( const TA_QSTICK_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_QSTICK_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_QSTICK_Advance( TA_QSTICK_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -10955,10 +15379,38 @@ TA_LIB_API TA_RetCode TA_RMA_OpenAndFill( TA_RMA_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_RMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_RMA_Value( const TA_RMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_RMA_Advance, this reports what TA_RMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RMA_OutRange( const TA_RMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_RMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RMA_Advance( TA_RMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11023,10 +15475,38 @@ TA_LIB_API TA_RetCode TA_ROC_OpenAndFill( TA_ROC_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ROC_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ROC_Value( const TA_ROC_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ROC_Advance, this reports what TA_ROC( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROC_OutRange( const TA_ROC_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ROC_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROC_Advance( TA_ROC_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11091,10 +15571,38 @@ TA_LIB_API TA_RetCode TA_ROCP_OpenAndFill( TA_ROCP_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ROCP_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ROCP_Value( const TA_ROCP_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ROCP_Advance, this reports what TA_ROCP( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROCP_OutRange( const TA_ROCP_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ROCP_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROCP_Advance( TA_ROCP_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11159,10 +15667,38 @@ TA_LIB_API TA_RetCode TA_ROCR_OpenAndFill( TA_ROCR_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ROCR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ROCR_Value( const TA_ROCR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ROCR_Advance, this reports what TA_ROCR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROCR_OutRange( const TA_ROCR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ROCR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROCR_Advance( TA_ROCR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11227,10 +15763,38 @@ TA_LIB_API TA_RetCode TA_ROCR100_OpenAndFill( TA_ROCR100_Stream **stream, const 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ROCR100_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ROCR100_Value( const TA_ROCR100_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ROCR100_Advance, this reports what TA_ROCR100( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROCR100_OutRange( const TA_ROCR100_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ROCR100_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ROCR100_Advance( TA_ROCR100_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11295,10 +15859,38 @@ TA_LIB_API TA_RetCode TA_RSI_OpenAndFill( TA_RSI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_RSI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_RSI_Value( const TA_RSI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_RSI_Advance, this reports what TA_RSI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RSI_OutRange( const TA_RSI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_RSI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RSI_Advance( TA_RSI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11369,10 +15961,38 @@ TA_LIB_API TA_RetCode TA_RVI_OpenAndFill( TA_RVI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_RVI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_RVI_Value( const TA_RVI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_RVI_Advance, this reports what TA_RVI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RVI_OutRange( const TA_RVI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_RVI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RVI_Advance( TA_RVI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11437,10 +16057,38 @@ TA_LIB_API TA_RetCode TA_RVOL_OpenAndFill( TA_RVOL_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_RVOL_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_RVOL_Value( const TA_RVOL_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_RVOL_Advance, this reports what TA_RVOL( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RVOL_OutRange( const TA_RVOL_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_RVOL_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_RVOL_Advance( TA_RVOL_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11513,10 +16161,38 @@ TA_LIB_API TA_RetCode TA_SAR_OpenAndFill( TA_SAR_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SAR_Value( const TA_SAR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SAR_Advance, this reports what TA_SAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SAR_OutRange( const TA_SAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SAR_Advance( TA_SAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11625,10 +16301,38 @@ TA_LIB_API TA_RetCode TA_SAREXT_OpenAndFill( TA_SAREXT_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SAREXT_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SAREXT_Value( const TA_SAREXT_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SAREXT_Advance, this reports what TA_SAREXT( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SAREXT_OutRange( const TA_SAREXT_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SAREXT_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SAREXT_Advance( TA_SAREXT_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11685,10 +16389,38 @@ TA_LIB_API TA_RetCode TA_SIN_OpenAndFill( TA_SIN_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SIN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SIN_Value( const TA_SIN_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SIN_Advance, this reports what TA_SIN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SIN_OutRange( const TA_SIN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SIN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SIN_Advance( TA_SIN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11745,10 +16477,38 @@ TA_LIB_API TA_RetCode TA_SINH_OpenAndFill( TA_SINH_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SINH_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SINH_Value( const TA_SINH_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SINH_Advance, this reports what TA_SINH( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SINH_OutRange( const TA_SINH_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SINH_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SINH_Advance( TA_SINH_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11813,10 +16573,38 @@ TA_LIB_API TA_RetCode TA_SMA_OpenAndFill( TA_SMA_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SMA_Value( const TA_SMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SMA_Advance, this reports what TA_SMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SMA_OutRange( const TA_SMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SMA_Advance( TA_SMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11905,10 +16693,38 @@ TA_LIB_API TA_RetCode TA_SMI_OpenAndFill( TA_SMI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SMI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SMI_Value( const TA_SMI_Stream *stream, double *outSMI, double *outSMISignal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SMI_Advance, this reports what TA_SMI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SMI_OutRange( const TA_SMI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SMI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SMI_Advance( TA_SMI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -11965,10 +16781,38 @@ TA_LIB_API TA_RetCode TA_SQRT_OpenAndFill( TA_SQRT_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SQRT_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SQRT_Value( const TA_SQRT_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SQRT_Advance, this reports what TA_SQRT( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SQRT_OutRange( const TA_SQRT_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SQRT_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SQRT_Advance( TA_SQRT_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12039,10 +16883,38 @@ TA_LIB_API TA_RetCode TA_STDDEV_OpenAndFill( TA_STDDEV_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_STDDEV_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_STDDEV_Value( const TA_STDDEV_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_STDDEV_Advance, this reports what TA_STDDEV( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STDDEV_OutRange( const TA_STDDEV_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_STDDEV_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STDDEV_Advance( TA_STDDEV_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12136,10 +17008,38 @@ TA_LIB_API TA_RetCode TA_STOCH_OpenAndFill( TA_STOCH_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_STOCH_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_STOCH_Value( const TA_STOCH_Stream *stream, double *outSlowK, double *outSlowD );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_STOCH_Advance, this reports what TA_STOCH( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STOCH_OutRange( const TA_STOCH_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_STOCH_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STOCH_Advance( TA_STOCH_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12221,10 +17121,38 @@ TA_LIB_API TA_RetCode TA_STOCHF_OpenAndFill( TA_STOCHF_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_STOCHF_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_STOCHF_Value( const TA_STOCHF_Stream *stream, double *outFastK, double *outFastD );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_STOCHF_Advance, this reports what TA_STOCHF( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STOCHF_OutRange( const TA_STOCHF_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_STOCHF_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STOCHF_Advance( TA_STOCHF_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12308,10 +17236,38 @@ TA_LIB_API TA_RetCode TA_STOCHRSI_OpenAndFill( TA_STOCHRSI_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_STOCHRSI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_STOCHRSI_Value( const TA_STOCHRSI_Stream *stream, double *outFastK, double *outFastD );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_STOCHRSI_Advance, this reports what TA_STOCHRSI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STOCHRSI_OutRange( const TA_STOCHRSI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_STOCHRSI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_STOCHRSI_Advance( TA_STOCHRSI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12370,10 +17326,38 @@ TA_LIB_API TA_RetCode TA_SUB_OpenAndFill( TA_SUB_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SUB_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SUB_Value( const TA_SUB_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SUB_Advance, this reports what TA_SUB( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SUB_OutRange( const TA_SUB_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SUB_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SUB_Advance( TA_SUB_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12438,10 +17422,38 @@ TA_LIB_API TA_RetCode TA_SUM_OpenAndFill( TA_SUM_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SUM_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SUM_Value( const TA_SUM_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SUM_Advance, this reports what TA_SUM( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SUM_OutRange( const TA_SUM_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SUM_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SUM_Advance( TA_SUM_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12518,10 +17530,38 @@ TA_LIB_API TA_RetCode TA_SUPERTREND_OpenAndFill( TA_SUPERTREND_Stream **stream, 
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_SUPERTREND_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_SUPERTREND_Value( const TA_SUPERTREND_Stream *stream, double *outReal, int *outInteger );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_SUPERTREND_Advance, this reports what TA_SUPERTREND( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SUPERTREND_OutRange( const TA_SUPERTREND_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_SUPERTREND_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_SUPERTREND_Advance( TA_SUPERTREND_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12592,10 +17632,38 @@ TA_LIB_API TA_RetCode TA_T3_OpenAndFill( TA_T3_Stream **stream, const double inR
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_T3_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_T3_Value( const TA_T3_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_T3_Advance, this reports what TA_T3( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_T3_OutRange( const TA_T3_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_T3_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_T3_Advance( TA_T3_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12652,10 +17720,38 @@ TA_LIB_API TA_RetCode TA_TAN_OpenAndFill( TA_TAN_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TAN_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TAN_Value( const TA_TAN_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TAN_Advance, this reports what TA_TAN( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TAN_OutRange( const TA_TAN_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TAN_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TAN_Advance( TA_TAN_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12712,10 +17808,38 @@ TA_LIB_API TA_RetCode TA_TANH_OpenAndFill( TA_TANH_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TANH_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TANH_Value( const TA_TANH_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TANH_Advance, this reports what TA_TANH( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TANH_OutRange( const TA_TANH_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TANH_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TANH_Advance( TA_TANH_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12780,10 +17904,38 @@ TA_LIB_API TA_RetCode TA_TEMA_OpenAndFill( TA_TEMA_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TEMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TEMA_Value( const TA_TEMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TEMA_Advance, this reports what TA_TEMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TEMA_OutRange( const TA_TEMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TEMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TEMA_Advance( TA_TEMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12844,10 +17996,38 @@ TA_LIB_API TA_RetCode TA_TRANGE_OpenAndFill( TA_TRANGE_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TRANGE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TRANGE_Value( const TA_TRANGE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TRANGE_Advance, this reports what TA_TRANGE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TRANGE_OutRange( const TA_TRANGE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TRANGE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TRANGE_Advance( TA_TRANGE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12912,10 +18092,38 @@ TA_LIB_API TA_RetCode TA_TRIMA_OpenAndFill( TA_TRIMA_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TRIMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TRIMA_Value( const TA_TRIMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TRIMA_Advance, this reports what TA_TRIMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TRIMA_OutRange( const TA_TRIMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TRIMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TRIMA_Advance( TA_TRIMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -12980,10 +18188,38 @@ TA_LIB_API TA_RetCode TA_TRIX_OpenAndFill( TA_TRIX_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TRIX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TRIX_Value( const TA_TRIX_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TRIX_Advance, this reports what TA_TRIX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TRIX_OutRange( const TA_TRIX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TRIX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TRIX_Advance( TA_TRIX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13048,10 +18284,38 @@ TA_LIB_API TA_RetCode TA_TSF_OpenAndFill( TA_TSF_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TSF_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TSF_Value( const TA_TSF_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TSF_Advance, this reports what TA_TSF( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TSF_OutRange( const TA_TSF_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TSF_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TSF_Advance( TA_TSF_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13122,10 +18386,38 @@ TA_LIB_API TA_RetCode TA_TSI_OpenAndFill( TA_TSI_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TSI_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TSI_Value( const TA_TSI_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TSI_Advance, this reports what TA_TSI( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TSI_OutRange( const TA_TSI_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TSI_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TSI_Advance( TA_TSI_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13186,10 +18478,38 @@ TA_LIB_API TA_RetCode TA_TYPPRICE_OpenAndFill( TA_TYPPRICE_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_TYPPRICE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_TYPPRICE_Value( const TA_TYPPRICE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_TYPPRICE_Advance, this reports what TA_TYPPRICE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TYPPRICE_OutRange( const TA_TYPPRICE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_TYPPRICE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_TYPPRICE_Advance( TA_TYPPRICE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13270,10 +18590,38 @@ TA_LIB_API TA_RetCode TA_ULTOSC_OpenAndFill( TA_ULTOSC_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ULTOSC_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ULTOSC_Value( const TA_ULTOSC_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ULTOSC_Advance, this reports what TA_ULTOSC( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ULTOSC_OutRange( const TA_ULTOSC_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ULTOSC_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ULTOSC_Advance( TA_ULTOSC_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13344,10 +18692,38 @@ TA_LIB_API TA_RetCode TA_VAR_OpenAndFill( TA_VAR_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_VAR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_VAR_Value( const TA_VAR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_VAR_Advance, this reports what TA_VAR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VAR_OutRange( const TA_VAR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_VAR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VAR_Advance( TA_VAR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13412,10 +18788,38 @@ TA_LIB_API TA_RetCode TA_VHF_OpenAndFill( TA_VHF_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_VHF_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_VHF_Value( const TA_VHF_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_VHF_Advance, this reports what TA_VHF( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VHF_OutRange( const TA_VHF_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_VHF_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VHF_Advance( TA_VHF_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13486,10 +18890,38 @@ TA_LIB_API TA_RetCode TA_VORTEX_OpenAndFill( TA_VORTEX_Stream **stream, const do
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_VORTEX_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_VORTEX_Value( const TA_VORTEX_Stream *stream, double *outPlusVI, double *outMinusVI );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_VORTEX_Advance, this reports what TA_VORTEX( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VORTEX_OutRange( const TA_VORTEX_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_VORTEX_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VORTEX_Advance( TA_VORTEX_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13552,10 +18984,38 @@ TA_LIB_API TA_RetCode TA_VWAP_OpenAndFill( TA_VWAP_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_VWAP_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_VWAP_Value( const TA_VWAP_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_VWAP_Advance, this reports what TA_VWAP( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VWAP_OutRange( const TA_VWAP_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_VWAP_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VWAP_Advance( TA_VWAP_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13622,10 +19082,38 @@ TA_LIB_API TA_RetCode TA_VWMA_OpenAndFill( TA_VWMA_Stream **stream, const double
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_VWMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_VWMA_Value( const TA_VWMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_VWMA_Advance, this reports what TA_VWMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VWMA_OutRange( const TA_VWMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_VWMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_VWMA_Advance( TA_VWMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13686,10 +19174,38 @@ TA_LIB_API TA_RetCode TA_WAD_OpenAndFill( TA_WAD_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_WAD_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_WAD_Value( const TA_WAD_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_WAD_Advance, this reports what TA_WAD( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WAD_OutRange( const TA_WAD_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_WAD_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WAD_Advance( TA_WAD_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13750,10 +19266,38 @@ TA_LIB_API TA_RetCode TA_WCLPRICE_OpenAndFill( TA_WCLPRICE_Stream **stream, cons
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_WCLPRICE_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_WCLPRICE_Value( const TA_WCLPRICE_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_WCLPRICE_Advance, this reports what TA_WCLPRICE( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WCLPRICE_OutRange( const TA_WCLPRICE_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_WCLPRICE_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WCLPRICE_Advance( TA_WCLPRICE_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13822,10 +19366,38 @@ TA_LIB_API TA_RetCode TA_WILLR_OpenAndFill( TA_WILLR_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_WILLR_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_WILLR_Value( const TA_WILLR_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_WILLR_Advance, this reports what TA_WILLR( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WILLR_OutRange( const TA_WILLR_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_WILLR_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WILLR_Advance( TA_WILLR_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13890,10 +19462,38 @@ TA_LIB_API TA_RetCode TA_WMA_OpenAndFill( TA_WMA_Stream **stream, const double i
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_WMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_WMA_Value( const TA_WMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_WMA_Advance, this reports what TA_WMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WMA_OutRange( const TA_WMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_WMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_WMA_Advance( TA_WMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13958,10 +19558,38 @@ TA_LIB_API TA_RetCode TA_ZLEMA_OpenAndFill( TA_ZLEMA_Stream **stream, const doub
 
 /*
  * Value: the value(s) at the last bar the stream counted — the bar
- * TA_StreamOutRange ends on — without recomputing. Seeded by Open, refreshed by
+ * TA_ZLEMA_OutRange ends on — without recomputing. Seeded by Open, refreshed by
  * every accepted Update, left alone by Peek.
  */
 TA_LIB_API TA_RetCode TA_ZLEMA_Value( const TA_ZLEMA_Stream *stream, double *outReal );
+
+/*
+ * OutRange: the bars this handle has an output for, in the input series'
+ * coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
+ *
+ * It is what the batch call over the same bars reports. A handle opened over
+ * historyLen bars starts at ( lookback, historyLen - lookback ) and each
+ * accepted Update adds one; a rejected Update changes nothing, and neither does
+ * Peek. So after the handle has been carried over nbBar bars, by any mix of
+ * Open, Update and TA_ZLEMA_Advance, this reports what TA_ZLEMA( 0, nbBar-1, ... )
+ * does. The count saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ZLEMA_OutRange( const TA_ZLEMA_Stream *stream, int *outBegIdx, int *outNBElement );
+
+/*
+ * Advance: count one bar the handle was not fed — the range advances by one and
+ * nothing else moves, so TA_ZLEMA_Value keeps answering the previous output, which
+ * is this bar's output too.
+ *
+ * For a bar the caller leaves out: one an Update rejected and that will not be
+ * re-fed, or a session with no print. Without it two handles on one feed drift a
+ * bar apart when only one of them skips. Saturates at TA_MAX_INDEX.
+ *
+ * Returns TA_BAD_PARAM on a NULL argument.
+ */
+TA_LIB_API TA_RetCode TA_ZLEMA_Advance( TA_ZLEMA_Stream *stream );
 
 /*
  * Clone: fork the stream — an independent stream at the same bar, owning its
@@ -13969,37 +19597,6 @@ TA_LIB_API TA_RetCode TA_ZLEMA_Value( const TA_ZLEMA_Stream *stream, double *out
  * carries the value and the range verbatim.
  */
 TA_LIB_API TA_RetCode TA_ZLEMA_Clone( const TA_ZLEMA_Stream *stream, TA_ZLEMA_Stream **clone );
-
-/* The range of bars a live stream has an output for, in the
- * input series' coordinates: [*outBegIdx, *outBegIdx + *outNBElement).
- *
- * It is what the batch call over the same bars reports. A handle opened
- * over `historyLen` bars starts at (lookback, historyLen - lookback) and
- * each accepted Update adds one; a rejected Update changes nothing, and
- * neither does Peek. So after a handle has been carried over nbBar bars,
- * by any mix of Open, Update and TA_StreamAdvance, this reports what the
- * batch call over ( 0, nbBar-1 ) does. The count saturates at
- * TA_MAX_INDEX.
- *
- * Takes any TA_<N>_Stream *; there is one accessor, not one per
- * function. Returns TA_BAD_PARAM on a NULL argument.
- */
-TA_LIB_API TA_RetCode TA_StreamOutRange( const void *stream,
-                                 int *outBegIdx,
-                                 int *outNBElement );
-
-/* Count one bar the handle was not fed: the range advances by one and
- * nothing else moves — TA_<N>_Value keeps answering the previous
- * output, which is this bar's output too.
- *
- * For a bar the caller leaves out: one an Update rejected and that will
- * not be re-fed, or a session with no print. Without it two handles on
- * one feed drift a bar apart when only one of them skips.
- *
- * Takes any TA_<N>_Stream *; there is one call, not one per function.
- * Returns TA_BAD_PARAM on a NULL argument.
- */
-TA_LIB_API TA_RetCode TA_StreamAdvance( void *stream );
 
 /* Some TA functions takes a certain amount of input data
  * before stabilizing and outputing meaningful data. This is

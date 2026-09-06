@@ -315,7 +315,7 @@ TA_RetCode TA_S_CDLMORNINGDOJISTAR( int    startIdx,
 /**** Streaming API *****/
 
 struct TA_CDLMORNINGDOJISTAR_Stream {
-   /* The bars this handle has an output for (see TA_StreamOutRange).
+   /* The bars this handle has an output for (see TA_<N>_OutRange).
     * Kept first, and in this order, in every stream struct. */
    int outRangeBegIdx;
    int outRangeCount;
@@ -676,6 +676,21 @@ TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_Peek( const TA_CDLMORNINGDOJISTAR_St
 TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_Close( TA_CDLMORNINGDOJISTAR_Stream *stream )
 {
    TA_CDLMORNINGDOJISTAR_ReleaseImpl( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_OutRange( const TA_CDLMORNINGDOJISTAR_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_CDLMORNINGDOJISTAR_Advance( TA_CDLMORNINGDOJISTAR_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeCount < TA_MAX_INDEX ) stream->outRangeCount++;
    return TA_SUCCESS;
 }
 

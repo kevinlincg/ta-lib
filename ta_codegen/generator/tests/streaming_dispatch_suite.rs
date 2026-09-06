@@ -1199,15 +1199,15 @@ fn test_c_state_struct_text_is_the_emitted_struct() {
     assert!(checked >= 200, "expected the streaming corpus, saw {checked}");
 }
 
-/// The layout `TA_StreamOutRange` reads through (#241). One public accessor
-/// serves every stream only because the range sits at a fixed offset in EVERY
-/// `TA_<N>_Stream`, so this pins the emitted text: the two declarations, first,
-/// in that order, in every tier's struct. Nothing else can see it — the accessor
-/// takes a `const void *`, so a struct that leads with something else compiles
-/// and returns whatever those four bytes happened to be.
+/// The range head leads every tier's struct, first and in that order (#241).
+/// Since #387 the accessors are typed and read these as fields, so a struct that
+/// led with something else would no longer miscompute — it would not compile.
+/// What this still pins is the uniformity the shared emitters rest on: one
+/// seed, one capture and one advance serve all five tiers only while every tier
+/// spells the pair the same way, in the same place.
 #[test]
 fn c_stream_every_tier_leads_with_the_range_head() {
-    let head = backends::c_stream::RANGE_HEAD_FIELDS;
+    let head = backends::c_stream::range_head_fields();
     let mut checked = 0usize;
     let mut tiers: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     for name in discover_indicators() {
