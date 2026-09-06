@@ -2326,6 +2326,11 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
         s.push_str("        int valueChecked = 0, valueOk = 1, valueLegs = 0;\n");
         s.push_str("        const char *valueBad = \"-\";\n");
         s.push_str("        const char *cloneBad = \"-\";\n");
+        // Short-history reject leg. Rust, Java and C# have carried this since
+        // the streaming tier landed; C never emitted it, so `ok` could not fall
+        // for an Open that accepts a history no output is defined over.
+        s.push_str("        int shortHistChecked = 0, shortHistOk = 1;\n");
+        s.push_str("        const char *shortHistBad = \"-\";\n");
         s.push_str("        const char *peekBad = \"-\";\n");
         s.push_str("        int fillOk = 1, fillChecked = 0, fillBars = 0;\n");
         emit_sv_state_decls(&mut s, name, steq);
@@ -2756,13 +2761,40 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
         // Fold fill into ok as a safety net (the driver also checks fill_ok
         // explicitly for a clearer message), so a fill regression fails the run
         // even if the driver's fill check ever regresses.
+        // At exactly `lb` bars no output is defined for ANY configuration, so
+        // Open must reject -- and with TA_INSUFFICIENT_HISTORY specifically, the
+        // one routine data-dependent failure a caller separates from a
+        // programming error. Accepting is the defect; rejecting with the wrong
+        // code is a second, distinguishable one, matching the typed-exception
+        // arms Java and C# already carry.
+        s.push_str("        if( lb >= 1 && lb < svN ) {\n");
+        s.push_str("            shortHistChecked = 1;\n");
+        let _ = writeln!(
+            s,
+            "            {{ TA_{name}_Stream *stSH = NULL; {} TA_RetCode shrc = TA_{name}_Open(&stSH, {in_args}lb, {opt_args}{});",
+            out_is_int
+                .iter()
+                .enumerate()
+                .map(|(i, is_int)| if *is_int { format!("int sh{i} = 0;") } else { format!("double sh{i} = 0.0;") })
+                .collect::<Vec<_>>()
+                .join(" "),
+            (0..n_outs).map(|i| format!("&sh{i}")).collect::<Vec<_>>().join(", ")
+        );
+        let _ = writeln!(
+            s,
+            "              if( shrc == TA_SUCCESS ) {{ shortHistOk = 0; shortHistBad = \"open accepted a history shorter than one output\"; TA_{name}_Close(stSH); }}"
+        );
+        s.push_str("              else if( shrc != TA_INSUFFICIENT_HISTORY ) { shortHistOk = 0; shortHistBad = \"open rejected with the wrong retCode\"; }\n");
+        s.push_str("              (void)stSH; }\n");
+        s.push_str("        }\n");
+        s.push_str("        if( shortHistChecked && !shortHistOk ) allOk = 0;\n");
         s.push_str("        if( fillChecked && !fillOk ) allOk = 0;\n");
         emit_sv_state_report(&mut s, steq);
         emit_sv_range_report(&mut s);
         if candle {
-            s.push_str("        pos = json_appendf(resp, resp_size, pos, \",\\\"beg\\\":%d,\\\"nb\\\":%d,\\\"legs\\\":%d,\\\"fill_checked\\\":%d,\\\"fill_ok\\\":%d,\\\"fill_bars\\\":%d,\\\"ok\\\":%d,\\\"peek_checked\\\":%d,\\\"peek_ok\\\":%d,\\\"peek_reps\\\":%d,\\\"peek_rep_ok\\\":%d,\\\"peek_rejects\\\":%d,\\\"clone_checked\\\":%d,\\\"clone_legs\\\":%d,\\\"clone_ok\\\":%d,\\\"clone_bad\\\":\\\"%s\\\",\\\"value_checked\\\":%d,\\\"value_legs\\\":%d,\\\"value_ok\\\":%d,\\\"value_bad\\\":\\\"%s\\\",\\\"benign\\\":%d}\", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);\n");
+            s.push_str("        pos = json_appendf(resp, resp_size, pos, \",\\\"beg\\\":%d,\\\"nb\\\":%d,\\\"legs\\\":%d,\\\"fill_checked\\\":%d,\\\"fill_ok\\\":%d,\\\"fill_bars\\\":%d,\\\"ok\\\":%d,\\\"peek_checked\\\":%d,\\\"peek_ok\\\":%d,\\\"peek_reps\\\":%d,\\\"peek_rep_ok\\\":%d,\\\"peek_rejects\\\":%d,\\\"short_history_checked\\\":%d,\\\"short_history_ok\\\":%d,\\\"short_history_bad\\\":\\\"%s\\\",\\\"clone_checked\\\":%d,\\\"clone_legs\\\":%d,\\\"clone_ok\\\":%d,\\\"clone_bad\\\":\\\"%s\\\",\\\"value_checked\\\":%d,\\\"value_legs\\\":%d,\\\"value_ok\\\":%d,\\\"value_bad\\\":\\\"%s\\\",\\\"benign\\\":%d}\", svBeg, svNb, lgi, fillChecked, fillOk, fillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, shortHistChecked, shortHistOk, shortHistBad, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);\n");
         } else {
-            s.push_str("        pos = json_appendf(resp, resp_size, pos, \",\\\"fill_checked\\\":%d,\\\"fill_ok\\\":%d,\\\"fill_bars\\\":%d,\\\"ok\\\":%d,\\\"peek_checked\\\":%d,\\\"peek_ok\\\":%d,\\\"peek_reps\\\":%d,\\\"peek_rep_ok\\\":%d,\\\"peek_rejects\\\":%d,\\\"clone_checked\\\":%d,\\\"clone_legs\\\":%d,\\\"clone_ok\\\":%d,\\\"clone_bad\\\":\\\"%s\\\",\\\"value_checked\\\":%d,\\\"value_legs\\\":%d,\\\"value_ok\\\":%d,\\\"value_bad\\\":\\\"%s\\\",\\\"benign\\\":%d}\", fillChecked, fillOk, fillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);\n");
+            s.push_str("        pos = json_appendf(resp, resp_size, pos, \",\\\"fill_checked\\\":%d,\\\"fill_ok\\\":%d,\\\"fill_bars\\\":%d,\\\"ok\\\":%d,\\\"peek_checked\\\":%d,\\\"peek_ok\\\":%d,\\\"peek_reps\\\":%d,\\\"peek_rep_ok\\\":%d,\\\"peek_rejects\\\":%d,\\\"short_history_checked\\\":%d,\\\"short_history_ok\\\":%d,\\\"short_history_bad\\\":\\\"%s\\\",\\\"clone_checked\\\":%d,\\\"clone_legs\\\":%d,\\\"clone_ok\\\":%d,\\\"clone_bad\\\":\\\"%s\\\",\\\"value_checked\\\":%d,\\\"value_legs\\\":%d,\\\"value_ok\\\":%d,\\\"value_bad\\\":\\\"%s\\\",\\\"benign\\\":%d}\", fillChecked, fillOk, fillBars, allOk, peekChecked, peekAll, peekReps, peekRepAll, peekRejects, shortHistChecked, shortHistOk, shortHistBad, cloneChecked, cloneLegs, cloneOk, cloneBad, valueChecked, valueLegs, valueOk, valueBad, svZsign);\n");
         }
         s.push_str("        return;\n");
         s.push_str("    }\n");
