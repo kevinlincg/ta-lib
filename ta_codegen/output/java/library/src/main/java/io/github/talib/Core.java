@@ -82430,16 +82430,19 @@ public final class Core {
        *
        *   ER[t] = |c[t] - c[t-P]| / SUM(k = t-P+1 .. t) |c[k] - c[k-1]|
        *
+       * The ratio is in [0,1] in exact arithmetic, but sumROC1 drifts, so the
+       * clamp to 1.0 is what makes the declared range a bound rather than a
+       * hope -- and in kama.c what keeps its recurrence a convex combination.
+       *
        * This is a lift of TA_KAMA's inner efficiency ratio (kama.c) so the
        * two stay bit-identical -- the KAMA-reconstruction differential in
-       * test_composite2.c exists to keep it that way. Two guards are
+       * test_composite2.c exists to keep it that way. Three more guards are
        * load-bearing and shared with kama.c:
        *
        *   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP
-       *     would give 1.0000000000000002. The comparison is against the
-       *     SIGNED numerator, so it only fires on up-moves; on sustained
-       *     declines the raw fabs ratio can exceed 1.0 by a few ULP. Do NOT
-       *     "fix" this with fabs -- it changes TA_KAMA's output.
+       *     would give 1.0000000000000002, on up-moves. It compares against
+       *     the SIGNED numerator, so it is false for every down move: it
+       *     bounds nothing on its own, which is what the clamp is for.
        *   - a genuinely flat window is recognized by COUNTING exactly-zero
        *     one-bar changes (nullRun >= P forces sumROC1 to 0.0, purging the
        *     running sum's rounding residue), after which `0 <= 0` pins the
@@ -82448,13 +82451,10 @@ public final class Core {
        *     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
        *     price-carrying sum).
        *
-       * A third guard is the denominator test: the division runs only where
-       * sumROC1 is exactly positive. The clamp above cannot serve as it,
-       * because it compares against the SIGNED numerator and so is false for
-       * every down move -- and a subtract-then-add sum can reach 0.0, or
-       * below it, on a window that is not flat, when a term absorbed on the
-       * way in is subtracted later at full precision. Without the guard those
-       * bars divide by zero.
+       * The third is the denominator test (#385): a subtract-then-add sum can
+       * reach 0.0, or below it, on a window that is not flat. The clamp
+       * subsumes it numerically, so it is held by the structural sweep over
+       * divisors, not by any value test.
        *
        * The subtract-then-add update order matches TA_SUM's recurrence,
        * which is what makes the composite differential bit-exact. The
@@ -82503,7 +82503,11 @@ public final class Core {
       if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          outReal[0] = 1.0;
       } else {
-         outReal[0] = Math.abs(periodROC / sumROC1);
+         tempReal = Math.abs(periodROC / sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
+         outReal[0] = tempReal;
       }
       outIdx = 1;
       today += 1;
@@ -82535,7 +82539,11 @@ public final class Core {
          if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             outReal[outIdx++] = 1.0;
          } else {
-            outReal[outIdx++] = Math.abs(periodROC / sumROC1);
+            tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
+            outReal[outIdx++] = tempReal;
          }
          today += 1;
       }
@@ -82604,7 +82612,11 @@ public final class Core {
       if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          outReal[0] = 1.0;
       } else {
-         outReal[0] = Math.abs(periodROC / sumROC1);
+         tempReal = Math.abs(periodROC / sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
+         outReal[0] = tempReal;
       }
       outIdx = 1;
       today += 1;
@@ -82627,7 +82639,11 @@ public final class Core {
          if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             outReal[outIdx++] = 1.0;
          } else {
-            outReal[outIdx++] = Math.abs(periodROC / sumROC1);
+            tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
+            outReal[outIdx++] = tempReal;
          }
          today += 1;
       }
@@ -82647,7 +82663,7 @@ public final class Core {
     * <pre>{@code
     * `ER[t] = |close[t] − close[t−P]| / Σ |close[k] − close[k−1]|` over the same `P` bars.
     * Two guards, both shared with `KAMA`: a ratio that floating point would nudge just above 1.0 on a straight-line advance is pinned to exactly 1.0, and a dead-flat window (0/0) also reports 1.0 — a flat market therefore reads as "perfectly efficient", which is `KAMA`'s own convention and what keeps the two reconstructible from each other.
-    * The clamp compares against the *signed* net move, so it only fires on advances: on sustained declines the output may exceed 1.0 by a few ULP. The range is "0..1, may exceed 1 by a few ULP on sustained declines", not a hard bound.
+    * The output is a hard 0..1 — the net move can never exceed the path travelled.
     * TC2000 documents a signed ×100 variant (−100..+100); the absolute 0..1 form here is the author's, StockCharts', LEAN's, backtrader's and pandas-ta's.
     * }</pre>
     * <p><b>Notes</b>
@@ -82720,7 +82736,7 @@ public final class Core {
     * <pre>{@code
     * `ER[t] = |close[t] − close[t−P]| / Σ |close[k] − close[k−1]|` over the same `P` bars.
     * Two guards, both shared with `KAMA`: a ratio that floating point would nudge just above 1.0 on a straight-line advance is pinned to exactly 1.0, and a dead-flat window (0/0) also reports 1.0 — a flat market therefore reads as "perfectly efficient", which is `KAMA`'s own convention and what keeps the two reconstructible from each other.
-    * The clamp compares against the *signed* net move, so it only fires on advances: on sustained declines the output may exceed 1.0 by a few ULP. The range is "0..1, may exceed 1 by a few ULP on sustained declines", not a hard bound.
+    * The output is a hard 0..1 — the net move can never exceed the path travelled.
     * TC2000 documents a signed ×100 variant (−100..+100); the absolute 0..1 form here is the author's, StockCharts', LEAN's, backtrader's and pandas-ta's.
     * }</pre>
     * <p><b>Notes</b>
@@ -82930,7 +82946,11 @@ public final class Core {
          if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             cur_outReal = 1.0;
          } else {
-            cur_outReal = Math.abs(periodROC / sumROC1);
+            tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
+            cur_outReal = tempReal;
          }
          return cur_outReal;
       }
@@ -82996,7 +83016,11 @@ public final class Core {
       if( sp.sumROC1 <= 0.0 || sp.sumROC1 <= periodROC ) {
          sp.cur_outReal = 1.0;
       } else {
-         sp.cur_outReal = Math.abs(periodROC / sp.sumROC1);
+         tempReal = Math.abs(periodROC / sp.sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
+         sp.cur_outReal = tempReal;
       }
       sp.lag1_inReal = inReal;
       sp.ring_trailingIdx_inReal[sp.ringPos_trailingIdx] = inReal;
@@ -83042,16 +83066,19 @@ public final class Core {
        *
        *   ER[t] = |c[t] - c[t-P]| / SUM(k = t-P+1 .. t) |c[k] - c[k-1]|
        *
+       * The ratio is in [0,1] in exact arithmetic, but sumROC1 drifts, so the
+       * clamp to 1.0 is what makes the declared range a bound rather than a
+       * hope -- and in kama.c what keeps its recurrence a convex combination.
+       *
        * This is a lift of TA_KAMA's inner efficiency ratio (kama.c) so the
        * two stay bit-identical -- the KAMA-reconstruction differential in
-       * test_composite2.c exists to keep it that way. Two guards are
+       * test_composite2.c exists to keep it that way. Three more guards are
        * load-bearing and shared with kama.c:
        *
        *   - `sumROC1 <= periodROC` pins the ratio to exactly 1.0 where FP
-       *     would give 1.0000000000000002. The comparison is against the
-       *     SIGNED numerator, so it only fires on up-moves; on sustained
-       *     declines the raw fabs ratio can exceed 1.0 by a few ULP. Do NOT
-       *     "fix" this with fabs -- it changes TA_KAMA's output.
+       *     would give 1.0000000000000002, on up-moves. It compares against
+       *     the SIGNED numerator, so it is false for every down move: it
+       *     bounds nothing on its own, which is what the clamp is for.
        *   - a genuinely flat window is recognized by COUNTING exactly-zero
        *     one-bar changes (nullRun >= P forces sumROC1 to 0.0, purging the
        *     running sum's rounding residue), after which `0 <= 0` pins the
@@ -83060,13 +83087,10 @@ public final class Core {
        *     gate (ER is homogeneous of degree 0, and a fixed 1e-14 met a
        *     price-carrying sum).
        *
-       * A third guard is the denominator test: the division runs only where
-       * sumROC1 is exactly positive. The clamp above cannot serve as it,
-       * because it compares against the SIGNED numerator and so is false for
-       * every down move -- and a subtract-then-add sum can reach 0.0, or
-       * below it, on a window that is not flat, when a term absorbed on the
-       * way in is subtracted later at full precision. Without the guard those
-       * bars divide by zero.
+       * The third is the denominator test (#385): a subtract-then-add sum can
+       * reach 0.0, or below it, on a window that is not flat. The clamp
+       * subsumes it numerically, so it is held by the structural sweep over
+       * divisors, not by any value test.
        *
        * The subtract-then-add update order matches TA_SUM's recurrence,
        * which is what makes the composite differential bit-exact. The
@@ -83115,7 +83139,11 @@ public final class Core {
       if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          outReal[0 * outStride] = 1.0;
       } else {
-         outReal[0 * outStride] = Math.abs(periodROC / sumROC1);
+         tempReal = Math.abs(periodROC / sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
+         outReal[0 * outStride] = tempReal;
       }
       outIdx = 1;
       today += 1;
@@ -83147,7 +83175,11 @@ public final class Core {
          if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
             outReal[outIdx++ * outStride] = 1.0;
          } else {
-            outReal[outIdx++ * outStride] = Math.abs(periodROC / sumROC1);
+            tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
+            outReal[outIdx++ * outStride] = tempReal;
          }
          today += 1;
       }
@@ -102800,6 +102832,9 @@ public final class Core {
  *                the fixed TA_IS_ZERO band beside the efficiency ratio, which
  *                forced the fastest adaptation on any instrument quoted small
  *                enough to fall under it.
+ *  090626 MF,CC  Fix #390. Clamp the efficiency ratio to 1. A drifted sumROC1
+ *                let it exceed its own mathematical maximum, and the squared
+ *                smoothing constant then amplified instead of averaging.
  */
 
    /**
@@ -102945,26 +102980,22 @@ public final class Core {
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio.
        *
-       * The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-       * both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-       * sit beside it was not -- it declared the window flat, and forced the
-       * fastest adaptation, for every window of an instrument quoted below it
-       * (issue #253). A genuinely flat window is now recognized by the exact bar
-       * count above instead.
+       * The ratio cannot exceed 1 in exact arithmetic, but sumROC1 drifts, so
+       * clamp it: past 1 the squared smoothing constant amplifies instead of
+       * averaging and the recurrence below stops being a convex combination.
        *
-       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
-       * beside it compares against the SIGNED numerator, so it is false whenever
-       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
-       * add/subtract of fabs terms, so an addend absorbed on the way in and
-       * subtracted later at full precision drives it to exactly 0.0 on a window
-       * that is not flat; without this clause that bar divides by zero and the
-       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
-       * carried until #350).
+       * `sumROC1 <= 0.0` (#385) is now numerically redundant -- the clamp maps its
+       * +Inf onto the same 1.0 -- so a value test written against it would pass
+       * with it deleted. Keep it anyway: the divisor sweep requires a division to
+       * be dominated by a test of its own divisor against a literal zero.
        */
       if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
       }
       /* Calculate the smoothing constant */
       tempReal = Math.fma(tempReal, constDiff, constMax);
@@ -103013,6 +103044,9 @@ public final class Core {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
          }
          /* Calculate the smoothing constant */
          tempReal = Math.fma(tempReal, constDiff, constMax);
@@ -103061,6 +103095,9 @@ public final class Core {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
          }
          /* Calculate the smoothing constant */
          tempReal = Math.fma(tempReal, constDiff, constMax);
@@ -103161,6 +103198,9 @@ public final class Core {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
       }
       tempReal = Math.fma(tempReal, constDiff, constMax);
       tempReal *= tempReal;
@@ -103185,6 +103225,9 @@ public final class Core {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
          }
          tempReal = Math.fma(tempReal, constDiff, constMax);
          tempReal *= tempReal;
@@ -103213,6 +103256,9 @@ public final class Core {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
          }
          tempReal = Math.fma(tempReal, constDiff, constMax);
          tempReal *= tempReal;
@@ -103237,6 +103283,7 @@ public final class Core {
     * <p><b>Notes</b>
     * <ul>
     * <li>A period of 1 performs no smoothing: the output is a copy of the input, consistent with {@code MA(period=1)} for every MAType. (The natural KAMA math at period 1 would degenerate to a fixed-alpha EMA because the efficiency ratio is always 1, so the copy is made explicit.) Allowed since 0.6.5.</li>
+    * <li>The output never leaves the range of the prices it has seen.</li>
     * </ul>
     * <p>Values are written only where the indicator is defined. The returned
     * {@link OutRange} says where they start and how many there are; nothing
@@ -103304,6 +103351,7 @@ public final class Core {
     * <p><b>Notes</b>
     * <ul>
     * <li>A period of 1 performs no smoothing: the output is a copy of the input, consistent with {@code MA(period=1)} for every MAType. (The natural KAMA math at period 1 would degenerate to a fixed-alpha EMA because the efficiency ratio is always 1, so the copy is made explicit.) Allowed since 0.6.5.</li>
+    * <li>The output never leaves the range of the prices it has seen.</li>
     * </ul>
     * <p>This is the {@code float[]} overload. The arithmetic is performed in
     * {@code double} before being written to the {@code double[]} output, so a
@@ -103522,6 +103570,9 @@ public final class Core {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
          }
          /* Calculate the smoothing constant */
          tempReal = Math.fma(tempReal, sp.constDiff, sp.constMax);
@@ -103605,6 +103656,9 @@ public final class Core {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sp.sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
       }
       /* Calculate the smoothing constant */
       tempReal = Math.fma(tempReal, sp.constDiff, sp.constMax);
@@ -103746,26 +103800,22 @@ public final class Core {
       trailingValue = tempReal2;
       /* Calculate the efficiency ratio.
        *
-       * The only threshold is `sumROC1 <= periodROC`, and it is scale-consistent:
-       * both sides carry the quote unit. The fixed TA_IS_ZERO band that used to
-       * sit beside it was not -- it declared the window flat, and forced the
-       * fastest adaptation, for every window of an instrument quoted below it
-       * (issue #253). A genuinely flat window is now recognized by the exact bar
-       * count above instead.
+       * The ratio cannot exceed 1 in exact arithmetic, but sumROC1 drifts, so
+       * clamp it: past 1 the squared smoothing constant amplifies instead of
+       * averaging and the recurrence below stops being a convex combination.
        *
-       * `sumROC1 <= 0.0` is the denominator test and must stay FIRST: the clamp
-       * beside it compares against the SIGNED numerator, so it is false whenever
-       * periodROC < 0 and cannot stand in for one. sumROC1 is a running
-       * add/subtract of fabs terms, so an addend absorbed on the way in and
-       * subtracted later at full precision drives it to exactly 0.0 on a window
-       * that is not flat; without this clause that bar divides by zero and the
-       * +Inf poisons prevKAMA for the rest of the call (#385, the same shape ER
-       * carried until #350).
+       * `sumROC1 <= 0.0` (#385) is now numerically redundant -- the clamp maps its
+       * +Inf onto the same 1.0 -- so a value test written against it would pass
+       * with it deleted. Keep it anyway: the divisor sweep requires a division to
+       * be dominated by a test of its own divisor against a literal zero.
        */
       if( sumROC1 <= 0.0 || sumROC1 <= periodROC ) {
          tempReal = 1.0;
       } else {
          tempReal = Math.abs(periodROC / sumROC1);
+         if( tempReal > 1.0 ) {
+            tempReal = 1.0;
+         }
       }
       /* Calculate the smoothing constant */
       tempReal = Math.fma(tempReal, constDiff, constMax);
@@ -103814,6 +103864,9 @@ public final class Core {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
          }
          /* Calculate the smoothing constant */
          tempReal = Math.fma(tempReal, constDiff, constMax);
@@ -103862,6 +103915,9 @@ public final class Core {
             tempReal = 1.0;
          } else {
             tempReal = Math.abs(periodROC / sumROC1);
+            if( tempReal > 1.0 ) {
+               tempReal = 1.0;
+            }
          }
          /* Calculate the smoothing constant */
          tempReal = Math.fma(tempReal, constDiff, constMax);
@@ -155142,6 +155198,9 @@ public final class Core {
  *               small enough to fall under it.
  *  082726 MF,CC Fix #269. Answer a rejected %D ma() before the copy, not after:
  *               the stale *outNBElement overran outSlowK by lookbackDSlow.
+ *  090626 MF,CC Fix #390. Divide by the range, scale after: the hoisted
+ *               `(highest-lowest)/100.0` underflowed to 0.0 on a denormal
+ *               range that the guard still called "not flat".
  */
 
    /**
@@ -155222,7 +155281,6 @@ public final class Core {
       double lowest = 0;
       double highest = 0;
       double tmp = 0;
-      double diff = 0;
       double[] tempBuffer;
       int outIdx = 0;
       int lowestIdx = 0;
@@ -155338,7 +155396,6 @@ public final class Core {
       lowestIdx = highestIdx;
       lowest = 0.0;
       highest = lowest;
-      diff = highest;
       /* Allocate a temporary buffer large enough to
        * store the K.
        *
@@ -155370,11 +155427,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          /* Set the highest high */
          tmp = inHigh[today];
@@ -155389,22 +155444,22 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
-         /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-          * machine-flat window leaves a sub-epsilon residue that an exact check
-          * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-          * range against ITS OWN two extremes, not against a fixed band: the range
-          * carries the quote unit, so a constant put against it answers "flat" for
-          * every window of an instrument quoted below it and zeroed the whole
-          * output (issue #253).
+         /* Divide by the range itself and scale after: the guard has to test the
+          * very expression the division uses, or a scaling step can carry a
+          * guarded-non-zero into a zero divisor.
+          *
+          * The band is the range against ITS OWN two extremes, not a fixed
+          * constant: the range carries the quote unit, so a constant answers
+          * "flat" for every window of an instrument quoted below it (issue #253).
+          * It absorbs the machine-flat window an exact test would divide into
+          * [0,100] noise (issue #107 / STOCHRSI).
           */
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            tempBuffer[outIdx++] = (inClose[today] - lowest) / diff;
+            tempBuffer[outIdx++] = (inClose[today] - lowest) / (highest - lowest) * 100.0;
          } else {
             tempBuffer[outIdx++] = 0.0;
          }
@@ -155467,7 +155522,6 @@ public final class Core {
       double lowest = 0;
       double highest = 0;
       double tmp = 0;
-      double diff = 0;
       double[] tempBuffer;
       int outIdx = 0;
       int lowestIdx = 0;
@@ -155530,7 +155584,6 @@ public final class Core {
       lowestIdx = highestIdx;
       lowest = 0.0;
       highest = lowest;
-      diff = highest;
       bufferIsAllocated = 0;
       if( false || false || false ) {
          tempBuffer = outSlowK;
@@ -155551,11 +155604,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          tmp = (double)inHigh[today];
          if( highestIdx < trailingIdx ) {
@@ -155569,14 +155620,12 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            tempBuffer[outIdx++] = ((double)inClose[today] - lowest) / diff;
+            tempBuffer[outIdx++] = ((double)inClose[today] - lowest) / (highest - lowest) * 100.0;
          } else {
             tempBuffer[outIdx++] = 0.0;
          }
@@ -155822,7 +155871,6 @@ public final class Core {
       MAType optInSlowD_MAType;
       double lowest;
       double highest;
-      double diff;
       int lowestIdx;
       int highestIdx;
       int trailingIdx;
@@ -155873,7 +155921,6 @@ public final class Core {
          this.optInSlowD_MAType = other.optInSlowD_MAType;
          this.lowest = other.lowest;
          this.highest = other.highest;
-         this.diff = other.diff;
          this.lowestIdx = other.lowestIdx;
          this.highestIdx = other.highestIdx;
          this.trailingIdx = other.trailingIdx;
@@ -155934,7 +155981,6 @@ public final class Core {
          double cur_outSlowD = 0.0;
          double cur_outSlowK = 0.0;
          double tmp = 0.0;
-         double diff = sp.diff;
          double highest = sp.highest;
          int highestIdx = sp.highestIdx;
          int i = sp.i;
@@ -155975,11 +156021,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          /* Set the highest high */
          tmp = ((today & sp.xMask) != pkSlot0) ? sp.x_inHigh[today & sp.xMask] : pkVal0;
@@ -155994,22 +156038,22 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
-         /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-          * machine-flat window leaves a sub-epsilon residue that an exact check
-          * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-          * range against ITS OWN two extremes, not against a fixed band: the range
-          * carries the quote unit, so a constant put against it answers "flat" for
-          * every window of an instrument quoted below it and zeroed the whole
-          * output (issue #253).
+         /* Divide by the range itself and scale after: the guard has to test the
+          * very expression the division uses, or a scaling step can carry a
+          * guarded-non-zero into a zero divisor.
+          *
+          * The band is the range against ITS OWN two extremes, not a fixed
+          * constant: the range carries the quote unit, so a constant answers
+          * "flat" for every window of an instrument quoted below it (issue #253).
+          * It absorbs the machine-flat window an exact test would divide into
+          * [0,100] noise (issue #107 / STOCHRSI).
           */
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            cur_tempBuffer = ((((today & sp.xMask) != pkSlot2) ? sp.x_inClose[today & sp.xMask] : pkVal2) - lowest) / diff;
+            cur_tempBuffer = ((((today & sp.xMask) != pkSlot2) ? sp.x_inClose[today & sp.xMask] : pkVal2) - lowest) / (highest - lowest) * 100.0;
          } else {
             cur_tempBuffer = 0.0;
          }
@@ -156100,11 +156144,9 @@ public final class Core {
                sp.lowest = tmp;
             }
          }
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       } else if( tmp <= sp.lowest ) {
          sp.lowestIdx = sp.today;
          sp.lowest = tmp;
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       }
       /* Set the highest high */
       tmp = sp.x_inHigh[sp.today & sp.xMask];
@@ -156119,22 +156161,22 @@ public final class Core {
                sp.highest = tmp;
             }
          }
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       } else if( tmp >= sp.highest ) {
          sp.highestIdx = sp.today;
          sp.highest = tmp;
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       }
-      /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-       * machine-flat window leaves a sub-epsilon residue that an exact check
-       * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-       * range against ITS OWN two extremes, not against a fixed band: the range
-       * carries the quote unit, so a constant put against it answers "flat" for
-       * every window of an instrument quoted below it and zeroed the whole
-       * output (issue #253).
+      /* Divide by the range itself and scale after: the guard has to test the
+       * very expression the division uses, or a scaling step can carry a
+       * guarded-non-zero into a zero divisor.
+       *
+       * The band is the range against ITS OWN two extremes, not a fixed
+       * constant: the range carries the quote unit, so a constant answers
+       * "flat" for every window of an instrument quoted below it (issue #253).
+       * It absorbs the machine-flat window an exact test would divide into
+       * [0,100] noise (issue #107 / STOCHRSI).
        */
       if( !(Math.abs(sp.highest - sp.lowest) <= 0.00000000000001 * (Math.abs(sp.highest) + Math.abs(sp.lowest))) ) {
-         cur_tempBuffer = (sp.x_inClose[sp.today & sp.xMask] - sp.lowest) / sp.diff;
+         cur_tempBuffer = (sp.x_inClose[sp.today & sp.xMask] - sp.lowest) / (sp.highest - sp.lowest) * 100.0;
       } else {
          cur_tempBuffer = 0.0;
       }
@@ -156152,7 +156194,6 @@ public final class Core {
       double lowest = 0;
       double highest = 0;
       double tmp = 0;
-      double diff = 0;
       double[] tempBuffer;
       int outIdx = 0;
       int lowestIdx = 0;
@@ -156280,7 +156321,6 @@ public final class Core {
       lowestIdx = highestIdx;
       lowest = 0.0;
       highest = lowest;
-      diff = highest;
       /* Allocate a temporary buffer large enough to
        * store the K.
        *
@@ -156312,11 +156352,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          /* Set the highest high */
          tmp = inHigh[today];
@@ -156331,22 +156369,22 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
-         /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-          * machine-flat window leaves a sub-epsilon residue that an exact check
-          * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-          * range against ITS OWN two extremes, not against a fixed band: the range
-          * carries the quote unit, so a constant put against it answers "flat" for
-          * every window of an instrument quoted below it and zeroed the whole
-          * output (issue #253).
+         /* Divide by the range itself and scale after: the guard has to test the
+          * very expression the division uses, or a scaling step can carry a
+          * guarded-non-zero into a zero divisor.
+          *
+          * The band is the range against ITS OWN two extremes, not a fixed
+          * constant: the range carries the quote unit, so a constant answers
+          * "flat" for every window of an instrument quoted below it (issue #253).
+          * It absorbs the machine-flat window an exact test would divide into
+          * [0,100] noise (issue #107 / STOCHRSI).
           */
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            tempBuffer[outIdx++] = (inClose[today] - lowest) / diff;
+            tempBuffer[outIdx++] = (inClose[today] - lowest) / (highest - lowest) * 100.0;
          } else {
             tempBuffer[outIdx++] = 0.0;
          }
@@ -156419,7 +156457,6 @@ public final class Core {
       sp.optInSlowD_MAType = optInSlowD_MAType;
       sp.lowest = lowest;
       sp.highest = highest;
-      sp.diff = diff;
       sp.lowestIdx = lowestIdx;
       sp.highestIdx = highestIdx;
       sp.trailingIdx = trailingIdx;
@@ -156556,6 +156593,9 @@ public final class Core {
  *               small enough to fall under it.
  *  082726 MF,CC Drop the dead retCode block after the copy: the rejection is
  *               already answered above it, and the shape reads like #269.
+ *  090626 MF,CC Fix #390. Divide by the range, scale after: the hoisted
+ *               `(highest-lowest)/100.0` underflowed to 0.0 on a denormal
+ *               range that the guard still called "not flat".
  */
 
    /**
@@ -156616,7 +156656,6 @@ public final class Core {
       double lowest = 0;
       double highest = 0;
       double tmp = 0;
-      double diff = 0;
       double[] tempBuffer;
       int outIdx = 0;
       int lowestIdx = 0;
@@ -156722,7 +156761,6 @@ public final class Core {
       lowestIdx = highestIdx;
       lowest = 0.0;
       highest = lowest;
-      diff = highest;
       /* Allocate a temporary buffer large enough to
        * store the K.
        *
@@ -156754,11 +156792,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          /* Set the highest high */
          tmp = inHigh[today];
@@ -156773,22 +156809,22 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
-         /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-          * machine-flat window leaves a sub-epsilon residue that an exact check
-          * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-          * range against ITS OWN two extremes, not against a fixed band: the range
-          * carries the quote unit, so a constant put against it answers "flat" for
-          * every window of an instrument quoted below it and zeroed the whole
-          * output (issue #253).
+         /* Divide by the range itself and scale after: the guard has to test the
+          * very expression the division uses, or a scaling step can carry a
+          * guarded-non-zero into a zero divisor.
+          *
+          * The band is the range against ITS OWN two extremes, not a fixed
+          * constant: the range carries the quote unit, so a constant answers
+          * "flat" for every window of an instrument quoted below it (issue #253).
+          * It absorbs the machine-flat window an exact test would divide into
+          * [0,100] noise (issue #107 / STOCHRSI).
           */
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            tempBuffer[outIdx++] = (inClose[today] - lowest) / diff;
+            tempBuffer[outIdx++] = (inClose[today] - lowest) / (highest - lowest) * 100.0;
          } else {
             tempBuffer[outIdx++] = 0.0;
          }
@@ -156840,7 +156876,6 @@ public final class Core {
       double lowest = 0;
       double highest = 0;
       double tmp = 0;
-      double diff = 0;
       double[] tempBuffer;
       int outIdx = 0;
       int lowestIdx = 0;
@@ -156893,7 +156928,6 @@ public final class Core {
       lowestIdx = highestIdx;
       lowest = 0.0;
       highest = lowest;
-      diff = highest;
       bufferIsAllocated = 0;
       if( false || false || false ) {
          tempBuffer = outFastK;
@@ -156914,11 +156948,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          tmp = (double)inHigh[today];
          if( highestIdx < trailingIdx ) {
@@ -156932,14 +156964,12 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            tempBuffer[outIdx++] = ((double)inClose[today] - lowest) / diff;
+            tempBuffer[outIdx++] = ((double)inClose[today] - lowest) / (highest - lowest) * 100.0;
          } else {
             tempBuffer[outIdx++] = 0.0;
          }
@@ -157155,7 +157185,6 @@ public final class Core {
       MAType optInFastD_MAType;
       double lowest;
       double highest;
-      double diff;
       int lowestIdx;
       int highestIdx;
       int trailingIdx;
@@ -157203,7 +157232,6 @@ public final class Core {
          this.optInFastD_MAType = other.optInFastD_MAType;
          this.lowest = other.lowest;
          this.highest = other.highest;
-         this.diff = other.diff;
          this.lowestIdx = other.lowestIdx;
          this.highestIdx = other.highestIdx;
          this.trailingIdx = other.trailingIdx;
@@ -157263,7 +157291,6 @@ public final class Core {
          double cur_outFastD = 0.0;
          double cur_outFastK = 0.0;
          double tmp = 0.0;
-         double diff = sp.diff;
          double highest = sp.highest;
          int highestIdx = sp.highestIdx;
          int i = sp.i;
@@ -157304,11 +157331,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          /* Set the highest high */
          tmp = ((today & sp.xMask) != pkSlot0) ? sp.x_inHigh[today & sp.xMask] : pkVal0;
@@ -157323,22 +157348,22 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
-         /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-          * machine-flat window leaves a sub-epsilon residue that an exact check
-          * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-          * range against ITS OWN two extremes, not against a fixed band: the range
-          * carries the quote unit, so a constant put against it answers "flat" for
-          * every window of an instrument quoted below it and zeroed the whole
-          * output (issue #253).
+         /* Divide by the range itself and scale after: the guard has to test the
+          * very expression the division uses, or a scaling step can carry a
+          * guarded-non-zero into a zero divisor.
+          *
+          * The band is the range against ITS OWN two extremes, not a fixed
+          * constant: the range carries the quote unit, so a constant answers
+          * "flat" for every window of an instrument quoted below it (issue #253).
+          * It absorbs the machine-flat window an exact test would divide into
+          * [0,100] noise (issue #107 / STOCHRSI).
           */
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            cur_tempBuffer = ((((today & sp.xMask) != pkSlot2) ? sp.x_inClose[today & sp.xMask] : pkVal2) - lowest) / diff;
+            cur_tempBuffer = ((((today & sp.xMask) != pkSlot2) ? sp.x_inClose[today & sp.xMask] : pkVal2) - lowest) / (highest - lowest) * 100.0;
          } else {
             cur_tempBuffer = 0.0;
          }
@@ -157428,11 +157453,9 @@ public final class Core {
                sp.lowest = tmp;
             }
          }
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       } else if( tmp <= sp.lowest ) {
          sp.lowestIdx = sp.today;
          sp.lowest = tmp;
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       }
       /* Set the highest high */
       tmp = sp.x_inHigh[sp.today & sp.xMask];
@@ -157447,22 +157470,22 @@ public final class Core {
                sp.highest = tmp;
             }
          }
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       } else if( tmp >= sp.highest ) {
          sp.highestIdx = sp.today;
          sp.highest = tmp;
-         sp.diff = (sp.highest - sp.lowest) / 100.0;
       }
-      /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-       * machine-flat window leaves a sub-epsilon residue that an exact check
-       * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-       * range against ITS OWN two extremes, not against a fixed band: the range
-       * carries the quote unit, so a constant put against it answers "flat" for
-       * every window of an instrument quoted below it and zeroed the whole
-       * output (issue #253).
+      /* Divide by the range itself and scale after: the guard has to test the
+       * very expression the division uses, or a scaling step can carry a
+       * guarded-non-zero into a zero divisor.
+       *
+       * The band is the range against ITS OWN two extremes, not a fixed
+       * constant: the range carries the quote unit, so a constant answers
+       * "flat" for every window of an instrument quoted below it (issue #253).
+       * It absorbs the machine-flat window an exact test would divide into
+       * [0,100] noise (issue #107 / STOCHRSI).
        */
       if( !(Math.abs(sp.highest - sp.lowest) <= 0.00000000000001 * (Math.abs(sp.highest) + Math.abs(sp.lowest))) ) {
-         cur_tempBuffer = (sp.x_inClose[sp.today & sp.xMask] - sp.lowest) / sp.diff;
+         cur_tempBuffer = (sp.x_inClose[sp.today & sp.xMask] - sp.lowest) / (sp.highest - sp.lowest) * 100.0;
       } else {
          cur_tempBuffer = 0.0;
       }
@@ -157479,7 +157502,6 @@ public final class Core {
       double lowest = 0;
       double highest = 0;
       double tmp = 0;
-      double diff = 0;
       double[] tempBuffer;
       int outIdx = 0;
       int lowestIdx = 0;
@@ -157597,7 +157619,6 @@ public final class Core {
       lowestIdx = highestIdx;
       lowest = 0.0;
       highest = lowest;
-      diff = highest;
       /* Allocate a temporary buffer large enough to
        * store the K.
        *
@@ -157629,11 +157650,9 @@ public final class Core {
                   lowest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp <= lowest ) {
             lowestIdx = today;
             lowest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
          /* Set the highest high */
          tmp = inHigh[today];
@@ -157648,22 +157667,22 @@ public final class Core {
                   highest = tmp;
                }
             }
-            diff = (highest - lowest) / 100.0;
          } else if( tmp >= highest ) {
             highestIdx = today;
             highest = tmp;
-            diff = (highest - lowest) / 100.0;
          }
-         /* Calculate stochastic. The guard is not an exact `diff != 0.0`: a
-          * machine-flat window leaves a sub-epsilon residue that an exact check
-          * would divide into [0,100] noise (issue #107 / STOCHRSI). It is the
-          * range against ITS OWN two extremes, not against a fixed band: the range
-          * carries the quote unit, so a constant put against it answers "flat" for
-          * every window of an instrument quoted below it and zeroed the whole
-          * output (issue #253).
+         /* Divide by the range itself and scale after: the guard has to test the
+          * very expression the division uses, or a scaling step can carry a
+          * guarded-non-zero into a zero divisor.
+          *
+          * The band is the range against ITS OWN two extremes, not a fixed
+          * constant: the range carries the quote unit, so a constant answers
+          * "flat" for every window of an instrument quoted below it (issue #253).
+          * It absorbs the machine-flat window an exact test would divide into
+          * [0,100] noise (issue #107 / STOCHRSI).
           */
          if( !(Math.abs(highest - lowest) <= 0.00000000000001 * (Math.abs(highest) + Math.abs(lowest))) ) {
-            tempBuffer[outIdx++] = (inClose[today] - lowest) / diff;
+            tempBuffer[outIdx++] = (inClose[today] - lowest) / (highest - lowest) * 100.0;
          } else {
             tempBuffer[outIdx++] = 0.0;
          }
@@ -157722,7 +157741,6 @@ public final class Core {
       sp.optInFastD_MAType = optInFastD_MAType;
       sp.lowest = lowest;
       sp.highest = highest;
-      sp.diff = diff;
       sp.lowestIdx = lowestIdx;
       sp.highestIdx = highestIdx;
       sp.trailingIdx = trailingIdx;
