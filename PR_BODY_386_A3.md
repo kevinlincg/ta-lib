@@ -108,11 +108,17 @@ overlapping ones.
 
 ## Verification
 
-- `cargo test` in `ta_codegen/generator` green; `cargo clippy --all-targets`
-  clean.
+- `cargo test` in `ta_codegen/generator`: 936 passed, 0 failed. `cargo clippy
+  --all-targets` clean.
 - `./ta_regtest` green (the full hand-written C suite, including the streaming
   gates and the frozen v0.6.4 leg).
-- `ta_regtest --codegen --language=c` green.
+- `ta_regtest --codegen --language=c` green over the whole corpus (161 pass, 0
+  fail). That run was made on `dev` at `f0f89e1c` with the C server carrying the
+  same short-history-leg reordering the maintainer has since landed as
+  `7625e259`: without it the leg reports a false
+  `open accepted a history shorter than one output` on every unstable-period
+  function, and the C leg cannot reach a verdict on anything else. This branch
+  now merges `7625e259`, and regenerating on the merged tree changes nothing.
 - Regenerated: the diff is `src/ta_func/*.c` plus the emitter; `output/rust`,
   `output/java` and `output/csharp` regenerate byte-identical, and no generated
   server or bench file moves.
