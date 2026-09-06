@@ -124,7 +124,71 @@ const ANNOTATED: &[(&str, &str, &str, &str)] = &[
     // it. KAMA below is the contrast -- it carries `sumROC1`, so the same reasoning
     // does not reach it.
     ("VWMA", "tempV", "unguarded by decision: stateless per bar", "nan_inf_output"),
+
+    // OPEN, and reported by the scaled-derivation arm rather than the accumulator one.
+    // `stoch.c:230` guards `highest - lowest` and `:231` divides by `diff`, which
+    // `:189` sets to `(highest - lowest)/100.0`. The scaling is what breaks the
+    // inference: a denormal range leaves `highest - lowest` non-zero while `diff`
+    // underflows to exactly 0.0, so the guard says "not flat" and the division is by
+    // zero. Measured on the released library in #390 -- TA_SUCCESS with inf/nan
+    // written for well-formed OHLC. Moving the guard onto `diff` changes STOCH's
+    // output on those windows, so it is a decision about the function, not a patch to
+    // make a sweep green; `the_scaled_arm_clears_when_the_guard_moves_to_the_divisor`
+    // pins that this row disappears once that decision is made.
+    ("STOCH", "diff", "OPEN: guard tests the pre-scaled range; see #390", ""),
+    ("STOCHF", "diff", "OPEN: guard tests the pre-scaled range; see #390", ""),
 ];
+
+/// Variables assigned, inside a loop, from an expression that MULTIPLIES OR DIVIDES
+/// something — mapped to the variables that expression reads.
+///
+/// This is the second defect shape, and it is not the accumulator one. STOCH guards
+/// `highest - lowest` and then divides by `diff`, where `diff = (highest-lowest)/100.0`
+/// (`stoch.c:189,230-231`). Scaling can send a non-zero quantity to exactly 0.0 by
+/// underflow, so a guard on the pre-scaled value does not establish what the division
+/// needs — the divisor is a different number. Addition and subtraction are excluded:
+/// they cannot turn a guarded-non-zero into a zero divisor the way a scaling can.
+fn scaled_derivations(f: &FuncDef) -> Vec<(String, HashSet<String>)> {
+    fn scaling_reads(e: &Expr) -> Option<HashSet<String>> {
+        match e {
+            Expr::BinOp(l, BinOp::Mul | BinOp::Div, r) => {
+                let mut s = names(l);
+                s.extend(names(r));
+                Some(s)
+            }
+            Expr::BinOp(l, _, r) => scaling_reads(l).or_else(|| scaling_reads(r)),
+            Expr::Cast(_, i) => scaling_reads(i),
+            _ => None,
+        }
+    }
+    fn walk(body: &[Statement], in_loop: bool, out: &mut Vec<(String, HashSet<String>)>) {
+        for st in body {
+            match st {
+                Statement::Assign { target: Expr::Var(t), value, .. } if in_loop => {
+                    if let Some(reads) = scaling_reads(value) {
+                        if !reads.contains(t) {
+                            out.push((t.clone(), reads));
+                        }
+                    }
+                }
+                Statement::While { body, .. }
+                | Statement::DoWhile { body, .. }
+                | Statement::For { body, .. }
+                | Statement::ForC { body, .. } => walk(body, true, out),
+                Statement::Block { body } => walk(body, in_loop, out),
+                Statement::If { then_body, else_body, .. } => {
+                    walk(then_body, in_loop, out);
+                    walk(else_body, in_loop, out);
+                }
+                _ => {}
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(&f.body, false, &mut out);
+    walk(&f.private_body, false, &mut out);
+    out
+}
 
 /// Every variable name mentioned anywhere in `e`.
 fn vars_of(e: &Expr, out: &mut HashSet<String>) {
@@ -369,6 +433,25 @@ fn real_valued(f: &FuncDef) -> HashSet<String> {
 struct Finding {
     func: String,
     divisor: String,
+    kind: FindingKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum FindingKind {
+    /// Divisor is accumulated across loop iterations and no guard tests it.
+    Accumulated,
+    /// Divisor is a SCALED derivation of a quantity a dominating guard does test —
+    /// the guard proves the pre-scaled value non-zero, which the divisor is not.
+    ScaledFromGuarded,
+}
+
+impl FindingKind {
+    fn label(self) -> &'static str {
+        match self {
+            FindingKind::Accumulated => "accumulated, untested",
+            FindingKind::ScaledFromGuarded => "scaled from a guarded value",
+        }
+    }
 }
 
 /// Walk an expression for divisions whose denominator is an accumulated variable that
@@ -378,6 +461,7 @@ fn scan_expr(
     accum: &HashSet<String>,
     guards: &[Expr],
     aliases: &[(String, String)],
+    derived: &[(String, HashSet<String>)],
     func: &str,
     out: &mut Vec<Finding>,
 ) {
@@ -390,31 +474,53 @@ fn scan_expr(
                         .any(|(alias, of)| *of == v && tests_var_against_zero(g, alias))
             });
             if accum.contains(&v) && !guarded {
-                out.push(Finding { func: func.to_string(), divisor: v });
+                out.push(Finding {
+                    func: func.to_string(),
+                    divisor: v.clone(),
+                    kind: FindingKind::Accumulated,
+                });
+            }
+            // Second shape: the divisor is untested, but a guard DOES test something
+            // the divisor was scaled from. That reads as guarded and is not -- scaling
+            // can underflow a non-zero value to exactly 0.0.
+            if !guarded {
+                let scaled_from_a_guarded_value = derived
+                    .iter()
+                    .filter(|(d, _)| *d == v)
+                    .any(|(_, reads)| {
+                        reads.iter().any(|r| guards.iter().any(|g| tests_var_against_zero(g, r)))
+                    });
+                if scaled_from_a_guarded_value {
+                    out.push(Finding {
+                        func: func.to_string(),
+                        divisor: v,
+                        kind: FindingKind::ScaledFromGuarded,
+                    });
+                }
             }
         }
-        scan_expr(num, accum, guards, aliases, func, out);
-        scan_expr(den, accum, guards, aliases, func, out);
+        scan_expr(num, accum, guards, aliases, derived, func, out);
+        scan_expr(den, accum, guards, aliases, derived, func, out);
         return;
     }
     match e {
         Expr::BinOp(l, _, r) => {
-            scan_expr(l, accum, guards, aliases, func, out);
-            scan_expr(r, accum, guards, aliases, func, out);
+            scan_expr(l, accum, guards, aliases, derived, func, out);
+            scan_expr(r, accum, guards, aliases, derived, func, out);
         }
         Expr::Cast(_, i) | Expr::Not(i) | Expr::BitwiseNot(i) | Expr::AddressOf(i) => {
-            scan_expr(i, accum, guards, aliases, func, out)
+            scan_expr(i, accum, guards, aliases, derived, func, out)
         }
         Expr::FuncCall(_, args) => {
-            args.iter().for_each(|a| scan_expr(a, accum, guards, aliases, func, out))
+            args.iter().for_each(|a| scan_expr(a, accum, guards, aliases, derived, func, out))
         }
         // A ternary's own condition guards both arms.
         Expr::Ternary(c, t, f) => {
-            scan_expr(c, accum, guards, aliases, func, out);
+            scan_expr(c, accum, guards, aliases, derived, func, out);
             let mut inner = guards.to_vec();
             inner.push((**c).clone());
-            scan_expr(t, accum, &inner, aliases, func, out);
-            scan_expr(f, accum, &inner, aliases, func, out);
+            scan_expr(t, accum, &inner, aliases, derived, func, out);
+            scan_expr(f, accum, &inner, aliases, derived, func, out);
         }
         _ => {}
     }
@@ -430,6 +536,7 @@ fn scan_stmts(
     accum: &HashSet<String>,
     guards: &[Expr],
     aliases: &[(String, String)],
+    derived: &[(String, HashSet<String>)],
     in_loop: bool,
     func: &str,
     out: &mut Vec<Finding>,
@@ -437,44 +544,44 @@ fn scan_stmts(
     for st in body {
         match st {
             Statement::Assign { value, .. } if in_loop => {
-                scan_expr(value, accum, guards, aliases, func, out)
+                scan_expr(value, accum, guards, aliases, derived, func, out)
             }
             Statement::VarDecl { init: Some(v), .. } if in_loop => {
-                scan_expr(v, accum, guards, aliases, func, out)
+                scan_expr(v, accum, guards, aliases, derived, func, out)
             }
             Statement::Expr(e) | Statement::Return { value: Some(e) } if in_loop => {
-                scan_expr(e, accum, guards, aliases, func, out)
+                scan_expr(e, accum, guards, aliases, derived, func, out)
             }
             Statement::If { condition, then_body, else_body, .. } => {
                 if in_loop {
-                    scan_expr(condition, accum, guards, aliases, func, out);
+                    scan_expr(condition, accum, guards, aliases, derived, func, out);
                 }
                 let mut inner = guards.to_vec();
                 inner.push(condition.clone());
-                scan_stmts(then_body, accum, &inner, aliases, in_loop, func, out);
+                scan_stmts(then_body, accum, &inner, aliases, derived, in_loop, func, out);
                 // The else arm is guarded by the negation, which `tests_var` treats
                 // the same way: it names the variable either way.
-                scan_stmts(else_body, accum, &inner, aliases, in_loop, func, out);
+                scan_stmts(else_body, accum, &inner, aliases, derived, in_loop, func, out);
             }
             Statement::While { condition, body } | Statement::DoWhile { condition, body } => {
-                scan_expr(condition, accum, guards, aliases, func, out);
-                scan_stmts(body, accum, guards, aliases, true, func, out);
+                scan_expr(condition, accum, guards, aliases, derived, func, out);
+                scan_stmts(body, accum, guards, aliases, derived, true, func, out);
             }
             Statement::For { body, .. } => {
-                scan_stmts(body, accum, guards, aliases, true, func, out)
+                scan_stmts(body, accum, guards, aliases, derived, true, func, out)
             }
             Statement::Block { body } => {
-                scan_stmts(body, accum, guards, aliases, in_loop, func, out)
+                scan_stmts(body, accum, guards, aliases, derived, in_loop, func, out)
             }
             Statement::ForC { condition, body, .. } => {
-                scan_expr(condition, accum, guards, aliases, func, out);
-                scan_stmts(body, accum, guards, aliases, true, func, out);
+                scan_expr(condition, accum, guards, aliases, derived, func, out);
+                scan_stmts(body, accum, guards, aliases, derived, true, func, out);
             }
             Statement::Switch { cases, default, .. } => {
                 for (_, b) in cases {
-                    scan_stmts(b, accum, guards, aliases, in_loop, func, out);
+                    scan_stmts(b, accum, guards, aliases, derived, in_loop, func, out);
                 }
-                scan_stmts(default, accum, guards, aliases, in_loop, func, out);
+                scan_stmts(default, accum, guards, aliases, derived, in_loop, func, out);
             }
             _ => {}
         }
@@ -488,18 +595,17 @@ fn findings_for(f: &FuncDef) -> Vec<Finding> {
     propagate_copies(f, &mut accum);
     let reals = real_valued(f);
     accum.retain(|v| reals.contains(v));
-    if accum.is_empty() {
-        return Vec::new();
-    }
     let aliases = magnitude_aliases(f);
+    let derived = scaled_derivations(f);
     let mut out = Vec::new();
     // Both bodies: `private_body` is where the arithmetic lives for every function
     // that declares a `_private` variant, and scanning only `body` skipped ER's
     // divisions entirely.
-    scan_stmts(&f.body, &accum, &[], &aliases, false, &f.name, &mut out);
-    scan_stmts(&f.private_body, &accum, &[], &aliases, false, &f.name, &mut out);
+    scan_stmts(&f.body, &accum, &[], &aliases, &derived, false, &f.name, &mut out);
+    scan_stmts(&f.private_body, &accum, &[], &aliases, &derived, false, &f.name, &mut out);
     out.sort_by(|a, b| a.divisor.cmp(&b.divisor));
-    out.dedup_by(|a, b| a.func == b.func && a.divisor == b.divisor);
+    out.sort_by(|a, b| (a.divisor.clone(), a.kind.label()).cmp(&(b.divisor.clone(), b.kind.label())));
+    out.dedup_by(|a, b| a.func == b.func && a.divisor == b.divisor && a.kind == b.kind);
     out
 }
 
@@ -512,16 +618,17 @@ fn loop_accumulated_divisors_are_guarded_on_themselves() {
             if ANNOTATED.iter().any(|(fn_, v, _, _)| *fn_ == fd.func && *v == fd.divisor) {
                 continue;
             }
-            flagged.push(format!("{}: divides by `{}`", fd.func, fd.divisor));
+            flagged.push(format!("{}: divides by `{}` ({})", fd.func, fd.divisor, fd.kind.label()));
         }
     }
     flagged.sort();
     flagged.dedup();
     assert!(
         flagged.is_empty(),
-        "divisor(s) accumulated across loop iterations with no guard testing that same \
-         variable — each is either a missing zero guard or a known-safe case that \
-         belongs in ANNOTATED with its reason:\n  {}",
+        "divisor(s) no dominating guard establishes non-zero for — either accumulated \
+         across loop iterations with nothing testing them, or SCALED from a value the \
+         guard does test, which scaling can underflow to 0.0 independently. Each is a \
+         missing guard or a case that belongs in ANNOTATED with its reason:\n  {}",
         flagged.join("\n  ")
     );
 }
@@ -680,5 +787,69 @@ fn annotation_reasons_still_hold() {
              `{required_flag}` flag -- and {name} no longer declares it. The reason has \
              expired: re-read the division rather than re-adding the flag to silence this."
         );
+    }
+}
+
+/// The scaled-derivation arm must go quiet when the guard moves to the divisor.
+///
+/// Same requirement as the ER and VORTEX self-tests, in the other direction: those
+/// prove the sweep goes loud on a reintroduced defect, this one proves it goes QUIET
+/// on the fix. Without it, a check that flags every scaled divisor unconditionally
+/// would look identical to one that reasons about the guard.
+#[test]
+fn the_scaled_arm_clears_when_the_guard_moves_to_the_divisor() {
+    let funcs = load();
+    let stoch = funcs.iter().find(|f| f.name == "STOCH").expect("STOCH is in the tree");
+
+    assert!(
+        findings_for(stoch).iter().any(|f| f.divisor == "diff"
+            && f.kind == FindingKind::ScaledFromGuarded),
+        "STOCH ships guarding `highest - lowest` while dividing by `diff`; the sweep \
+         should say so"
+    );
+
+    // Rewrite the guard's subject from `highest - lowest` to `diff` — the fix #390
+    // suggests — and the finding must disappear.
+    let mut fixed = stoch.clone();
+    guard_on_diff(&mut fixed.body);
+    guard_on_diff(&mut fixed.private_body);
+    assert!(
+        !findings_for(&fixed).iter().any(|f| f.divisor == "diff"),
+        "the sweep still flags `diff` after the guard was moved onto it — the check is \
+         not reading the guard, it is flagging every scaled divisor"
+    );
+}
+
+/// Replace `TA_IS_ZERO_SCALED(highest-lowest, ...)` with a plain zero test on `diff`.
+fn guard_on_diff(body: &mut [Statement]) {
+    fn fix(e: &Expr) -> Expr {
+        if let Expr::FuncCall(name, args) = e {
+            if name.contains("IS_ZERO") && args.iter().any(|a| names(a).contains("highest")) {
+                return Expr::BinOp(
+                    Box::new(Expr::Var("diff".to_string())),
+                    BinOp::Eq,
+                    Box::new(Expr::Literal(0.0)),
+                );
+            }
+        }
+        if let Expr::Not(inner) = e {
+            return Expr::Not(Box::new(fix(inner)));
+        }
+        e.clone()
+    }
+    for st in body.iter_mut() {
+        match st {
+            Statement::If { condition, then_body, else_body, .. } => {
+                *condition = fix(condition);
+                guard_on_diff(then_body);
+                guard_on_diff(else_body);
+            }
+            Statement::While { body, .. }
+            | Statement::DoWhile { body, .. }
+            | Statement::For { body, .. }
+            | Statement::ForC { body, .. }
+            | Statement::Block { body } => guard_on_diff(body),
+            _ => {}
+        }
     }
 }
