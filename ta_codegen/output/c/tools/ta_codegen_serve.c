@@ -6361,7 +6361,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_AC_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_AC_Open(&stSH, sv_h, sv_l, lb, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, &sh0);
@@ -6370,6 +6369,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -6651,7 +6651,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ACCBANDS_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_ACCBANDS_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0, &sh1, &sh2);
@@ -6660,6 +6659,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -6903,7 +6903,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ACOS_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ACOS_Open(&stSH, sv_c, lb, &sh0);
@@ -6912,6 +6911,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -7155,7 +7155,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_AD_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_AD_Open(&stSH, sv_h, sv_l, sv_c, sv_v, lb, &sh0);
@@ -7164,6 +7163,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -7407,7 +7407,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ADD_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ADD_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -7416,6 +7415,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -7663,8 +7663,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ADOSC_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ADOSC_Open(&stSH, sv_h, sv_l, sv_c, sv_v, lb, optInFastPeriod, optInSlowPeriod, &sh0);
@@ -7673,6 +7671,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -7917,7 +7917,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ADR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ADR_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, &sh0);
@@ -7926,6 +7925,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -8172,8 +8172,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(0, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ADX_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ADX_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -8182,6 +8180,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(0, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -8428,8 +8428,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(0, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ADXR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ADXR_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -8438,6 +8436,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(0, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -8683,7 +8683,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_AO_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_AO_Open(&stSH, sv_h, sv_l, lb, optInFastPeriod, optInSlowPeriod, &sh0);
@@ -8692,6 +8691,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -8948,12 +8948,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_APO_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_APO_Open(&stSH, sv_c, lb, optInFastPeriod, optInSlowPeriod, optInMAType, &sh0);
@@ -8962,6 +8956,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -9228,7 +9228,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_AROON_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_AROON_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, &sh0, &sh1);
@@ -9237,6 +9236,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -9481,7 +9481,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_AROONOSC_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_AROONOSC_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, &sh0);
@@ -9490,6 +9489,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -9733,7 +9733,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ASIN_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ASIN_Open(&stSH, sv_c, lb, &sh0);
@@ -9742,6 +9741,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -9985,7 +9985,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ATAN_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ATAN_Open(&stSH, sv_c, lb, &sh0);
@@ -9994,6 +9993,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -10240,8 +10240,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(2, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ATR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ATR_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -10250,6 +10248,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(2, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -10494,7 +10494,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_AVGDEV_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_AVGDEV_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -10503,6 +10502,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -10746,7 +10746,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_AVGPRICE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_AVGPRICE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -10755,6 +10754,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -11049,12 +11049,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_BBANDS_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_BBANDS_Open(&stSH, sv_c, lb, optInTimePeriod, optInNbDevUp, optInNbDevDn, optInMAType, &sh0, &sh1, &sh2);
@@ -11063,6 +11057,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -11307,7 +11307,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_BETA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_BETA_Open(&stSH, sv_c, sv_v, lb, optInTimePeriod, &sh0);
@@ -11316,6 +11315,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -11559,7 +11559,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_BOP_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_BOP_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -11568,6 +11567,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -11812,7 +11812,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CCI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CCI_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -11821,6 +11820,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -12067,7 +12067,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDL2CROWS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDL2CROWS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -12076,6 +12075,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -12322,7 +12322,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDL3BLACKCROWS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDL3BLACKCROWS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -12331,6 +12330,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -12577,7 +12577,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDL3INSIDE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDL3INSIDE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -12586,6 +12585,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -12832,7 +12832,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDL3LINESTRIKE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDL3LINESTRIKE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -12841,6 +12840,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -13087,7 +13087,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDL3OUTSIDE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDL3OUTSIDE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -13096,6 +13095,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -13342,7 +13342,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDL3STARSINSOUTH_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDL3STARSINSOUTH_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -13351,6 +13350,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -13597,7 +13597,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDL3WHITESOLDIERS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDL3WHITESOLDIERS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -13606,6 +13605,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -13853,7 +13853,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLABANDONEDBABY_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLABANDONEDBABY_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, optInPenetration, &sh0);
@@ -13862,6 +13861,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -14108,7 +14108,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLADVANCEBLOCK_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLADVANCEBLOCK_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -14117,6 +14116,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -14363,7 +14363,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLBELTHOLD_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLBELTHOLD_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -14372,6 +14371,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -14618,7 +14618,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLBREAKAWAY_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLBREAKAWAY_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -14627,6 +14626,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -14873,7 +14873,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLCLOSINGMARUBOZU_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLCLOSINGMARUBOZU_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -14882,6 +14881,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -15128,7 +15128,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLCONCEALBABYSWALL_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLCONCEALBABYSWALL_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -15137,6 +15136,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -15383,7 +15383,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLCOUNTERATTACK_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLCOUNTERATTACK_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -15392,6 +15391,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -15639,7 +15639,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLDARKCLOUDCOVER_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLDARKCLOUDCOVER_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, optInPenetration, &sh0);
@@ -15648,6 +15647,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -15894,7 +15894,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLDOJI_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLDOJI_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -15903,6 +15902,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -16149,7 +16149,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLDOJISTAR_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLDOJISTAR_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -16158,6 +16157,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -16404,7 +16404,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLDRAGONFLYDOJI_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLDRAGONFLYDOJI_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -16413,6 +16412,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -16659,7 +16659,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLENGULFING_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLENGULFING_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -16668,6 +16667,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -16915,7 +16915,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLEVENINGDOJISTAR_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLEVENINGDOJISTAR_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, optInPenetration, &sh0);
@@ -16924,6 +16923,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -17171,7 +17171,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLEVENINGSTAR_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLEVENINGSTAR_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, optInPenetration, &sh0);
@@ -17180,6 +17179,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -17426,7 +17426,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLGAPSIDESIDEWHITE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLGAPSIDESIDEWHITE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -17435,6 +17434,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -17681,7 +17681,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLGRAVESTONEDOJI_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLGRAVESTONEDOJI_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -17690,6 +17689,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -17936,7 +17936,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHAMMER_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHAMMER_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -17945,6 +17944,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -18191,7 +18191,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHANGINGMAN_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHANGINGMAN_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -18200,6 +18199,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -18446,7 +18446,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHARAMI_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHARAMI_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -18455,6 +18454,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -18701,7 +18701,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHARAMICROSS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHARAMICROSS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -18710,6 +18709,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -18956,7 +18956,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHIGHWAVE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHIGHWAVE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -18965,6 +18964,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -19211,7 +19211,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHIKKAKE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHIKKAKE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -19220,6 +19219,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -19466,7 +19466,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHIKKAKEMOD_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHIKKAKEMOD_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -19475,6 +19474,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -19721,7 +19721,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLHOMINGPIGEON_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLHOMINGPIGEON_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -19730,6 +19729,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -19976,7 +19976,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLIDENTICAL3CROWS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLIDENTICAL3CROWS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -19985,6 +19984,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -20231,7 +20231,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLINNECK_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLINNECK_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -20240,6 +20239,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -20486,7 +20486,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLINVERTEDHAMMER_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLINVERTEDHAMMER_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -20495,6 +20494,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -20741,7 +20741,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLKICKING_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLKICKING_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -20750,6 +20749,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -20996,7 +20996,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLKICKINGBYLENGTH_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLKICKINGBYLENGTH_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -21005,6 +21004,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -21251,7 +21251,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLLADDERBOTTOM_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLLADDERBOTTOM_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -21260,6 +21259,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -21506,7 +21506,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLLONGLEGGEDDOJI_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLLONGLEGGEDDOJI_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -21515,6 +21514,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -21761,7 +21761,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLLONGLINE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLLONGLINE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -21770,6 +21769,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -22016,7 +22016,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLMARUBOZU_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLMARUBOZU_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -22025,6 +22024,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -22271,7 +22271,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLMATCHINGLOW_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLMATCHINGLOW_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -22280,6 +22279,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -22527,7 +22527,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLMATHOLD_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLMATHOLD_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, optInPenetration, &sh0);
@@ -22536,6 +22535,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -22783,7 +22783,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLMORNINGDOJISTAR_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLMORNINGDOJISTAR_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, optInPenetration, &sh0);
@@ -22792,6 +22791,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -23039,7 +23039,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLMORNINGSTAR_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLMORNINGSTAR_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, optInPenetration, &sh0);
@@ -23048,6 +23047,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -23294,7 +23294,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLONNECK_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLONNECK_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -23303,6 +23302,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -23549,7 +23549,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLPIERCING_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLPIERCING_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -23558,6 +23557,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -23804,7 +23804,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLRICKSHAWMAN_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLRICKSHAWMAN_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -23813,6 +23812,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -24059,7 +24059,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLRISEFALL3METHODS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLRISEFALL3METHODS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -24068,6 +24067,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -24314,7 +24314,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLSEPARATINGLINES_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLSEPARATINGLINES_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -24323,6 +24322,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -24569,7 +24569,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLSHOOTINGSTAR_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLSHOOTINGSTAR_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -24578,6 +24577,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -24824,7 +24824,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLSHORTLINE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLSHORTLINE_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -24833,6 +24832,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -25079,7 +25079,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLSPINNINGTOP_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLSPINNINGTOP_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -25088,6 +25087,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -25334,7 +25334,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLSTALLEDPATTERN_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLSTALLEDPATTERN_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -25343,6 +25342,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -25589,7 +25589,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLSTICKSANDWICH_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLSTICKSANDWICH_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -25598,6 +25597,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -25844,7 +25844,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLTAKURI_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLTAKURI_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -25853,6 +25852,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -26099,7 +26099,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLTASUKIGAP_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLTASUKIGAP_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -26108,6 +26107,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -26354,7 +26354,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLTHRUSTING_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLTHRUSTING_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -26363,6 +26362,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -26609,7 +26609,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLTRISTAR_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLTRISTAR_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -26618,6 +26617,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -26864,7 +26864,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLUNIQUE3RIVER_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLUNIQUE3RIVER_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -26873,6 +26872,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -27119,7 +27119,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLUPSIDEGAP2CROWS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLUPSIDEGAP2CROWS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -27128,6 +27127,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -27374,7 +27374,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CDLXSIDEGAP3METHODS_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_CDLXSIDEGAP3METHODS_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0);
@@ -27383,6 +27382,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -27626,7 +27626,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CEIL_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CEIL_Open(&stSH, sv_c, lb, &sh0);
@@ -27635,6 +27634,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -27879,7 +27879,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CMF_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CMF_Open(&stSH, sv_h, sv_l, sv_c, sv_v, lb, optInTimePeriod, &sh0);
@@ -27888,6 +27887,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -28134,8 +28134,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(3, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CMO_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CMO_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -28144,6 +28142,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(3, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -28388,7 +28388,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CMOU_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CMOU_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -28397,6 +28396,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -28643,7 +28643,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_COPPOCK_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_COPPOCK_Open(&stSH, sv_c, lb, optInWMAPeriod, optInROC1Period, optInROC2Period, &sh0);
@@ -28652,6 +28651,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -28896,7 +28896,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CORREL_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CORREL_Open(&stSH, sv_c, sv_v, lb, optInTimePeriod, &sh0);
@@ -28905,6 +28904,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -29148,7 +29148,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_COS_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_COS_Open(&stSH, sv_c, lb, &sh0);
@@ -29157,6 +29156,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -29400,7 +29400,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_COSH_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_COSH_Open(&stSH, sv_c, lb, &sh0);
@@ -29409,6 +29408,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -29652,7 +29652,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CUMSUM_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CUMSUM_Open(&stSH, sv_c, lb, &sh0);
@@ -29661,6 +29660,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -29908,8 +29908,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_CVI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_CVI_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, optInROCPeriod, &sh0);
@@ -29918,6 +29916,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -30164,8 +30164,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_DEMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_DEMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -30174,6 +30172,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -30417,7 +30417,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_DIV_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_DIV_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -30426,6 +30425,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -30707,7 +30707,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_DONCHIAN_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_DONCHIAN_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, &sh0, &sh1, &sh2);
@@ -30716,6 +30715,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -30960,7 +30960,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_DPO_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_DPO_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -30969,6 +30968,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -31215,8 +31215,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(4, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_DX_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_DX_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -31225,6 +31223,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(4, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -31469,7 +31469,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_EFI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_EFI_Open(&stSH, sv_c, sv_v, lb, optInTimePeriod, &sh0);
@@ -31478,6 +31477,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -31724,8 +31724,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_EMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_EMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -31734,6 +31732,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -31978,7 +31978,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ER_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ER_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -31987,6 +31986,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -32255,8 +32255,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ERI_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_ERI_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0, &sh1);
@@ -32265,6 +32263,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -32508,7 +32508,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_EXP_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_EXP_Open(&stSH, sv_c, lb, &sh0);
@@ -32517,6 +32516,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -32760,7 +32760,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_FLOOR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_FLOOR_Open(&stSH, sv_c, lb, &sh0);
@@ -32769,6 +32768,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -33013,7 +33013,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_FOSC_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_FOSC_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -33022,6 +33021,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -33282,7 +33282,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_FRACTAL_Stream *stSH = NULL; int sh0 = 0; int sh1 = 0; TA_RetCode shrc = TA_FRACTAL_Open(&stSH, sv_h, sv_l, lb, optInLeftBars, optInRightBars, &sh0, &sh1);
@@ -33291,6 +33290,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -33588,8 +33588,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(25, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HA_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; double sh3 = 0.0; TA_RetCode shrc = TA_HA_Open(&stSH, sv_o, sv_h, sv_l, sv_c, lb, &sh0, &sh1, &sh2, &sh3);
@@ -33598,6 +33596,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(25, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -33842,7 +33842,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_HMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -33851,6 +33850,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -34096,8 +34096,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(6, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HT_DCPERIOD_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_HT_DCPERIOD_Open(&stSH, sv_c, lb, &sh0);
@@ -34106,6 +34104,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(6, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -34351,8 +34351,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(7, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HT_DCPHASE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_HT_DCPHASE_Open(&stSH, sv_c, lb, &sh0);
@@ -34361,6 +34359,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(7, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -34628,8 +34628,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(8, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HT_PHASOR_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_HT_PHASOR_Open(&stSH, sv_c, lb, &sh0, &sh1);
@@ -34638,6 +34636,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(8, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -34905,8 +34905,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(9, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HT_SINE_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_HT_SINE_Open(&stSH, sv_c, lb, &sh0, &sh1);
@@ -34915,6 +34913,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(9, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -35160,8 +35160,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(10, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HT_TRENDLINE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_HT_TRENDLINE_Open(&stSH, sv_c, lb, &sh0);
@@ -35170,6 +35168,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(10, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -35408,8 +35408,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(11, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_HT_TRENDMODE_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_HT_TRENDMODE_Open(&stSH, sv_c, lb, &sh0);
@@ -35418,6 +35416,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(11, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -35662,7 +35662,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_IMI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_IMI_Open(&stSH, sv_o, sv_c, lb, optInTimePeriod, &sh0);
@@ -35671,6 +35670,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -35917,8 +35917,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_KAMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_KAMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -35927,6 +35925,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -36214,9 +36214,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(2, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_KC_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_KC_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, optInATRPeriod, optInNbDev, &sh0, &sh1, &sh2);
@@ -36225,6 +36222,9 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(2, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -36520,12 +36520,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_KDJ_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_KDJ_Open(&stSH, sv_h, sv_l, sv_c, lb, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &sh0, &sh1, &sh2);
@@ -36534,6 +36528,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -36778,7 +36778,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_LINEARREG_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_LINEARREG_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -36787,6 +36786,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -37031,7 +37031,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_LINEARREG_ANGLE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_LINEARREG_ANGLE_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -37040,6 +37039,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -37284,7 +37284,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_LINEARREG_INTERCEPT_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_LINEARREG_INTERCEPT_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -37293,6 +37292,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -37537,7 +37537,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_LINEARREG_SLOPE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_LINEARREG_SLOPE_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -37546,6 +37545,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -37789,7 +37789,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_LN_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_LN_Open(&stSH, sv_c, lb, &sh0);
@@ -37798,6 +37797,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -38041,7 +38041,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_LOG10_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_LOG10_Open(&stSH, sv_c, lb, &sh0);
@@ -38050,6 +38049,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -38305,12 +38305,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MA_Open(&stSH, sv_c, lb, optInTimePeriod, optInMAType, &sh0);
@@ -38319,6 +38313,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -38604,8 +38604,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MACD_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_MACD_Open(&stSH, sv_c, lb, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, &sh0, &sh1, &sh2);
@@ -38614,6 +38612,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -38910,12 +38910,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MACDEXT_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_MACDEXT_Open(&stSH, sv_c, lb, optInFastPeriod, optInFastMAType, optInSlowPeriod, optInSlowMAType, optInSignalPeriod, optInSignalMAType, &sh0, &sh1, &sh2);
@@ -38924,6 +38918,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -39207,8 +39207,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MACDFIX_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; double sh2 = 0.0; TA_RetCode shrc = TA_MACDFIX_Open(&stSH, sv_c, lb, optInSignalPeriod, &sh0, &sh1, &sh2);
@@ -39217,6 +39215,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -39486,8 +39486,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MAMA_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_MAMA_Open(&stSH, sv_c, lb, optInFastLimit, optInSlowLimit, &sh0, &sh1);
@@ -39496,6 +39494,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -39739,7 +39739,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MARKETFI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MARKETFI_Open(&stSH, sv_h, sv_l, sv_v, lb, &sh0);
@@ -39748,6 +39747,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -39995,8 +39995,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MASSI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MASSI_Open(&stSH, sv_h, sv_l, lb, optInFastPeriod, optInSlowPeriod, &sh0);
@@ -40005,6 +40003,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -40262,12 +40262,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MAVP_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MAVP_Open(&stSH, sv_c, sv_v, lb, optInMinPeriod, optInMaxPeriod, optInMAType, &sh0);
@@ -40276,6 +40270,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -40520,7 +40520,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MAX_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MAX_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -40529,6 +40528,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -40766,7 +40766,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MAXINDEX_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_MAXINDEX_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -40775,6 +40774,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -41018,7 +41018,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MEDPRICE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MEDPRICE_Open(&stSH, sv_h, sv_l, lb, &sh0);
@@ -41027,6 +41026,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -41271,7 +41271,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MFI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MFI_Open(&stSH, sv_h, sv_l, sv_c, sv_v, lb, optInTimePeriod, &sh0);
@@ -41280,6 +41279,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -41524,7 +41524,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MIDPOINT_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MIDPOINT_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -41533,6 +41532,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -41777,7 +41777,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MIDPRICE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MIDPRICE_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, &sh0);
@@ -41786,6 +41785,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -42030,7 +42030,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MIN_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MIN_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -42039,6 +42038,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -42276,7 +42276,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MININDEX_Stream *stSH = NULL; int sh0 = 0; TA_RetCode shrc = TA_MININDEX_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -42285,6 +42284,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -42551,7 +42551,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MINMAX_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_MINMAX_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0, &sh1);
@@ -42560,6 +42559,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -42819,7 +42819,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MINMAXINDEX_Stream *stSH = NULL; int sh0 = 0; int sh1 = 0; TA_RetCode shrc = TA_MINMAXINDEX_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0, &sh1);
@@ -42828,6 +42827,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -43074,8 +43074,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(16, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MINUS_DI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MINUS_DI_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -43084,6 +43082,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(16, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -43330,8 +43330,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(17, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MINUS_DM_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MINUS_DM_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, &sh0);
@@ -43340,6 +43338,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(17, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -43584,7 +43584,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MOM_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MOM_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -43593,6 +43592,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -43836,7 +43836,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_MULT_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_MULT_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -43845,6 +43844,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -44091,8 +44091,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(18, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_NATR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_NATR_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -44101,6 +44099,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(18, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -44344,7 +44344,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_NVI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_NVI_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -44353,6 +44352,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -44596,7 +44596,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_OBV_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_OBV_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -44605,6 +44604,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -44850,7 +44850,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PERCENTILE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PERCENTILE_Open(&stSH, sv_c, lb, optInTimePeriod, optInPercentile, &sh0);
@@ -44859,6 +44858,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -45103,7 +45103,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PERCENTRANK_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PERCENTRANK_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -45112,6 +45111,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -45358,8 +45358,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(19, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PLUS_DI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PLUS_DI_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -45368,6 +45366,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(19, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -45614,8 +45614,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(20, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PLUS_DM_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PLUS_DM_Open(&stSH, sv_h, sv_l, lb, optInTimePeriod, &sh0);
@@ -45624,6 +45622,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(20, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -45880,12 +45880,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PPO_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PPO_Open(&stSH, sv_c, lb, optInFastPeriod, optInSlowPeriod, optInMAType, &sh0);
@@ -45894,6 +45888,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -46137,7 +46137,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PVI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PVI_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -46146,6 +46145,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -46402,12 +46402,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PVO_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PVO_Open(&stSH, sv_v, lb, optInFastPeriod, optInSlowPeriod, optInMAType, &sh0);
@@ -46416,6 +46410,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -46659,7 +46659,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_PVT_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_PVT_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -46668,6 +46667,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -46912,7 +46912,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_QSTICK_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_QSTICK_Open(&stSH, sv_o, sv_c, lb, optInTimePeriod, &sh0);
@@ -46921,6 +46920,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -47167,8 +47167,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_RMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_RMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -47177,6 +47175,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -47421,7 +47421,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ROC_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ROC_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -47430,6 +47429,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -47674,7 +47674,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ROCP_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ROCP_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -47683,6 +47682,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -47927,7 +47927,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ROCR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ROCR_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -47936,6 +47935,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -48180,7 +48180,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ROCR100_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ROCR100_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -48189,6 +48188,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -48435,8 +48435,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(21, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_RSI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_RSI_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -48445,6 +48443,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(21, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -48692,8 +48692,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(26, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_RVI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_RVI_Open(&stSH, sv_c, lb, optInTimePeriod, optInStdDevPeriod, &sh0);
@@ -48702,6 +48700,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(26, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -48946,7 +48946,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_RVOL_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_RVOL_Open(&stSH, sv_v, lb, optInTimePeriod, &sh0);
@@ -48955,6 +48954,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -49200,7 +49200,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SAR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SAR_Open(&stSH, sv_h, sv_l, lb, optInAcceleration, optInMaximum, &sh0);
@@ -49209,6 +49208,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -49460,7 +49460,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SAREXT_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SAREXT_Open(&stSH, sv_h, sv_l, lb, optInStartValue, optInOffsetOnReverse, optInAccelerationInitLong, optInAccelerationLong, optInAccelerationMaxLong, optInAccelerationInitShort, optInAccelerationShort, optInAccelerationMaxShort, &sh0);
@@ -49469,6 +49468,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -49712,7 +49712,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SIN_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SIN_Open(&stSH, sv_c, lb, &sh0);
@@ -49721,6 +49720,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -49964,7 +49964,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SINH_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SINH_Open(&stSH, sv_c, lb, &sh0);
@@ -49973,6 +49972,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -50217,7 +50217,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -50226,6 +50225,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -50497,8 +50497,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SMI_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_SMI_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, &sh0, &sh1);
@@ -50507,6 +50505,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -50750,7 +50750,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SQRT_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SQRT_Open(&stSH, sv_c, lb, &sh0);
@@ -50759,6 +50758,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -51004,7 +51004,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_STDDEV_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_STDDEV_Open(&stSH, sv_c, lb, optInTimePeriod, optInNbDev, &sh0);
@@ -51013,6 +51012,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -51293,12 +51293,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_STOCH_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_STOCH_Open(&stSH, sv_h, sv_l, sv_c, lb, optInFastK_Period, optInSlowK_Period, optInSlowK_MAType, optInSlowD_Period, optInSlowD_MAType, &sh0, &sh1);
@@ -51307,6 +51301,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -51585,12 +51585,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_STOCHF_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_STOCHF_Open(&stSH, sv_h, sv_l, sv_c, lb, optInFastK_Period, optInFastD_Period, optInFastD_MAType, &sh0, &sh1);
@@ -51599,6 +51593,12 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -51880,13 +51880,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(24, 0);
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetUnstablePeriod(14, 0);
-        TA_SetUnstablePeriod(13, 0);
-        TA_SetUnstablePeriod(21, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_STOCHRSI_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_STOCHRSI_Open(&stSH, sv_c, lb, optInTimePeriod, optInFastK_Period, optInFastD_Period, optInFastD_MAType, &sh0, &sh1);
@@ -51895,6 +51888,13 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(24, 0);
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetUnstablePeriod(14, 0);
+        TA_SetUnstablePeriod(13, 0);
+        TA_SetUnstablePeriod(21, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -52138,7 +52138,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SUB_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SUB_Open(&stSH, sv_c, sv_v, lb, &sh0);
@@ -52147,6 +52146,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -52391,7 +52391,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SUM_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_SUM_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -52400,6 +52399,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -52662,8 +52662,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(2, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_SUPERTREND_Stream *stSH = NULL; double sh0 = 0.0; int sh1 = 0; TA_RetCode shrc = TA_SUPERTREND_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, optInMultiplier, &sh0, &sh1);
@@ -52672,6 +52670,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(2, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -52919,8 +52919,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(23, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_T3_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_T3_Open(&stSH, sv_c, lb, optInTimePeriod, optInVFactor, &sh0);
@@ -52929,6 +52927,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(23, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -53172,7 +53172,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TAN_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TAN_Open(&stSH, sv_c, lb, &sh0);
@@ -53181,6 +53180,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -53424,7 +53424,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TANH_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TANH_Open(&stSH, sv_c, lb, &sh0);
@@ -53433,6 +53432,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -53679,8 +53679,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TEMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TEMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -53689,6 +53687,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -53932,7 +53932,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TRANGE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TRANGE_Open(&stSH, sv_h, sv_l, sv_c, lb, &sh0);
@@ -53941,6 +53940,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -54185,7 +54185,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TRIMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TRIMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -54194,6 +54193,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -54440,8 +54440,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TRIX_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TRIX_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -54450,6 +54448,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -54694,7 +54694,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TSF_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TSF_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -54703,6 +54702,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -54950,8 +54950,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TSI_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TSI_Open(&stSH, sv_c, lb, optInFirstPeriod, optInSecondPeriod, &sh0);
@@ -54960,6 +54958,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -55203,7 +55203,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_TYPPRICE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_TYPPRICE_Open(&stSH, sv_h, sv_l, sv_c, lb, &sh0);
@@ -55212,6 +55211,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -55458,7 +55458,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ULTOSC_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ULTOSC_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod1, optInTimePeriod2, optInTimePeriod3, &sh0);
@@ -55467,6 +55466,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -55712,7 +55712,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_VAR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_VAR_Open(&stSH, sv_c, lb, optInTimePeriod, optInNbDev, &sh0);
@@ -55721,6 +55720,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -55965,7 +55965,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_VHF_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_VHF_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -55974,6 +55973,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -56240,7 +56240,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_VORTEX_Stream *stSH = NULL; double sh0 = 0.0; double sh1 = 0.0; TA_RetCode shrc = TA_VORTEX_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0, &sh1);
@@ -56249,6 +56248,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -56492,7 +56492,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_VWAP_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_VWAP_Open(&stSH, sv_h, sv_l, sv_c, sv_v, lb, &sh0);
@@ -56501,6 +56500,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -56745,7 +56745,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_VWMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_VWMA_Open(&stSH, sv_c, sv_v, lb, optInTimePeriod, &sh0);
@@ -56754,6 +56753,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -56997,7 +56997,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_WAD_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_WAD_Open(&stSH, sv_h, sv_l, sv_c, lb, &sh0);
@@ -57006,6 +57005,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -57249,7 +57249,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_WCLPRICE_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_WCLPRICE_Open(&stSH, sv_h, sv_l, sv_c, lb, &sh0);
@@ -57258,6 +57257,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -57502,7 +57502,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_WILLR_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_WILLR_Open(&stSH, sv_h, sv_l, sv_c, lb, optInTimePeriod, &sh0);
@@ -57511,6 +57510,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -57755,7 +57755,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_WMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_WMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -57764,6 +57763,7 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;
@@ -58010,8 +58010,6 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
                 }
             }
         }
-        TA_SetUnstablePeriod(5, 0);
-        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( lb >= 1 && lb < svN ) {
             shortHistChecked = 1;
             { TA_ZLEMA_Stream *stSH = NULL; double sh0 = 0.0; TA_RetCode shrc = TA_ZLEMA_Open(&stSH, sv_c, lb, optInTimePeriod, &sh0);
@@ -58020,6 +58018,8 @@ static void handle_stream_verify(const char *json, char *resp, int resp_size) {
               }
         }
         if( shortHistChecked && !shortHistOk ) allOk = 0;
+        TA_SetUnstablePeriod(5, 0);
+        TA_SetCompatibility((TA_Compatibility)savedCompat);
         if( fillChecked && !fillOk ) allOk = 0;
         if( stateChecked && !stateOk ) allOk = 0;
         if( cloneChecked && !cloneOk ) allOk = 0;

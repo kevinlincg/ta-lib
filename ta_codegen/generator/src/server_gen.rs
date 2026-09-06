@@ -2754,13 +2754,6 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
             s.push_str("        }\n");
         }
 
-        for id in &pin_ids {
-            s.push_str(&format!("        TA_SetUnstablePeriod({id}, 0);\n"));
-        }
-        s.push_str("        TA_SetCompatibility((TA_Compatibility)savedCompat);\n");
-        // Fold fill into ok as a safety net (the driver also checks fill_ok
-        // explicitly for a clearer message), so a fill regression fails the run
-        // even if the driver's fill check ever regresses.
         // At exactly `lb` bars no output is defined for ANY configuration, so
         // Open must reject -- and with TA_INSUFFICIENT_HISTORY specifically, the
         // one routine data-dependent failure a caller separates from a
@@ -2788,6 +2781,13 @@ fn generate_c_stream_verify(funcs: &[FuncDef], enums: &HashMap<String, EnumDef>)
         s.push_str("              (void)stSH; }\n");
         s.push_str("        }\n");
         s.push_str("        if( shortHistChecked && !shortHistOk ) allOk = 0;\n");
+        for id in &pin_ids {
+            s.push_str(&format!("        TA_SetUnstablePeriod({id}, 0);\n"));
+        }
+        s.push_str("        TA_SetCompatibility((TA_Compatibility)savedCompat);\n");
+        // Fold fill into ok as a safety net (the driver also checks fill_ok
+        // explicitly for a clearer message), so a fill regression fails the run
+        // even if the driver's fill check ever regresses.
         s.push_str("        if( fillChecked && !fillOk ) allOk = 0;\n");
         emit_sv_state_report(&mut s, steq);
         emit_sv_range_report(&mut s);
