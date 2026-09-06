@@ -7349,6 +7349,12 @@ fn emit_java_sv_func(func: &FuncDef, funcs: &[FuncDef], enums: &HashMap<String, 
     // for the same bars. Public API in every backend, so unlike the state leg
     // this one is not C-only.
     s.push_str("        int rangeChecked = 0;\n        boolean rangeOk = true;\n        long rangeLegs = 0;\n        int rangeSites = 0;\n");
+    // The Value leg's own counters. The compares below already ran; what was
+    // missing is a count of them, and without one the harness cannot tell a
+    // server that stopped emitting the leg from a language that never had it.
+    // Each site keeps its `allOk = false` so `ok` and its diag are unchanged --
+    // `valueOk` is the narrower report, not a replacement.
+    s.push_str("        int valueChecked = 0;\n        boolean valueOk = true;\n        long valueLegs = 0;\n");
     // Benign +/-0 cases across every cross-tier compare in this request. A
     // one-element array, not a static: the server answers many requests per
     // process and a static would carry one function's count into the next.
@@ -7508,19 +7514,20 @@ fn emit_java_sv_func(func: &FuncDef, funcs: &[FuncDef], enums: &HashMap<String, 
     s.push_str("                legs++;\n");
     // Open-value compare through value() (load-bearing: Java open returns only
     // the handle, so the anchor compare IS the value() verification).
+    s.push_str("                valueChecked = 1; valueLegs++;\n");
     if multi {
         let _ = writeln!(s, "                Core.{ocls} v0 = new Core.{ocls}(); st.value(v0);");
         for (i, f) in vfield.iter().enumerate() {
             if out_is_int[i] {
-                let _ = writeln!(s, "                if (v0.{f} != b{i}[p - 1 - beg.value]) {{ allOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":{i},\\\"where\\\":\\\"open\\\"\"; }}");
+                let _ = writeln!(s, "                if (v0.{f} != b{i}[p - 1 - beg.value]) {{ allOk = false; valueOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":{i},\\\"where\\\":\\\"open\\\"\"; }}");
             } else {
-                let _ = writeln!(s, "                if (svXtierNe(v0.{f}, b{i}[p - 1 - beg.value], zsign)) {{ allOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":{i},\\\"where\\\":\\\"open\\\"\"; }}");
+                let _ = writeln!(s, "                if (svXtierNe(v0.{f}, b{i}[p - 1 - beg.value], zsign)) {{ allOk = false; valueOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":{i},\\\"where\\\":\\\"open\\\"\"; }}");
             }
         }
     } else if out_is_int[0] {
-        s.push_str("                if (st.value() != b0[p - 1 - beg.value]) { allOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":0,\\\"where\\\":\\\"open\\\"\"; }\n");
+        s.push_str("                if (st.value() != b0[p - 1 - beg.value]) { allOk = false; valueOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":0,\\\"where\\\":\\\"open\\\"\"; }\n");
     } else {
-        s.push_str("                if (svXtierNe(st.value(), b0[p - 1 - beg.value], zsign)) { allOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":0,\\\"where\\\":\\\"open\\\"\"; }\n");
+        s.push_str("                if (svXtierNe(st.value(), b0[p - 1 - beg.value], zsign)) { allOk = false; valueOk = false; if (diag.isEmpty()) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":0,\\\"where\\\":\\\"open\\\"\"; }\n");
     }
     // Update loop: peek every bar, `value()`==update, and the repeat probe every
     // seventh. The multi-output sinks are allocated ONCE and reused, which is
@@ -7603,12 +7610,12 @@ fn emit_java_sv_func(func: &FuncDef, funcs: &[FuncDef], enums: &HashMap<String, 
         // `value` reports the peeked bar. Same shape as the C# leg, which found
         // the tautology first. `pk` is reused here -- its own compare is done.
         let _ = writeln!(s, "                    try {{ st.peek({}, pk); }} catch (IllegalArgumentException _e) {{ peekRejects++; }}", bar_args("t - 1"));
-        s.push_str("                    st.value(vc);\n");
+        s.push_str("                    st.value(vc); valueChecked = 1; valueLegs++;\n");
         for (i, f) in vfield.iter().enumerate() {
             if out_is_int[i] {
-                let _ = writeln!(s, "                    if (vc.{f} != up.{f}) allOk = false;");
+                let _ = writeln!(s, "                    if (vc.{f} != up.{f}) {{ allOk = false; valueOk = false; }}");
             } else {
-                let _ = writeln!(s, "                    if (svBne(vc.{f}, up.{f})) allOk = false;");
+                let _ = writeln!(s, "                    if (svBne(vc.{f}, up.{f})) {{ allOk = false; valueOk = false; }}");
             }
         }
     } else {
@@ -7619,7 +7626,8 @@ fn emit_java_sv_func(func: &FuncDef, funcs: &[FuncDef], enums: &HashMap<String, 
         let _ = writeln!(s, "                    if (pkTook && {}) peekAll = false;",
             if out_is_int[0] { "pk != up" } else { "svBne(pk, up)" });
         let _ = writeln!(s, "                    try {{ st.peek({}); }} catch (IllegalArgumentException _e) {{ peekRejects++; }}", bar_args("t - 1"));
-        let _ = writeln!(s, "                    if ({}) allOk = false;",
+        s.push_str("                    valueChecked = 1; valueLegs++;\n");
+        let _ = writeln!(s, "                    if ({}) {{ allOk = false; valueOk = false; }}",
             if out_is_int[0] { "st.value() != up" } else { "svBne(st.value(), up)" });
     }
     let emit_up_compares = |s: &mut String, pad: &str| {
@@ -7815,7 +7823,7 @@ fn emit_java_sv_func(func: &FuncDef, funcs: &[FuncDef], enums: &HashMap<String, 
     s.push_str("        }\n");
     // fill_ok folds into ok as a safety net (mirrors the C/Rust gates).
 
-    s.push_str("        return \"{\\\"retCode\\\":0,\\\"beg\\\":\" + beg.value + \",\\\"nb\\\":\" + nb.value + \",\\\"legs\\\":\" + legs + \",\\\"fill_checked\\\":\" + fillChecked + \",\\\"fill_ok\\\":\" + (fillOk ? 1 : 0) + \",\\\"range_checked\\\":\" + rangeChecked + \",\\\"range_legs\\\":\" + rangeLegs + \",\\\"range_sites\\\":\" + rangeSites + \",\\\"range_sites_all\\\":"); s.push_str(&SV_RANGE_MASK_JAVA.to_string()); s.push_str(",\\\"range_ok\\\":\" + (rangeOk ? 1 : 0) + \",\\\"step_ok\\\":\" + (allOk ? 1 : 0) + \",\\\"ok\\\":\" + ((allOk && fillOk && rangeOk) ? 1 : 0) + \",\\\"peek_ok\\\":\" + (peekAll ? 1 : 0) + \",\\\"peek_reps\\\":\" + peekReps + \",\\\"peek_rep_ok\\\":\" + (peekRepAll ? 1 : 0) + \",\\\"peek_rejects\\\":\" + peekRejects + \",\\\"benign\\\":\" + zsign[0] + diag + \"}\";\n");
+    s.push_str("        return \"{\\\"retCode\\\":0,\\\"beg\\\":\" + beg.value + \",\\\"nb\\\":\" + nb.value + \",\\\"legs\\\":\" + legs + \",\\\"fill_checked\\\":\" + fillChecked + \",\\\"fill_ok\\\":\" + (fillOk ? 1 : 0) + \",\\\"range_checked\\\":\" + rangeChecked + \",\\\"range_legs\\\":\" + rangeLegs + \",\\\"range_sites\\\":\" + rangeSites + \",\\\"range_sites_all\\\":"); s.push_str(&SV_RANGE_MASK_JAVA.to_string()); s.push_str(",\\\"range_ok\\\":\" + (rangeOk ? 1 : 0) + \",\\\"value_checked\\\":\" + valueChecked + \",\\\"value_legs\\\":\" + valueLegs + \",\\\"value_ok\\\":\" + (valueOk ? 1 : 0) + \",\\\"step_ok\\\":\" + (allOk ? 1 : 0) + \",\\\"ok\\\":\" + ((allOk && fillOk && rangeOk) ? 1 : 0) + \",\\\"peek_ok\\\":\" + (peekAll ? 1 : 0) + \",\\\"peek_reps\\\":\" + peekReps + \",\\\"peek_rep_ok\\\":\" + (peekRepAll ? 1 : 0) + \",\\\"peek_rejects\\\":\" + peekRejects + \",\\\"benign\\\":\" + zsign[0] + diag + \"}\";\n");
     s.push_str("    }\n\n");
     s
 }
@@ -8473,6 +8481,9 @@ fn emit_csharp_sv_func(
     // the same bars. Public API in every backend, so unlike the state leg this
     // one is not C-only.
     s.push_str("        int rangeChecked = 0;\n        bool rangeOk = true;\n        long rangeLegs = 0;\n        int rangeSites = 0;\n");
+    // The Value leg's own counters -- see the Java emitter for why the compares
+    // needed a count and why each site keeps its `allOk = false`.
+    s.push_str("        int valueChecked = 0;\n        bool valueOk = true;\n        long valueLegs = 0;\n");
     // RULE 7 -- the benign +/-0 accumulator is a REQUEST-SCOPED LOCAL, passed by
     // `ref`. One process answers many requests and a `static` would carry one
     // function's count into the next -- and the plan's Java<->C# `benign`
@@ -8888,12 +8899,12 @@ fn emit_csharp_sv_func(
     } else {
         "double".to_string()
     };
-    let _ = writeln!(s, "                {up_ty} v0 = st.Value;");
+    let _ = writeln!(s, "                {up_ty} v0 = st.Value; valueChecked = 1; valueLegs++;");
     for i in 0..n_out {
         let cmp = xtier_ne(&rd_out("v0", i), &format!("b{i}[p - 1 - beg]"), i, "zsign");
         let _ = writeln!(
             s,
-            "                if ({cmp}) {{ allOk = false; if (diag.Length == 0) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":{i},\\\"where\\\":\\\"open\\\"\"; }}"
+            "                if ({cmp}) {{ allOk = false; valueOk = false; if (diag.Length == 0) diag = \",\\\"badBar\\\":\" + (p - 1) + \",\\\"badOut\\\":{i},\\\"where\\\":\\\"open\\\"\"; }}"
         );
     }
 
@@ -8961,12 +8972,12 @@ fn emit_csharp_sv_func(
     // +0.0 equal to -0.0 and NaN equal to NaN, i.e. would pass on exactly the
     // corruption this leg exists to find.
     let _ = writeln!(s, "                    try {{ _ = st.Peek({}); }} catch (ArgumentException) {{ peekRejects++; }}", bar_args("t - 1"));
-    let _ = writeln!(s, "                    {up_ty} vc = st.Value;");
+    let _ = writeln!(s, "                    {up_ty} vc = st.Value; valueChecked = 1; valueLegs++;");
     for i in 0..n_out {
         let cmp = same_tier_ne(&rd_out("vc", i), &rd_out("up", i), i);
         let _ = writeln!(
             s,
-            "                    if ({cmp}) {{ allOk = false; if (diag.Length == 0) diag = \",\\\"valueNeUpdate\\\":\" + t; }}"
+            "                    if ({cmp}) {{ allOk = false; valueOk = false; if (diag.Length == 0) diag = \",\\\"valueNeUpdate\\\":\" + t; }}"
         );
     }
     emit_up_compares(&mut s, "                    ");
@@ -9254,7 +9265,7 @@ fn emit_csharp_sv_func(
         s.push_str("        extra += \",\\\"candleMut\\\":\" + candleMutRan + \",\\\"candleMutMoved\\\":\" + candleMutMoved + \",\\\"benignMut\\\":\" + zsignMut;\n");
     }
 
-    s.push_str("        return \"{\\\"retCode\\\":0,\\\"beg\\\":\" + beg + \",\\\"nb\\\":\" + nb + \",\\\"legs\\\":\" + legs + \",\\\"fill_checked\\\":\" + fillChecked + \",\\\"fill_ok\\\":\" + (fillOk ? 1 : 0) + \",\\\"range_checked\\\":\" + rangeChecked + \",\\\"range_legs\\\":\" + rangeLegs + \",\\\"range_sites\\\":\" + rangeSites + \",\\\"range_sites_all\\\":"); s.push_str(&SV_RANGE_MASK_CSHARP.to_string()); s.push_str(",\\\"range_ok\\\":\" + (rangeOk ? 1 : 0) + \",\\\"step_ok\\\":\" + (allOk ? 1 : 0) + \",\\\"ok\\\":\" + ((allOk && fillOk && rangeOk) ? 1 : 0) + \",\\\"peek_ok\\\":\" + (peekAll ? 1 : 0) + \",\\\"peek_reps\\\":\" + peekReps + \",\\\"peek_rep_ok\\\":\" + (peekRepAll ? 1 : 0) + \",\\\"peek_rejects\\\":\" + peekRejects + \",\\\"benign\\\":\" + zsign + extra + diag + \"}\";\n");
+    s.push_str("        return \"{\\\"retCode\\\":0,\\\"beg\\\":\" + beg + \",\\\"nb\\\":\" + nb + \",\\\"legs\\\":\" + legs + \",\\\"fill_checked\\\":\" + fillChecked + \",\\\"fill_ok\\\":\" + (fillOk ? 1 : 0) + \",\\\"range_checked\\\":\" + rangeChecked + \",\\\"range_legs\\\":\" + rangeLegs + \",\\\"range_sites\\\":\" + rangeSites + \",\\\"range_sites_all\\\":"); s.push_str(&SV_RANGE_MASK_CSHARP.to_string()); s.push_str(",\\\"range_ok\\\":\" + (rangeOk ? 1 : 0) + \",\\\"value_checked\\\":\" + valueChecked + \",\\\"value_legs\\\":\" + valueLegs + \",\\\"value_ok\\\":\" + (valueOk ? 1 : 0) + \",\\\"step_ok\\\":\" + (allOk ? 1 : 0) + \",\\\"ok\\\":\" + ((allOk && fillOk && rangeOk) ? 1 : 0) + \",\\\"peek_ok\\\":\" + (peekAll ? 1 : 0) + \",\\\"peek_reps\\\":\" + peekReps + \",\\\"peek_rep_ok\\\":\" + (peekRepAll ? 1 : 0) + \",\\\"peek_rejects\\\":\" + peekRejects + \",\\\"benign\\\":\" + zsign + extra + diag + \"}\";\n");
     s.push_str("    }\n\n");
     s
 }

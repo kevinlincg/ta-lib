@@ -106,6 +106,21 @@ static int codegen_lang_has_stream_state_probe(const char *lang)
     return lang && strcmp(lang, "c") == 0;
 }
 
+/* Which servers report the Value leg — the handle's own accessor read back
+ * against the bar the stream is on, at Open and after every Update.
+ *
+ * All four compare it; the declaration exists because the FLOOR needs a
+ * denominator that does not move. Keyed off `value_checked > 0` instead, a
+ * server that stopped reporting the leg entirely reads exactly like one that
+ * never had it, which is how the leg sat unwatched outside C and Rust: Java
+ * and C# ran the compares and folded them into `ok`, so no count could tell
+ * a shrinking leg from an absent one. */
+static int codegen_lang_has_value_probe(const char *lang)
+{
+    (void)lang;
+    return 1;
+}
+
 /* Which servers answer the peek non-commit leg: a handle peeked across the
  * history must be bit-identical to a twin that was not.
  *
@@ -4933,12 +4948,13 @@ static ErrorNumber test_codegen_for_language(
                        "streaming functions\n", lang->name, ctx.streamFunctions);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
-            if( ctx.error == TA_TEST_PASS && ctx.streamValueFunctions > 0 &&
+            if( ctx.error == TA_TEST_PASS && ctx.streamFunctions != 0 &&
+                codegen_lang_has_value_probe(lang->name) &&
                 ctx.streamValueFunctions != ctx.streamFunctions )
             {
                 printf("STREAM VALUE VACUOUS: only %d of %d streaming functions probed "
-                       "their Value accessor\n",
-                       ctx.streamValueFunctions, ctx.streamFunctions);
+                       "their Value accessor on the %s server\n",
+                       ctx.streamValueFunctions, ctx.streamFunctions, lang->name);
                 ctx.error = TA_CODEGEN_STREAM_MISMATCH;
             }
             /* Without this floor a server that stopped peeking reads exactly
