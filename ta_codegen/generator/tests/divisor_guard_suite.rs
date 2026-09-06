@@ -845,7 +845,7 @@ fn the_scaled_arm_fires_on_a_scaled_divisor_and_not_otherwise() {
 /// which no guard in the body tests.
 fn scale_from_an_unguarded_source(body: &mut [Statement]) {
     divide_by_a_scaled_copy(body);
-    fn retarget(body: &mut Vec<Statement>) {
+    fn retarget(body: &mut [Statement]) {
         for st in body.iter_mut() {
             match st {
                 Statement::Assign { target: Expr::Var(t), value, .. } if t == "diff" => {
