@@ -231,6 +231,7 @@ mod ht_sine;
 mod ht_trendline;
 mod ht_trendmode;
 mod ibs;
+mod ichimoku;
 mod imi;
 mod kama;
 mod kc;

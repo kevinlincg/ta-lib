@@ -11174,6 +11174,59 @@ TA_LIB_API TA_RetCode TA_IBS_Advance( TA_IBS_Stream *stream );
 TA_LIB_API TA_RetCode TA_IBS_Clone( const TA_IBS_Stream *stream, TA_IBS_Stream **clone );
 
 /*
+ * TA_ICHIMOKU - Ichimoku Kinko Hyo
+ * 
+ * Input  = High, Low
+ * Output = double, double, double, double
+ * 
+ * Optional Parameters
+ * -------------------
+ * optInTenkanPeriod:(From 2 to 100000)
+ *    Period of the conversion line
+ * 
+ * optInKijunPeriod:(From 2 to 100000)
+ *    Period of the base line, and the forward shift of the two spans
+ * 
+ * optInSenkouBPeriod:(From 2 to 100000)
+ *    Period of the second leading span
+ * 
+ * 
+ */
+TA_LIB_API TA_RetCode TA_ICHIMOKU( int    startIdx,
+                                   int    endIdx,
+                                              const double inHigh[],
+                                              const double inLow[],
+                                              int           optInTenkanPeriod, /* From 2 to 100000 */
+                                              int           optInKijunPeriod, /* From 2 to 100000 */
+                                              int           optInSenkouBPeriod, /* From 2 to 100000 */
+                                              int          *outBegIdx,
+                                              int          *outNBElement,
+                                              double        outTenkanSen[],
+                                              double        outKijunSen[],
+                                              double        outSenkouSpanA[],
+                                              double        outSenkouSpanB[] );
+
+TA_LIB_API TA_RetCode TA_S_ICHIMOKU( int    startIdx,
+                                     int    endIdx,
+                                                const float  inHigh[],
+                                                const float  inLow[],
+                                                int           optInTenkanPeriod, /* From 2 to 100000 */
+                                                int           optInKijunPeriod, /* From 2 to 100000 */
+                                                int           optInSenkouBPeriod, /* From 2 to 100000 */
+                                                int          *outBegIdx,
+                                                int          *outNBElement,
+                                                double        outTenkanSen[],
+                                                double        outKijunSen[],
+                                                double        outSenkouSpanA[],
+                                                double        outSenkouSpanB[] );
+
+TA_LIB_API int TA_ICHIMOKU_Lookback( int           optInTenkanPeriod, /* From 2 to 100000 */
+                                              int           optInKijunPeriod, /* From 2 to 100000 */
+                                              int           optInSenkouBPeriod );  /* From 2 to 100000 */
+TA_LIB_API int TA_ICHIMOKU_DisplayShift( int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, int outputIdx );
+
+
+/*
  * TA_IMI - Intraday Momentum Index
  * 
  * Input  = Open, Close

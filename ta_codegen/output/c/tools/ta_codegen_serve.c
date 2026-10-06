@@ -147,6 +147,7 @@
 #include "ta_func/ta_HT_TRENDLINE.c"
 #include "ta_func/ta_HT_TRENDMODE.c"
 #include "ta_func/ta_IBS.c"
+#include "ta_func/ta_ICHIMOKU.c"
 #include "ta_func/ta_IMI.c"
 #include "ta_func/ta_KAMA.c"
 #include "ta_func/ta_KC.c"
@@ -112040,6 +112041,108 @@ static void handle_request(const char *json, char *resp, int resp_size) {
 #endif /* TA_REF_SERVE */
         pos = json_appendf(resp, resp_size, pos, "}");
     }
+    else if ( methodLen == 11 && strncmp(method, "TA_ICHIMOKU", 11) == 0 ) {
+        int startIdx = json_find_int(json, "startIdx");
+        int endIdx = json_find_int(json, "endIdx");
+        int use_preloaded = json_find_int(json, "use_preloaded");
+        if( use_preloaded && g_refN > 0 ) {
+            preload_to_working(2, 1);
+        } else {
+            json_find_double_array(json, "inHigh", g_inBuf0, MAX_ARRAY_SIZE);
+            json_find_double_array(json, "inLow", g_inBuf1, MAX_ARRAY_SIZE);
+        }
+        int optInTenkanPeriod = json_find_int(json, "optInTenkanPeriod");
+        int optInKijunPeriod = json_find_int(json, "optInKijunPeriod");
+        int optInSenkouBPeriod = json_find_int(json, "optInSenkouBPeriod");
+        int outBegIdx = 0, outNBElement = 0;
+        int bench_iters = json_find_int(json, "iters");
+        if( bench_iters < 1 ) bench_iters = 1;
+        int bench_mode = json_find_int(json, "bench_mode");
+#ifdef TA_REF_SERVE
+        if( bench_mode != 0 ) {
+            snprintf(resp, resp_size, "{\"retCode\":0,\"timing_ns\":0,\"unsupported_mode\":1}");
+            return;
+        }
+#endif /* TA_REF_SERVE */
+        TA_RetCode rc = 0;
+        if( use_preloaded ) {
+            preload_to_working(2, 1);
+        }
+        long _t0 = 0;
+        for( int _bi = 0; _bi <= bench_iters; _bi++ ) {
+        if( _bi == 1 ) _t0 = get_nanotime();
+        if( bench_mode == 0 )
+        rc = TA_ICHIMOKU(
+            startIdx, endIdx,
+            g_inBuf0,
+            g_inBuf1,
+            optInTenkanPeriod,
+            optInKijunPeriod,
+            optInSenkouBPeriod,
+            &outBegIdx, &outNBElement, g_outBuf0, g_outBuf1, g_outBuf2, g_outBuf3);
+#ifndef TA_REF_SERVE
+        else if( bench_mode == 1 ) {
+            TA_ICHIMOKU_Stream *_h = NULL;
+            double _openOut0 = 0;
+            double _openOut1 = 0;
+            double _openOut2 = 0;
+            double _openOut3 = 0;
+            rc = TA_ICHIMOKU_Open( &_h, g_inBuf0, g_inBuf1, endIdx + 1, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, &_openOut0, &_openOut1, &_openOut2, &_openOut3 );
+            if( _h ) TA_ICHIMOKU_Close( _h );
+        }
+        else {
+            TA_ICHIMOKU_Stream *_h = NULL;
+            rc = TA_ICHIMOKU_OpenAndFill( &_h, g_inBuf0, g_inBuf1, endIdx + 1, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, &outBegIdx, &outNBElement, g_outBuf0, g_outBuf1, g_outBuf2, g_outBuf3 );
+            if( _h ) TA_ICHIMOKU_Close( _h );
+        }
+#endif /* TA_REF_SERVE */
+        }
+        long elapsed_ns = (get_nanotime() - _t0) / bench_iters;
+#ifndef TA_REF_SERVE
+        if( json_find_int(json, "want_hash") && !json_find_int(json, "full_output") ) {
+            unsigned long long _oh = fuzz_hash_init();
+            if( rc == TA_SUCCESS && outNBElement > 0 ) {
+                _oh = fuzz_hash_bytes(_oh, g_outBuf0, (unsigned long)outNBElement * sizeof(double));
+                _oh = fuzz_hash_bytes(_oh, g_outBuf1, (unsigned long)outNBElement * sizeof(double));
+                _oh = fuzz_hash_bytes(_oh, g_outBuf2, (unsigned long)outNBElement * sizeof(double));
+                _oh = fuzz_hash_bytes(_oh, g_outBuf3, (unsigned long)outNBElement * sizeof(double));
+            }
+            _oh = fuzz_hash_fin(_oh);
+            int _hp = json_appendf(resp, resp_size, 0, "{\"retCode\":%d,\"outBegIdx\":%d,\"outNBElement\":%d,\"out_hash\":\"%016llx\"", (int)rc, outBegIdx, outNBElement, _oh);
+            json_appendf(resp, resp_size, _hp, "}");
+            return;
+        }
+#endif /* TA_REF_SERVE */
+        int usedFloat = 0;
+        if( json_find_int(json, "use_float") ) {
+            for( int _fi = 0; _fi <= endIdx; _fi++ ) g_sinBuf0[_fi] = (float)g_inBuf0[_fi];
+            for( int _fi = 0; _fi <= endIdx; _fi++ ) g_sinBuf1[_fi] = (float)g_inBuf1[_fi];
+            rc = TA_S_ICHIMOKU(
+                startIdx, endIdx,
+                g_sinBuf0,
+                g_sinBuf1,
+                optInTenkanPeriod,
+                optInKijunPeriod,
+                optInSenkouBPeriod,
+                &outBegIdx, &outNBElement, g_outBuf0, g_outBuf1, g_outBuf2, g_outBuf3);
+            usedFloat = 1;
+        }
+        int pos = json_appendf(resp, resp_size, 0,
+            "{\"retCode\":%d,\"outBegIdx\":%d,\"outNBElement\":%d,\"out_len\":%d,\"timing_ns\":%ld",
+            (int)rc, outBegIdx, outNBElement, (int)MAX_ARRAY_SIZE, elapsed_ns);
+        if( !json_find_int(json, "no_output") ) {
+        pos = json_appendf(resp, resp_size, pos, ",\"outReal\":");
+        pos = json_write_double_array(resp, resp_size, pos, g_outBuf0, outNBElement);
+        pos = json_appendf(resp, resp_size, pos, ",\"outReal1\":");
+        pos = json_write_double_array(resp, resp_size, pos, g_outBuf1, outNBElement);
+        pos = json_appendf(resp, resp_size, pos, ",\"outReal2\":");
+        pos = json_write_double_array(resp, resp_size, pos, g_outBuf2, outNBElement);
+        pos = json_appendf(resp, resp_size, pos, ",\"outReal3\":");
+        pos = json_write_double_array(resp, resp_size, pos, g_outBuf3, outNBElement);
+        }
+        pos = json_appendf(resp, resp_size, pos, ",\"used_float\":%d", usedFloat);
+        pos = json_appendf(resp, resp_size, pos, "}");
+    }
     else if ( methodLen == 6 && strncmp(method, "TA_IMI", 6) == 0 ) {
         int startIdx = json_find_int(json, "startIdx");
         int endIdx = json_find_int(json, "endIdx");
@@ -122140,6 +122243,14 @@ static void handle_request(const char *json, char *resp, int resp_size) {
         snprintf(resp, resp_size,
             "{\"lookback\":%d}", lookback);
     }
+    else if ( methodLen == 20 && strncmp(method, "TA_ICHIMOKU_Lookback", 20) == 0 ) {
+        int optInTenkanPeriod = json_find_int(json, "optInTenkanPeriod");
+        int optInKijunPeriod = json_find_int(json, "optInKijunPeriod");
+        int optInSenkouBPeriod = json_find_int(json, "optInSenkouBPeriod");
+        int lookback = TA_ICHIMOKU_Lookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
+        snprintf(resp, resp_size,
+            "{\"lookback\":%d}", lookback);
+    }
     else if ( methodLen == 15 && strncmp(method, "TA_IMI_Lookback", 15) == 0 ) {
         int optInTimePeriod = json_find_int(json, "optInTimePeriod");
         int lookback = TA_IMI_Lookback(optInTimePeriod);
@@ -122945,6 +123056,7 @@ static void handle_request(const char *json, char *resp, int resp_size) {
         pos = json_appendf(resp, resp_size, pos, ",\"TA_HT_TRENDLINE\"");
         pos = json_appendf(resp, resp_size, pos, ",\"TA_HT_TRENDMODE\"");
         pos = json_appendf(resp, resp_size, pos, ",\"TA_IBS\"");
+        pos = json_appendf(resp, resp_size, pos, ",\"TA_ICHIMOKU\"");
         pos = json_appendf(resp, resp_size, pos, ",\"TA_IMI\"");
         pos = json_appendf(resp, resp_size, pos, ",\"TA_KAMA\"");
         pos = json_appendf(resp, resp_size, pos, ",\"TA_KC\"");

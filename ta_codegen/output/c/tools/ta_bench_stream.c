@@ -190,6 +190,7 @@ static void bench_tracked_free(void *p) {
 #include "ta_HT_TRENDLINE.c"
 #include "ta_HT_TRENDMODE.c"
 #include "ta_IBS.c"
+#include "ta_ICHIMOKU.c"
 #include "ta_IMI.c"
 #include "ta_KAMA.c"
 #include "ta_KC.c"

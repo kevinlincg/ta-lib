@@ -1071,6 +1071,7 @@ fn dispatch(core: &mut Core, ref_data: &mut RefData, method: &str, params: &Valu
         "TA_HT_TRENDLINE" => rpc_ht_trendline(core, ref_data, params),
         "TA_HT_TRENDMODE" => rpc_ht_trendmode(core, ref_data, params),
         "TA_IBS" => rpc_ibs(core, ref_data, params),
+        "TA_ICHIMOKU" => rpc_ichimoku(core, ref_data, params),
         "TA_IMI" => rpc_imi(core, ref_data, params),
         "TA_KAMA" => rpc_kama(core, ref_data, params),
         "TA_KC" => rpc_kc(core, ref_data, params),
@@ -1303,6 +1304,7 @@ fn dispatch(core: &mut Core, ref_data: &mut RefData, method: &str, params: &Valu
                 "TA_HT_TRENDLINE",
                 "TA_HT_TRENDMODE",
                 "TA_IBS",
+                "TA_ICHIMOKU",
                 "TA_IMI",
                 "TA_KAMA",
                 "TA_KC",
@@ -52077,6 +52079,129 @@ pub(super) fn ride_ibs(core: &Core, params: &Value, endIdx: usize, inHigh: &[f64
 
 }
 use f_ibs::*;
+
+mod f_ichimoku {
+use super::*;
+
+pub(super) fn rpc_ichimoku(core: &mut Core, ref_data: &mut RefData, params: &Value) -> String {
+            let startIdx = params["startIdx"].as_u64().unwrap_or(0) as usize;
+            let endIdx = params["endIdx"].as_u64().unwrap_or(0) as usize;
+            let use_preloaded = params["use_preloaded"].as_i64().unwrap_or(0);
+            let bench_iters = std::cmp::max(1, params["iters"].as_i64().unwrap_or(1)) as u64;
+            let bench_mode = params["bench_mode"].as_i64().unwrap_or(0);
+            let gen_present = params["gen_present"].as_i64().unwrap_or(0);
+            let gen_shape = params["gen_shape"].as_i64().unwrap_or(0) as i32;
+            let gen_seed = params["gen_seed"].as_i64().unwrap_or(0) as i32;
+            let gen_n = params["gen_n"].as_i64().unwrap_or(0) as usize;
+            let full_output = params["full_output"].as_i64().unwrap_or(0);
+            let want_hash = params["want_hash"].as_i64().unwrap_or(0);
+            let mut _json_inHigh: Vec<f64> = Vec::new();
+            let mut _json_inLow: Vec<f64> = Vec::new();
+            let inHigh: &[f64];
+            let inLow: &[f64];
+            if gen_present != 0 {
+                let mut _fz_o = vec![0.0f64; gen_n];
+                let mut _fz_h = vec![0.0f64; gen_n];
+                let mut _fz_l = vec![0.0f64; gen_n];
+                let mut _fz_c = vec![0.0f64; gen_n];
+                let mut _fz_v = vec![0.0f64; gen_n];
+                let mut _fz_oi = vec![0.0f64; gen_n];
+                fuzz_gen(gen_shape, gen_seed, gen_n as i32, &mut _fz_o, &mut _fz_h, &mut _fz_l, &mut _fz_c, &mut _fz_v, &mut _fz_oi);
+                _json_inHigh = _fz_h.clone();
+                inHigh = &_json_inHigh;
+                _json_inLow = _fz_l.clone();
+                inLow = &_json_inLow;
+            } else if use_preloaded != 0 && ref_data.n > 0 {
+                inHigh = &ref_data.high[..ref_data.n];
+                inLow = &ref_data.low[..ref_data.n];
+            } else {
+                _json_inHigh = parse_f64_array(&params["inHigh"]);
+                inHigh = &_json_inHigh;
+                _json_inLow = parse_f64_array(&params["inLow"]);
+                inLow = &_json_inLow;
+            }
+            let optInTenkanPeriod = params["optInTenkanPeriod"].as_i64().unwrap_or(9) as i32;
+            let optInKijunPeriod = params["optInKijunPeriod"].as_i64().unwrap_or(26) as i32;
+            let optInSenkouBPeriod = params["optInSenkouBPeriod"].as_i64().unwrap_or(52) as i32;
+            // The output buffers are sized to the count the call actually PRODUCES --
+            // endIdx - max(startIdx, lookback) + 1 -- plus `out_pad` from the request, and
+            // never below one. Not to the width of the requested range: that is the bound the
+            // managed backends check and the Rust asserts state, and at the range width it was
+            // slack by exactly the lookback, so no call could ever approach it.
+            // The pad is there because a bound is a MINIMUM, never an equality. A caller
+            // re-using a pre-allocated buffer passes a larger one, and that is not an error --
+            // the reported OutRange is what says which part was written. So the harness sends
+            // both: the startIdx axis sends no pad (the bound is reachable) while the
+            // full-range value comparison sends one (slack is legal). Sizing every call one way
+            // would silently drop the other property.
+            // FLOORED AT ONE, deliberately. Zero is what the formula gives for a rejected call
+            // (the lookback is -1, or usize::MAX in Rust, for an out-of-range parameter) and
+            // for a range shorter than the lookback, where the output bound switches off.
+            // An empty output is an absent one, so sizing to zero here would turn the second
+            // into a rejection of the buffer.
+            // The C server keeps its MAX_ARRAY_SIZE statics: C is handed bare pointers, has no
+            // sizes and cannot make the check, so an exact buffer would test nothing there.
+            let _lb = core.ichimoku_lookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod).unwrap_or(usize::MAX);
+            let _cs = if startIdx > _lb { startIdx } else { _lb };
+            let out_size = (if _cs > endIdx { 1 } else { endIdx - _cs + 1 }) + params["out_pad"].as_u64().unwrap_or(0) as usize;
+            let mut outBuf0: Vec<f64> = vec![0.0f64; out_size];
+            let mut outBuf1: Vec<f64> = vec![0.0f64; out_size];
+            let mut outBuf2: Vec<f64> = vec![0.0f64; out_size];
+            let mut outBuf3: Vec<f64> = vec![0.0f64; out_size];
+            let mut outBegIdx: usize = 0;
+            let mut outNBElement: usize = 0;
+            let mut rc = RetCode::Success;
+            let mut start_time = Instant::now();
+            for _bi in 0..=bench_iters {
+                if _bi == 1 { start_time = Instant::now(); }
+            if bench_mode == 0 {
+            let _out = core.ichimoku(
+                startIdx, endIdx,
+                &inHigh,
+                &inLow,
+                optInTenkanPeriod,
+                optInKijunPeriod,
+                optInSenkouBPeriod,
+                &mut outBuf0, &mut outBuf1, &mut outBuf2, &mut outBuf3,
+            );
+            rc = match _out {
+                Ok(r) => { outBegIdx = r.beg_idx; outNBElement = r.count; RetCode::Success }
+                Err(e) => { outBegIdx = 0; outNBElement = 0; e }
+            };
+            } else {
+            if bench_mode == 1 {
+                rc = match core.ichimoku_open(&inHigh[..=endIdx], &inLow[..=endIdx], optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, ) { Ok(_h) => RetCode::Success, Err(e) => e };
+            } else {
+                rc = match core.ichimoku_open_and_fill(&inHigh[..=endIdx], &inLow[..=endIdx], optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, &mut outBuf0, &mut outBuf1, &mut outBuf2, &mut outBuf3) { Ok((_h, r)) => { outBegIdx = r.beg_idx; outNBElement = r.count; RetCode::Success } Err(e) => e };
+            }
+            }
+            }
+            let elapsed_ns = start_time.elapsed().as_nanos() as u64 / bench_iters as u64;
+            if (gen_present != 0 || want_hash != 0) && full_output == 0 {
+                let mut _oh = fuzz_hash_init();
+                if matches!(rc, RetCode::Success) && outNBElement > 0 {
+                    _oh = fuzz_hash_bytes_f64(_oh, &outBuf0[..outNBElement]);
+                    _oh = fuzz_hash_bytes_f64(_oh, &outBuf1[..outNBElement]);
+                    _oh = fuzz_hash_bytes_f64(_oh, &outBuf2[..outNBElement]);
+                    _oh = fuzz_hash_bytes_f64(_oh, &outBuf3[..outNBElement]);
+                }
+                _oh = fuzz_hash_fin(_oh);
+                let mut hresp = format!("{{\"retCode\":{},\"outBegIdx\":{},\"outNBElement\":{},\"out_hash\":\"{:016x}\"", retcode_to_int(rc), outBegIdx, outNBElement, _oh);
+                hresp.push('}');
+                return hresp;
+            }
+            let lookback: i64 = core.ichimoku_lookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod).map_or(-1, |v| v as i64);
+            let mut resp = format!("{{\"retCode\":{},\"outBegIdx\":{},\"outNBElement\":{},\"out_len\":{},\"lookback\":{},\"timing_ns\":{}", retcode_to_int(rc), outBegIdx, outNBElement, out_size, lookback, elapsed_ns);
+            resp.push_str(",\"outReal\":"); resp.push_str(&json_f64_array(&outBuf0[..outNBElement]));
+            resp.push_str(",\"outReal1\":"); resp.push_str(&json_f64_array(&outBuf1[..outNBElement]));
+            resp.push_str(",\"outReal2\":"); resp.push_str(&json_f64_array(&outBuf2[..outNBElement]));
+            resp.push_str(",\"outReal3\":"); resp.push_str(&json_f64_array(&outBuf3[..outNBElement]));
+            resp.push('}');
+            resp
+}
+
+}
+use f_ichimoku::*;
 
 mod f_imi {
 use super::*;

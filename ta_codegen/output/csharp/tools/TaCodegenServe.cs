@@ -248,6 +248,7 @@ public class TaCodegenServe {
             else if (method == "TA_HT_TRENDLINE") return Handle_HT_TRENDLINE(p, startIdx, endIdx);
             else if (method == "TA_HT_TRENDMODE") return Handle_HT_TRENDMODE(p, startIdx, endIdx);
             else if (method == "TA_IBS") return Handle_IBS(p, startIdx, endIdx);
+            else if (method == "TA_ICHIMOKU") return Handle_ICHIMOKU(p, startIdx, endIdx);
             else if (method == "TA_IMI") return Handle_IMI(p, startIdx, endIdx);
             else if (method == "TA_KAMA") return Handle_KAMA(p, startIdx, endIdx);
             else if (method == "TA_KC") return Handle_KC(p, startIdx, endIdx);
@@ -606,6 +607,8 @@ public class TaCodegenServe {
                 sb.Append("\"TA_HT_TRENDMODE\"");
                 sb.Append(",");
                 sb.Append("\"TA_IBS\"");
+                sb.Append(",");
+                sb.Append("\"TA_ICHIMOKU\"");
                 sb.Append(",");
                 sb.Append("\"TA_IMI\"");
                 sb.Append(",");
@@ -77784,6 +77787,12 @@ public class TaCodegenServe {
         case "IBS": {
             return core.IbsLookback();
         }
+        case "ICHIMOKU": {
+            int optInTenkanPeriod = GetInt(p, "optInTenkanPeriod", 0);
+            int optInKijunPeriod = GetInt(p, "optInKijunPeriod", 0);
+            int optInSenkouBPeriod = GetInt(p, "optInSenkouBPeriod", 0);
+            return core.IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
+        }
         case "IMI": {
             int optInTimePeriod = GetInt(p, "optInTimePeriod", 0);
             return core.ImiLookback(optInTimePeriod);
@@ -78714,6 +78723,12 @@ public class TaCodegenServe {
         }
         case "IBS": {
             return core.IbsDisplayShift(GetInt(p, "outputIdx", 0));
+        }
+        case "ICHIMOKU": {
+            int optInTenkanPeriod = GetInt(p, "optInTenkanPeriod", 0);
+            int optInKijunPeriod = GetInt(p, "optInKijunPeriod", 0);
+            int optInSenkouBPeriod = GetInt(p, "optInSenkouBPeriod", 0);
+            return core.IchimokuDisplayShift(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, GetInt(p, "outputIdx", 0));
         }
         case "IMI": {
             int optInTimePeriod = GetInt(p, "optInTimePeriod", 0);
@@ -96273,6 +96288,144 @@ public class TaCodegenServe {
         sb.Append($",\"used_float\":{usedFloat}");
         sb.Append($",\"timing_ns\":{elapsedNs}");
         RideIbs(core, p, endIdx, inHigh, inLow, inClose, sb);
+        sb.Append("}");
+        return sb.ToString();
+    }
+
+    static string Handle_ICHIMOKU(JsonElement p, int startIdx, int endIdx) {
+        int use_preloaded = GetInt(p, "use_preloaded", 0);
+        int bench_iters = GetInt(p, "iters", 1);
+        if (bench_iters < 1) bench_iters = 1;
+        int bench_mode = GetInt(p, "bench_mode", 0);
+        double[] inHigh;
+        double[] inLow;
+        if (use_preloaded != 0 && refN > 0) {
+            inHigh = new double[refN]; Array.Copy(refHigh, inHigh, refN);
+            inLow = new double[refN]; Array.Copy(refLow, inLow, refN);
+        } else {
+            inHigh = GetDoubleArray(p, "inHigh");
+            inLow = GetDoubleArray(p, "inLow");
+        }
+        ReadOnlySpan<double> _warm_inHigh = bench_mode == 0 ? default : inHigh.AsSpan(0, endIdx + 1);
+        ReadOnlySpan<double> _warm_inLow = bench_mode == 0 ? default : inLow.AsSpan(0, endIdx + 1);
+        int optInTenkanPeriod = GetInt(p, "optInTenkanPeriod", 0);
+        int optInKijunPeriod = GetInt(p, "optInKijunPeriod", 0);
+        int optInSenkouBPeriod = GetInt(p, "optInSenkouBPeriod", 0);
+        // The output buffers are sized to the count the call actually PRODUCES --
+        // endIdx - max(startIdx, lookback) + 1 -- plus `out_pad` from the request, and
+        // never below one. Not to the width of the requested range: that is the bound the
+        // managed backends check and the Rust asserts state, and at the range width it was
+        // slack by exactly the lookback, so no call could ever approach it.
+        // The pad is there because a bound is a MINIMUM, never an equality. A caller
+        // re-using a pre-allocated buffer passes a larger one, and that is not an error --
+        // the reported OutRange is what says which part was written. So the harness sends
+        // both: the startIdx axis sends no pad (the bound is reachable) while the
+        // full-range value comparison sends one (slack is legal). Sizing every call one way
+        // would silently drop the other property.
+        // FLOORED AT ONE, deliberately. Zero is what the formula gives for a rejected call
+        // (the lookback is -1, or usize::MAX in Rust, for an out-of-range parameter) and
+        // for a range shorter than the lookback, where the output bound switches off.
+        // An empty output is an absent one, so sizing to zero here would turn the second
+        // into a rejection of the buffer.
+        // The C server keeps its MAX_ARRAY_SIZE statics: C is handed bare pointers, has no
+        // sizes and cannot make the check, so an exact buffer would test nothing there.
+        int _lb = core.IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
+        int _cs = startIdx > _lb ? startIdx : _lb;
+        int _outLen = ((_lb < 0 || _cs > endIdx) ? 1 : endIdx - _cs + 1) + GetInt(p, "out_pad", 0);
+        double[] outArr0 = new double[_outLen];
+        double[] outArr1 = new double[_outLen];
+        double[] outArr2 = new double[_outLen];
+        double[] outArr3 = new double[_outLen];
+        int outBegIdx = 0, outNBElement = 0;
+        RetCode rc = RetCode.Success;
+        long _t0 = 0;
+        for (int _bi = 0; _bi <= bench_iters; _bi++) {
+            if (_bi == 1) _t0 = GetNanoTime();
+            if (bench_mode == 0) {
+            if (GetInt(p, "timed", 0) != 0) {
+                try {
+                    rc = core.IchimokuImpl(startIdx, endIdx, inHigh, inLow, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, out outBegIdx, out outNBElement, outArr0, outArr1, outArr2, outArr3);
+                } catch (Exception _e2) when (_e2 is ITALibFailure) {
+                    rc = ((ITALibFailure)_e2).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            } else {
+                try {
+                    OutRange _pr = core.Ichimoku(startIdx, endIdx, inHigh, inLow, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, outArr0, outArr1, outArr2, outArr3);
+                    outBegIdx = _pr.BegIdx;
+                    outNBElement = _pr.Count;
+                    rc = RetCode.Success;
+                } catch (Exception _e) when (_e is ITALibFailure) {
+                    rc = ((ITALibFailure)_e).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            }
+            } else if (bench_mode == 1) {
+                try {
+                    core.IchimokuOpen(_warm_inHigh, _warm_inLow, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
+                    rc = RetCode.Success;
+                } catch (Exception _e3) when (_e3 is ITALibFailure) {
+                    rc = ((ITALibFailure)_e3).RetCode;
+                }
+            } else {
+                try {
+                    Core.IchimokuStream _wh = core.IchimokuOpenAndFill(_warm_inHigh, _warm_inLow, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, outArr0, outArr1, outArr2, outArr3);
+                    outBegIdx = _wh.OutRange.BegIdx;
+                    outNBElement = _wh.OutRange.Count;
+                    rc = RetCode.Success;
+                } catch (Exception _e3) when (_e3 is ITALibFailure) {
+                    rc = ((ITALibFailure)_e3).RetCode;
+                    outBegIdx = 0;
+                    outNBElement = 0;
+                }
+            }
+        }
+        long elapsedNs = (GetNanoTime() - _t0) / bench_iters;
+        int usedFloat = 0;
+        if (GetInt(p, "use_float", 0) != 0) {
+            var f_inHigh = new float[inHigh.Length];
+            for (int _fi = 0; _fi < inHigh.Length; _fi++) f_inHigh[_fi] = (float)inHigh[_fi];
+            var f_inLow = new float[inLow.Length];
+            for (int _fi = 0; _fi < inLow.Length; _fi++) f_inLow[_fi] = (float)inLow[_fi];
+            try {
+                OutRange _fr = core.Ichimoku(startIdx, endIdx, f_inHigh, f_inLow, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, outArr0, outArr1, outArr2, outArr3);
+                outBegIdx = _fr.BegIdx;
+                outNBElement = _fr.Count;
+                rc = RetCode.Success;
+            } catch (Exception _e) when (_e is ITALibFailure) {
+                rc = ((ITALibFailure)_e).RetCode;
+                outBegIdx = 0;
+                outNBElement = 0;
+            }
+            usedFloat = 1;
+        }
+        if (GetInt(p, "want_hash", 0) != 0 && GetInt(p, "full_output", 0) == 0) {
+            ulong _h = SvHashInit();
+            if (rc == RetCode.Success && outNBElement > 0) {
+                _h = SvHashF64(_h, outArr0, outNBElement);
+                _h = SvHashF64(_h, outArr1, outNBElement);
+                _h = SvHashF64(_h, outArr2, outNBElement);
+                _h = SvHashF64(_h, outArr3, outNBElement);
+            }
+            _h = SvHashFin(_h);
+            var hb = new System.Text.StringBuilder();
+            hb.Append($"{{\"retCode\":{(int)rc},\"outBegIdx\":{outBegIdx},\"outNBElement\":{outNBElement},\"out_hash\":\"{_h:x16}\"");
+            hb.Append("}");
+            return hb.ToString();
+        }
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"{{\"retCode\":{(int)rc},\"outBegIdx\":{outBegIdx},\"outNBElement\":{outNBElement}");
+        sb.Append($",\"out_len\":{_outLen}");
+        if (GetInt(p, "no_output", 0) == 0) {
+            sb.Append(",\"outReal\":"); sb.Append(FormatArray(outArr0, outNBElement));
+            sb.Append(",\"outReal1\":"); sb.Append(FormatArray(outArr1, outNBElement));
+            sb.Append(",\"outReal2\":"); sb.Append(FormatArray(outArr2, outNBElement));
+            sb.Append(",\"outReal3\":"); sb.Append(FormatArray(outArr3, outNBElement));
+        }
+        sb.Append($",\"used_float\":{usedFloat}");
+        sb.Append($",\"timing_ns\":{elapsedNs}");
         sb.Append("}");
         return sb.ToString();
     }
