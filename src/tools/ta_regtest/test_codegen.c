@@ -743,6 +743,15 @@ static const UnstableLookup UNSTABLE_MAP[] = {
      * tightens around it. Measured with only UNST_EMA listed, KC moved 1.8%
      * across startIdx at unstable period 140 where 0.15% was allowed. Without
      * any entry it classified EPSILON and moved 0.25% where ~1e-13 was allowed. */
+    /* KVO is listed for the SECOND consumer of this map, as SUPERTREND is:
+     * it carries `path_dependent`, so stability_class() answers SKIP before it
+     * asks about an unstable id and the range envelope is not what this row
+     * buys. What it buys is the stream K-leg. All three of KVO's smoothings
+     * are EMA sub-calls sharing one anchor, so a non-zero EMA unstable period
+     * moves where that anchor sits; without a row here stream_verify runs
+     * every language at K == 0 only and that shift is never exercised on the
+     * streaming path. */
+    {"KVO",          TA_FUNC_UNST_EMA},
     {"KC",           TA_FUNC_UNST_EMA},
     {"KC",           TA_FUNC_UNST_ATR},
     /* SMI's three EMA stages are seeded and advanced exactly as ema.c does,
