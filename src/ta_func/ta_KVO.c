@@ -939,6 +939,22 @@ TA_FMA_OPEN_PLAIN static TA_RetCode TA_KVO_OpenImplPlain( struct TA_KVO_Stream *
    return TA_KVO_OpenImpl( stream, inHigh, inLow, inClose, inVolume, startIdx, historyLen, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, outBegIdx, outNBElement, outKVO, outKVOSignal, outStride );
 }
 
+TA_FMA_OPEN_CLONE static TA_RetCode TA_KVO_OpenSinkFma( struct TA_KVO_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], const double inVolume[], int startIdx, int historyLen, int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod, double *outKVO, double *outKVOSignal )
+{
+   TA_RetCode retCode;
+   int dummyBegIdx = 0;
+   int dummyNBElement = 0;
+   double sink_outKVO = 0.0;
+   double sink_outKVOSignal = 0.0;
+   retCode = TA_KVO_OpenImpl( stream, inHigh, inLow, inClose, inVolume, startIdx, historyLen, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, &dummyBegIdx, &dummyNBElement, &sink_outKVO, &sink_outKVOSignal, 0 );
+   if( retCode == TA_SUCCESS )
+   {
+      *outKVO = sink_outKVO;
+      *outKVOSignal = sink_outKVOSignal;
+   }
+   return retCode;
+}
+
 /* Private function, not in public API. */
 TA_RetCode TA_KVO_OpenInternal( struct TA_KVO_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], const double inVolume[], int startIdx, int historyLen, int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod, double *outKVO, double *outKVOSignal )
 {
@@ -963,7 +979,7 @@ TA_LIB_API TA_RetCode TA_KVO_Open( TA_KVO_Stream **stream, const double inHigh[]
    if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
    if( historyLen > TA_INDEX_MAX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
    if( !inHigh || !inLow || !inClose || !inVolume || !outKVO || !outKVOSignal ) return TA_BAD_PARAM;
-   return TA_KVO_OpenInternal( stream, inHigh, inLow, inClose, inVolume, 0, historyLen, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, outKVO, outKVOSignal );
+   return TA_FMA_AVAILABLE ? TA_KVO_OpenSinkFma( stream, inHigh, inLow, inClose, inVolume, 0, historyLen, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, outKVO, outKVOSignal ) : TA_KVO_OpenInternal( stream, inHigh, inLow, inClose, inVolume, 0, historyLen, optInFastPeriod, optInSlowPeriod, optInSignalPeriod, outKVO, outKVOSignal );
 }
 
 TA_LIB_API TA_RetCode TA_KVO_OpenAndFill( TA_KVO_Stream **stream, const double inHigh[], const double inLow[], const double inClose[], const double inVolume[], int historyLen, int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod, int *outBegIdx, int *outNBElement, double outKVO[], double outKVOSignal[] )
