@@ -253,10 +253,23 @@ public partial class Core
        * The three windows use the cached-extreme-plus-rescan idiom of stoch.c
        * rather than midprice.c's block scan. Both are exact -- an extremum is a
        * selection, so the bits are whichever input bar won, whatever the scan
-       * order -- so the choice is streamability and cost, not correctness: the
-       * block-scan form produces a whole block at a time and cannot be a per-bar
-       * automaton, which is why midprice.c carries a midprice_ALT1 for the
-       * streaming tier (#147). This form needs no twin.
+       * order -- so the choice is cost, not correctness.
+       *
+       * UNRESOLVED (#490 Q6). The reason this form was chosen no longer holds.
+       * It was chosen because the block scan produces a whole block at a time and
+       * cannot be a per-bar automaton, which is why midprice.c carries a
+       * midprice_ALT1 for the streaming tier (#147) -- and this form would need no
+       * such twin. The generator then refused ICHIMOKU a streaming tier outright
+       * (three windows, one automaton), so there is no twin to avoid. Measured on
+       * an i7-10700K over 20000 bars, the rescan costs what stoch.c's idiom costs
+       * on flat input:
+       *
+       *    tenkan/kijun/senkouB   random walk   flat
+       *      9 /  27 /  54          23.21         119.67 ns/bar
+       *     36 / 108 / 216          37.30         571.95
+       *    148 / 444 / 888          72.25        2520.80
+       *
+       * The block scan is bounded instead. Awaiting the ruling before switching.
        */
       lookbackTotal = IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
       /* Move up the start index if there is not
@@ -289,8 +302,19 @@ public partial class Core
       hiB = 0.0;
       loB = 0.0;
       while( today <= endIdx ) {
-         /* Tenkan window. The cached index is refreshed on a tie, so a flat
-          * stretch never rescans.
+         /* Tenkan window. The rebuild below compares STRICTLY, so when every bar
+          * in the window is equal it leaves the index at trailT -- the oldest bar
+          * -- and one bar later trailT has passed it and it rebuilds again. The
+          * tie branch is not what saves a flat stretch: it is never reached
+          * there, because the rebuild hands it an index that is already expiring.
+          * Measured at 148/444/888 over 20000 bars: 67 ns/bar on a random walk
+          * against 2505 flat.
+          *
+          * The strict comparison is not incidental. It is the strict form that
+          * the compiler contracts into a branchless maxsd: spelling it `>=` to
+          * keep the newest tied bar makes the flat cost constant in the period
+          * (6.2 ns/bar) but drops all 30 maxsd from the object file and costs
+          * 34.8% on a random walk. #490 Q6 has the full table.
           */
          tmp = inHigh[today];
          if( hiIdxT < trailT ) {
@@ -641,7 +665,7 @@ public partial class Core
    /// <see href="https://ta-lib.org/functions/ichimoku">ta-lib.org/functions/ichimoku</see>.
    /// </para>
    /// <list type="bullet">
-   /// <item><description>Each line is <c>TA_MIDPRICE</c> over its own period, and Span A is <c>TA_MEDPRICE</c> of the other two lines. Span A halves the two midpoints after each has been rounded, rather than averaging the four extremes, which is a different value in the last bit on about a quarter of the bars.</description></item>
+   /// <item><description>Each line is <c>TA_MIDPRICE</c> over its own period, and Span A is <c>TA_MEDPRICE</c> of the other two lines. Span A halves the two midpoints after each has been rounded, rather than averaging the four extremes. The two spellings are the same number in real arithmetic and a different double in the last bit often enough to matter: on the 252-bar regression corpus the rate is 0% at the published 9/26 periods, 5.7% at 26/9, and 12.4% at 2/2, and on a four-decimal series at 3/5 it is 48%. The rate is not a function of the longer period alone: 9/26 and 26/9 share a 26-bar window and read 0% and 5.7%.</description></item>
    /// <item><description>The two spans are drawn <c>kijunPeriod</c> bars ahead of the bar that computed them. That is a display shift: it is reported through the display-shift call and changes nothing about the values, the lookback or the returned range. Every output is written at the bar that computed it.</description></item>
    /// <item><description>The lookback is the longest of the three periods less one. It is not the Senkou B period: nothing orders the three, so a base line longer than the second span dominates.</description></item>
    /// <item><description>The Chikou span, the close drawn backward, carries no computation and is not an output here: it is the input series with a display shift.</description></item>
@@ -754,7 +778,7 @@ public partial class Core
    /// <see href="https://ta-lib.org/functions/ichimoku">ta-lib.org/functions/ichimoku</see>.
    /// </para>
    /// <list type="bullet">
-   /// <item><description>Each line is <c>TA_MIDPRICE</c> over its own period, and Span A is <c>TA_MEDPRICE</c> of the other two lines. Span A halves the two midpoints after each has been rounded, rather than averaging the four extremes, which is a different value in the last bit on about a quarter of the bars.</description></item>
+   /// <item><description>Each line is <c>TA_MIDPRICE</c> over its own period, and Span A is <c>TA_MEDPRICE</c> of the other two lines. Span A halves the two midpoints after each has been rounded, rather than averaging the four extremes. The two spellings are the same number in real arithmetic and a different double in the last bit often enough to matter: on the 252-bar regression corpus the rate is 0% at the published 9/26 periods, 5.7% at 26/9, and 12.4% at 2/2, and on a four-decimal series at 3/5 it is 48%. The rate is not a function of the longer period alone: 9/26 and 26/9 share a 26-bar window and read 0% and 5.7%.</description></item>
    /// <item><description>The two spans are drawn <c>kijunPeriod</c> bars ahead of the bar that computed them. That is a display shift: it is reported through the display-shift call and changes nothing about the values, the lookback or the returned range. Every output is written at the bar that computed it.</description></item>
    /// <item><description>The lookback is the longest of the three periods less one. It is not the Senkou B period: nothing orders the three, so a base line longer than the second span dominates.</description></item>
    /// <item><description>The Chikou span, the close drawn backward, carries no computation and is not an output here: it is the input series with a display shift.</description></item>

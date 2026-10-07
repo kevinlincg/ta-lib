@@ -222,10 +222,23 @@ TA_LIB_API TA_RetCode TA_ICHIMOKU( int    startIdx,
     * The three windows use the cached-extreme-plus-rescan idiom of stoch.c
     * rather than midprice.c's block scan. Both are exact -- an extremum is a
     * selection, so the bits are whichever input bar won, whatever the scan
-    * order -- so the choice is streamability and cost, not correctness: the
-    * block-scan form produces a whole block at a time and cannot be a per-bar
-    * automaton, which is why midprice.c carries a midprice_ALT1 for the
-    * streaming tier (#147). This form needs no twin.
+    * order -- so the choice is cost, not correctness.
+    *
+    * UNRESOLVED (#490 Q6). The reason this form was chosen no longer holds.
+    * It was chosen because the block scan produces a whole block at a time and
+    * cannot be a per-bar automaton, which is why midprice.c carries a
+    * midprice_ALT1 for the streaming tier (#147) -- and this form would need no
+    * such twin. The generator then refused ICHIMOKU a streaming tier outright
+    * (three windows, one automaton), so there is no twin to avoid. Measured on
+    * an i7-10700K over 20000 bars, the rescan costs what stoch.c's idiom costs
+    * on flat input:
+    *
+    *    tenkan/kijun/senkouB   random walk   flat
+    *      9 /  27 /  54          23.21         119.67 ns/bar
+    *     36 / 108 / 216          37.30         571.95
+    *    148 / 444 / 888          72.25        2520.80
+    *
+    * The block scan is bounded instead. Awaiting the ruling before switching.
     */
    lookbackTotal = TA_ICHIMOKU_Lookback(optInTenkanPeriod,optInKijunPeriod,optInSenkouBPeriod);
    /* Move up the start index if there is not
@@ -261,8 +274,19 @@ TA_LIB_API TA_RetCode TA_ICHIMOKU( int    startIdx,
    loB = 0.0;
    while( today <= endIdx )
    {
-      /* Tenkan window. The cached index is refreshed on a tie, so a flat
-       * stretch never rescans.
+      /* Tenkan window. The rebuild below compares STRICTLY, so when every bar
+       * in the window is equal it leaves the index at trailT -- the oldest bar
+       * -- and one bar later trailT has passed it and it rebuilds again. The
+       * tie branch is not what saves a flat stretch: it is never reached
+       * there, because the rebuild hands it an index that is already expiring.
+       * Measured at 148/444/888 over 20000 bars: 67 ns/bar on a random walk
+       * against 2505 flat.
+       *
+       * The strict comparison is not incidental. It is the strict form that
+       * the compiler contracts into a branchless maxsd: spelling it `>=` to
+       * keep the newest tied bar makes the flat cost constant in the period
+       * (6.2 ns/bar) but drops all 30 maxsd from the object file and costs
+       * 34.8% on a random walk. #490 Q6 has the full table.
        */
       tmp = inHigh[today];
       if( hiIdxT < trailT )
