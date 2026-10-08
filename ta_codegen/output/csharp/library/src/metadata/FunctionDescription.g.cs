@@ -5832,6 +5832,7 @@ public static class FunctionDescription
 		<GroupId>Overlap Studies</GroupId>
 		<Flags>
 			<Flag>Overlap</Flag>
+			<Flag>Streaming</Flag>
 			<Flag>Display Shift</Flag>
 		</Flags>
 		<RequiredInputArguments>

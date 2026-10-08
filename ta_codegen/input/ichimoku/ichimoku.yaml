@@ -5,7 +5,7 @@ hint: Ichimoku Kinko Hyo
 # window, and this function carries three (the generator rejects it by name:
 # `expected exactly one window-start variable, found ["trailT","trailK","trailB"]`).
 # A streaming form would need either three automata or a composed tier; #490 Q7.
-flags: [overlap]
+flags: [overlap, stream]
 inputs:
   - name: inPriceHL
     type: price

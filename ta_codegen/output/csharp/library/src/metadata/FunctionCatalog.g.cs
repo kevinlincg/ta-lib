@@ -3256,7 +3256,7 @@ public sealed class FunctionCatalog : IReadOnlyList<FuncInfo>
         name: "ICHIMOKU",
         group: FunctionGroup.OverlapStudies,
         hint: "Ichimoku Kinko Hyo",
-        flags: FuncFlags.Overlap | FuncFlags.DisplayShift,
+        flags: FuncFlags.Overlap | FuncFlags.Stream | FuncFlags.DisplayShift,
         unstableId: null,
         inputs:
         [

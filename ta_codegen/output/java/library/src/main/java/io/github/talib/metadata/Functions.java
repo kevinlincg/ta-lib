@@ -2326,7 +2326,7 @@ public final class Functions {
 
    private static FuncInfo f_ICHIMOKU() {
       return new FuncInfo(
-         "ICHIMOKU", "Overlap Studies", "Ichimoku Kinko Hyo", 0x01000002,
+         "ICHIMOKU", "Overlap Studies", "Ichimoku Kinko Hyo", 0x03000002,
          List.of(
             new InputInfo(InputType.PRICE, "inPriceHL", 0x00000006)
          ),

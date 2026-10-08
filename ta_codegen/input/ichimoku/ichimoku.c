@@ -63,64 +63,33 @@ TA_RetCode ichimoku(int startIdx, int endIdx,
    double outSenkouSpanA[],
    double outSenkouSpanB[])
 {
-   double tenkan, kijun;
-   double hiT, loT, hiK, loK, hiB, loB, tmp;
-   int lookbackTotal, today, outIdx, i;
-   int trailT, trailK, trailB;
-   int hiIdxT, loIdxT, hiIdxK, loIdxK, hiIdxB, loIdxB;
+   TA_RetCode retCode;
+   int lookbackTotal, n, i;
+   int tempBegIdx, tempNbElement;
+   double *tempT;
+   double *tempK;
+   double *tempB;
 
-   /* Goichi Hosoda's Ichimoku Kinko Hyo, the four lines that are computed
-    * from price alone:
+   /* PROTOTYPE (#490 Q7): each line IS a midpoint over its own window, which is
+    * exactly what midprice computes, so the three scans are three midprice calls
+    * and Span A is the mean of two of them. MEASURED bit-identical to the fused
+    * loop over four parameter triples on the suite's corpus, every line, before
+    * this was written.
     *
-    *    Tenkan-sen  = midpoint of the last tenkan bars
-    *    Kijun-sen   = midpoint of the last kijun bars
-    *    Senkou A    = mean of those two lines
-    *    Senkou B    = midpoint of the last senkouB bars
+    * The point is the stream tier: three windows of different periods cannot be
+    * one extrema automaton (the census refuses with "expected exactly one
+    * window-start variable"), but a composed body is a different tier.
     *
-    * where a midpoint is (highest high + lowest low)/2 over the window, which
-    * is TA_MIDPRICE. The two spans are drawn kijun bars ahead; that is
-    * display-shift metadata (ichimoku_display_shift), never a shift of the
-    * values, so every output is written at the bar that computed it (rL9).
-    * The Chikou span is the close displaced backward and carries no
-    * computation, so it is not an output here.
-    *
-    * SPAN A HALVES THE TWO ALREADY-ROUNDED MIDPOINTS. Folding it into
-    * (hiT + loT + hiK + loK)/4 is the same value in real arithmetic and a
-    * different double on a quarter of the bars; only a bit-exact gate
-    * against TA_MIDPRICE and TA_MEDPRICE sees the difference.
-    *
-    * The three windows use the cached-extreme-plus-rescan idiom of stoch.c
-    * rather than midprice.c's block scan. Both are exact -- an extremum is a
-    * selection, so the bits are whichever input bar won, whatever the scan
-    * order -- so the choice is cost, not correctness.
-    *
-    * UNRESOLVED (#490 Q6). The reason this form was chosen no longer holds.
-    * It was chosen because the block scan produces a whole block at a time and
-    * cannot be a per-bar automaton, which is why midprice.c carries a
-    * midprice_ALT1 for the streaming tier (#147) -- and this form would need no
-    * such twin. The generator then refused ICHIMOKU a streaming tier outright
-    * (three windows, one automaton), so there is no twin to avoid. Measured on
-    * an i7-10700K over 20000 bars, the rescan costs what stoch.c's idiom costs
-    * on flat input:
-    *
-    *    tenkan/kijun/senkouB   random walk   flat
-    *      9 /  27 /  54          23.21         119.67 ns/bar
-    *     36 / 108 / 216          37.30         571.95
-    *    148 / 444 / 888          72.25        2520.80
-    *
-    * The block scan is bounded instead. Awaiting the ruling before switching.
+    * The three results go to temporaries and are copied at the end: every read of
+    * high and low has to happen before the first write to a caller buffer, or an
+    * output aliased onto an input is read after it has been overwritten.
     */
-
    lookbackTotal = ichimoku_lookback( optInTenkanPeriod, optInKijunPeriod,
       optInSenkouBPeriod );
 
-   /* Move up the start index if there is not
-    * enough initial data.
-    */
    if( startIdx < lookbackTotal )
       startIdx = lookbackTotal;
 
-   /* Make sure there is still something to evaluate. */
    if( startIdx > endIdx )
    {
       *outBegIdx = 0;
@@ -128,193 +97,95 @@ TA_RetCode ichimoku(int startIdx, int endIdx,
       return TA_SUCCESS;
    }
 
-   outIdx = 0;
-   today = startIdx;
-   trailT = today - (optInTenkanPeriod - 1);
-   trailK = today - (optInKijunPeriod - 1);
-   trailB = today - (optInSenkouBPeriod - 1);
+   n = endIdx - startIdx + 1;
 
-   hiIdxT = -1;
-   loIdxT = -1;
-   hiIdxK = -1;
-   loIdxK = -1;
-   hiIdxB = -1;
-   loIdxB = -1;
-   hiT = 0.0;
-   loT = 0.0;
-   hiK = 0.0;
-   loK = 0.0;
-   hiB = 0.0;
-   loB = 0.0;
-
-   while( today <= endIdx )
+   tempT = malloc( n * sizeof(double) );
+   if( !tempT )
    {
-      /* Tenkan window. The rebuild below compares STRICTLY, so when every bar
-       * in the window is equal it leaves the index at trailT -- the oldest bar
-       * -- and one bar later trailT has passed it and it rebuilds again. The
-       * tie branch is not what saves a flat stretch: it is never reached
-       * there, because the rebuild hands it an index that is already expiring.
-       * Measured at 148/444/888 over 20000 bars: 67 ns/bar on a random walk
-       * against 2505 flat.
-       *
-       * The strict comparison is not incidental. It is the strict form that
-       * the compiler contracts into a branchless maxsd: spelling it `>=` to
-       * keep the newest tied bar makes the flat cost constant in the period
-       * (6.2 ns/bar) but drops all 30 maxsd from the object file and costs
-       * 34.8% on a random walk. #490 Q6 has the full table. */
-      tmp = inHigh[today];
-      if( hiIdxT < trailT )
-      {
-         hiIdxT = trailT;
-         hiT = inHigh[hiIdxT];
-         i = hiIdxT;
-         while( ++i <= today )
-         {
-            tmp = inHigh[i];
-            if( tmp > hiT )
-            {
-               hiIdxT = i;
-               hiT = tmp;
-            }
-         }
-      }
-      else if( tmp >= hiT )
-      {
-         hiIdxT = today;
-         hiT = tmp;
-      }
-
-      tmp = inLow[today];
-      if( loIdxT < trailT )
-      {
-         loIdxT = trailT;
-         loT = inLow[loIdxT];
-         i = loIdxT;
-         while( ++i <= today )
-         {
-            tmp = inLow[i];
-            if( tmp < loT )
-            {
-               loIdxT = i;
-               loT = tmp;
-            }
-         }
-      }
-      else if( tmp <= loT )
-      {
-         loIdxT = today;
-         loT = tmp;
-      }
-
-      /* Kijun window. */
-      tmp = inHigh[today];
-      if( hiIdxK < trailK )
-      {
-         hiIdxK = trailK;
-         hiK = inHigh[hiIdxK];
-         i = hiIdxK;
-         while( ++i <= today )
-         {
-            tmp = inHigh[i];
-            if( tmp > hiK )
-            {
-               hiIdxK = i;
-               hiK = tmp;
-            }
-         }
-      }
-      else if( tmp >= hiK )
-      {
-         hiIdxK = today;
-         hiK = tmp;
-      }
-
-      tmp = inLow[today];
-      if( loIdxK < trailK )
-      {
-         loIdxK = trailK;
-         loK = inLow[loIdxK];
-         i = loIdxK;
-         while( ++i <= today )
-         {
-            tmp = inLow[i];
-            if( tmp < loK )
-            {
-               loIdxK = i;
-               loK = tmp;
-            }
-         }
-      }
-      else if( tmp <= loK )
-      {
-         loIdxK = today;
-         loK = tmp;
-      }
-
-      /* Senkou B window. */
-      tmp = inHigh[today];
-      if( hiIdxB < trailB )
-      {
-         hiIdxB = trailB;
-         hiB = inHigh[hiIdxB];
-         i = hiIdxB;
-         while( ++i <= today )
-         {
-            tmp = inHigh[i];
-            if( tmp > hiB )
-            {
-               hiIdxB = i;
-               hiB = tmp;
-            }
-         }
-      }
-      else if( tmp >= hiB )
-      {
-         hiIdxB = today;
-         hiB = tmp;
-      }
-
-      tmp = inLow[today];
-      if( loIdxB < trailB )
-      {
-         loIdxB = trailB;
-         loB = inLow[loIdxB];
-         i = loIdxB;
-         while( ++i <= today )
-         {
-            tmp = inLow[i];
-            if( tmp < loB )
-            {
-               loIdxB = i;
-               loB = tmp;
-            }
-         }
-      }
-      else if( tmp <= loB )
-      {
-         loIdxB = today;
-         loB = tmp;
-      }
-
-      /* Each midpoint is spelled as midprice.c spells it, and Span A halves
-       * the two lines rather than the four extremes. */
-      tenkan = (hiT + loT) / 2.0;
-      kijun = (hiK + loK) / 2.0;
-
-      outTenkanSen[outIdx] = tenkan;
-      outKijunSen[outIdx] = kijun;
-      outSenkouSpanA[outIdx] = (tenkan + kijun) / 2.0;
-      outSenkouSpanB[outIdx] = (hiB + loB) / 2.0;
-      outIdx = outIdx + 1;
-
-      trailT = trailT + 1;
-      trailK = trailK + 1;
-      trailB = trailB + 1;
-      today = today + 1;
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return TA_ALLOC_ERR;
+   }
+   tempK = malloc( n * sizeof(double) );
+   if( !tempK )
+   {
+      free( tempT );
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return TA_ALLOC_ERR;
+   }
+   tempB = malloc( n * sizeof(double) );
+   if( !tempB )
+   {
+      free( tempT );
+      free( tempK );
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return TA_ALLOC_ERR;
    }
 
-   *outNBElement = outIdx;
-   *outBegIdx    = startIdx;
+   retCode = midprice( startIdx, endIdx, inHigh, inLow, optInTenkanPeriod,
+      &tempBegIdx, &tempNbElement, tempT );
+   if( retCode != TA_SUCCESS )
+   {
+      free( tempT );
+      free( tempK );
+      free( tempB );
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return retCode;
+   }
+
+   retCode = midprice( startIdx, endIdx, inHigh, inLow, optInKijunPeriod,
+      &tempBegIdx, &tempNbElement, tempK );
+   if( retCode != TA_SUCCESS )
+   {
+      free( tempT );
+      free( tempK );
+      free( tempB );
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return retCode;
+   }
+
+   retCode = midprice( startIdx, endIdx, inHigh, inLow, optInSenkouBPeriod,
+      &tempBegIdx, &tempNbElement, tempB );
+   if( retCode != TA_SUCCESS )
+   {
+      free( tempT );
+      free( tempK );
+      free( tempB );
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return retCode;
+   }
+
+   /* Span A is the mean of the two lines, which medprice is over any two series. */
+   retCode = medprice( 0, n-1, tempT, tempK,
+      &tempBegIdx, &tempNbElement, outSenkouSpanA );
+   if( retCode != TA_SUCCESS )
+   {
+      free( tempT );
+      free( tempK );
+      free( tempB );
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return retCode;
+   }
+
+   for( i = 0; i < n; i++ )
+   {
+      outTenkanSen[i] = tempT[i];
+      outKijunSen[i] = tempK[i];
+      outSenkouSpanB[i] = tempB[i];
+   }
+
+   free( tempT );
+   free( tempK );
+   free( tempB );
+
+   *outBegIdx = startIdx;
+   *outNBElement = n;
 
    return TA_SUCCESS;
 }

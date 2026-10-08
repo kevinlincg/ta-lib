@@ -141,7 +141,7 @@ static const TA_OptInputParameterInfo *TA_ICHIMOKU_OptInputs[] =
 DEF_FUNCTION( ICHIMOKU,
               TA_GroupId_OverlapStudies,
               "Ichimoku Kinko Hyo",
-              TA_FUNC_FLG_OVERLAP | TA_FUNC_FLG_DISPLAY_SHIFT
+              TA_FUNC_FLG_OVERLAP | TA_FUNC_FLG_STREAM | TA_FUNC_FLG_DISPLAY_SHIFT
              );
 /* ICHIMOKU END */
 

@@ -142,28 +142,15 @@ TA_LIB_API TA_RetCode TA_ICHIMOKU( int    startIdx,
                                    double        outSenkouSpanA[],
                                    double        outSenkouSpanB[] )
 {
-   double tenkan;
-   double kijun;
-   double hiT;
-   double loT;
-   double hiK;
-   double loK;
-   double hiB;
-   double loB;
-   double tmp;
+   TA_RetCode retCode;
    int lookbackTotal;
-   int today;
-   int outIdx;
+   int n;
    int i;
-   int trailT;
-   int trailK;
-   int trailB;
-   int hiIdxT;
-   int loIdxT;
-   int hiIdxK;
-   int loIdxK;
-   int hiIdxB;
-   int loIdxB;
+   int tempBegIdx;
+   int tempNbElement;
+   double *tempT;
+   double *tempK;
+   double *tempB;
 
    if( (startIdx < 0) || (startIdx > TA_INDEX_MAX) )
       return TA_OUT_OF_RANGE_START_INDEX;
@@ -199,234 +186,108 @@ TA_LIB_API TA_RetCode TA_ICHIMOKU( int    startIdx,
    if( outTenkanSen == outKijunSen || outTenkanSen == outSenkouSpanA || outTenkanSen == outSenkouSpanB || outKijunSen == outSenkouSpanA || outKijunSen == outSenkouSpanB || outSenkouSpanA == outSenkouSpanB )
       return TA_BAD_PARAM;
 
-   /* Goichi Hosoda's Ichimoku Kinko Hyo, the four lines that are computed
-    * from price alone:
+   /* PROTOTYPE (#490 Q7): each line IS a midpoint over its own window, which is
+    * exactly what midprice computes, so the three scans are three midprice calls
+    * and Span A is the mean of two of them. MEASURED bit-identical to the fused
+    * loop over four parameter triples on the suite's corpus, every line, before
+    * this was written.
     *
-    *    Tenkan-sen  = midpoint of the last tenkan bars
-    *    Kijun-sen   = midpoint of the last kijun bars
-    *    Senkou A    = mean of those two lines
-    *    Senkou B    = midpoint of the last senkouB bars
+    * The point is the stream tier: three windows of different periods cannot be
+    * one extrema automaton (the census refuses with "expected exactly one
+    * window-start variable"), but a composed body is a different tier.
     *
-    * where a midpoint is (highest high + lowest low)/2 over the window, which
-    * is TA_MIDPRICE. The two spans are drawn kijun bars ahead; that is
-    * display-shift metadata (ichimoku_display_shift), never a shift of the
-    * values, so every output is written at the bar that computed it (rL9).
-    * The Chikou span is the close displaced backward and carries no
-    * computation, so it is not an output here.
-    *
-    * SPAN A HALVES THE TWO ALREADY-ROUNDED MIDPOINTS. Folding it into
-    * (hiT + loT + hiK + loK)/4 is the same value in real arithmetic and a
-    * different double on a quarter of the bars; only a bit-exact gate
-    * against TA_MIDPRICE and TA_MEDPRICE sees the difference.
-    *
-    * The three windows use the cached-extreme-plus-rescan idiom of stoch.c
-    * rather than midprice.c's block scan. Both are exact -- an extremum is a
-    * selection, so the bits are whichever input bar won, whatever the scan
-    * order -- so the choice is cost, not correctness.
-    *
-    * UNRESOLVED (#490 Q6). The reason this form was chosen no longer holds.
-    * It was chosen because the block scan produces a whole block at a time and
-    * cannot be a per-bar automaton, which is why midprice.c carries a
-    * midprice_ALT1 for the streaming tier (#147) -- and this form would need no
-    * such twin. The generator then refused ICHIMOKU a streaming tier outright
-    * (three windows, one automaton), so there is no twin to avoid. Measured on
-    * an i7-10700K over 20000 bars, the rescan costs what stoch.c's idiom costs
-    * on flat input:
-    *
-    *    tenkan/kijun/senkouB   random walk   flat
-    *      9 /  27 /  54          23.21         119.67 ns/bar
-    *     36 / 108 / 216          37.30         571.95
-    *    148 / 444 / 888          72.25        2520.80
-    *
-    * The block scan is bounded instead. Awaiting the ruling before switching.
+    * The three results go to temporaries and are copied at the end: every read of
+    * high and low has to happen before the first write to a caller buffer, or an
+    * output aliased onto an input is read after it has been overwritten.
     */
    lookbackTotal = TA_ICHIMOKU_Lookback(optInTenkanPeriod,optInKijunPeriod,optInSenkouBPeriod);
-   /* Move up the start index if there is not
-    * enough initial data.
-    */
    if( startIdx < lookbackTotal )
    {
       startIdx = lookbackTotal;
    }
-   /* Make sure there is still something to evaluate. */
    if( startIdx > endIdx )
    {
       *outBegIdx= 0;
       *outNBElement= 0;
       return TA_SUCCESS;
    }
-   outIdx = 0;
-   today = startIdx;
-   trailT = today - (optInTenkanPeriod - 1);
-   trailK = today - (optInKijunPeriod - 1);
-   trailB = today - (optInSenkouBPeriod - 1);
-   hiIdxT = -1;
-   loIdxT = -1;
-   hiIdxK = -1;
-   loIdxK = -1;
-   hiIdxB = -1;
-   loIdxB = -1;
-   hiT = 0.0;
-   loT = 0.0;
-   hiK = 0.0;
-   loK = 0.0;
-   hiB = 0.0;
-   loB = 0.0;
-   while( today <= endIdx )
+   n = endIdx - startIdx + 1;
+   tempT = malloc(n * sizeof(double));
+   if( !tempT )
    {
-      /* Tenkan window. The rebuild below compares STRICTLY, so when every bar
-       * in the window is equal it leaves the index at trailT -- the oldest bar
-       * -- and one bar later trailT has passed it and it rebuilds again. The
-       * tie branch is not what saves a flat stretch: it is never reached
-       * there, because the rebuild hands it an index that is already expiring.
-       * Measured at 148/444/888 over 20000 bars: 67 ns/bar on a random walk
-       * against 2505 flat.
-       *
-       * The strict comparison is not incidental. It is the strict form that
-       * the compiler contracts into a branchless maxsd: spelling it `>=` to
-       * keep the newest tied bar makes the flat cost constant in the period
-       * (6.2 ns/bar) but drops all 30 maxsd from the object file and costs
-       * 34.8% on a random walk. #490 Q6 has the full table.
-       */
-      tmp = inHigh[today];
-      if( hiIdxT < trailT )
-      {
-         hiIdxT = trailT;
-         hiT = inHigh[hiIdxT];
-         i = hiIdxT;
-         while( ++i <= today )
-         {
-            tmp = inHigh[i];
-            if( tmp > hiT )
-            {
-               hiIdxT = i;
-               hiT = tmp;
-            }
-         }
-      } else if( tmp >= hiT )
-      {
-         hiIdxT = today;
-         hiT = tmp;
-      }
-      tmp = inLow[today];
-      if( loIdxT < trailT )
-      {
-         loIdxT = trailT;
-         loT = inLow[loIdxT];
-         i = loIdxT;
-         while( ++i <= today )
-         {
-            tmp = inLow[i];
-            if( tmp < loT )
-            {
-               loIdxT = i;
-               loT = tmp;
-            }
-         }
-      } else if( tmp <= loT )
-      {
-         loIdxT = today;
-         loT = tmp;
-      }
-      /* Kijun window. */
-      tmp = inHigh[today];
-      if( hiIdxK < trailK )
-      {
-         hiIdxK = trailK;
-         hiK = inHigh[hiIdxK];
-         i = hiIdxK;
-         while( ++i <= today )
-         {
-            tmp = inHigh[i];
-            if( tmp > hiK )
-            {
-               hiIdxK = i;
-               hiK = tmp;
-            }
-         }
-      } else if( tmp >= hiK )
-      {
-         hiIdxK = today;
-         hiK = tmp;
-      }
-      tmp = inLow[today];
-      if( loIdxK < trailK )
-      {
-         loIdxK = trailK;
-         loK = inLow[loIdxK];
-         i = loIdxK;
-         while( ++i <= today )
-         {
-            tmp = inLow[i];
-            if( tmp < loK )
-            {
-               loIdxK = i;
-               loK = tmp;
-            }
-         }
-      } else if( tmp <= loK )
-      {
-         loIdxK = today;
-         loK = tmp;
-      }
-      /* Senkou B window. */
-      tmp = inHigh[today];
-      if( hiIdxB < trailB )
-      {
-         hiIdxB = trailB;
-         hiB = inHigh[hiIdxB];
-         i = hiIdxB;
-         while( ++i <= today )
-         {
-            tmp = inHigh[i];
-            if( tmp > hiB )
-            {
-               hiIdxB = i;
-               hiB = tmp;
-            }
-         }
-      } else if( tmp >= hiB )
-      {
-         hiIdxB = today;
-         hiB = tmp;
-      }
-      tmp = inLow[today];
-      if( loIdxB < trailB )
-      {
-         loIdxB = trailB;
-         loB = inLow[loIdxB];
-         i = loIdxB;
-         while( ++i <= today )
-         {
-            tmp = inLow[i];
-            if( tmp < loB )
-            {
-               loIdxB = i;
-               loB = tmp;
-            }
-         }
-      } else if( tmp <= loB )
-      {
-         loIdxB = today;
-         loB = tmp;
-      }
-      /* Each midpoint is spelled as midprice.c spells it, and Span A halves
-       * the two lines rather than the four extremes.
-       */
-      tenkan = (hiT + loT) / 2.0;
-      kijun = (hiK + loK) / 2.0;
-      outTenkanSen[outIdx] = tenkan;
-      outKijunSen[outIdx] = kijun;
-      outSenkouSpanA[outIdx] = (tenkan + kijun) / 2.0;
-      outSenkouSpanB[outIdx] = (hiB + loB) / 2.0;
-      outIdx = outIdx + 1;
-      trailT = trailT + 1;
-      trailK = trailK + 1;
-      trailB = trailB + 1;
-      today = today + 1;
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return TA_ALLOC_ERR;
    }
-   *outNBElement= outIdx;
+   tempK = malloc(n * sizeof(double));
+   if( !tempK )
+   {
+      free(tempT);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return TA_ALLOC_ERR;
+   }
+   tempB = malloc(n * sizeof(double));
+   if( !tempB )
+   {
+      free(tempT);
+      free(tempK);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return TA_ALLOC_ERR;
+   }
+   retCode = TA_MIDPRICE(startIdx,endIdx,inHigh,inLow,optInTenkanPeriod,&tempBegIdx,&tempNbElement,tempT);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   retCode = TA_MIDPRICE(startIdx,endIdx,inHigh,inLow,optInKijunPeriod,&tempBegIdx,&tempNbElement,tempK);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   retCode = TA_MIDPRICE(startIdx,endIdx,inHigh,inLow,optInSenkouBPeriod,&tempBegIdx,&tempNbElement,tempB);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   /* Span A is the mean of the two lines, which medprice is over any two series. */
+   retCode = TA_MEDPRICE(0,n - 1,tempT,tempK,&tempBegIdx,&tempNbElement,outSenkouSpanA);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   for( i = 0; i < n; i += 1 )
+   {
+      outTenkanSen[i] = tempT[i];
+      outKijunSen[i] = tempK[i];
+      outSenkouSpanB[i] = tempB[i];
+   }
+   free(tempT);
+   free(tempK);
+   free(tempB);
    *outBegIdx= startIdx;
+   *outNBElement= n;
    return TA_SUCCESS;
 }
 
@@ -444,28 +305,15 @@ TA_RetCode TA_S_ICHIMOKU( int    startIdx,
                           double        outSenkouSpanA[],
                           double        outSenkouSpanB[] )
 {
-   double tenkan;
-   double kijun;
-   double hiT;
-   double loT;
-   double hiK;
-   double loK;
-   double hiB;
-   double loB;
-   double tmp;
+   TA_RetCode retCode;
    int lookbackTotal;
-   int today;
-   int outIdx;
+   int n;
    int i;
-   int trailT;
-   int trailK;
-   int trailB;
-   int hiIdxT;
-   int loIdxT;
-   int hiIdxK;
-   int loIdxK;
-   int hiIdxB;
-   int loIdxB;
+   int tempBegIdx;
+   int tempNbElement;
+   double *tempT;
+   double *tempK;
+   double *tempB;
 
    if( (startIdx < 0) || (startIdx > TA_INDEX_MAX) )
       return TA_OUT_OF_RANGE_START_INDEX;
@@ -512,159 +360,590 @@ TA_RetCode TA_S_ICHIMOKU( int    startIdx,
       *outNBElement= 0;
       return TA_SUCCESS;
    }
-   outIdx = 0;
-   today = startIdx;
-   trailT = today - (optInTenkanPeriod - 1);
-   trailK = today - (optInKijunPeriod - 1);
-   trailB = today - (optInSenkouBPeriod - 1);
-   hiIdxT = -1;
-   loIdxT = -1;
-   hiIdxK = -1;
-   loIdxK = -1;
-   hiIdxB = -1;
-   loIdxB = -1;
-   hiT = 0.0;
-   loT = 0.0;
-   hiK = 0.0;
-   loK = 0.0;
-   hiB = 0.0;
-   loB = 0.0;
-   while( today <= endIdx )
+   n = endIdx - startIdx + 1;
+   tempT = malloc(n * sizeof(double));
+   if( !tempT )
    {
-      tmp = (double)inHigh[today];
-      if( hiIdxT < trailT )
-      {
-         hiIdxT = trailT;
-         hiT = (double)inHigh[hiIdxT];
-         i = hiIdxT;
-         while( ++i <= today )
-         {
-            tmp = (double)inHigh[i];
-            if( tmp > hiT )
-            {
-               hiIdxT = i;
-               hiT = tmp;
-            }
-         }
-      } else if( tmp >= hiT )
-      {
-         hiIdxT = today;
-         hiT = tmp;
-      }
-      tmp = (double)inLow[today];
-      if( loIdxT < trailT )
-      {
-         loIdxT = trailT;
-         loT = (double)inLow[loIdxT];
-         i = loIdxT;
-         while( ++i <= today )
-         {
-            tmp = (double)inLow[i];
-            if( tmp < loT )
-            {
-               loIdxT = i;
-               loT = tmp;
-            }
-         }
-      } else if( tmp <= loT )
-      {
-         loIdxT = today;
-         loT = tmp;
-      }
-      tmp = (double)inHigh[today];
-      if( hiIdxK < trailK )
-      {
-         hiIdxK = trailK;
-         hiK = (double)inHigh[hiIdxK];
-         i = hiIdxK;
-         while( ++i <= today )
-         {
-            tmp = (double)inHigh[i];
-            if( tmp > hiK )
-            {
-               hiIdxK = i;
-               hiK = tmp;
-            }
-         }
-      } else if( tmp >= hiK )
-      {
-         hiIdxK = today;
-         hiK = tmp;
-      }
-      tmp = (double)inLow[today];
-      if( loIdxK < trailK )
-      {
-         loIdxK = trailK;
-         loK = (double)inLow[loIdxK];
-         i = loIdxK;
-         while( ++i <= today )
-         {
-            tmp = (double)inLow[i];
-            if( tmp < loK )
-            {
-               loIdxK = i;
-               loK = tmp;
-            }
-         }
-      } else if( tmp <= loK )
-      {
-         loIdxK = today;
-         loK = tmp;
-      }
-      tmp = (double)inHigh[today];
-      if( hiIdxB < trailB )
-      {
-         hiIdxB = trailB;
-         hiB = (double)inHigh[hiIdxB];
-         i = hiIdxB;
-         while( ++i <= today )
-         {
-            tmp = (double)inHigh[i];
-            if( tmp > hiB )
-            {
-               hiIdxB = i;
-               hiB = tmp;
-            }
-         }
-      } else if( tmp >= hiB )
-      {
-         hiIdxB = today;
-         hiB = tmp;
-      }
-      tmp = (double)inLow[today];
-      if( loIdxB < trailB )
-      {
-         loIdxB = trailB;
-         loB = (double)inLow[loIdxB];
-         i = loIdxB;
-         while( ++i <= today )
-         {
-            tmp = (double)inLow[i];
-            if( tmp < loB )
-            {
-               loIdxB = i;
-               loB = tmp;
-            }
-         }
-      } else if( tmp <= loB )
-      {
-         loIdxB = today;
-         loB = tmp;
-      }
-      tenkan = (hiT + loT) / 2.0;
-      kijun = (hiK + loK) / 2.0;
-      outTenkanSen[outIdx] = tenkan;
-      outKijunSen[outIdx] = kijun;
-      outSenkouSpanA[outIdx] = (tenkan + kijun) / 2.0;
-      outSenkouSpanB[outIdx] = (hiB + loB) / 2.0;
-      outIdx = outIdx + 1;
-      trailT = trailT + 1;
-      trailK = trailK + 1;
-      trailB = trailB + 1;
-      today = today + 1;
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return TA_ALLOC_ERR;
    }
-   *outNBElement= outIdx;
+   tempK = malloc(n * sizeof(double));
+   if( !tempK )
+   {
+      free(tempT);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return TA_ALLOC_ERR;
+   }
+   tempB = malloc(n * sizeof(double));
+   if( !tempB )
+   {
+      free(tempT);
+      free(tempK);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return TA_ALLOC_ERR;
+   }
+   retCode = TA_S_MIDPRICE(startIdx,endIdx,inHigh,inLow,optInTenkanPeriod,&tempBegIdx,&tempNbElement,tempT);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   retCode = TA_S_MIDPRICE(startIdx,endIdx,inHigh,inLow,optInKijunPeriod,&tempBegIdx,&tempNbElement,tempK);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   retCode = TA_S_MIDPRICE(startIdx,endIdx,inHigh,inLow,optInSenkouBPeriod,&tempBegIdx,&tempNbElement,tempB);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   retCode = TA_MEDPRICE(0,n - 1,tempT,tempK,&tempBegIdx,&tempNbElement,outSenkouSpanA);
+   if( retCode != TA_SUCCESS )
+   {
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      *outBegIdx= 0;
+      *outNBElement= 0;
+      return retCode;
+   }
+   for( i = 0; i < n; i += 1 )
+   {
+      outTenkanSen[i] = tempT[i];
+      outKijunSen[i] = tempK[i];
+      outSenkouSpanB[i] = tempB[i];
+   }
+   free(tempT);
+   free(tempK);
+   free(tempB);
    *outBegIdx= startIdx;
+   *outNBElement= n;
+   return TA_SUCCESS;
+}
+
+/**** Streaming API *****/
+
+struct TA_ICHIMOKU_Stream {
+   /* The bars this handle has an output for (see TA_ICHIMOKU_OutRange). */
+   int outRangeBegIdx;
+   int outRangeCount;
+   /* The value(s) at the last bar the stream counted (see TA_ICHIMOKU_Value). */
+   double cur_outTenkanSen;
+   double cur_outKijunSen;
+   double cur_outSenkouSpanA;
+   double cur_outSenkouSpanB;
+   int optInTenkanPeriod;
+   int optInKijunPeriod;
+   int optInSenkouBPeriod;
+   TA_MIDPRICE_Stream *sub0;
+   TA_MIDPRICE_Stream *sub1;
+   TA_MIDPRICE_Stream *sub2;
+   TA_MEDPRICE_Stream *sub3;
+};
+
+/* Private function, not in public API. */
+static TA_RetCode TA_ICHIMOKU_StepImpl( struct TA_ICHIMOKU_Stream *sp, double inHigh, double inLow, double *outTenkanSen, double *outKijunSen, double *outSenkouSpanA, double *outSenkouSpanB )
+{
+   double cur_tempT = 0.0;
+   double cur_tempK = 0.0;
+   double cur_tempB = 0.0;
+   double cur_outSenkouSpanA = 0.0;
+   double cur_outTenkanSen = 0.0;
+   double cur_outKijunSen = 0.0;
+   double cur_outSenkouSpanB = 0.0;
+
+
+   /* Pipeline the new bar through the sub-streams (batch tail order). */
+   {
+      TA_RetCode subRc = TA_MIDPRICE_Update( sp->sub0, inHigh, inLow, &cur_tempT );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   {
+      TA_RetCode subRc = TA_MIDPRICE_Update( sp->sub1, inHigh, inLow, &cur_tempK );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   {
+      TA_RetCode subRc = TA_MIDPRICE_Update( sp->sub2, inHigh, inLow, &cur_tempB );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   {
+      TA_RetCode subRc = TA_MEDPRICE_Update( sp->sub3, cur_tempT, cur_tempK, &cur_outSenkouSpanA );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   /* Combine map (batch tail, per bar). */
+   cur_outTenkanSen = cur_tempT;
+   cur_outKijunSen = cur_tempK;
+   cur_outSenkouSpanB = cur_tempB;
+   *outTenkanSen = cur_outTenkanSen;
+   *outKijunSen = cur_outKijunSen;
+   *outSenkouSpanA = cur_outSenkouSpanA;
+   *outSenkouSpanB = cur_outSenkouSpanB;
+   return TA_SUCCESS;
+}
+
+static TA_RetCode TA_ICHIMOKU_OpenImpl( struct TA_ICHIMOKU_Stream **stream, const double inHigh[], const double inLow[], int startIdx, int historyLen, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, int *outBegIdx, int *outNBElement, double outTenkanSen[], double outKijunSen[], double outSenkouSpanA[], double outSenkouSpanB[], int outStride )
+{
+   struct TA_ICHIMOKU_Stream *sp;
+   int endIdx;
+   int dummyBegIdx;
+   int dummyNBElement;
+   TA_RetCode subRc;
+   double *sc_outTenkanSen;
+   double *sc_outKijunSen;
+   double *sc_outSenkouSpanA;
+   double *sc_outSenkouSpanB;
+   TA_MIDPRICE_Stream *sub0;
+   TA_MIDPRICE_Stream *sub1;
+   TA_MIDPRICE_Stream *sub2;
+   TA_MEDPRICE_Stream *sub3;
+
+   if( !stream ) return TA_BAD_PARAM;
+   *stream = NULL;
+   if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
+   if( historyLen > TA_INDEX_MAX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
+   if( !inHigh || !inLow || !outTenkanSen || !outKijunSen || !outSenkouSpanA || !outSenkouSpanB ) return TA_BAD_PARAM;
+   if( (int)optInTenkanPeriod == TA_INTEGER_DEFAULT )
+      optInTenkanPeriod = 9;
+   else if( (int)optInTenkanPeriod < 2 || (int)optInTenkanPeriod > 100000 )
+      return TA_BAD_PARAM;
+   if( (int)optInKijunPeriod == TA_INTEGER_DEFAULT )
+      optInKijunPeriod = 26;
+   else if( (int)optInKijunPeriod < 2 || (int)optInKijunPeriod > 100000 )
+      return TA_BAD_PARAM;
+   if( (int)optInSenkouBPeriod == TA_INTEGER_DEFAULT )
+      optInSenkouBPeriod = 52;
+   else if( (int)optInSenkouBPeriod < 2 || (int)optInSenkouBPeriod > 100000 )
+      return TA_BAD_PARAM;
+   if( startIdx > historyLen - 1 )
+   {
+      *outBegIdx = 0;
+      *outNBElement = 0;
+      return TA_INSUFFICIENT_HISTORY;
+   }
+
+   endIdx = historyLen - 1;
+   dummyBegIdx = 0;
+   dummyNBElement = 0;
+   subRc = TA_SUCCESS;
+   sub0 = NULL;
+   sub1 = NULL;
+   sub2 = NULL;
+   sub3 = NULL;
+   if( outStride ) sc_outTenkanSen = outTenkanSen;
+   else
+   {
+      sc_outTenkanSen = (double *)TA_Malloc( sizeof(double) * (size_t)historyLen );
+      if( !sc_outTenkanSen ) { return TA_ALLOC_ERR; }
+   }
+   if( outStride ) sc_outKijunSen = outKijunSen;
+   else
+   {
+      sc_outKijunSen = (double *)TA_Malloc( sizeof(double) * (size_t)historyLen );
+      if( !sc_outKijunSen ) { TA_Free( sc_outTenkanSen ); return TA_ALLOC_ERR; }
+   }
+   if( outStride ) sc_outSenkouSpanA = outSenkouSpanA;
+   else
+   {
+      sc_outSenkouSpanA = (double *)TA_Malloc( sizeof(double) * (size_t)historyLen );
+      if( !sc_outSenkouSpanA ) { TA_Free( sc_outTenkanSen ); TA_Free( sc_outKijunSen ); return TA_ALLOC_ERR; }
+   }
+   if( outStride ) sc_outSenkouSpanB = outSenkouSpanB;
+   else
+   {
+      sc_outSenkouSpanB = (double *)TA_Malloc( sizeof(double) * (size_t)historyLen );
+      if( !sc_outSenkouSpanB ) { TA_Free( sc_outTenkanSen ); TA_Free( sc_outKijunSen ); TA_Free( sc_outSenkouSpanA ); return TA_ALLOC_ERR; }
+   }
+
+   {
+      TA_RetCode retCode;
+      int lookbackTotal;
+      int n;
+      int i;
+      int tempBegIdx;
+      int tempNbElement;
+      double *tempT;
+      double *tempK;
+      double *tempB;
+      /* PROTOTYPE (#490 Q7): each line IS a midpoint over its own window, which is
+       * exactly what midprice computes, so the three scans are three midprice calls
+       * and Span A is the mean of two of them. MEASURED bit-identical to the fused
+       * loop over four parameter triples on the suite's corpus, every line, before
+       * this was written.
+       *
+       * The point is the stream tier: three windows of different periods cannot be
+       * one extrema automaton (the census refuses with "expected exactly one
+       * window-start variable"), but a composed body is a different tier.
+       *
+       * The three results go to temporaries and are copied at the end: every read of
+       * high and low has to happen before the first write to a caller buffer, or an
+       * output aliased onto an input is read after it has been overwritten.
+       */
+      lookbackTotal = TA_ICHIMOKU_Lookback(optInTenkanPeriod,optInKijunPeriod,optInSenkouBPeriod);
+      if( startIdx < lookbackTotal )
+      {
+         startIdx = lookbackTotal;
+      }
+      if( startIdx > endIdx )
+      {
+         dummyBegIdx = 0;
+         dummyNBElement = 0;
+         *outBegIdx = 0; *outNBElement = 0;
+         TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return TA_INSUFFICIENT_HISTORY;
+      }
+      n = endIdx - startIdx + 1;
+      tempT = malloc(n * sizeof(double));
+      if( !tempT )
+      {
+         TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return TA_ALLOC_ERR;
+      }
+      tempK = malloc(n * sizeof(double));
+      if( !tempK )
+      {
+         free( tempT ); TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return TA_ALLOC_ERR;
+      }
+      tempB = malloc(n * sizeof(double));
+      if( !tempB )
+      {
+         free( tempT ); free( tempK ); TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return TA_ALLOC_ERR;
+      }
+      /* Sub-stream 0: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      {
+         subRc = TA_MIDPRICE_OpenAndFillInternal( &sub0, inHigh, inLow, (startIdx), (endIdx) + 1, optInTenkanPeriod, &tempBegIdx, &tempNbElement, tempT );
+         if( subRc != TA_SUCCESS )
+         {
+            free(tempT);
+            free(tempK);
+            free(tempB);
+            TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+            return subRc;
+         }
+      }
+      retCode = subRc;
+      if( retCode != TA_SUCCESS )
+      {
+         free(tempT);
+         free(tempK);
+         free(tempB);
+         dummyBegIdx = 0;
+         dummyNBElement = 0;
+         TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return retCode;
+      }
+      /* Sub-stream 1: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      {
+         subRc = TA_MIDPRICE_OpenAndFillInternal( &sub1, inHigh, inLow, (startIdx), (endIdx) + 1, optInKijunPeriod, &tempBegIdx, &tempNbElement, tempK );
+         if( subRc != TA_SUCCESS )
+         {
+            free(tempT);
+            free(tempK);
+            free(tempB);
+            TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+            return subRc;
+         }
+      }
+      retCode = subRc;
+      if( retCode != TA_SUCCESS )
+      {
+         free(tempT);
+         free(tempK);
+         free(tempB);
+         dummyBegIdx = 0;
+         dummyNBElement = 0;
+         TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return retCode;
+      }
+      /* Sub-stream 2: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      {
+         subRc = TA_MIDPRICE_OpenAndFillInternal( &sub2, inHigh, inLow, (startIdx), (endIdx) + 1, optInSenkouBPeriod, &tempBegIdx, &tempNbElement, tempB );
+         if( subRc != TA_SUCCESS )
+         {
+            free(tempT);
+            free(tempK);
+            free(tempB);
+            TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+            return subRc;
+         }
+      }
+      retCode = subRc;
+      if( retCode != TA_SUCCESS )
+      {
+         free(tempT);
+         free(tempK);
+         free(tempB);
+         dummyBegIdx = 0;
+         dummyNBElement = 0;
+         TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return retCode;
+      }
+      /* Span A is the mean of the two lines, which medprice is over any two series. */
+      /* Sub-stream 3: medprice over `tempT, tempK`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      {
+         subRc = TA_MEDPRICE_OpenAndFillInternal( &sub3, tempT, tempK, (0), (n - 1) + 1, &tempBegIdx, &tempNbElement, sc_outSenkouSpanA );
+         if( subRc != TA_SUCCESS )
+         {
+            free(tempT);
+            free(tempK);
+            free(tempB);
+            TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+            return subRc;
+         }
+      }
+      retCode = subRc;
+      if( retCode != TA_SUCCESS )
+      {
+         free(tempT);
+         free(tempK);
+         free(tempB);
+         dummyBegIdx = 0;
+         dummyNBElement = 0;
+         TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB );
+         return retCode;
+      }
+      for( i = 0; i < n; i += 1 )
+      {
+         sc_outTenkanSen[i] = tempT[i];
+         sc_outKijunSen[i] = tempK[i];
+         sc_outSenkouSpanB[i] = tempB[i];
+      }
+      free(tempT);
+      free(tempK);
+      free(tempB);
+      dummyBegIdx = startIdx;
+      dummyNBElement = n;
+
+      /* Capture the live producer state + sub handles. */
+      if( dummyNBElement < 1 ) { *outBegIdx = 0; *outNBElement = 0; TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB ); return TA_INSUFFICIENT_HISTORY; }
+      sp = (struct TA_ICHIMOKU_Stream *)TA_Malloc( sizeof(*sp) );
+      if( !sp ) { TA_MIDPRICE_Close( sub0 ); TA_MIDPRICE_Close( sub1 ); TA_MIDPRICE_Close( sub2 ); TA_MEDPRICE_Close( sub3 ); if( !outStride ) TA_Free( sc_outTenkanSen ); if( !outStride ) TA_Free( sc_outKijunSen ); if( !outStride ) TA_Free( sc_outSenkouSpanA ); if( !outStride ) TA_Free( sc_outSenkouSpanB ); return TA_ALLOC_ERR; }
+      memset( sp, 0, sizeof(*sp) );
+      sp->optInTenkanPeriod = optInTenkanPeriod;
+      sp->optInKijunPeriod = optInKijunPeriod;
+      sp->optInSenkouBPeriod = optInSenkouBPeriod;
+      sp->sub0 = sub0;
+      sp->sub1 = sub1;
+      sp->sub2 = sub2;
+      sp->sub3 = sub3;
+      *outBegIdx = dummyBegIdx;
+      *outNBElement = dummyNBElement;
+      if( !outStride ) outTenkanSen[0] = sc_outTenkanSen[dummyNBElement - 1];
+      if( !outStride ) outKijunSen[0] = sc_outKijunSen[dummyNBElement - 1];
+      if( !outStride ) outSenkouSpanA[0] = sc_outSenkouSpanA[dummyNBElement - 1];
+      if( !outStride ) outSenkouSpanB[0] = sc_outSenkouSpanB[dummyNBElement - 1];
+      if( !outStride ) TA_Free( sc_outTenkanSen );
+      if( !outStride ) TA_Free( sc_outKijunSen );
+      if( !outStride ) TA_Free( sc_outSenkouSpanA );
+      if( !outStride ) TA_Free( sc_outSenkouSpanB );
+      sp->outRangeBegIdx = *outBegIdx;
+      sp->outRangeCount = *outNBElement;
+      sp->cur_outTenkanSen = outTenkanSen[(*outNBElement - 1) * outStride];
+      sp->cur_outKijunSen = outKijunSen[(*outNBElement - 1) * outStride];
+      sp->cur_outSenkouSpanA = outSenkouSpanA[(*outNBElement - 1) * outStride];
+      sp->cur_outSenkouSpanB = outSenkouSpanB[(*outNBElement - 1) * outStride];
+      *stream = sp;
+      return TA_SUCCESS;
+   }
+}
+
+/* Private function, not in public API. */
+TA_RetCode TA_ICHIMOKU_OpenInternal( struct TA_ICHIMOKU_Stream **stream, const double inHigh[], const double inLow[], int startIdx, int historyLen, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, double *outTenkanSen, double *outKijunSen, double *outSenkouSpanA, double *outSenkouSpanB )
+{
+   TA_RetCode retCode;
+   int dummyBegIdx = 0;
+   int dummyNBElement = 0;
+   double sink_outTenkanSen = 0.0;
+   double sink_outKijunSen = 0.0;
+   double sink_outSenkouSpanA = 0.0;
+   double sink_outSenkouSpanB = 0.0;
+   retCode = TA_ICHIMOKU_OpenImpl( stream, inHigh, inLow, startIdx, historyLen, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, &dummyBegIdx, &dummyNBElement, &sink_outTenkanSen, &sink_outKijunSen, &sink_outSenkouSpanA, &sink_outSenkouSpanB, 0 );
+   if( retCode == TA_SUCCESS )
+   {
+      *outTenkanSen = sink_outTenkanSen;
+      *outKijunSen = sink_outKijunSen;
+      *outSenkouSpanA = sink_outSenkouSpanA;
+      *outSenkouSpanB = sink_outSenkouSpanB;
+   }
+   return retCode;
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_Open( TA_ICHIMOKU_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, double *outTenkanSen, double *outKijunSen, double *outSenkouSpanA, double *outSenkouSpanB )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   *stream = NULL;
+   if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
+   if( historyLen > TA_INDEX_MAX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
+   if( !inHigh || !inLow || !outTenkanSen || !outKijunSen || !outSenkouSpanA || !outSenkouSpanB ) return TA_BAD_PARAM;
+   return TA_ICHIMOKU_OpenInternal( stream, inHigh, inLow, 0, historyLen, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB );
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_OpenAndFill( TA_ICHIMOKU_Stream **stream, const double inHigh[], const double inLow[], int historyLen, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, int *outBegIdx, int *outNBElement, double outTenkanSen[], double outKijunSen[], double outSenkouSpanA[], double outSenkouSpanB[] )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   *stream = NULL;
+   if( historyLen < 1 ) return TA_OUT_OF_RANGE_START_INDEX;
+   if( historyLen > TA_INDEX_MAX + 1 ) return TA_OUT_OF_RANGE_END_INDEX;
+   if( !inHigh || !inLow || !outBegIdx || !outNBElement || !outTenkanSen || !outKijunSen || !outSenkouSpanA || !outSenkouSpanB ) return TA_BAD_PARAM;
+   if( (const void *)outTenkanSen == (const void *)inHigh || (const void *)outTenkanSen == (const void *)inLow || (const void *)outKijunSen == (const void *)inHigh || (const void *)outKijunSen == (const void *)inLow || (const void *)outSenkouSpanA == (const void *)inHigh || (const void *)outSenkouSpanA == (const void *)inLow || (const void *)outSenkouSpanB == (const void *)inHigh || (const void *)outSenkouSpanB == (const void *)inLow || (const void *)outTenkanSen == (const void *)outKijunSen || (const void *)outTenkanSen == (const void *)outSenkouSpanA || (const void *)outTenkanSen == (const void *)outSenkouSpanB || (const void *)outKijunSen == (const void *)outSenkouSpanA || (const void *)outKijunSen == (const void *)outSenkouSpanB || (const void *)outSenkouSpanA == (const void *)outSenkouSpanB ) return TA_BAD_PARAM;
+   return TA_ICHIMOKU_OpenAndFillInternal( stream, inHigh, inLow, 0, historyLen, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, outBegIdx, outNBElement, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB );
+}
+
+/* Private function, not in public API. */
+TA_RetCode TA_ICHIMOKU_OpenAndFillInternal( struct TA_ICHIMOKU_Stream **stream, const double inHigh[], const double inLow[], int startIdx, int historyLen, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, int *outBegIdx, int *outNBElement, double outTenkanSen[], double outKijunSen[], double outSenkouSpanA[], double outSenkouSpanB[] )
+{
+   return TA_ICHIMOKU_OpenImpl( stream, inHigh, inLow, startIdx, historyLen, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, outBegIdx, outNBElement, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB, 1 );
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_Update( TA_ICHIMOKU_Stream *stream, double inHigh, double inLow, double *outTenkanSen, double *outKijunSen, double *outSenkouSpanA, double *outSenkouSpanB )
+{
+   TA_RetCode retCode;
+
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeBegIdx + stream->outRangeCount > TA_INDEX_MAX )
+      return TA_OUT_OF_RANGE_END_INDEX;
+   if( !outTenkanSen || !outKijunSen || !outSenkouSpanA || !outSenkouSpanB ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
+   retCode = TA_ICHIMOKU_StepImpl( stream, inHigh, inLow, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB );
+   if( retCode != TA_SUCCESS ) return retCode;
+   stream->cur_outTenkanSen = *outTenkanSen;
+   stream->cur_outKijunSen = *outKijunSen;
+   stream->cur_outSenkouSpanA = *outSenkouSpanA;
+   stream->cur_outSenkouSpanB = *outSenkouSpanB;
+   stream->outRangeCount++;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_Peek( const TA_ICHIMOKU_Stream *stream, double inHigh, double inLow, double *outTenkanSen, double *outKijunSen, double *outSenkouSpanA, double *outSenkouSpanB )
+{
+   const struct TA_ICHIMOKU_Stream *sp = stream;
+   double cur_tempT = 0.0;
+   double cur_tempK = 0.0;
+   double cur_tempB = 0.0;
+   double cur_outSenkouSpanA = 0.0;
+   double cur_outTenkanSen = 0.0;
+   double cur_outKijunSen = 0.0;
+   double cur_outSenkouSpanB = 0.0;
+
+   if( !stream || !outTenkanSen || !outKijunSen || !outSenkouSpanA || !outSenkouSpanB ) return TA_BAD_PARAM;
+   if( !TA_IS_FINITE( inHigh ) || !TA_IS_FINITE( inLow ) ) return TA_BAD_PARAM;
+
+   /* Pipeline the new bar through the sub-streams (batch tail order). */
+   {
+      TA_RetCode subRc = TA_MIDPRICE_Peek( (const TA_MIDPRICE_Stream *)sp->sub0, inHigh, inLow, &cur_tempT );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   {
+      TA_RetCode subRc = TA_MIDPRICE_Peek( (const TA_MIDPRICE_Stream *)sp->sub1, inHigh, inLow, &cur_tempK );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   {
+      TA_RetCode subRc = TA_MIDPRICE_Peek( (const TA_MIDPRICE_Stream *)sp->sub2, inHigh, inLow, &cur_tempB );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   {
+      TA_RetCode subRc = TA_MEDPRICE_Peek( (const TA_MEDPRICE_Stream *)sp->sub3, cur_tempT, cur_tempK, &cur_outSenkouSpanA );
+      if( subRc != TA_SUCCESS ) return subRc;
+   }
+   /* Combine map (batch tail, per bar). */
+   cur_outTenkanSen = cur_tempT;
+   cur_outKijunSen = cur_tempK;
+   cur_outSenkouSpanB = cur_tempB;
+   *outTenkanSen = cur_outTenkanSen;
+   *outKijunSen = cur_outKijunSen;
+   *outSenkouSpanA = cur_outSenkouSpanA;
+   *outSenkouSpanB = cur_outSenkouSpanB;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_Close( TA_ICHIMOKU_Stream *stream )
+{
+   if( !stream ) return TA_SUCCESS;
+   TA_MIDPRICE_Close( stream->sub0 );
+   TA_MIDPRICE_Close( stream->sub1 );
+   TA_MIDPRICE_Close( stream->sub2 );
+   TA_MEDPRICE_Close( stream->sub3 );
+   TA_Free( stream );
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_Value( const TA_ICHIMOKU_Stream *stream, double *outTenkanSen, double *outKijunSen, double *outSenkouSpanA, double *outSenkouSpanB )
+{
+   if( !stream || !outTenkanSen || !outKijunSen || !outSenkouSpanA || !outSenkouSpanB ) return TA_BAD_PARAM;
+   *outTenkanSen = stream->cur_outTenkanSen;
+   *outKijunSen = stream->cur_outKijunSen;
+   *outSenkouSpanA = stream->cur_outSenkouSpanA;
+   *outSenkouSpanB = stream->cur_outSenkouSpanB;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_OutRange( const TA_ICHIMOKU_Stream *stream, int *outBegIdx, int *outNBElement )
+{
+   if( !stream || !outBegIdx || !outNBElement ) return TA_BAD_PARAM;
+   *outBegIdx = stream->outRangeBegIdx;
+   *outNBElement = stream->outRangeCount;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_Advance( TA_ICHIMOKU_Stream *stream )
+{
+   if( !stream ) return TA_BAD_PARAM;
+   if( stream->outRangeBegIdx + stream->outRangeCount > TA_INDEX_MAX )
+      return TA_OUT_OF_RANGE_END_INDEX;
+   stream->outRangeCount++;
+   return TA_SUCCESS;
+}
+
+TA_LIB_API TA_RetCode TA_ICHIMOKU_Clone( const TA_ICHIMOKU_Stream *stream, TA_ICHIMOKU_Stream **clone )
+{
+   struct TA_ICHIMOKU_Stream *sp;
+
+   if( !clone ) return TA_BAD_PARAM;
+   *clone = NULL;
+   if( !stream ) return TA_BAD_PARAM;
+   sp = (struct TA_ICHIMOKU_Stream *)TA_Malloc( sizeof(*sp) );
+   if( !sp ) return TA_ALLOC_ERR;
+   *sp = *stream;
+   sp->sub0 = NULL;
+   sp->sub1 = NULL;
+   sp->sub2 = NULL;
+   sp->sub3 = NULL;
+   if( stream->sub0 )
+   { TA_RetCode subRc = TA_MIDPRICE_Clone( stream->sub0, &sp->sub0 );
+     if( subRc != TA_SUCCESS ) { TA_ICHIMOKU_Close( sp ); return subRc; } }
+   if( stream->sub1 )
+   { TA_RetCode subRc = TA_MIDPRICE_Clone( stream->sub1, &sp->sub1 );
+     if( subRc != TA_SUCCESS ) { TA_ICHIMOKU_Close( sp ); return subRc; } }
+   if( stream->sub2 )
+   { TA_RetCode subRc = TA_MIDPRICE_Clone( stream->sub2, &sp->sub2 );
+     if( subRc != TA_SUCCESS ) { TA_ICHIMOKU_Close( sp ); return subRc; } }
+   if( stream->sub3 )
+   { TA_RetCode subRc = TA_MEDPRICE_Clone( stream->sub3, &sp->sub3 );
+     if( subRc != TA_SUCCESS ) { TA_ICHIMOKU_Close( sp ); return subRc; } }
+   *clone = sp;
    return TA_SUCCESS;
 }
 

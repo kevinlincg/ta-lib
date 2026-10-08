@@ -181,28 +181,15 @@ public partial class Core
    {
       outBegIdx = 0;
       outNBElement = 0;
-      double tenkan = 0;
-      double kijun = 0;
-      double hiT = 0;
-      double loT = 0;
-      double hiK = 0;
-      double loK = 0;
-      double hiB = 0;
-      double loB = 0;
-      double tmp = 0;
+      RetCode retCode;
       int lookbackTotal = 0;
-      int today = 0;
-      int outIdx = 0;
+      int n = 0;
       int i = 0;
-      int trailT = 0;
-      int trailK = 0;
-      int trailB = 0;
-      int hiIdxT = 0;
-      int loIdxT = 0;
-      int hiIdxK = 0;
-      int loIdxK = 0;
-      int hiIdxB = 0;
-      int loIdxB = 0;
+      int tempBegIdx = 0;
+      int tempNbElement = 0;
+      Span<double> tempT;
+      Span<double> tempK;
+      Span<double> tempB;
       if( (startIdx < 0) || (startIdx > IndexMax) ) {
          return RetCode.OutOfRangeStartIndex ;
       }
@@ -230,213 +217,66 @@ public partial class Core
       if( (outTenkanSen.Overlaps(inHigh) && outTenkanSen != inHigh) || (outTenkanSen.Overlaps(inLow) && outTenkanSen != inLow) || (outKijunSen.Overlaps(inHigh) && outKijunSen != inHigh) || (outKijunSen.Overlaps(inLow) && outKijunSen != inLow) || (outSenkouSpanA.Overlaps(inHigh) && outSenkouSpanA != inHigh) || (outSenkouSpanA.Overlaps(inLow) && outSenkouSpanA != inLow) || (outSenkouSpanB.Overlaps(inHigh) && outSenkouSpanB != inHigh) || (outSenkouSpanB.Overlaps(inLow) && outSenkouSpanB != inLow) ) {
          return RetCode.BadParam ;
       }
-      /* Goichi Hosoda's Ichimoku Kinko Hyo, the four lines that are computed
-       * from price alone:
+      double[]? _rent_tempB = null;
+      double[]? _rent_tempK = null;
+      double[]? _rent_tempT = null;
+      /* PROTOTYPE (#490 Q7): each line IS a midpoint over its own window, which is
+       * exactly what midprice computes, so the three scans are three midprice calls
+       * and Span A is the mean of two of them. MEASURED bit-identical to the fused
+       * loop over four parameter triples on the suite's corpus, every line, before
+       * this was written.
        *
-       *    Tenkan-sen  = midpoint of the last tenkan bars
-       *    Kijun-sen   = midpoint of the last kijun bars
-       *    Senkou A    = mean of those two lines
-       *    Senkou B    = midpoint of the last senkouB bars
+       * The point is the stream tier: three windows of different periods cannot be
+       * one extrema automaton (the census refuses with "expected exactly one
+       * window-start variable"), but a composed body is a different tier.
        *
-       * where a midpoint is (highest high + lowest low)/2 over the window, which
-       * is TA_MIDPRICE. The two spans are drawn kijun bars ahead; that is
-       * display-shift metadata (ichimoku_display_shift), never a shift of the
-       * values, so every output is written at the bar that computed it (rL9).
-       * The Chikou span is the close displaced backward and carries no
-       * computation, so it is not an output here.
-       *
-       * SPAN A HALVES THE TWO ALREADY-ROUNDED MIDPOINTS. Folding it into
-       * (hiT + loT + hiK + loK)/4 is the same value in real arithmetic and a
-       * different double on a quarter of the bars; only a bit-exact gate
-       * against TA_MIDPRICE and TA_MEDPRICE sees the difference.
-       *
-       * The three windows use the cached-extreme-plus-rescan idiom of stoch.c
-       * rather than midprice.c's block scan. Both are exact -- an extremum is a
-       * selection, so the bits are whichever input bar won, whatever the scan
-       * order -- so the choice is cost, not correctness.
-       *
-       * UNRESOLVED (#490 Q6). The reason this form was chosen no longer holds.
-       * It was chosen because the block scan produces a whole block at a time and
-       * cannot be a per-bar automaton, which is why midprice.c carries a
-       * midprice_ALT1 for the streaming tier (#147) -- and this form would need no
-       * such twin. The generator then refused ICHIMOKU a streaming tier outright
-       * (three windows, one automaton), so there is no twin to avoid. Measured on
-       * an i7-10700K over 20000 bars, the rescan costs what stoch.c's idiom costs
-       * on flat input:
-       *
-       *    tenkan/kijun/senkouB   random walk   flat
-       *      9 /  27 /  54          23.21         119.67 ns/bar
-       *     36 / 108 / 216          37.30         571.95
-       *    148 / 444 / 888          72.25        2520.80
-       *
-       * The block scan is bounded instead. Awaiting the ruling before switching.
+       * The three results go to temporaries and are copied at the end: every read of
+       * high and low has to happen before the first write to a caller buffer, or an
+       * output aliased onto an input is read after it has been overwritten.
        */
       lookbackTotal = IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
-      /* Move up the start index if there is not
-       * enough initial data.
-       */
       if( startIdx < lookbackTotal ) {
          startIdx = lookbackTotal;
       }
-      /* Make sure there is still something to evaluate. */
       if( startIdx > endIdx ) {
          outBegIdx = 0;
          outNBElement = 0;
          return RetCode.Success ;
       }
-      outIdx = 0;
-      today = startIdx;
-      trailT = today - (optInTenkanPeriod - 1);
-      trailK = today - (optInKijunPeriod - 1);
-      trailB = today - (optInSenkouBPeriod - 1);
-      hiIdxT = -1;
-      loIdxT = -1;
-      hiIdxK = -1;
-      loIdxK = -1;
-      hiIdxB = -1;
-      loIdxB = -1;
-      hiT = 0.0;
-      loT = 0.0;
-      hiK = 0.0;
-      loK = 0.0;
-      hiB = 0.0;
-      loB = 0.0;
-      while( today <= endIdx ) {
-         /* Tenkan window. The rebuild below compares STRICTLY, so when every bar
-          * in the window is equal it leaves the index at trailT -- the oldest bar
-          * -- and one bar later trailT has passed it and it rebuilds again. The
-          * tie branch is not what saves a flat stretch: it is never reached
-          * there, because the rebuild hands it an index that is already expiring.
-          * Measured at 148/444/888 over 20000 bars: 67 ns/bar on a random walk
-          * against 2505 flat.
-          *
-          * The strict comparison is not incidental. It is the strict form that
-          * the compiler contracts into a branchless maxsd: spelling it `>=` to
-          * keep the newest tied bar makes the flat cost constant in the period
-          * (6.2 ns/bar) but drops all 30 maxsd from the object file and costs
-          * 34.8% on a random walk. #490 Q6 has the full table.
-          */
-         tmp = inHigh[today];
-         if( hiIdxT < trailT ) {
-            hiIdxT = trailT;
-            hiT = inHigh[hiIdxT];
-            i = hiIdxT;
-            while( ++i <= today ) {
-               tmp = inHigh[i];
-               if( tmp > hiT ) {
-                  hiIdxT = i;
-                  hiT = tmp;
-               }
-            }
-         } else {
-            var _pk0 = MaskLe(hiT, tmp);
-            hiIdxT = Pick(_pk0, today, hiIdxT);
-            hiT = Pick(_pk0, tmp, hiT);
-         }
-         tmp = inLow[today];
-         if( loIdxT < trailT ) {
-            loIdxT = trailT;
-            loT = inLow[loIdxT];
-            i = loIdxT;
-            while( ++i <= today ) {
-               tmp = inLow[i];
-               if( tmp < loT ) {
-                  loIdxT = i;
-                  loT = tmp;
-               }
-            }
-         } else {
-            var _pk1 = MaskLe(tmp, loT);
-            loIdxT = Pick(_pk1, today, loIdxT);
-            loT = Pick(_pk1, tmp, loT);
-         }
-         /* Kijun window. */
-         tmp = inHigh[today];
-         if( hiIdxK < trailK ) {
-            hiIdxK = trailK;
-            hiK = inHigh[hiIdxK];
-            i = hiIdxK;
-            while( ++i <= today ) {
-               tmp = inHigh[i];
-               if( tmp > hiK ) {
-                  hiIdxK = i;
-                  hiK = tmp;
-               }
-            }
-         } else {
-            var _pk2 = MaskLe(hiK, tmp);
-            hiIdxK = Pick(_pk2, today, hiIdxK);
-            hiK = Pick(_pk2, tmp, hiK);
-         }
-         tmp = inLow[today];
-         if( loIdxK < trailK ) {
-            loIdxK = trailK;
-            loK = inLow[loIdxK];
-            i = loIdxK;
-            while( ++i <= today ) {
-               tmp = inLow[i];
-               if( tmp < loK ) {
-                  loIdxK = i;
-                  loK = tmp;
-               }
-            }
-         } else {
-            var _pk3 = MaskLe(tmp, loK);
-            loIdxK = Pick(_pk3, today, loIdxK);
-            loK = Pick(_pk3, tmp, loK);
-         }
-         /* Senkou B window. */
-         tmp = inHigh[today];
-         if( hiIdxB < trailB ) {
-            hiIdxB = trailB;
-            hiB = inHigh[hiIdxB];
-            i = hiIdxB;
-            while( ++i <= today ) {
-               tmp = inHigh[i];
-               if( tmp > hiB ) {
-                  hiIdxB = i;
-                  hiB = tmp;
-               }
-            }
-         } else {
-            var _pk4 = MaskLe(hiB, tmp);
-            hiIdxB = Pick(_pk4, today, hiIdxB);
-            hiB = Pick(_pk4, tmp, hiB);
-         }
-         tmp = inLow[today];
-         if( loIdxB < trailB ) {
-            loIdxB = trailB;
-            loB = inLow[loIdxB];
-            i = loIdxB;
-            while( ++i <= today ) {
-               tmp = inLow[i];
-               if( tmp < loB ) {
-                  loIdxB = i;
-                  loB = tmp;
-               }
-            }
-         } else {
-            var _pk5 = MaskLe(tmp, loB);
-            loIdxB = Pick(_pk5, today, loIdxB);
-            loB = Pick(_pk5, tmp, loB);
-         }
-         /* Each midpoint is spelled as midprice.c spells it, and Span A halves
-          * the two lines rather than the four extremes.
-          */
-         tenkan = (hiT + loT) / 2.0;
-         kijun = (hiK + loK) / 2.0;
-         outTenkanSen[outIdx] = tenkan;
-         outKijunSen[outIdx] = kijun;
-         outSenkouSpanA[outIdx] = (tenkan + kijun) / 2.0;
-         outSenkouSpanB[outIdx] = (hiB + loB) / 2.0;
-         outIdx = outIdx + 1;
-         trailT = trailT + 1;
-         trailK = trailK + 1;
-         trailB = trailB + 1;
-         today = today + 1;
+      n = endIdx - startIdx + 1;
+      _rent_tempT = System.Buffers.ArrayPool<double>.Shared.Rent((int)(n * 1));
+      tempT = _rent_tempT.AsSpan(0, (int)(n * 1));
+      _rent_tempK = System.Buffers.ArrayPool<double>.Shared.Rent((int)(n * 1));
+      tempK = _rent_tempK.AsSpan(0, (int)(n * 1));
+      _rent_tempB = System.Buffers.ArrayPool<double>.Shared.Rent((int)(n * 1));
+      tempB = _rent_tempB.AsSpan(0, (int)(n * 1));
+      OutRange _xr0 = Midprice(startIdx, endIdx, inHigh, inLow, optInTenkanPeriod, tempT);
+      tempBegIdx = _xr0.BegIdx;
+      tempNbElement = _xr0.Count;
+      retCode = RetCode.Success;
+      OutRange _xr1 = Midprice(startIdx, endIdx, inHigh, inLow, optInKijunPeriod, tempK);
+      tempBegIdx = _xr1.BegIdx;
+      tempNbElement = _xr1.Count;
+      retCode = RetCode.Success;
+      OutRange _xr2 = Midprice(startIdx, endIdx, inHigh, inLow, optInSenkouBPeriod, tempB);
+      tempBegIdx = _xr2.BegIdx;
+      tempNbElement = _xr2.Count;
+      retCode = RetCode.Success;
+      /* Span A is the mean of the two lines, which medprice is over any two series. */
+      OutRange _xr3 = Medprice(0, n - 1, tempT, tempK, outSenkouSpanA);
+      tempBegIdx = _xr3.BegIdx;
+      tempNbElement = _xr3.Count;
+      retCode = RetCode.Success;
+      for( i = 0; i < n; i += 1 ) {
+         outTenkanSen[i] = tempT[i];
+         outKijunSen[i] = tempK[i];
+         outSenkouSpanB[i] = tempB[i];
       }
-      outNBElement = outIdx;
+      ReturnScratch(ref _rent_tempT);
+      ReturnScratch(ref _rent_tempK);
+      ReturnScratch(ref _rent_tempB);
       outBegIdx = startIdx;
+      outNBElement = n;
       return RetCode.Success ;
    }
    internal RetCode IchimokuImpl( int startIdx,
@@ -455,28 +295,15 @@ public partial class Core
    {
       outBegIdx = 0;
       outNBElement = 0;
-      double tenkan = 0;
-      double kijun = 0;
-      double hiT = 0;
-      double loT = 0;
-      double hiK = 0;
-      double loK = 0;
-      double hiB = 0;
-      double loB = 0;
-      double tmp = 0;
+      RetCode retCode;
       int lookbackTotal = 0;
-      int today = 0;
-      int outIdx = 0;
+      int n = 0;
       int i = 0;
-      int trailT = 0;
-      int trailK = 0;
-      int trailB = 0;
-      int hiIdxT = 0;
-      int loIdxT = 0;
-      int hiIdxK = 0;
-      int loIdxK = 0;
-      int hiIdxB = 0;
-      int loIdxB = 0;
+      int tempBegIdx = 0;
+      int tempNbElement = 0;
+      Span<double> tempT;
+      Span<double> tempK;
+      Span<double> tempB;
       if( (startIdx < 0) || (startIdx > IndexMax) ) {
          return RetCode.OutOfRangeStartIndex ;
       }
@@ -504,6 +331,9 @@ public partial class Core
       if( System.Runtime.InteropServices.MemoryMarshal.AsBytes(outTenkanSen).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inHigh)) || System.Runtime.InteropServices.MemoryMarshal.AsBytes(outTenkanSen).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inLow)) || System.Runtime.InteropServices.MemoryMarshal.AsBytes(outKijunSen).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inHigh)) || System.Runtime.InteropServices.MemoryMarshal.AsBytes(outKijunSen).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inLow)) || System.Runtime.InteropServices.MemoryMarshal.AsBytes(outSenkouSpanA).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inHigh)) || System.Runtime.InteropServices.MemoryMarshal.AsBytes(outSenkouSpanA).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inLow)) || System.Runtime.InteropServices.MemoryMarshal.AsBytes(outSenkouSpanB).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inHigh)) || System.Runtime.InteropServices.MemoryMarshal.AsBytes(outSenkouSpanB).Overlaps(System.Runtime.InteropServices.MemoryMarshal.AsBytes(inLow)) ) {
          return RetCode.BadParam ;
       }
+      double[]? _rent_tempB = null;
+      double[]? _rent_tempK = null;
+      double[]? _rent_tempT = null;
       lookbackTotal = IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
       if( startIdx < lookbackTotal ) {
          startIdx = lookbackTotal;
@@ -513,140 +343,39 @@ public partial class Core
          outNBElement = 0;
          return RetCode.Success ;
       }
-      outIdx = 0;
-      today = startIdx;
-      trailT = today - (optInTenkanPeriod - 1);
-      trailK = today - (optInKijunPeriod - 1);
-      trailB = today - (optInSenkouBPeriod - 1);
-      hiIdxT = -1;
-      loIdxT = -1;
-      hiIdxK = -1;
-      loIdxK = -1;
-      hiIdxB = -1;
-      loIdxB = -1;
-      hiT = 0.0;
-      loT = 0.0;
-      hiK = 0.0;
-      loK = 0.0;
-      hiB = 0.0;
-      loB = 0.0;
-      while( today <= endIdx ) {
-         tmp = (double)inHigh[today];
-         if( hiIdxT < trailT ) {
-            hiIdxT = trailT;
-            hiT = (double)inHigh[hiIdxT];
-            i = hiIdxT;
-            while( ++i <= today ) {
-               tmp = (double)inHigh[i];
-               if( tmp > hiT ) {
-                  hiIdxT = i;
-                  hiT = tmp;
-               }
-            }
-         } else {
-            var _pk0 = MaskLe(hiT, tmp);
-            hiIdxT = Pick(_pk0, today, hiIdxT);
-            hiT = Pick(_pk0, tmp, hiT);
-         }
-         tmp = (double)inLow[today];
-         if( loIdxT < trailT ) {
-            loIdxT = trailT;
-            loT = (double)inLow[loIdxT];
-            i = loIdxT;
-            while( ++i <= today ) {
-               tmp = (double)inLow[i];
-               if( tmp < loT ) {
-                  loIdxT = i;
-                  loT = tmp;
-               }
-            }
-         } else {
-            var _pk1 = MaskLe(tmp, loT);
-            loIdxT = Pick(_pk1, today, loIdxT);
-            loT = Pick(_pk1, tmp, loT);
-         }
-         tmp = (double)inHigh[today];
-         if( hiIdxK < trailK ) {
-            hiIdxK = trailK;
-            hiK = (double)inHigh[hiIdxK];
-            i = hiIdxK;
-            while( ++i <= today ) {
-               tmp = (double)inHigh[i];
-               if( tmp > hiK ) {
-                  hiIdxK = i;
-                  hiK = tmp;
-               }
-            }
-         } else {
-            var _pk2 = MaskLe(hiK, tmp);
-            hiIdxK = Pick(_pk2, today, hiIdxK);
-            hiK = Pick(_pk2, tmp, hiK);
-         }
-         tmp = (double)inLow[today];
-         if( loIdxK < trailK ) {
-            loIdxK = trailK;
-            loK = (double)inLow[loIdxK];
-            i = loIdxK;
-            while( ++i <= today ) {
-               tmp = (double)inLow[i];
-               if( tmp < loK ) {
-                  loIdxK = i;
-                  loK = tmp;
-               }
-            }
-         } else {
-            var _pk3 = MaskLe(tmp, loK);
-            loIdxK = Pick(_pk3, today, loIdxK);
-            loK = Pick(_pk3, tmp, loK);
-         }
-         tmp = (double)inHigh[today];
-         if( hiIdxB < trailB ) {
-            hiIdxB = trailB;
-            hiB = (double)inHigh[hiIdxB];
-            i = hiIdxB;
-            while( ++i <= today ) {
-               tmp = (double)inHigh[i];
-               if( tmp > hiB ) {
-                  hiIdxB = i;
-                  hiB = tmp;
-               }
-            }
-         } else {
-            var _pk4 = MaskLe(hiB, tmp);
-            hiIdxB = Pick(_pk4, today, hiIdxB);
-            hiB = Pick(_pk4, tmp, hiB);
-         }
-         tmp = (double)inLow[today];
-         if( loIdxB < trailB ) {
-            loIdxB = trailB;
-            loB = (double)inLow[loIdxB];
-            i = loIdxB;
-            while( ++i <= today ) {
-               tmp = (double)inLow[i];
-               if( tmp < loB ) {
-                  loIdxB = i;
-                  loB = tmp;
-               }
-            }
-         } else {
-            var _pk5 = MaskLe(tmp, loB);
-            loIdxB = Pick(_pk5, today, loIdxB);
-            loB = Pick(_pk5, tmp, loB);
-         }
-         tenkan = (hiT + loT) / 2.0;
-         kijun = (hiK + loK) / 2.0;
-         outTenkanSen[outIdx] = tenkan;
-         outKijunSen[outIdx] = kijun;
-         outSenkouSpanA[outIdx] = (tenkan + kijun) / 2.0;
-         outSenkouSpanB[outIdx] = (hiB + loB) / 2.0;
-         outIdx = outIdx + 1;
-         trailT = trailT + 1;
-         trailK = trailK + 1;
-         trailB = trailB + 1;
-         today = today + 1;
+      n = endIdx - startIdx + 1;
+      _rent_tempT = System.Buffers.ArrayPool<double>.Shared.Rent((int)(n * 1));
+      tempT = _rent_tempT.AsSpan(0, (int)(n * 1));
+      _rent_tempK = System.Buffers.ArrayPool<double>.Shared.Rent((int)(n * 1));
+      tempK = _rent_tempK.AsSpan(0, (int)(n * 1));
+      _rent_tempB = System.Buffers.ArrayPool<double>.Shared.Rent((int)(n * 1));
+      tempB = _rent_tempB.AsSpan(0, (int)(n * 1));
+      OutRange _xr0 = Midprice(startIdx, endIdx, inHigh, inLow, optInTenkanPeriod, tempT);
+      tempBegIdx = _xr0.BegIdx;
+      tempNbElement = _xr0.Count;
+      retCode = RetCode.Success;
+      OutRange _xr1 = Midprice(startIdx, endIdx, inHigh, inLow, optInKijunPeriod, tempK);
+      tempBegIdx = _xr1.BegIdx;
+      tempNbElement = _xr1.Count;
+      retCode = RetCode.Success;
+      OutRange _xr2 = Midprice(startIdx, endIdx, inHigh, inLow, optInSenkouBPeriod, tempB);
+      tempBegIdx = _xr2.BegIdx;
+      tempNbElement = _xr2.Count;
+      retCode = RetCode.Success;
+      OutRange _xr3 = Medprice(0, n - 1, tempT, tempK, outSenkouSpanA);
+      tempBegIdx = _xr3.BegIdx;
+      tempNbElement = _xr3.Count;
+      retCode = RetCode.Success;
+      for( i = 0; i < n; i += 1 ) {
+         outTenkanSen[i] = tempT[i];
+         outKijunSen[i] = tempK[i];
+         outSenkouSpanB[i] = tempB[i];
       }
-      outNBElement = outIdx;
+      ReturnScratch(ref _rent_tempT);
+      ReturnScratch(ref _rent_tempK);
+      ReturnScratch(ref _rent_tempB);
       outBegIdx = startIdx;
+      outNBElement = n;
       return RetCode.Success ;
    }
    /// <summary>
@@ -882,5 +611,464 @@ public partial class Core
          throw Failure("ICHIMOKU", retCode);
       }
       return new OutRange(outBegIdx, outNBElement);
+   }
+   /**** Streaming API *****/
+
+   /// <summary>One <c>ICHIMOKU</c> output set, in batch output order.</summary>
+   /// <remarks>
+   /// <para>Equality is the compiler-generated record-struct equality, which compares
+   /// each component with <see cref="System.Double.Equals(System.Double)"/>, not
+   /// <c>==</c>: any two <c>NaN</c> payloads compare equal, and <c>0.0</c>
+   /// equals <c>-0.0</c>. Compare
+   /// <see cref="System.BitConverter.DoubleToInt64Bits(double)"/> per component
+   /// when bit-level identity is what you mean.</para>
+   /// </remarks>
+   /// <param name="TenkanSen">Conversion line.</param>
+   /// <param name="KijunSen">Base line.</param>
+   /// <param name="SenkouSpanA">First leading span, drawn ahead by the base period.</param>
+   /// <param name="SenkouSpanB">Second leading span, drawn ahead by the base period.</param>
+   public readonly record struct IchimokuValue( double TenkanSen, double KijunSen, double SenkouSpanA, double SenkouSpanB );
+
+   /// <summary>A live <c>ICHIMOKU</c> stream: one value per closed bar, bit-identical to
+   /// <c>ICHIMOKU</c> over the same series.</summary>
+   /// <remarks>
+   /// <para>Open with <see cref="Core.IchimokuOpen"/>. There is no close and nothing
+   /// to dispose — the handle is ordinary managed state, and an unreferenced
+   /// handle is simply collected.</para>
+   /// <para>Concurrency: a handle is single-writer — <see cref="Update"/>,
+   /// <see cref="Peek"/>, <see cref="Value"/> and <see cref="Clone"/> must not
+   /// race with an <c>Update</c> on the same handle. With no concurrent
+   /// <c>Update</c>, <c>Peek</c>, <c>Value</c> and <c>Clone</c> never write the
+   /// handle. Independent handles (a <c>Clone</c> result included) are fully
+   /// independent.</para>
+   /// <para>Not serializable by design, and the constructors are internal so no
+   /// partially built handle can be minted: to checkpoint, retain the history
+   /// and re-open — the result is bit-identical by contract.</para>
+   /// </remarks>
+   public sealed class IchimokuStream
+   {
+      internal Core core;
+      internal int optInTenkanPeriod;
+      internal int optInKijunPeriod;
+      internal int optInSenkouBPeriod;
+      internal double cur_outTenkanSen;
+      internal double cur_outKijunSen;
+      internal double cur_outSenkouSpanA;
+      internal double cur_outSenkouSpanB;
+      internal MidpriceStream sub0 = null!;
+      internal MidpriceStream sub1 = null!;
+      internal MidpriceStream sub2 = null!;
+      internal MedpriceStream sub3 = null!;
+      internal int outRangeBegIdx;
+      internal int outRangeCount;
+
+      internal IchimokuStream( Core core ) { this.core = core; }
+
+      /// <summary>The bars this stream has an output for, in the input series' coordinates:
+      /// <c>[BegIdx, BegIdx + Count)</c>.</summary>
+      /// <remarks>
+      /// <para>It is what <c>Core.Ichimoku</c> reports over the same bars: the opener
+      /// sets it to <c>(lookback, historyLen - lookback)</c>, every accepted
+      /// <c>Update</c> adds one to the count — a rejected one changes nothing, and
+      /// neither does <c>Peek</c> — and <c>Clone</c> carries it verbatim. A plain
+      /// <c>Open</c> hands back only the last value, a subset of this range,
+      /// because the caller chose not to take the fill.</para>
+      /// <para>The last bar it can reach is <see cref="Core.IndexMax"/>; past that
+      /// <c>Update</c> and <c>Advance</c> throw.</para>
+      /// </remarks>
+      public OutRange OutRange => new OutRange(outRangeBegIdx, outRangeCount);
+
+      /// <summary>Count one bar this stream was not fed: <see cref="OutRange"/> advances by
+      /// one and nothing else moves.</summary>
+      /// <remarks>
+      /// <para><see cref="Value"/> keeps answering the previous output, which is this
+      /// bar's output too. For a bar the caller leaves out: one an <c>Update</c>
+      /// rejected and that will not be re-fed, or a session with no print. Without
+      /// it two handles on one feed drift a bar apart when only one of them skips.</para>
+      /// <para>Throws <see cref="System.ArgumentException"/> once <see cref="OutRange"/>
+      /// has reached bar <see cref="Core.IndexMax"/>, the last one the batch tier
+      /// can address and the last this handle will count. <c>Update</c> throws the
+      /// same there.</para>
+      /// </remarks>
+      public void Advance()
+      {
+         if( outRangeBegIdx + outRangeCount > Core.IndexMax )
+            throw Core.StreamFailure("ICHIMOKU", "advance", RetCode.OutOfRangeEndIndex);
+         outRangeCount++;
+      }
+
+      internal IchimokuStream( IchimokuStream other )
+      {
+         this.core = other.core;
+         this.optInTenkanPeriod = other.optInTenkanPeriod;
+         this.optInKijunPeriod = other.optInKijunPeriod;
+         this.optInSenkouBPeriod = other.optInSenkouBPeriod;
+         this.cur_outTenkanSen = other.cur_outTenkanSen;
+         this.cur_outKijunSen = other.cur_outKijunSen;
+         this.cur_outSenkouSpanA = other.cur_outSenkouSpanA;
+         this.cur_outSenkouSpanB = other.cur_outSenkouSpanB;
+         this.sub0 = new MidpriceStream(other.sub0);
+         this.sub1 = new MidpriceStream(other.sub1);
+         this.sub2 = new MidpriceStream(other.sub2);
+         this.sub3 = new MedpriceStream(other.sub3);
+         this.outRangeBegIdx = other.outRangeBegIdx;
+         this.outRangeCount = other.outRangeCount;
+      }
+
+      /// <summary>Commit one closed bar, returning the new current value.</summary>
+      /// <remarks>
+      /// <para>Throws <see cref="System.ArgumentException"/> if any bar value is not
+      /// finite (NaN or an infinity). That check runs before anything is written,
+      /// so nothing moves — <see cref="OutRange"/> included — and
+      /// <see cref="Value"/> still answers the previous value. Re-feed the bar when
+      /// a corrected value arrives, or call <see cref="Advance"/> to count it and
+      /// carry on; two handles on one feed drift a bar apart if neither happens.
+      /// This is the one place the streaming tier is stricter than the batch API,
+      /// which computes on whatever it is given: a handle retains its state, so a
+      /// single non-finite bar would poison every later value it produces.</para>
+      /// <para>Throws <see cref="System.ArgumentException"/> once <see cref="OutRange"/>
+      /// has reached bar <see cref="Core.IndexMax"/>, which no re-feed clears: the
+      /// handle has run out of index domain and only a shorter history can start a
+      /// new one.</para>
+      /// </remarks>
+      /// <param name="inHigh">This bar's high price.</param>
+      /// <param name="inLow">This bar's low price.</param>
+      /// <returns>The value at the bar just committed.</returns>
+      public IchimokuValue Update( double inHigh, double inLow )
+      {
+         if( outRangeBegIdx + outRangeCount > Core.IndexMax )
+            throw Core.StreamFailure("ICHIMOKU", "update", RetCode.OutOfRangeEndIndex);
+         if( !double.IsFinite(inHigh) || !double.IsFinite(inLow) ) throw Core.NonFiniteBar("ICHIMOKU", "update", !double.IsFinite(inHigh) ? nameof(inHigh) : nameof(inLow));
+         core.IchimokuStepImpl(this, inHigh, inLow);
+         outRangeCount++;
+         return new IchimokuValue(cur_outTenkanSen, cur_outKijunSen, cur_outSenkouSpanA, cur_outSenkouSpanB);
+      }
+
+      /// <summary>Evaluate a forming bar without committing it.</summary>
+      /// <remarks>
+      /// <para>Bit-identical to what the next <see cref="Update"/> with the same bar
+      /// would return — the same transition, with every store it would make carried
+      /// in a local instead. Never writes this handle, so peeks may run
+      /// concurrently with each other.</para>
+      /// <para>It counts no bar, so it keeps answering past the
+      /// <see cref="Core.IndexMax"/> ceiling <c>Update</c> stops at.</para>
+      /// </remarks>
+      /// <param name="inHigh">This bar's high price.</param>
+      /// <param name="inLow">This bar's low price.</param>
+      /// <returns>The value <see cref="Update"/> would return for this bar, when it takes
+      /// it.</returns>
+      public IchimokuValue Peek( double inHigh, double inLow )
+      {
+         if( !double.IsFinite(inHigh) || !double.IsFinite(inLow) ) throw Core.NonFiniteBar("ICHIMOKU", "peek", !double.IsFinite(inHigh) ? nameof(inHigh) : nameof(inLow));
+         IchimokuStream sp = this;
+         double cur_tempT = 0.0;
+         double cur_tempK = 0.0;
+         double cur_tempB = 0.0;
+         double cur_outSenkouSpanA = 0.0;
+         double cur_outTenkanSen = 0.0;
+         double cur_outKijunSen = 0.0;
+         double cur_outSenkouSpanB = 0.0;
+         /* Pipeline the new bar through the sub-streams (batch tail order). */
+         cur_tempT = sp.sub0.Peek(inHigh, inLow);
+         cur_tempK = sp.sub1.Peek(inHigh, inLow);
+         cur_tempB = sp.sub2.Peek(inHigh, inLow);
+         cur_outSenkouSpanA = sp.sub3.Peek(cur_tempT, cur_tempK);
+         /* Combine map (batch tail, per bar). */
+         cur_outTenkanSen = cur_tempT;
+         cur_outKijunSen = cur_tempK;
+         cur_outSenkouSpanB = cur_tempB;
+         return new IchimokuValue(cur_outTenkanSen, cur_outKijunSen, cur_outSenkouSpanA, cur_outSenkouSpanB);
+      }
+
+      /// <summary>The value at the last bar this stream counted — the bar
+      /// <see cref="OutRange"/> ends on. The last history bar right after open,
+      /// then whatever the latest accepted <see cref="Update"/> returned.</summary>
+      /// <remarks>
+      /// <para><see cref="Peek"/> does not change it.</para>
+      /// </remarks>
+      public IchimokuValue Value => new IchimokuValue(cur_outTenkanSen, cur_outKijunSen, cur_outSenkouSpanA, cur_outSenkouSpanB);
+
+      /// <summary>An independent deep copy of this stream: both evolve separately from here
+      /// on.</summary>
+      /// <returns>The new, independent handle.</returns>
+      public IchimokuStream Clone()
+      {
+         return new IchimokuStream(this);
+      }
+   }
+
+   private void IchimokuStepImpl( IchimokuStream sp, double inHigh, double inLow )
+   {
+      double cur_tempT = 0.0;
+      double cur_tempK = 0.0;
+      double cur_tempB = 0.0;
+      double cur_outSenkouSpanA = 0.0;
+      double cur_outTenkanSen = 0.0;
+      double cur_outKijunSen = 0.0;
+      double cur_outSenkouSpanB = 0.0;
+      /* Pipeline the new bar through the sub-streams (batch tail order). */
+      cur_tempT = sp.sub0.Update(inHigh, inLow);
+      cur_tempK = sp.sub1.Update(inHigh, inLow);
+      cur_tempB = sp.sub2.Update(inHigh, inLow);
+      cur_outSenkouSpanA = sp.sub3.Update(cur_tempT, cur_tempK);
+      /* Combine map (batch tail, per bar). */
+      cur_outTenkanSen = cur_tempT;
+      cur_outKijunSen = cur_tempK;
+      cur_outSenkouSpanB = cur_tempB;
+      sp.cur_outTenkanSen = cur_outTenkanSen;
+      sp.cur_outKijunSen = cur_outKijunSen;
+      sp.cur_outSenkouSpanA = cur_outSenkouSpanA;
+      sp.cur_outSenkouSpanB = cur_outSenkouSpanB;
+   }
+
+   private RetCode IchimokuOpenImpl( IchimokuStream sp, ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, int startIdx, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, out int outBegIdx, out int outNBElement, Span<double> outTenkanSen, Span<double> outKijunSen, Span<double> outSenkouSpanA, Span<double> outSenkouSpanB, int outStride )
+   {
+      outBegIdx = 0;
+      outNBElement = 0;
+      RetCode retCode;
+      int lookbackTotal = 0;
+      int n = 0;
+      int i = 0;
+      int tempBegIdx = 0;
+      int tempNbElement = 0;
+      Span<double> tempT;
+      Span<double> tempK;
+      Span<double> tempB;
+      int historyLen = inHigh.Length;
+      int endIdx = historyLen - 1;
+      if( historyLen < 1 ) {
+         return RetCode.OutOfRangeStartIndex;
+      }
+      if( historyLen > IndexMax + 1 ) {
+         return RetCode.OutOfRangeEndIndex;
+      }
+      if( inLow.Length != inHigh.Length ) {
+         return RetCode.BadParam;
+      }
+      if( optInTenkanPeriod == int.MinValue ) {
+         optInTenkanPeriod = 9;
+      } else if( optInTenkanPeriod < 2 || optInTenkanPeriod > 100000 ) {
+         return RetCode.BadParam;
+      }
+      if( optInKijunPeriod == int.MinValue ) {
+         optInKijunPeriod = 26;
+      } else if( optInKijunPeriod < 2 || optInKijunPeriod > 100000 ) {
+         return RetCode.BadParam;
+      }
+      if( optInSenkouBPeriod == int.MinValue ) {
+         optInSenkouBPeriod = 52;
+      } else if( optInSenkouBPeriod < 2 || optInSenkouBPeriod > 100000 ) {
+         return RetCode.BadParam;
+      }
+      if( startIdx > endIdx ) {
+         outBegIdx = 0;
+         outNBElement = 0;
+         return RetCode.InsufficientHistory;
+      }
+      if( historyLen < IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod) + 1 ) {
+         return RetCode.InsufficientHistory;
+      }
+      Span<double> sc_outTenkanSen = outStride == 1 ? outTenkanSen : new double[historyLen];
+      Span<double> sc_outKijunSen = outStride == 1 ? outKijunSen : new double[historyLen];
+      Span<double> sc_outSenkouSpanA = outStride == 1 ? outSenkouSpanA : new double[historyLen];
+      Span<double> sc_outSenkouSpanB = outStride == 1 ? outSenkouSpanB : new double[historyLen];
+      /* PROTOTYPE (#490 Q7): each line IS a midpoint over its own window, which is
+       * exactly what midprice computes, so the three scans are three midprice calls
+       * and Span A is the mean of two of them. MEASURED bit-identical to the fused
+       * loop over four parameter triples on the suite's corpus, every line, before
+       * this was written.
+       *
+       * The point is the stream tier: three windows of different periods cannot be
+       * one extrema automaton (the census refuses with "expected exactly one
+       * window-start variable"), but a composed body is a different tier.
+       *
+       * The three results go to temporaries and are copied at the end: every read of
+       * high and low has to happen before the first write to a caller buffer, or an
+       * output aliased onto an input is read after it has been overwritten.
+       */
+      lookbackTotal = IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
+      if( startIdx < lookbackTotal ) {
+         startIdx = lookbackTotal;
+      }
+      if( startIdx > endIdx ) {
+         outBegIdx = 0;
+         outNBElement = 0;
+         return RetCode.InsufficientHistory ;
+      }
+      n = endIdx - startIdx + 1;
+      tempT = new double[(int)(n * 1)];
+      tempK = new double[(int)(n * 1)];
+      tempB = new double[(int)(n * 1)];
+      /* Sub-stream 0: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      MidpriceStream sub0 = MidpriceOpenAndFillInternal(inHigh, inLow, startIdx, optInTenkanPeriod, out tempBegIdx, out tempNbElement, tempT);
+      retCode = RetCode.Success;
+      /* Sub-stream 1: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      MidpriceStream sub1 = MidpriceOpenAndFillInternal(inHigh, inLow, startIdx, optInKijunPeriod, out tempBegIdx, out tempNbElement, tempK);
+      retCode = RetCode.Success;
+      /* Sub-stream 2: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      MidpriceStream sub2 = MidpriceOpenAndFillInternal(inHigh, inLow, startIdx, optInSenkouBPeriod, out tempBegIdx, out tempNbElement, tempB);
+      retCode = RetCode.Success;
+      /* Span A is the mean of the two lines, which medprice is over any two series. */
+      /* Sub-stream 3: medprice over `tempT, tempK`, warmed from bar 0 up to the
+       * sub-call's own startIdx (the seeding point). */
+      int subLen3 = (n - 1) + 1;
+      double[] subSrc3_0 = new double[subLen3];
+      tempT.Slice(0, subLen3).CopyTo(subSrc3_0);
+      double[] subSrc3_1 = new double[subLen3];
+      tempK.Slice(0, subLen3).CopyTo(subSrc3_1);
+      MedpriceStream sub3 = MedpriceOpenAndFillInternal(subSrc3_0, subSrc3_1, 0, out tempBegIdx, out tempNbElement, sc_outSenkouSpanA);
+      retCode = RetCode.Success;
+      for( i = 0; i < n; i += 1 ) {
+         sc_outTenkanSen[i] = tempT[i];
+         sc_outKijunSen[i] = tempK[i];
+         sc_outSenkouSpanB[i] = tempB[i];
+      }
+      outBegIdx = startIdx;
+      outNBElement = n;
+      /* Capture the live producer state + sub handles. */
+      if( outNBElement < 1 ) {
+         return RetCode.InsufficientHistory;
+      }
+      sp.optInTenkanPeriod = optInTenkanPeriod;
+      sp.optInKijunPeriod = optInKijunPeriod;
+      sp.optInSenkouBPeriod = optInSenkouBPeriod;
+      sp.sub0 = sub0;
+      sp.sub1 = sub1;
+      sp.sub2 = sub2;
+      sp.sub3 = sub3;
+      sp.cur_outTenkanSen = sc_outTenkanSen[outNBElement - 1];
+      sp.cur_outKijunSen = sc_outKijunSen[outNBElement - 1];
+      sp.cur_outSenkouSpanA = sc_outSenkouSpanA[outNBElement - 1];
+      sp.cur_outSenkouSpanB = sc_outSenkouSpanB[outNBElement - 1];
+      return RetCode.Success;
+   }
+
+   /* IchimokuOpenAndFill anchored at startIdx — the composed-open fusion seam. */
+   internal IchimokuStream IchimokuOpenAndFillInternal( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, int startIdx, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, out int outBegIdx, out int outNBElement, Span<double> outTenkanSen, Span<double> outKijunSen, Span<double> outSenkouSpanA, Span<double> outSenkouSpanB )
+   {
+      IchimokuStream sp = new IchimokuStream(this);
+      RetCode retCode = IchimokuOpenImpl(sp, inHigh, inLow, startIdx, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, out outBegIdx, out outNBElement, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB, 1);
+      sp.outRangeBegIdx = outBegIdx;
+      sp.outRangeCount = outNBElement;
+      if( retCode == RetCode.Success ) {
+         return sp;
+      }
+      if( retCode == RetCode.InsufficientHistory ) {
+         throw InsufficientHistory("ICHIMOKU", "openAndFill", nameof(inHigh), inHigh.Length, startIdx, IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod));
+      }
+      throw StreamFailure("ICHIMOKU", "openAndFill", retCode);
+   }
+
+   /* Internal startIdx-anchored open behind IchimokuOpen (composition seam). */
+   internal IchimokuStream IchimokuOpenInternal( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, int startIdx, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod )
+   {
+      IchimokuStream sp = new IchimokuStream(this);
+      double[] sink_outTenkanSen = new double[1];
+      double[] sink_outKijunSen = new double[1];
+      double[] sink_outSenkouSpanA = new double[1];
+      double[] sink_outSenkouSpanB = new double[1];
+      RetCode retCode = IchimokuOpenImpl(sp, inHigh, inLow, startIdx, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, out int outBegIdx, out int outNBElement, sink_outTenkanSen, sink_outKijunSen, sink_outSenkouSpanA, sink_outSenkouSpanB, 0);
+      sp.outRangeBegIdx = outBegIdx;
+      sp.outRangeCount = outNBElement;
+      if( retCode == RetCode.Success ) {
+         return sp;
+      }
+      if( retCode == RetCode.InsufficientHistory ) {
+         throw InsufficientHistory("ICHIMOKU", "open", nameof(inHigh), inHigh.Length, startIdx, IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod));
+      }
+      throw StreamFailure("ICHIMOKU", "open", retCode);
+   }
+
+   /// <summary>Open a live <c>ICHIMOKU</c> stream over the warm-up history.</summary>
+   /// <remarks>
+   /// <para>The handle's <see cref="IchimokuStream.Value"/> starts at the last history
+   /// bar's value — bit-identical to what <c>ICHIMOKU</c> reports for that bar.</para>
+   /// <para>The history must hold at least <c>IchimokuLookback(...) + 1</c> bars
+   /// (unstable-period aware). Nothing is written to any caller array; use
+   /// <c>IchimokuOpenAndFill</c> to get the warm-up values as well.</para>
+   /// </remarks>
+   /// <param name="inHigh">High price series. The warm-up history, oldest bar first.</param>
+   /// <param name="inLow">Low price series. The warm-up history, oldest bar first.</param>
+   /// <param name="optInTenkanPeriod">As in the batch call; see <see cref="IchimokuLookback"/> for its default
+   /// and range (<c>int.MinValue</c> selects the default).</param>
+   /// <param name="optInKijunPeriod">As in the batch call; see <see cref="IchimokuLookback"/> for its default
+   /// and range (<c>int.MinValue</c> selects the default).</param>
+   /// <param name="optInSenkouBPeriod">As in the batch call; see <see cref="IchimokuLookback"/> for its default
+   /// and range (<c>int.MinValue</c> selects the default).</param>
+   /// <returns>The open stream handle.</returns>
+   /// <exception cref="InsufficientHistoryException">The history holds fewer than <c>IchimokuLookback(...) + 1</c> bars.</exception>
+   /// <exception cref="System.ArgumentException">An optional parameter is outside its documented range, or the input series
+   /// have different lengths.</exception>
+   /// <exception cref="System.ArgumentOutOfRangeException">The history is empty — which is what a null array becomes, since a span
+   /// cannot be null — or it is longer than <see cref="Core.IndexMax"/> + 1, the
+   /// two index faults an opener can have (rules rS1 and rS2).</exception>
+   public IchimokuStream IchimokuOpen( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod )
+   {
+      if( inHigh.IsEmpty ) throw new TALibArgumentOutOfRangeException(nameof(inHigh), "ICHIMOKU open: history is empty", RetCode.OutOfRangeStartIndex);
+      if( inHigh.Length > IndexMax + 1 ) throw new TALibArgumentOutOfRangeException(nameof(inHigh), "ICHIMOKU open: history is longer than IndexMax + 1", RetCode.OutOfRangeEndIndex);
+      if( inLow.IsEmpty ) throw new TALibArgumentException("ICHIMOKU open: inLow is empty", nameof(inLow), RetCode.BadParam);
+      RequireHistoryLength("ICHIMOKU", "open", "inLow", inLow.Length, inHigh.Length);
+      return IchimokuOpenInternal(inHigh, inLow, 0, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod);
+   }
+
+   /// <summary><c>IchimokuOpen</c> that also fills the output array(s) over the whole
+   /// history in the same single pass.</summary>
+   /// <remarks>
+   /// <para>The values written are bit-identical to what <c>ICHIMOKU</c> produces over
+   /// the same series, so no separate batch call is needed for the warm-up plot.</para>
+   /// <para>Output arrays must hold <c>historyLen - IchimokuLookback(...)</c> values
+   /// and must not alias the inputs or each other — this path writes the outputs
+   /// and then reads the input tail to seed its rings, so the batch tier's
+   /// in-place allowance does not carry over here. Both are checked before
+   /// anything is written, so an undersized span is an <c>ArgumentException</c>
+   /// naming it rather than a fault from inside the fill.</para>
+   /// <para>The range written is reported on the returned handle:
+   /// <see cref="IchimokuStream.OutRange"/>.</para>
+   /// </remarks>
+   /// <param name="inHigh">High price series. The warm-up history, oldest bar first.</param>
+   /// <param name="inLow">Low price series. The warm-up history, oldest bar first.</param>
+   /// <param name="optInTenkanPeriod">As in the batch call; see <see cref="IchimokuLookback"/> for its default
+   /// and range (<c>int.MinValue</c> selects the default).</param>
+   /// <param name="optInKijunPeriod">As in the batch call; see <see cref="IchimokuLookback"/> for its default
+   /// and range (<c>int.MinValue</c> selects the default).</param>
+   /// <param name="optInSenkouBPeriod">As in the batch call; see <see cref="IchimokuLookback"/> for its default
+   /// and range (<c>int.MinValue</c> selects the default).</param>
+   /// <param name="outTenkanSen">Conversion line. Must hold at least <c>historyLen -
+   /// IchimokuLookback(...)</c> values.</param>
+   /// <param name="outKijunSen">Base line. Must hold at least <c>historyLen - IchimokuLookback(...)</c>
+   /// values.</param>
+   /// <param name="outSenkouSpanA">First leading span, drawn ahead by the base period. Must hold at least
+   /// <c>historyLen - IchimokuLookback(...)</c> values.</param>
+   /// <param name="outSenkouSpanB">Second leading span, drawn ahead by the base period. Must hold at least
+   /// <c>historyLen - IchimokuLookback(...)</c> values.</param>
+   /// <returns>The open stream handle, with its fill range set.</returns>
+   /// <exception cref="InsufficientHistoryException">The history holds fewer than <c>IchimokuLookback(...) + 1</c> bars.</exception>
+   /// <exception cref="System.ArgumentException">An optional parameter is outside its documented range, the input series
+   /// have different lengths, an output is shorter than the values the fill
+   /// writes, or an output array aliases an input or another output.</exception>
+   /// <exception cref="System.ArgumentOutOfRangeException">The history is empty — which is what a null array becomes, since a span
+   /// cannot be null — or it is longer than <see cref="Core.IndexMax"/> + 1, the
+   /// two index faults an opener can have (rules rS1 and rS2).</exception>
+   public IchimokuStream IchimokuOpenAndFill( ReadOnlySpan<double> inHigh, ReadOnlySpan<double> inLow, int optInTenkanPeriod, int optInKijunPeriod, int optInSenkouBPeriod, Span<double> outTenkanSen, Span<double> outKijunSen, Span<double> outSenkouSpanA, Span<double> outSenkouSpanB )
+   {
+      if( inHigh.IsEmpty ) throw new TALibArgumentOutOfRangeException(nameof(inHigh), "ICHIMOKU openAndFill: history is empty", RetCode.OutOfRangeStartIndex);
+      if( inHigh.Length > IndexMax + 1 ) throw new TALibArgumentOutOfRangeException(nameof(inHigh), "ICHIMOKU openAndFill: history is longer than IndexMax + 1", RetCode.OutOfRangeEndIndex);
+      if( inLow.IsEmpty ) throw new TALibArgumentException("ICHIMOKU openAndFill: inLow is empty", nameof(inLow), RetCode.BadParam);
+      int guardOutLen = OpenFillCount("ICHIMOKU", "openAndFill", inHigh.Length, IchimokuLookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod));
+      RequireHistoryLength("ICHIMOKU", "openAndFill", "inLow", inLow.Length, inHigh.Length);
+      RequireFillLength("ICHIMOKU", "openAndFill", "outTenkanSen", outTenkanSen.Length, guardOutLen);
+      RequireFillLength("ICHIMOKU", "openAndFill", "outKijunSen", outKijunSen.Length, guardOutLen);
+      RequireFillLength("ICHIMOKU", "openAndFill", "outSenkouSpanA", outSenkouSpanA.Length, guardOutLen);
+      RequireFillLength("ICHIMOKU", "openAndFill", "outSenkouSpanB", outSenkouSpanB.Length, guardOutLen);
+      if( SameBuffer(outTenkanSen, inHigh) || SameBuffer(outTenkanSen, inLow) || SameBuffer(outKijunSen, inHigh) || SameBuffer(outKijunSen, inLow) || SameBuffer(outSenkouSpanA, inHigh) || SameBuffer(outSenkouSpanA, inLow) || SameBuffer(outSenkouSpanB, inHigh) || SameBuffer(outSenkouSpanB, inLow) || SameBuffer(outTenkanSen, outKijunSen) || SameBuffer(outTenkanSen, outSenkouSpanA) || SameBuffer(outTenkanSen, outSenkouSpanB) || SameBuffer(outKijunSen, outSenkouSpanA) || SameBuffer(outKijunSen, outSenkouSpanB) || SameBuffer(outSenkouSpanA, outSenkouSpanB) ) {
+         throw StreamFailure("ICHIMOKU", "openAndFill", RetCode.BadParam);
+      }
+      if( guardOutLen > 0 && ( outTenkanSen.Overlaps(inHigh) || outTenkanSen.Overlaps(inLow) || outKijunSen.Overlaps(inHigh) || outKijunSen.Overlaps(inLow) || outSenkouSpanA.Overlaps(inHigh) || outSenkouSpanA.Overlaps(inLow) || outSenkouSpanB.Overlaps(inHigh) || outSenkouSpanB.Overlaps(inLow) || OutputsAlias(outTenkanSen, outKijunSen) || OutputsAlias(outTenkanSen, outSenkouSpanA) || OutputsAlias(outTenkanSen, outSenkouSpanB) || OutputsAlias(outKijunSen, outSenkouSpanA) || OutputsAlias(outKijunSen, outSenkouSpanB) || OutputsAlias(outSenkouSpanA, outSenkouSpanB) ) ) {
+         throw StreamFailure("ICHIMOKU", "openAndFill", RetCode.BadParam);
+      }
+      return IchimokuOpenAndFillInternal(inHigh, inLow, 0, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, out _, out _, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB);
    }
 }

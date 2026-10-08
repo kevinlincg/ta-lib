@@ -2253,7 +2253,7 @@ static FUNC_TABLE: [FuncInfo; 232] = [
         name: "ICHIMOKU",
         group: Group::OverlapStudies,
         hint: "Ichimoku Kinko Hyo",
-        flags: FuncFlags(0x01000002),
+        flags: FuncFlags(0x03000002),
         inputs: &[InputInfo { param_name: "inPriceHL", kind: InputType::Price, flags: InputFlags(0x00000006) }, ],
         opt_inputs: &[OptInputInfo { param_name: "optInTenkanPeriod", display_name: "Tenkan Period", hint: "Period of the conversion line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 9, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInKijunPeriod", display_name: "Kijun Period", hint: "Period of the base line, and the forward shift of the two spans", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 26, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSenkouBPeriod", display_name: "Senkou B Period", hint: "Period of the second leading span", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 52, suggested: (4, 200, 1) } }, ],
         outputs: &[OutputInfo { param_name: "outTenkanSen", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outKijunSen", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outSenkouSpanA", kind: OutputType::Real, flags: OutputFlags(0x00004001) }, OutputInfo { param_name: "outSenkouSpanB", kind: OutputType::Real, flags: OutputFlags(0x00004001) }, ],

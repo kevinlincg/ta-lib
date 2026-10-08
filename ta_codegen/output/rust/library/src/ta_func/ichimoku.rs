@@ -220,227 +220,76 @@ impl Core {
             return RetCode::BadParam;
         }
         let mut startIdx = startIdx;
-        let mut tenkan: f64 = 0.0_f64;
-        let mut kijun: f64 = 0.0_f64;
-        let mut hiT: f64 = 0.0_f64;
-        let mut loT: f64 = 0.0_f64;
-        let mut hiK: f64 = 0.0_f64;
-        let mut loK: f64 = 0.0_f64;
-        let mut hiB: f64 = 0.0_f64;
-        let mut loB: f64 = 0.0_f64;
-        let mut tmp: f64 = 0.0_f64;
+        let mut retCode: RetCode = RetCode::Success;
         let mut lookbackTotal: usize = 0_usize;
-        let mut today: usize = 0_usize;
-        let mut outIdx: usize = 0_usize;
+        let mut n: usize = 0_usize;
         let mut i: usize = 0_usize;
-        let mut trailT: usize = 0_usize;
-        let mut trailK: usize = 0_usize;
-        let mut trailB: usize = 0_usize;
-        let mut hiIdxT: i32 = 0_i32;
-        let mut loIdxT: i32 = 0_i32;
-        let mut hiIdxK: i32 = 0_i32;
-        let mut loIdxK: i32 = 0_i32;
-        let mut hiIdxB: i32 = 0_i32;
-        let mut loIdxB: i32 = 0_i32;
-        // Goichi Hosoda's Ichimoku Kinko Hyo, the four lines that are computed
-        // from price alone:
+        let mut tempBegIdx: usize = 0_usize;
+        let mut tempNbElement: usize = 0_usize;
+        let mut tempT: Vec<f64> = Vec::new();
+        let mut tempK: Vec<f64> = Vec::new();
+        let mut tempB: Vec<f64> = Vec::new();
+        // PROTOTYPE (#490 Q7): each line IS a midpoint over its own window, which is
+        // exactly what midprice computes, so the three scans are three midprice calls
+        // and Span A is the mean of two of them. MEASURED bit-identical to the fused
+        // loop over four parameter triples on the suite's corpus, every line, before
+        // this was written.
         //
-        //    Tenkan-sen  = midpoint of the last tenkan bars
-        //    Kijun-sen   = midpoint of the last kijun bars
-        //    Senkou A    = mean of those two lines
-        //    Senkou B    = midpoint of the last senkouB bars
+        // The point is the stream tier: three windows of different periods cannot be
+        // one extrema automaton (the census refuses with "expected exactly one
+        // window-start variable"), but a composed body is a different tier.
         //
-        // where a midpoint is (highest high + lowest low)/2 over the window, which
-        // is TA_MIDPRICE. The two spans are drawn kijun bars ahead; that is
-        // display-shift metadata (ichimoku_display_shift), never a shift of the
-        // values, so every output is written at the bar that computed it (rL9).
-        // The Chikou span is the close displaced backward and carries no
-        // computation, so it is not an output here.
-        //
-        // SPAN A HALVES THE TWO ALREADY-ROUNDED MIDPOINTS. Folding it into
-        // (hiT + loT + hiK + loK)/4 is the same value in real arithmetic and a
-        // different double on a quarter of the bars; only a bit-exact gate
-        // against TA_MIDPRICE and TA_MEDPRICE sees the difference.
-        //
-        // The three windows use the cached-extreme-plus-rescan idiom of stoch.c
-        // rather than midprice.c's block scan. Both are exact -- an extremum is a
-        // selection, so the bits are whichever input bar won, whatever the scan
-        // order -- so the choice is cost, not correctness.
-        //
-        // UNRESOLVED (#490 Q6). The reason this form was chosen no longer holds.
-        // It was chosen because the block scan produces a whole block at a time and
-        // cannot be a per-bar automaton, which is why midprice.c carries a
-        // midprice_ALT1 for the streaming tier (#147) -- and this form would need no
-        // such twin. The generator then refused ICHIMOKU a streaming tier outright
-        // (three windows, one automaton), so there is no twin to avoid. Measured on
-        // an i7-10700K over 20000 bars, the rescan costs what stoch.c's idiom costs
-        // on flat input:
-        //
-        //    tenkan/kijun/senkouB   random walk   flat
-        //      9 /  27 /  54          23.21         119.67 ns/bar
-        //     36 / 108 / 216          37.30         571.95
-        //    148 / 444 / 888          72.25        2520.80
-        //
-        // The block scan is bounded instead. Awaiting the ruling before switching.
+        // The three results go to temporaries and are copied at the end: every read of
+        // high and low has to happen before the first write to a caller buffer, or an
+        // output aliased onto an input is read after it has been overwritten.
         lookbackTotal = self.ichimoku_lookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod).unwrap_or(usize::MAX);
-        // Move up the start index if there is not
-        // enough initial data.
         if startIdx < lookbackTotal {
             startIdx = lookbackTotal;
         }
-        // Make sure there is still something to evaluate.
         if startIdx > endIdx {
             (*outBegIdx) = 0;
             (*outNBElement) = 0;
             return RetCode::Success;
         }
-        let inHigh = &inHigh[..=endIdx];
-        let inLow = &inLow[..=endIdx];
-        outIdx = 0;
-        today = startIdx;
-        trailT = today - (((optInTenkanPeriod - 1)) as usize);
-        trailK = today - (((optInKijunPeriod - 1)) as usize);
-        trailB = today - (((optInSenkouBPeriod - 1)) as usize);
-        hiIdxT = -1;
-        loIdxT = -1;
-        hiIdxK = -1;
-        loIdxK = -1;
-        hiIdxB = -1;
-        loIdxB = -1;
-        hiT = 0.0;
-        loT = 0.0;
-        hiK = 0.0;
-        loK = 0.0;
-        hiB = 0.0;
-        loB = 0.0;
-        while today <= endIdx {
-            // Tenkan window. The rebuild below compares STRICTLY, so when every bar
-            // in the window is equal it leaves the index at trailT -- the oldest bar
-            // -- and one bar later trailT has passed it and it rebuilds again. The
-            // tie branch is not what saves a flat stretch: it is never reached
-            // there, because the rebuild hands it an index that is already expiring.
-            // Measured at 148/444/888 over 20000 bars: 67 ns/bar on a random walk
-            // against 2505 flat.
-            //
-            // The strict comparison is not incidental. It is the strict form that
-            // the compiler contracts into a branchless maxsd: spelling it `>=` to
-            // keep the newest tied bar makes the flat cost constant in the period
-            // (6.2 ns/bar) but drops all 30 maxsd from the object file and costs
-            // 34.8% on a random walk. #490 Q6 has the full table.
-            tmp = inHigh[today];
-            if hiIdxT < ((trailT) as i32) {
-                hiIdxT = (trailT) as i32;
-                hiT = inHigh[(hiIdxT) as usize];
-                i = (hiIdxT) as usize;
-                while { i += 1; i } <= today {
-                    tmp = inHigh[i];
-                    if tmp > hiT {
-                        hiIdxT = (i) as i32;
-                        hiT = tmp;
-                    }
-                }
-            } else if tmp >= hiT {
-                hiIdxT = (today) as i32;
-                hiT = tmp;
+        n = endIdx - startIdx + 1;
+        tempT = vec![0.0_f64; (n * 1) as usize];
+        tempK = vec![0.0_f64; (n * 1) as usize];
+        tempB = vec![0.0_f64; (n * 1) as usize];
+        let _xr0 = match self.midprice(startIdx, endIdx, inHigh, inLow, optInTenkanPeriod, &mut tempT[..]) { Ok(_r) => _r, Err(_e) => return _e };
+        tempBegIdx = _xr0.beg_idx;
+        tempNbElement = _xr0.count;
+        retCode = RetCode::Success;
+        let _xr1 = match self.midprice(startIdx, endIdx, inHigh, inLow, optInKijunPeriod, &mut tempK[..]) { Ok(_r) => _r, Err(_e) => return _e };
+        tempBegIdx = _xr1.beg_idx;
+        tempNbElement = _xr1.count;
+        retCode = RetCode::Success;
+        let _xr2 = match self.midprice(startIdx, endIdx, inHigh, inLow, optInSenkouBPeriod, &mut tempB[..]) { Ok(_r) => _r, Err(_e) => return _e };
+        tempBegIdx = _xr2.beg_idx;
+        tempNbElement = _xr2.count;
+        retCode = RetCode::Success;
+        // Span A is the mean of the two lines, which medprice is over any two series.
+        let _xr3 = match self.medprice(0, n - 1, &tempT, &tempK, outSenkouSpanA) { Ok(_r) => _r, Err(_e) => return _e };
+        tempBegIdx = _xr3.beg_idx;
+        tempNbElement = _xr3.count;
+        retCode = RetCode::Success;
+        i = 0;
+        if i < n {
+            let _wn: usize = n - i;
+            let _w0 = &mut outKijunSen[i..][.._wn];
+            let _w1 = &mut outSenkouSpanB[i..][.._wn];
+            let _w2 = &mut outTenkanSen[i..][.._wn];
+            let _w3 = &tempB[i..][.._wn];
+            let _w4 = &tempK[i..][.._wn];
+            let _w5 = &tempT[i..][.._wn];
+            for _wk in 0.._wn {
+                _w2[_wk] = ((_w5[_wk]) as f64);
+                _w0[_wk] = ((_w4[_wk]) as f64);
+                _w1[_wk] = ((_w3[_wk]) as f64);
+                i += 1;
             }
-            tmp = inLow[today];
-            if loIdxT < ((trailT) as i32) {
-                loIdxT = (trailT) as i32;
-                loT = inLow[(loIdxT) as usize];
-                i = (loIdxT) as usize;
-                while { i += 1; i } <= today {
-                    tmp = inLow[i];
-                    if tmp < loT {
-                        loIdxT = (i) as i32;
-                        loT = tmp;
-                    }
-                }
-            } else if tmp <= loT {
-                loIdxT = (today) as i32;
-                loT = tmp;
-            }
-            // Kijun window.
-            tmp = inHigh[today];
-            if hiIdxK < ((trailK) as i32) {
-                hiIdxK = (trailK) as i32;
-                hiK = inHigh[(hiIdxK) as usize];
-                i = (hiIdxK) as usize;
-                while { i += 1; i } <= today {
-                    tmp = inHigh[i];
-                    if tmp > hiK {
-                        hiIdxK = (i) as i32;
-                        hiK = tmp;
-                    }
-                }
-            } else if tmp >= hiK {
-                hiIdxK = (today) as i32;
-                hiK = tmp;
-            }
-            tmp = inLow[today];
-            if loIdxK < ((trailK) as i32) {
-                loIdxK = (trailK) as i32;
-                loK = inLow[(loIdxK) as usize];
-                i = (loIdxK) as usize;
-                while { i += 1; i } <= today {
-                    tmp = inLow[i];
-                    if tmp < loK {
-                        loIdxK = (i) as i32;
-                        loK = tmp;
-                    }
-                }
-            } else if tmp <= loK {
-                loIdxK = (today) as i32;
-                loK = tmp;
-            }
-            // Senkou B window.
-            tmp = inHigh[today];
-            if hiIdxB < ((trailB) as i32) {
-                hiIdxB = (trailB) as i32;
-                hiB = inHigh[(hiIdxB) as usize];
-                i = (hiIdxB) as usize;
-                while { i += 1; i } <= today {
-                    tmp = inHigh[i];
-                    if tmp > hiB {
-                        hiIdxB = (i) as i32;
-                        hiB = tmp;
-                    }
-                }
-            } else if tmp >= hiB {
-                hiIdxB = (today) as i32;
-                hiB = tmp;
-            }
-            tmp = inLow[today];
-            if loIdxB < ((trailB) as i32) {
-                loIdxB = (trailB) as i32;
-                loB = inLow[(loIdxB) as usize];
-                i = (loIdxB) as usize;
-                while { i += 1; i } <= today {
-                    tmp = inLow[i];
-                    if tmp < loB {
-                        loIdxB = (i) as i32;
-                        loB = tmp;
-                    }
-                }
-            } else if tmp <= loB {
-                loIdxB = (today) as i32;
-                loB = tmp;
-            }
-            // Each midpoint is spelled as midprice.c spells it, and Span A halves
-            // the two lines rather than the four extremes.
-            tenkan = (hiT + loT) / 2.0;
-            kijun = (hiK + loK) / 2.0;
-            outTenkanSen[outIdx] = tenkan;
-            outKijunSen[outIdx] = kijun;
-            outSenkouSpanA[outIdx] = (tenkan + kijun) / 2.0;
-            outSenkouSpanB[outIdx] = (hiB + loB) / 2.0;
-            outIdx = outIdx + 1;
-            trailT = trailT + 1;
-            trailK = trailK + 1;
-            trailB = trailB + 1;
-            today = today + 1;
         }
-        (*outNBElement) = outIdx;
         (*outBegIdx) = startIdx;
+        (*outNBElement) = n;
         return RetCode::Success;
     }
     /// Ichimoku Kinko Hyo, "one glance equilibrium chart": four lines built from highs and lows
@@ -590,6 +439,516 @@ impl Core {
     }
 
 }
+/**** Streaming API *****/
+
+/// Live ICHIMOKU stream: one value per closed bar, bit-identical to [`Core::ichimoku`]
+/// over the same series. Open with [`Core::ichimoku_open`]; dropping the handle
+/// closes the stream. Cloning it forks an independent stream.
+///
+/// [`Self::out_range`] reports the bars this handle has an output for.
+#[must_use = "a stream does nothing unless updated; dropping it closes the stream"]
+#[derive(Debug, Clone)]
+#[doc(alias = "TA_ICHIMOKU_Stream")]
+pub struct IchimokuStream {
+    state: IchimokuStreamState,
+    /// The bars this handle has an output for — see [`Self::out_range`].
+    out: OutRange,
+}
+
+#[derive(Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
+struct IchimokuStreamState {
+    optInTenkanPeriod: i32,
+    optInKijunPeriod: i32,
+    optInSenkouBPeriod: i32,
+    sub0: MidpriceStream,
+    sub1: MidpriceStream,
+    sub2: MidpriceStream,
+    sub3: MedpriceStream,
+    cur_outTenkanSen: f64,
+    cur_outKijunSen: f64,
+    cur_outSenkouSpanA: f64,
+    cur_outSenkouSpanB: f64,
+}
+
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl Core {
+    fn ichimoku_step_impl(sp: &mut IchimokuStreamState, inHigh: f64, inLow: f64, outTenkanSen: &mut f64, outKijunSen: &mut f64, outSenkouSpanA: &mut f64, outSenkouSpanB: &mut f64) -> Result<(), RetCode> {
+        let mut cur_tempT: f64 = 0.0_f64;
+        let mut cur_tempK: f64 = 0.0_f64;
+        let mut cur_tempB: f64 = 0.0_f64;
+        let mut cur_outSenkouSpanA: f64 = 0.0_f64;
+        let mut cur_outTenkanSen: f64 = 0.0_f64;
+        let mut cur_outKijunSen: f64 = 0.0_f64;
+        let mut cur_outSenkouSpanB: f64 = 0.0_f64;
+
+        // Pipeline the new bar through the sub-streams (batch tail order).
+        cur_tempT = sp.sub0.update(inHigh, inLow)?;
+        cur_tempK = sp.sub1.update(inHigh, inLow)?;
+        cur_tempB = sp.sub2.update(inHigh, inLow)?;
+        cur_outSenkouSpanA = sp.sub3.update(cur_tempT, cur_tempK)?;
+        // Combine map (batch tail, per bar).
+        cur_outTenkanSen = cur_tempT;
+        cur_outKijunSen = cur_tempK;
+        cur_outSenkouSpanB = cur_tempB;
+        (*outTenkanSen) = cur_outTenkanSen;
+        (*outKijunSen) = cur_outKijunSen;
+        (*outSenkouSpanA) = cur_outSenkouSpanA;
+        (*outSenkouSpanB) = cur_outSenkouSpanB;
+        Ok(())
+    }
+
+    /// The single whole-history transcription behind [`Core::ichimoku_open_internal`]
+    /// (stride 0, scalar sink) and [`Core::ichimoku_open_and_fill`] (stride 1, caller slices).
+    pub(crate) fn ichimoku_open_impl(
+        &self, inHigh: &[f64], inLow: &[f64], startIdx: usize, mut optInTenkanPeriod: i32, mut optInKijunPeriod: i32, mut optInSenkouBPeriod: i32, outBegIdx: &mut usize, outNBElement: &mut usize, outTenkanSen: &mut [f64], outKijunSen: &mut [f64], outSenkouSpanA: &mut [f64], outSenkouSpanB: &mut [f64], outStride: usize,
+    ) -> Result<IchimokuStream, RetCode> {
+        if inHigh.is_empty() {
+            return Err(RetCode::OutOfRangeStartIndex);
+        }
+        if inHigh.len() > Self::INDEX_MAX + 1 {
+            return Err(RetCode::OutOfRangeEndIndex);
+        }
+        if ((optInTenkanPeriod) as i32) == (i32::MIN) {
+            optInTenkanPeriod = 9;
+        } else if (((optInTenkanPeriod) as i32) < 2) || (((optInTenkanPeriod) as i32) > 100000) {
+            return Err(RetCode::BadParam);
+        }
+        if ((optInKijunPeriod) as i32) == (i32::MIN) {
+            optInKijunPeriod = 26;
+        } else if (((optInKijunPeriod) as i32) < 2) || (((optInKijunPeriod) as i32) > 100000) {
+            return Err(RetCode::BadParam);
+        }
+        if ((optInSenkouBPeriod) as i32) == (i32::MIN) {
+            optInSenkouBPeriod = 52;
+        } else if (((optInSenkouBPeriod) as i32) < 2) || (((optInSenkouBPeriod) as i32) > 100000) {
+            return Err(RetCode::BadParam);
+        }
+        if inLow.len() != inHigh.len() {
+            return Err(RetCode::BadParam);
+        }
+        let historyLen: usize = inHigh.len();
+        let endIdx: usize = historyLen - 1;
+        let mut startIdx = startIdx;
+        if startIdx > endIdx {
+            (*outBegIdx) = 0;
+            (*outNBElement) = 0;
+            return Err(RetCode::InsufficientHistory);
+        }
+        let mut dummyBegIdx: usize = 0;
+        let mut dummyNBElement: usize = 0;
+        let mut owned_sc_outTenkanSen: Vec<f64> =
+            if outStride == 1 { Vec::new() } else { vec![0.0_f64; historyLen] };
+        let sc_outTenkanSen: &mut [f64] =
+            if outStride == 1 { &mut *outTenkanSen } else { &mut owned_sc_outTenkanSen };
+        let mut owned_sc_outKijunSen: Vec<f64> =
+            if outStride == 1 { Vec::new() } else { vec![0.0_f64; historyLen] };
+        let sc_outKijunSen: &mut [f64] =
+            if outStride == 1 { &mut *outKijunSen } else { &mut owned_sc_outKijunSen };
+        let mut owned_sc_outSenkouSpanA: Vec<f64> =
+            if outStride == 1 { Vec::new() } else { vec![0.0_f64; historyLen] };
+        let sc_outSenkouSpanA: &mut [f64] =
+            if outStride == 1 { &mut *outSenkouSpanA } else { &mut owned_sc_outSenkouSpanA };
+        let mut owned_sc_outSenkouSpanB: Vec<f64> =
+            if outStride == 1 { Vec::new() } else { vec![0.0_f64; historyLen] };
+        let sc_outSenkouSpanB: &mut [f64] =
+            if outStride == 1 { &mut *outSenkouSpanB } else { &mut owned_sc_outSenkouSpanB };
+        let mut retCode: RetCode = RetCode::Success;
+        let mut lookbackTotal: usize = 0_usize;
+        let mut n: usize = 0_usize;
+        let mut i: usize = 0_usize;
+        let mut tempBegIdx: usize = 0_usize;
+        let mut tempNbElement: usize = 0_usize;
+        let mut tempT: Vec<f64> = Vec::new();
+        let mut tempK: Vec<f64> = Vec::new();
+        let mut tempB: Vec<f64> = Vec::new();
+        // PROTOTYPE (#490 Q7): each line IS a midpoint over its own window, which is
+        // exactly what midprice computes, so the three scans are three midprice calls
+        // and Span A is the mean of two of them. MEASURED bit-identical to the fused
+        // loop over four parameter triples on the suite's corpus, every line, before
+        // this was written.
+        //
+        // The point is the stream tier: three windows of different periods cannot be
+        // one extrema automaton (the census refuses with "expected exactly one
+        // window-start variable"), but a composed body is a different tier.
+        //
+        // The three results go to temporaries and are copied at the end: every read of
+        // high and low has to happen before the first write to a caller buffer, or an
+        // output aliased onto an input is read after it has been overwritten.
+        lookbackTotal = self.ichimoku_lookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod)?;
+        if startIdx < lookbackTotal {
+            startIdx = lookbackTotal;
+        }
+        if startIdx > endIdx {
+            (*outBegIdx) = 0;
+            (*outNBElement) = 0;
+            return Err(RetCode::InsufficientHistory);
+        }
+        n = endIdx - startIdx + 1;
+        tempT = vec![0.0_f64; (n * 1) as usize];
+        tempK = vec![0.0_f64; (n * 1) as usize];
+        tempB = vec![0.0_f64; (n * 1) as usize];
+        // Sub-stream 0: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+        // sub-call's own startIdx (the seeding point).
+        let sub0 = self.midprice_open_and_fill_internal(&inHigh[..((endIdx) as usize) + 1], &inLow[..((endIdx) as usize) + 1], ((startIdx) as usize), optInTenkanPeriod, &mut tempBegIdx, &mut tempNbElement, &mut tempT[..])?;
+        retCode = RetCode::Success;
+        // Sub-stream 1: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+        // sub-call's own startIdx (the seeding point).
+        let sub1 = self.midprice_open_and_fill_internal(&inHigh[..((endIdx) as usize) + 1], &inLow[..((endIdx) as usize) + 1], ((startIdx) as usize), optInKijunPeriod, &mut tempBegIdx, &mut tempNbElement, &mut tempK[..])?;
+        retCode = RetCode::Success;
+        // Sub-stream 2: midprice over `inHigh, inLow`, warmed from bar 0 up to the
+        // sub-call's own startIdx (the seeding point).
+        let sub2 = self.midprice_open_and_fill_internal(&inHigh[..((endIdx) as usize) + 1], &inLow[..((endIdx) as usize) + 1], ((startIdx) as usize), optInSenkouBPeriod, &mut tempBegIdx, &mut tempNbElement, &mut tempB[..])?;
+        retCode = RetCode::Success;
+        // Span A is the mean of the two lines, which medprice is over any two series.
+        // Sub-stream 3: medprice over `tempT, tempK`, warmed from bar 0 up to the
+        // sub-call's own startIdx (the seeding point).
+        let sub3 = self.medprice_open_and_fill_internal(&tempT[..((n - 1) as usize) + 1], &tempK[..((n - 1) as usize) + 1], ((0) as usize), &mut tempBegIdx, &mut tempNbElement, &mut sc_outSenkouSpanA[..])?;
+        retCode = RetCode::Success;
+        // for( i = 0; i < n; i += 1 )
+        i = 0;
+        while i < n {
+            sc_outTenkanSen[i] = tempT[i];
+            sc_outKijunSen[i] = tempK[i];
+            sc_outSenkouSpanB[i] = tempB[i];
+            i += 1;
+        }
+        (*outBegIdx) = startIdx;
+        (*outNBElement) = n;
+
+        // Capture the live producer state + sub handles.
+        if *outNBElement < 1 {
+            return Err(RetCode::InsufficientHistory);
+        }
+        let mut state = IchimokuStreamState {
+            cur_outTenkanSen: 0.0_f64,
+            cur_outKijunSen: 0.0_f64,
+            cur_outSenkouSpanA: 0.0_f64,
+            cur_outSenkouSpanB: 0.0_f64,
+            optInTenkanPeriod,
+            optInKijunPeriod,
+            optInSenkouBPeriod,
+            sub0,
+            sub1,
+            sub2,
+            sub3,
+        };
+        state.cur_outTenkanSen = sc_outTenkanSen[*outNBElement - 1];
+        state.cur_outKijunSen = sc_outKijunSen[*outNBElement - 1];
+        state.cur_outSenkouSpanA = sc_outSenkouSpanA[*outNBElement - 1];
+        state.cur_outSenkouSpanB = sc_outSenkouSpanB[*outNBElement - 1];
+        if outStride != 1 && *outNBElement > 0 {
+            let last_sc_outTenkanSen = sc_outTenkanSen[*outNBElement - 1];
+            outTenkanSen[0] = last_sc_outTenkanSen;
+        }
+        if outStride != 1 && *outNBElement > 0 {
+            let last_sc_outKijunSen = sc_outKijunSen[*outNBElement - 1];
+            outKijunSen[0] = last_sc_outKijunSen;
+        }
+        if outStride != 1 && *outNBElement > 0 {
+            let last_sc_outSenkouSpanA = sc_outSenkouSpanA[*outNBElement - 1];
+            outSenkouSpanA[0] = last_sc_outSenkouSpanA;
+        }
+        if outStride != 1 && *outNBElement > 0 {
+            let last_sc_outSenkouSpanB = sc_outSenkouSpanB[*outNBElement - 1];
+            outSenkouSpanB[0] = last_sc_outSenkouSpanB;
+        }
+        Ok(IchimokuStream { state, out: OutRange { beg_idx: *outBegIdx, count: *outNBElement } })
+    }
+
+    /// Internal startIdx-anchored open behind [`Core::ichimoku_open`] (composition seam).
+    pub(crate) fn ichimoku_open_internal(
+        &self, inHigh: &[f64], inLow: &[f64], startIdx: usize, mut optInTenkanPeriod: i32, mut optInKijunPeriod: i32, mut optInSenkouBPeriod: i32,
+    ) -> Result<(IchimokuStream, (f64, f64, f64, f64)), RetCode> {
+        let mut dummyBegIdx: usize = 0;
+        let mut dummyNBElement: usize = 0;
+        let mut sink_outTenkanSen = [0.0_f64; 1];
+        let mut sink_outKijunSen = [0.0_f64; 1];
+        let mut sink_outSenkouSpanA = [0.0_f64; 1];
+        let mut sink_outSenkouSpanB = [0.0_f64; 1];
+        let handle = self.ichimoku_open_impl(inHigh, inLow, startIdx, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, &mut dummyBegIdx, &mut dummyNBElement, &mut sink_outTenkanSen, &mut sink_outKijunSen, &mut sink_outSenkouSpanA, &mut sink_outSenkouSpanB, 0)?;
+        Ok((handle, (sink_outTenkanSen[0], sink_outKijunSen[0], sink_outSenkouSpanA[0], sink_outSenkouSpanB[0])))
+    }
+
+    /// Open a live ICHIMOKU stream over the warm-up history; returns the handle and
+    /// the value at the last history bar — bit-identical to [`Core::ichimoku`] at that bar.
+    ///
+    /// # Errors
+    ///
+    /// [`RetCode::InsufficientHistory`] when the history holds fewer than
+    /// `lookback + 1` bars — the one failure here worth retrying, since another
+    /// bar fixes it. [`RetCode::OutOfRangeStartIndex`] when the history is empty.
+    /// [`RetCode::BadParam`] when a parameter is out of range or the input
+    /// lengths differ.
+    ///
+    /// ```
+    /// use ta_lib::Core;
+    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
+    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
+    ///
+    /// let core = Core::new();
+    /// let (mut s, _last) = core.ichimoku_open(&high, &low, 9, 26, 52).expect("enough history");
+    /// let r0 = s.out_range();
+    /// let peeked = s.peek(101.4, 99.1).expect("a finite bar");
+    /// assert_eq!(s.out_range().count, r0.count); // a peek commits nothing
+    /// let updated = s.update(101.4, 99.1).expect("a finite bar");
+    /// assert_eq!(s.out_range().beg_idx, r0.beg_idx);
+    /// assert_eq!(s.out_range().count, r0.count + 1);
+    /// assert_eq!(peeked.0.to_bits(), updated.0.to_bits());
+    /// assert_eq!(peeked.1.to_bits(), updated.1.to_bits());
+    /// assert_eq!(peeked.2.to_bits(), updated.2.to_bits());
+    /// assert_eq!(peeked.3.to_bits(), updated.3.to_bits());
+    /// ```
+    #[doc(alias = "TA_ICHIMOKU_Open")]
+    pub fn ichimoku_open(&self, inHigh: &[f64], inLow: &[f64], optInTenkanPeriod: i32, optInKijunPeriod: i32, optInSenkouBPeriod: i32) -> Result<(IchimokuStream, (f64, f64, f64, f64)), RetCode> {
+        self.ichimoku_open_internal(inHigh, inLow, 0, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod)
+    }
+
+    /// [`Core::ichimoku_open`] that also fills the output array(s) bit-identically to
+    /// [`Core::ichimoku`] over `0..len` in the same single pass, and reports the range it
+    /// wrote as the [`OutRange`] beside the handle.
+    ///
+    /// # Errors
+    ///
+    /// [`RetCode::BadParam`] when an output slice holds fewer than `len - lookback`
+    /// values — the batch tier's sizing rule, checked here as it is there (rule rS5).
+    /// Everything [`Core::ichimoku_open`] rejects is rejected here too.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ta_lib::Core;
+    /// let high: Vec<f64> = (0..252).map(|i| 101.0 + 10.0 * (0.1 * i as f64).sin()).collect();
+    /// let low: Vec<f64> = (0..252).map(|i| 99.0 + 10.0 * (0.1 * i as f64).sin()).collect();
+    ///
+    /// let core = Core::new();
+    /// let mut batch_tenkan_sen = vec![0.0; 252];
+    /// let mut batch_kijun_sen = vec![0.0; 252];
+    /// let mut batch_senkou_span_a = vec![0.0; 252];
+    /// let mut batch_senkou_span_b = vec![0.0; 252];
+    /// let batch = core.ichimoku(0, high.len() - 1, &high, &low, 9, 26, 52, &mut batch_tenkan_sen, &mut batch_kijun_sen, &mut batch_senkou_span_a, &mut batch_senkou_span_b)?;
+    ///
+    /// let mut tenkan_sen = vec![0.0; 252];
+    /// let mut kijun_sen = vec![0.0; 252];
+    /// let mut senkou_span_a = vec![0.0; 252];
+    /// let mut senkou_span_b = vec![0.0; 252];
+    /// let (_stream, filled) = core.ichimoku_open_and_fill(&high, &low, 9, 26, 52, &mut tenkan_sen, &mut kijun_sen, &mut senkou_span_a, &mut senkou_span_b)?;
+    ///
+    /// assert_eq!(filled.beg_idx, batch.beg_idx);
+    /// assert_eq!(filled.count, batch.count);
+    /// assert!(tenkan_sen[..filled.count].iter().zip(&batch_tenkan_sen[..batch.count])
+    ///     .all(|(a, b)| a.to_bits() == b.to_bits()));
+    /// assert!(kijun_sen[..filled.count].iter().zip(&batch_kijun_sen[..batch.count])
+    ///     .all(|(a, b)| a.to_bits() == b.to_bits()));
+    /// assert!(senkou_span_a[..filled.count].iter().zip(&batch_senkou_span_a[..batch.count])
+    ///     .all(|(a, b)| a.to_bits() == b.to_bits()));
+    /// assert!(senkou_span_b[..filled.count].iter().zip(&batch_senkou_span_b[..batch.count])
+    ///     .all(|(a, b)| a.to_bits() == b.to_bits()));
+    /// # Ok::<(), ta_lib::RetCode>(())
+    /// ```
+    #[doc(alias = "TA_ICHIMOKU_OpenAndFill")]
+    pub fn ichimoku_open_and_fill(
+        &self, inHigh: &[f64], inLow: &[f64], mut optInTenkanPeriod: i32, mut optInKijunPeriod: i32, mut optInSenkouBPeriod: i32, outTenkanSen: &mut [f64], outKijunSen: &mut [f64], outSenkouSpanA: &mut [f64], outSenkouSpanB: &mut [f64],
+    ) -> Result<(IchimokuStream, OutRange), RetCode> {
+        if inHigh.is_empty() {
+            return Err(RetCode::OutOfRangeStartIndex);
+        }
+        if inHigh.len() > Self::INDEX_MAX + 1 {
+            return Err(RetCode::OutOfRangeEndIndex);
+        }
+        let _guardLb = self.ichimoku_lookback(optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod)?;
+        if inLow.len() != inHigh.len() {
+            return Err(RetCode::BadParam);
+        }
+        let _guardOutLen = inHigh.len().saturating_sub(_guardLb);
+        if outTenkanSen.is_empty() || outTenkanSen.len() < _guardOutLen {
+            return Err(RetCode::BadParam);
+        }
+        if outKijunSen.is_empty() || outKijunSen.len() < _guardOutLen {
+            return Err(RetCode::BadParam);
+        }
+        if outSenkouSpanA.is_empty() || outSenkouSpanA.len() < _guardOutLen {
+            return Err(RetCode::BadParam);
+        }
+        if outSenkouSpanB.is_empty() || outSenkouSpanB.len() < _guardOutLen {
+            return Err(RetCode::BadParam);
+        }
+        let mut outBegIdx: usize = 0;
+        let mut outNBElement: usize = 0;
+        let handle = self.ichimoku_open_and_fill_internal(inHigh, inLow, 0, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, &mut outBegIdx, &mut outNBElement, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB)?;
+        Ok((handle, OutRange { beg_idx: outBegIdx, count: outNBElement }))
+    }
+
+    /// [`Core::ichimoku_open_and_fill`] anchored at `startIdx` — the composed-open
+    /// fusion seam (issue #192), not a public entry point.
+    pub(crate) fn ichimoku_open_and_fill_internal(
+        &self, inHigh: &[f64], inLow: &[f64], startIdx: usize, mut optInTenkanPeriod: i32, mut optInKijunPeriod: i32, mut optInSenkouBPeriod: i32, outBegIdx: &mut usize, outNBElement: &mut usize, outTenkanSen: &mut [f64], outKijunSen: &mut [f64], outSenkouSpanA: &mut [f64], outSenkouSpanB: &mut [f64],
+    ) -> Result<IchimokuStream, RetCode> {
+        self.ichimoku_open_impl(inHigh, inLow, startIdx, optInTenkanPeriod, optInKijunPeriod, optInSenkouBPeriod, outBegIdx, outNBElement, outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB, 1)
+    }
+
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_variables)]
+#[allow(unused_mut)]
+#[allow(unused_assignments)]
+#[allow(unused_parens)]
+impl IchimokuStream {
+    /// Commit one closed bar.
+    ///
+    /// # Errors
+    ///
+    /// [`RetCode::BadParam`] if any bar value is not finite (NaN or ±Inf).
+    /// That check runs before anything is written, so the handle's state is
+    /// left exactly as it was and the stream stays usable. This is the one
+    /// place the streaming tier is stricter than the batch API, which computes
+    /// on whatever it is given: a handle retains its state, so a single
+    /// non-finite bar would poison every later value it produces.
+    ///
+    /// A rejection leaves [`Self::out_range`] alone too. Re-feed the bar when
+    /// a corrected value arrives, or call [`Self::advance`] to count it and
+    /// carry on — two handles on one feed drift a bar apart if neither
+    /// happens.
+    ///
+    /// [`RetCode::OutOfRangeEndIndex`] once [`Self::out_range`] has reached
+    /// bar [`Core::INDEX_MAX`], which no re-feed clears: the handle has run
+    /// out of index domain and only a shorter history can start a new one.
+    #[doc(alias = "TA_ICHIMOKU_Update")]
+    pub fn update(&mut self, inHigh: f64, inLow: f64) -> Result<(f64, f64, f64, f64), RetCode> {
+        if self.out.beg_idx + self.out.count > Core::INDEX_MAX {
+            return Err(RetCode::OutOfRangeEndIndex);
+        }
+        if !inHigh.is_finite() || !inLow.is_finite() {
+            return Err(RetCode::BadParam);
+        }
+        let mut outTenkanSen: f64 = 0.0_f64;
+        let mut outKijunSen: f64 = 0.0_f64;
+        let mut outSenkouSpanA: f64 = 0.0_f64;
+        let mut outSenkouSpanB: f64 = 0.0_f64;
+        Core::ichimoku_step_impl(&mut self.state, inHigh, inLow, &mut outTenkanSen, &mut outKijunSen, &mut outSenkouSpanA, &mut outSenkouSpanB)?;
+        self.state.cur_outTenkanSen = outTenkanSen;
+        self.state.cur_outKijunSen = outKijunSen;
+        self.state.cur_outSenkouSpanA = outSenkouSpanA;
+        self.state.cur_outSenkouSpanB = outSenkouSpanB;
+        self.out.count += 1;
+        Ok((outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB))
+    }
+
+    /// Evaluate a forming bar without committing — bit-identical to what the
+    /// next `update` with the same bar would return: the same transition,
+    /// rewritten so every store it would make lives in a local instead. It
+    /// writes no part of the handle, so peeks may run concurrently with each
+    /// other.
+    ///
+    /// # Errors
+    ///
+    /// [`RetCode::BadParam`] if any bar value is not finite, on the same test
+    /// `update` applies, and a rejected peek changes nothing at all. Not
+    /// [`RetCode::OutOfRangeEndIndex`]: `peek` counts no bar, so it keeps
+    /// answering past the [`Core::INDEX_MAX`] ceiling `update` stops at.
+    #[doc(alias = "TA_ICHIMOKU_Peek")]
+    pub fn peek(&self, inHigh: f64, inLow: f64) -> Result<(f64, f64, f64, f64), RetCode> {
+        if !inHigh.is_finite() || !inLow.is_finite() {
+            return Err(RetCode::BadParam);
+        }
+        let mut outTenkanSen: f64 = 0.0_f64;
+        let mut outKijunSen: f64 = 0.0_f64;
+        let mut outSenkouSpanA: f64 = 0.0_f64;
+        let mut outSenkouSpanB: f64 = 0.0_f64;
+        {
+            let sp = &self.state;
+            let outTenkanSen = &mut outTenkanSen;
+            let outKijunSen = &mut outKijunSen;
+            let outSenkouSpanA = &mut outSenkouSpanA;
+            let outSenkouSpanB = &mut outSenkouSpanB;
+            let mut cur_tempT: f64 = 0.0_f64;
+            let mut cur_tempK: f64 = 0.0_f64;
+            let mut cur_tempB: f64 = 0.0_f64;
+            let mut cur_outSenkouSpanA: f64 = 0.0_f64;
+            let mut cur_outTenkanSen: f64 = 0.0_f64;
+            let mut cur_outKijunSen: f64 = 0.0_f64;
+            let mut cur_outSenkouSpanB: f64 = 0.0_f64;
+
+            // Pipeline the new bar through the sub-streams (batch tail order).
+            cur_tempT = sp.sub0.peek(inHigh, inLow)?;
+            cur_tempK = sp.sub1.peek(inHigh, inLow)?;
+            cur_tempB = sp.sub2.peek(inHigh, inLow)?;
+            cur_outSenkouSpanA = sp.sub3.peek(cur_tempT, cur_tempK)?;
+            // Combine map (batch tail, per bar).
+            cur_outTenkanSen = cur_tempT;
+            cur_outKijunSen = cur_tempK;
+            cur_outSenkouSpanB = cur_tempB;
+            (*outTenkanSen) = cur_outTenkanSen;
+            (*outKijunSen) = cur_outKijunSen;
+            (*outSenkouSpanA) = cur_outSenkouSpanA;
+            (*outSenkouSpanB) = cur_outSenkouSpanB;
+        }
+        Ok((outTenkanSen, outKijunSen, outSenkouSpanA, outSenkouSpanB))
+    }
+
+    /// The value(s) at the last bar the stream counted — the bar
+    /// [`Self::out_range`] ends on — without recomputing. Seeded by the opener,
+    /// refreshed by every accepted `update`, and left
+    /// alone by `peek`.
+    ///
+    /// A clone carries them verbatim, so a forked handle can be asked its
+    /// current value without committing a bar to find out.
+    #[must_use]
+    #[doc(alias = "TA_ICHIMOKU_Value")]
+    pub fn value(&self) -> (f64, f64, f64, f64) {
+        (self.state.cur_outTenkanSen, self.state.cur_outKijunSen, self.state.cur_outSenkouSpanA, self.state.cur_outSenkouSpanB)
+    }
+
+    /// The bars this stream has an output for, in the input series'
+    /// coordinates: `[beg_idx, beg_idx + count)`.
+    ///
+    /// It is what [`Core::ichimoku`] reports over the same bars: the opener sets it
+    /// to `(lookback, historyLen - lookback)`, every accepted `update` adds
+    /// one to the count — a rejected one changes nothing, and neither does
+    /// `peek` — and a clone carries it verbatim. A plain `Open` hands back
+    /// only the last value, a subset of this range, because the caller chose
+    /// not to take the fill.
+    ///
+    /// The last bar it can reach is [`Core::INDEX_MAX`]; past that `update`
+    /// and `advance` answer [`RetCode::OutOfRangeEndIndex`].
+    #[doc(alias = "TA_ICHIMOKU_OutRange")]
+    pub fn out_range(&self) -> OutRange {
+        self.out
+    }
+
+    /// Count one bar this stream was not fed: [`Self::out_range`] advances by
+    /// one and nothing else moves — [`Self::value`] keeps answering the
+    /// previous output, which is this bar's output too.
+    ///
+    /// For a bar the caller leaves out: one an `update` rejected and that
+    /// will not be re-fed, or a session with no print. Without it two handles
+    /// on one feed drift a bar apart when only one of them skips.
+    ///
+    /// # Errors
+    ///
+    /// [`RetCode::OutOfRangeEndIndex`] once [`Self::out_range`] has reached
+    /// bar [`Core::INDEX_MAX`] — the last one the batch tier can address, and
+    /// the last this handle will count. `update` answers the same there.
+    #[doc(alias = "TA_ICHIMOKU_Advance")]
+    pub fn advance(&mut self) -> Result<(), RetCode> {
+        if self.out.beg_idx + self.out.count > Core::INDEX_MAX {
+            return Err(RetCode::OutOfRangeEndIndex);
+        }
+        self.out.count += 1;
+        Ok(())
+    }
+}
+
+const _: () = {
+    const fn _assert_auto<T: Send + Sync + Clone>() {}
+    _assert_auto::<IchimokuStream>();
+};
+
 /***************/
 /* End of File */
 /***************/

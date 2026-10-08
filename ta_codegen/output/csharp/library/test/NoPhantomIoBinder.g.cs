@@ -3040,6 +3040,7 @@ internal static class NoPhantomIoBinder
         ["HT_TRENDLINE"] = static (core, c) => core.HtTrendlineOpen(c.Series(0)),
         ["HT_TRENDMODE"] = static (core, c) => core.HtTrendmodeOpen(c.Series(0)),
         ["IBS"] = static (core, c) => core.IbsOpen(c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close)),
+        ["ICHIMOKU"] = static (core, c) => core.IchimokuOpen(c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.IntOpt(0), c.IntOpt(1), c.IntOpt(2)),
         ["IMI"] = static (core, c) => core.ImiOpen(c.Price(0, PriceComponents.Open), c.Price(0, PriceComponents.Close), c.IntOpt(0)),
         ["KAMA"] = static (core, c) => core.KamaOpen(c.Series(0), c.IntOpt(0)),
         ["KC"] = static (core, c) => core.KcOpen(c.Price(0, PriceComponents.High), c.Price(0, PriceComponents.Low), c.Price(0, PriceComponents.Close), c.IntOpt(0), c.IntOpt(1), c.RealOpt(2)),

@@ -465,6 +465,7 @@ pub use ht_sine::HtSineStream;
 pub use ht_trendline::HtTrendlineStream;
 pub use ht_trendmode::HtTrendmodeStream;
 pub use ibs::IbsStream;
+pub use ichimoku::IchimokuStream;
 pub use imi::ImiStream;
 pub use kama::KamaStream;
 pub use kc::KcStream;
