@@ -395,13 +395,16 @@ def expand_globs(root_dir: str, file_list: list) -> list:
     """
     Expand glob patterns in the file list to actual file paths.
     """
+    # Only file_list holds patterns: an unescaped '[...]', '*' or '?' in root_dir
+    # would be matched as one.
+    root = glob.escape(root_dir)
     expanded_files = []
     for file in file_list:
         # Use recursive globbing if '**' is in the pattern
         if '**' in file:
-            expanded_files.extend(glob.glob(os.path.join(root_dir, file), recursive=True))
+            expanded_files.extend(glob.glob(os.path.join(root, file), recursive=True))
         else:
-            expanded_files.extend(glob.glob(os.path.join(root_dir, file)))
+            expanded_files.extend(glob.glob(os.path.join(root, file)))
     return expanded_files
 
 
