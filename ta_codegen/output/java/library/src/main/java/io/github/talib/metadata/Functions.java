@@ -2578,7 +2578,7 @@ public final class Functions {
 
    private static FuncInfo f_KVO() {
       return new FuncInfo(
-         "KVO", "Volume Indicators", "Klinger Volume Oscillator", 0x22000000,
+         "KVO", "Volume Indicators", "Klinger Volume Oscillator", 0x02000000,
          List.of(
             new InputInfo(InputType.PRICE, "inPriceHLCV", 0x0000001E)
          ),

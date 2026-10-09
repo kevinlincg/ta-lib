@@ -225493,7 +225493,7 @@ public class TaCodegenServe {
             new AbsIn[]{ new AbsIn(1,"inReal",0) },
             new AbsOpt[]{ new AbsOpt(2,"optInTimePeriod",0,"Time Period","Time period",30.0, 0,0,0,0,0,0, 4,10000,10,200,5, null) },
             new AbsOut[]{ new AbsOut(0,"outReal",1) }));
-        ABSTRACT.put("KVO", new AbsFunc("KVO", "Volume Indicators", "Klinger Volume Oscillator", 570425344,
+        ABSTRACT.put("KVO", new AbsFunc("KVO", "Volume Indicators", "Klinger Volume Oscillator", 33554432,
             new AbsIn[]{ new AbsIn(0,"inPriceHLCV",30) },
             new AbsOpt[]{ new AbsOpt(2,"optInFastPeriod",0,"Fast Period","Period of the faster smoothing of the volume force",34.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSlowPeriod",0,"Slow Period","Period of the slower smoothing of the volume force",55.0, 0,0,0,0,0,0, 2,100000,4,200,1, null), new AbsOpt(2,"optInSignalPeriod",0,"Signal Period","Smoothing for the trigger line",13.0, 0,0,0,0,0,0, 2,100000,2,200,1, null) },
             new AbsOut[]{ new AbsOut(0,"outKVO",1), new AbsOut(0,"outKVOSignal",4) }));

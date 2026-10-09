@@ -754,7 +754,7 @@ static const TA_OptInputParameterInfo *TA_KVO_OptInputs[] =
 DEF_FUNCTION( KVO,
               TA_GroupId_VolumeIndicators,
               "Klinger Volume Oscillator",
-              TA_FUNC_FLG_STREAM | TA_FUNC_FLG_PATH_DEP
+              TA_FUNC_FLG_STREAM
              );
 /* KVO END */
 

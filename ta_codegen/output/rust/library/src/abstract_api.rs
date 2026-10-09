@@ -2330,7 +2330,7 @@ static FUNC_TABLE: [FuncInfo; 232] = [
         name: "KVO",
         group: Group::VolumeIndicators,
         hint: "Klinger Volume Oscillator",
-        flags: FuncFlags(0x22000000),
+        flags: FuncFlags(0x02000000),
         inputs: &[InputInfo { param_name: "inPriceHLCV", kind: InputType::Price, flags: InputFlags(0x0000001e) }, ],
         opt_inputs: &[OptInputInfo { param_name: "optInFastPeriod", display_name: "Fast Period", hint: "Period of the faster smoothing of the volume force", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 34, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSlowPeriod", display_name: "Slow Period", hint: "Period of the slower smoothing of the volume force", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 55, suggested: (4, 200, 1) } }, OptInputInfo { param_name: "optInSignalPeriod", display_name: "Signal Period", hint: "Smoothing for the trigger line", flags: OptInputFlags(0x00000000), kind: OptInputType::IntegerRange { min: 2, max: 100000, default: 13, suggested: (2, 200, 1) } }, ],
         outputs: &[OutputInfo { param_name: "outKVO", kind: OutputType::Real, flags: OutputFlags(0x00000001) }, OutputInfo { param_name: "outKVOSignal", kind: OutputType::Real, flags: OutputFlags(0x00000004) }, ],

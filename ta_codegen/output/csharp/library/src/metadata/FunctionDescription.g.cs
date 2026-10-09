@@ -6471,7 +6471,6 @@ public static class FunctionDescription
 		<GroupId>Volume Indicators</GroupId>
 		<Flags>
 			<Flag>Streaming</Flag>
-			<Flag>Path Dependent</Flag>
 		</Flags>
 		<RequiredInputArguments>
 			<RequiredInputArgument>

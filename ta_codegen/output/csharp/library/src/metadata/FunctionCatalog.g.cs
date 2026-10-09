@@ -3454,7 +3454,7 @@ public sealed class FunctionCatalog : IReadOnlyList<FuncInfo>
         name: "KVO",
         group: FunctionGroup.VolumeIndicators,
         hint: "Klinger Volume Oscillator",
-        flags: FuncFlags.Stream | FuncFlags.PathDependent,
+        flags: FuncFlags.Stream,
         unstableId: null,
         inputs:
         [
