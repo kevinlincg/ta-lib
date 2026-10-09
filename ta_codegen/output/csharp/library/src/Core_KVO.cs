@@ -102,7 +102,7 @@ public partial class Core
       if( optInSignalPeriod > longestPeriod ) {
          longestPeriod = optInSignalPeriod;
       }
-      return 1 + EmaLookback(longestPeriod) + ((this.UnstableCount((int)FuncUnstId.EMA, 1, 1) != this.UnstableCount((int)FuncUnstId.EMA, 0, 0)) ? (this.UnstableCount((int)FuncUnstId.EMA, (((MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) > 1) ? ((4 * 10 + 23) / 3 * MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0) - ((MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) > 1) ? (10 * MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0)), (((MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) > 1) ? ((4 * 19 + 23) / 3 * MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0) - ((MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) > 1) ? (19 * MaxGt(optInFastPeriod, MaxGt(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0))) - this.UnstableCount((int)FuncUnstId.EMA, 0, 0)) : 0) ;
+      return 1 + EmaLookback(longestPeriod) ;
 
    }
    /// <summary>
