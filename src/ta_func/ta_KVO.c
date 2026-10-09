@@ -56,6 +56,11 @@
  *  100726 MF,CC  Initial version (#484).
  */
 
+static TA_COLD int kvo_auto_offset( int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod )
+{
+   return TA_GLOBALS_UNSTABLE_AUTO(TA_FUNC_UNST_EMA,Ema,(((max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) > 1) ? ((4 * 10 + 23) / 3 * max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) + 1) / 2 : 0) - ((max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) > 1) ? (10 * max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) + 1) / 2 : 0)),(((max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) > 1) ? ((4 * 19 + 23) / 3 * max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) + 1) / 2 : 0) - ((max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) > 1) ? (19 * max(optInFastPeriod,max(optInSlowPeriod,optInSignalPeriod)) + 1) / 2 : 0)));
+}
+
 TA_LIB_API int TA_KVO_Lookback( int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod )
 {
    int longestPeriod;
@@ -86,7 +91,7 @@ TA_LIB_API int TA_KVO_Lookback( int optInFastPeriod, int optInSlowPeriod, int op
    {
       longestPeriod = optInSignalPeriod;
    }
-   return 1 + TA_EMA_Lookback(longestPeriod);
+   return 1 + TA_EMA_Lookback(longestPeriod) + TA_GLOBALS_UNSTABLE_OFFSET(TA_FUNC_UNST_EMA,kvo_auto_offset(optInFastPeriod, optInSlowPeriod, optInSignalPeriod));
 }
 
 TA_LIB_API int TA_KVO_DisplayShift( int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod, int outputIdx )

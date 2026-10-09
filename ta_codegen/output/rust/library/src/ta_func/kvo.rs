@@ -111,7 +111,7 @@ impl Core {
         if ((optInSignalPeriod) as usize) > longestPeriod {
             longestPeriod = (optInSignalPeriod) as usize;
         }
-        return Ok((1 + self.ema_lookback((longestPeriod) as i32)?) as usize);
+        return Ok((1 + self.ema_lookback((longestPeriod) as i32)? + (((if self.unstable_count(FuncUnstId::EMA, 1, 1) != self.unstable_count(FuncUnstId::EMA, 0, 0) { self.unstable_count(FuncUnstId::EMA, ((((if (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) > 1 { ((4 * 10 + 23) / 3 * (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) + 1) / 2 } else { 0 }) - (if (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) > 1 { (10 * (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) + 1) / 2 } else { 0 }))) as i32), ((((if (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) > 1 { ((4 * 19 + 23) / 3 * (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) + 1) / 2 } else { 0 }) - (if (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) > 1 { (19 * (optInFastPeriod).max((optInSlowPeriod).max(optInSignalPeriod)) + 1) / 2 } else { 0 }))) as i32)) - self.unstable_count(FuncUnstId::EMA, 0, 0) } else { 0 })) as usize)) as usize);
     }
     /// Display shift of one output of [`Core::kvo`]: how many bars ahead (positive) or behind
     /// (negative) of the bar that computed it a chart draws that output. The values are never
