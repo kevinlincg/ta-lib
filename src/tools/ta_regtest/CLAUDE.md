@@ -230,6 +230,15 @@ server, so a bare run reaches rejected parameters too. A value outside its
 declared domain that the lookback accepts fails. Each counter is asserted
 non-zero; the server one only when a server is attached.
 
+At each of those holders every output's shift is read again with every
+unstable period changed, then with every candle setting changed, and it must
+not move (rule rL12). C answers, then the server, which is handed the same
+settings and must also report C's lookback under them wherever C has one. A
+setter that refuses the change fails. Each axis has two floors, counted apart
+for C and for the server: a shift held while the change moved that function's
+own lookback, and a non-zero shift held. No shipped function meets both at
+once: the flagged outputs belong to functions no setting reaches.
+
 Opt-level `hint` is compared too. For a bespoke descriptor that is a genuine
 YAML-vs-C check; for a slot folded onto a predefined `TA_DEF_UI_*` it is not —
 the generator folds only when every field already agrees, so a stale literal
@@ -723,13 +732,14 @@ Scope rules (deliberate):
   and the driver never sends it (withheld cases counted and printed) while C,
   Rust and C# are held to it. These cases carry their own count and floor, being
   a subset of `sentCases` whose stopping the combined total could not show.
-- **The ill-conditioning skip: HT_DCPHASE / HT_SINE on the constant shape, for
-  the tolerance-lane servers.** Both derive their output from `atan` of a ratio
+- **The ill-conditioning skip: HT_DCPHASE / HT_SINE / HT_TRENDMODE on the constant
+  shape, for the tolerance-lane servers.** The first two derive their output from `atan` of a ratio
   of two sums, `realPart/imagPart`; on `FUZZ_CONSTANT` both are floating-point
   noise, so the phase is `atan(≈0/≈0)`: chaotically sensitive to the last bit of
-  every transcendental step, which amplifies ~1 ULP to whole degrees. C and Rust
+  every transcendental step, which amplifies ~1 ULP to whole degrees, and
+  HT_TRENDMODE branches on that phase, so its integer output flips. C and Rust
   share the system libm and stay bit-identical there, so `xlang_illcond` skips
-  exactly those two functions on exactly that shape for exactly the
+  exactly those three functions on exactly that shape for exactly the
   tolerance-lane servers, and reports the count. Not a codegen bug: every
   non-degenerate shape agrees within 1e-9, and the phase of a null signal is
   undefined, so no fixed tolerance could separate it from libm noise.

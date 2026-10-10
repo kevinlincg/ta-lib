@@ -51,8 +51,8 @@ namespace TALib.Metadata;
    non-vacuous. */
 internal static class CatalogFacts
 {
-    internal const int FunctionCount = 232;
-    internal const uint AllFunctionFlags = 0x7B000003U;
+    internal const int FunctionCount = 231;
+    internal const uint AllFunctionFlags = 0x7B000007U;
     internal const uint AllPriceComponents = 0x0000001FU;
     internal const uint AllOptInputFlags = 0x00100000U;
     internal const uint AllOutputFlags = 0x0000FFF5U;
