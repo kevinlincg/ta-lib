@@ -129124,7 +129124,7 @@ class Core {
           if( optInSignalPeriod > longestPeriod ) {
              longestPeriod = optInSignalPeriod;
           }
-          return 1 + emaLookback(longestPeriod) ;
+          return 1 + emaLookback(longestPeriod) + ((this.unstableCount(FuncUnstId.EMA.ordinal(), 1, 1) != this.unstableCount(FuncUnstId.EMA.ordinal(), 0, 0)) ? (this.unstableCount(FuncUnstId.EMA.ordinal(), (((Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) > 1) ? ((4 * 10 + 23) / 3 * Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0) - ((Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) > 1) ? (10 * Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0)), (((Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) > 1) ? ((4 * 19 + 23) / 3 * Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0) - ((Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) > 1) ? (19 * Math.max(optInFastPeriod, Math.max(optInSlowPeriod, optInSignalPeriod)) + 1) / 2 : 0))) - this.unstableCount(FuncUnstId.EMA.ordinal(), 0, 0)) : 0) ;
 
        }
        /**
@@ -224793,7 +224793,7 @@ class Core {
 
 public class TaCodegenServe {
     static Core core = new Core();
-    static final String SPLICED_GENCODE_DIGEST = "3f1ebaf272f9b604";
+    static final String SPLICED_GENCODE_DIGEST = "b183a065182a4408";
     static final int MAX_ARRAY_SIZE = 200000;
     static double[] refOpen = new double[MAX_ARRAY_SIZE];
     static double[] refHigh = new double[MAX_ARRAY_SIZE];

@@ -29,7 +29,10 @@ int kvo_lookback(int optInFastPeriod, int optInSlowPeriod, int optInSignalPeriod
    if( optInSignalPeriod > longestPeriod )
       longestPeriod = optInSignalPeriod;
 
-   return 1 + ema_lookback( longestPeriod );
+   return 1 + ema_lookback( longestPeriod )
+   + TA_UNSTABLE_AUTO( TA_FUNC_UNST_EMA,
+      ta_auto_stabilization_kvo( K,
+      max( optInFastPeriod, max( optInSlowPeriod, optInSignalPeriod ) ) ) );
 }
 
 TA_RetCode kvo(int startIdx, int endIdx,
