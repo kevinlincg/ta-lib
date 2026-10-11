@@ -307,8 +307,25 @@
       __builtin_types_compatible_p(__typeof__((a) + (b)), double), \
       __builtin_fmax((a), (b)), (((a) > (b)) ? (a) : (b)))
 #else
-   #define TA_MIN_LT(a, b) (((a) < (b)) ? (a) : (b))
-   #define TA_MAX_GT(a, b) (((a) > (b)) ? (a) : (b))
+   /* x86 probe (#547): the ARM64 instruction's semantics as functions, so the
+    * wide rule can be checked for value differences without an ARM host.
+    * fmin/fmax order -0 below +0 and drop a NaN operand. */
+   static double ta_probe_fmin(double a, double b) {
+      if (a != a) return b; if (b != b) return a;
+      if (a == 0.0 && b == 0.0) return (__builtin_signbit(a) || __builtin_signbit(b)) ? -0.0 : 0.0;
+      return (a < b) ? a : b;
+   }
+   static double ta_probe_fmax(double a, double b) {
+      if (a != a) return b; if (b != b) return a;
+      if (a == 0.0 && b == 0.0) return (__builtin_signbit(a) && __builtin_signbit(b)) ? -0.0 : 0.0;
+      return (a > b) ? a : b;
+   }
+   #define TA_MIN_LT(a, b) __builtin_choose_expr( \
+      __builtin_types_compatible_p(__typeof__((a) + (b)), double), \
+      ta_probe_fmin((a), (b)), (((a) < (b)) ? (a) : (b)))
+   #define TA_MAX_GT(a, b) __builtin_choose_expr( \
+      __builtin_types_compatible_p(__typeof__((a) + (b)), double), \
+      ta_probe_fmax((a), (b)), (((a) > (b)) ? (a) : (b)))
 #endif
 
 /* Candlestick macros (used by candlestick functions, where the parameters are always called inClose, inOpen, etc.
