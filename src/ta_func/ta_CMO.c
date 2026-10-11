@@ -151,7 +151,7 @@ TA_LIB_API TA_RetCode TA_CMO( int    startIdx,
       tempValue1 = inReal[today++];
       tempValue2 = tempValue1 - prevValue;
       prevValue = tempValue1;
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta;
       prevLoss += gainDelta - tempValue2;
    }
@@ -200,7 +200,7 @@ TA_LIB_API TA_RetCode TA_CMO( int    startIdx,
          tempValue1 = inReal[today];
          tempValue2 = tempValue1 - prevValue;
          prevValue = tempValue1;
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta * invPeriod - prevGain * invPeriod;
          prevLoss += (gainDelta - tempValue2) * invPeriod - prevLoss * invPeriod;
          today += 1;
@@ -214,7 +214,7 @@ TA_LIB_API TA_RetCode TA_CMO( int    startIdx,
       tempValue1 = inReal[today++];
       tempValue2 = tempValue1 - prevValue;
       prevValue = tempValue1;
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta * invPeriod - prevGain * invPeriod;
       prevLoss += (gainDelta - tempValue2) * invPeriod - prevLoss * invPeriod;
       tempValue1 = prevGain + prevLoss;
@@ -290,7 +290,7 @@ TA_RetCode TA_S_CMO( int    startIdx,
       tempValue1 = (double)inReal[today++];
       tempValue2 = tempValue1 - prevValue;
       prevValue = tempValue1;
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta;
       prevLoss += gainDelta - tempValue2;
    }
@@ -313,7 +313,7 @@ TA_RetCode TA_S_CMO( int    startIdx,
          tempValue1 = (double)inReal[today];
          tempValue2 = tempValue1 - prevValue;
          prevValue = tempValue1;
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta * invPeriod - prevGain * invPeriod;
          prevLoss += (gainDelta - tempValue2) * invPeriod - prevLoss * invPeriod;
          today += 1;
@@ -324,7 +324,7 @@ TA_RetCode TA_S_CMO( int    startIdx,
       tempValue1 = (double)inReal[today++];
       tempValue2 = tempValue1 - prevValue;
       prevValue = tempValue1;
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta * invPeriod - prevGain * invPeriod;
       prevLoss += (gainDelta - tempValue2) * invPeriod - prevLoss * invPeriod;
       tempValue1 = prevGain + prevLoss;
@@ -368,7 +368,7 @@ static void TA_CMO_StepImpl( struct TA_CMO_Stream *sp, double inReal, double *ou
    tempValue1 = inReal;
    tempValue2 = tempValue1 - sp->prevValue;
    sp->prevValue = tempValue1;
-   gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+   gainDelta = TA_MAX_GT(tempValue2, 0.0);
    sp->prevGain += gainDelta * sp->invPeriod - sp->prevGain * sp->invPeriod;
    sp->prevLoss += (gainDelta - tempValue2) * sp->invPeriod - sp->prevLoss * sp->invPeriod;
    tempValue1 = sp->prevGain + sp->prevLoss;
@@ -451,7 +451,7 @@ static TA_RetCode TA_CMO_OpenImpl( struct TA_CMO_Stream **stream, const double i
          tempValue1 = inReal[today++];
          tempValue2 = tempValue1 - prevValue;
          prevValue = tempValue1;
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta;
          prevLoss += gainDelta - tempValue2;
       }
@@ -500,7 +500,7 @@ static TA_RetCode TA_CMO_OpenImpl( struct TA_CMO_Stream **stream, const double i
             tempValue1 = inReal[today];
             tempValue2 = tempValue1 - prevValue;
             prevValue = tempValue1;
-            gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+            gainDelta = TA_MAX_GT(tempValue2, 0.0);
             prevGain += gainDelta * invPeriod - prevGain * invPeriod;
             prevLoss += (gainDelta - tempValue2) * invPeriod - prevLoss * invPeriod;
             today += 1;
@@ -514,7 +514,7 @@ static TA_RetCode TA_CMO_OpenImpl( struct TA_CMO_Stream **stream, const double i
          tempValue1 = inReal[today++];
          tempValue2 = tempValue1 - prevValue;
          prevValue = tempValue1;
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta * invPeriod - prevGain * invPeriod;
          prevLoss += (gainDelta - tempValue2) * invPeriod - prevLoss * invPeriod;
          tempValue1 = prevGain + prevLoss;
@@ -618,7 +618,7 @@ TA_LIB_API TA_RetCode TA_CMO_Peek( const TA_CMO_Stream *stream, double inReal, d
    tempValue1 = inReal;
    tempValue2 = tempValue1 - prevValue;
    prevValue = tempValue1;
-   gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+   gainDelta = TA_MAX_GT(tempValue2, 0.0);
    prevGain += gainDelta * sp->invPeriod - prevGain * sp->invPeriod;
    prevLoss += (gainDelta - tempValue2) * sp->invPeriod - prevLoss * sp->invPeriod;
    tempValue1 = prevGain + prevLoss;

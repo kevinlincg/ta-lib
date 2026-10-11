@@ -177,7 +177,7 @@ TA_LIB_API TA_RetCode TA_VAR( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       /* Remove the trailing value (prepares the next window). */
@@ -344,7 +344,7 @@ TA_RetCode TA_S_VAR( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       tempReal = (double)inReal[trailingIdx] - shift;
@@ -458,7 +458,7 @@ static void TA_VAR_StepImpl( struct TA_VAR_Stream *sp, double inReal, double *ou
    sp->periodTotal1 += tempReal;
    tempReal *= tempReal;
    sp->periodTotal2 += tempReal;
-   sp->peakTotal2 = (sp->periodTotal2 > sp->peakTotal2) ? sp->periodTotal2 : sp->peakTotal2;
+   sp->peakTotal2 = TA_MAX_GT(sp->periodTotal2, sp->peakTotal2);
    meanValue1 = sp->periodTotal1 * sp->invPeriod;
    variance = sp->periodTotal2 * sp->invPeriod - meanValue1 * meanValue1;
    /* Remove the trailing value (prepares the next window). */
@@ -634,7 +634,7 @@ static TA_RetCode TA_VAR_OpenImpl( struct TA_VAR_Stream **stream, const double i
          periodTotal1 += tempReal;
          tempReal *= tempReal;
          periodTotal2 += tempReal;
-         peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+         peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
          meanValue1 = periodTotal1 * invPeriod;
          variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
          /* Remove the trailing value (prepares the next window). */
@@ -849,7 +849,7 @@ TA_LIB_API TA_RetCode TA_VAR_Peek( const TA_VAR_Stream *stream, double inReal, d
    periodTotal1 += tempReal;
    tempReal *= tempReal;
    periodTotal2 += tempReal;
-   peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+   peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
    meanValue1 = periodTotal1 * sp->invPeriod;
    variance = periodTotal2 * sp->invPeriod - meanValue1 * meanValue1;
    /* Remove the trailing value (prepares the next window). */

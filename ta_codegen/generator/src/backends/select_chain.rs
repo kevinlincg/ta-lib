@@ -135,6 +135,22 @@ pub(crate) fn running_extreme_of<'e>(target: &str, value: &'e Expr) -> Option<(b
         .then_some((is_max, r))
 }
 
+/// #547 probe, the wide rule: any `l < r ? l : r` / `l > r ? l : r` with pure
+/// operands, whatever the target. Operands come back in the input's order.
+pub(crate) fn min_max_shaped<'e>(value: &'e Expr) -> Option<(bool, &'e Expr, &'e Expr)> {
+    let Expr::Ternary(cond, then_expr, else_expr) = value else { return None };
+    let Expr::BinOp(l, op, r) = cond.as_ref() else { return None };
+    let is_max = match op {
+        BinOp::Less => false,
+        BinOp::Greater => true,
+        _ => return None,
+    };
+    let (l, r) = (l.as_ref(), r.as_ref());
+    let pure = |e: &Expr| !crate::streaming::expr_effect(e, &|n| super::builtins::MathFn::from_name(n).is_some());
+    (pure(l) && pure(r) && crate::streaming::exprs_equal(then_expr, l) && crate::streaming::exprs_equal(else_expr, r))
+        .then_some((is_max, l, r))
+}
+
 /// Name -> whether its dependence on the planted select passed through
 /// arithmetic.
 type Taint = HashMap<String, bool>;

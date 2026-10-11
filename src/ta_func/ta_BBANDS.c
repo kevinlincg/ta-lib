@@ -273,7 +273,7 @@ TA_LIB_API TA_RetCode TA_BBANDS( int    startIdx,
          varTotal1 += _tempReal;
          _tempReal *= _tempReal;
          varTotal2 += _tempReal;
-         _peakTotal2 = (varTotal2 > _peakTotal2) ? varTotal2 : _peakTotal2;
+         _peakTotal2 = TA_MAX_GT(varTotal2, _peakTotal2);
          meanValue1 = varTotal1 * _invPeriod;
          variance = varTotal2 * _invPeriod - meanValue1 * meanValue1;
          tempBuffer1[_outIdx] = maTotal / optInTimePeriod;
@@ -619,7 +619,7 @@ TA_RetCode TA_S_BBANDS( int    startIdx,
          varTotal1 += _tempReal;
          _tempReal *= _tempReal;
          varTotal2 += _tempReal;
-         _peakTotal2 = (varTotal2 > _peakTotal2) ? varTotal2 : _peakTotal2;
+         _peakTotal2 = TA_MAX_GT(varTotal2, _peakTotal2);
          meanValue1 = varTotal1 * _invPeriod;
          variance = varTotal2 * _invPeriod - meanValue1 * meanValue1;
          tempBuffer1[_outIdx] = maTotal / optInTimePeriod;

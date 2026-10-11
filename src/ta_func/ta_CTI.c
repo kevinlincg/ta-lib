@@ -186,7 +186,7 @@ TA_LIB_API TA_RetCode TA_CTI( int    startIdx,
       x = inReal[today] - shift;
       sumX += x;
       sumX2 += x * x;
-      peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
+      peakX2 = TA_MAX_GT(sumX2, peakX2);
       ssX = sumX2 - sumX * sumX * invPeriod;
       spXY = sumXY - sumX * sumY * invPeriod;
       /* Re-anchor and rebuild when the shift has gone stale: the price sum of
@@ -385,7 +385,7 @@ TA_RetCode TA_S_CTI( int    startIdx,
       x = (double)inReal[today] - shift;
       sumX += x;
       sumX2 += x * x;
-      peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
+      peakX2 = TA_MAX_GT(sumX2, peakX2);
       ssX = sumX2 - sumX * sumX * invPeriod;
       spXY = sumXY - sumX * sumY * invPeriod;
       barsSinceReseed -= 1;
@@ -514,7 +514,7 @@ static void TA_CTI_StepImpl( struct TA_CTI_Stream *sp, double inReal, double *ou
    x = sp->x_inReal[sp->today & sp->xMask] - sp->shift;
    sumX += x;
    sumX2 += x * x;
-   sp->peakX2 = (sumX2 > sp->peakX2) ? sumX2 : sp->peakX2;
+   sp->peakX2 = TA_MAX_GT(sumX2, sp->peakX2);
    ssX = sumX2 - sumX * sumX * sp->invPeriod;
    spXY = sumXY - sumX * sp->sumY * sp->invPeriod;
    /* Re-anchor and rebuild when the shift has gone stale: the price sum of
@@ -739,7 +739,7 @@ static TA_RetCode TA_CTI_OpenImpl( struct TA_CTI_Stream **stream, const double i
          x = inReal[today] - shift;
          sumX += x;
          sumX2 += x * x;
-         peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
+         peakX2 = TA_MAX_GT(sumX2, peakX2);
          ssX = sumX2 - sumX * sumX * invPeriod;
          spXY = sumXY - sumX * sumY * invPeriod;
          /* Re-anchor and rebuild when the shift has gone stale: the price sum of
@@ -984,7 +984,7 @@ TA_LIB_API TA_RetCode TA_CTI_Peek( const TA_CTI_Stream *stream, double inReal, d
    x = (((sp->today & sp->xMask) != pkSlot0) ? x_inReal[sp->today & sp->xMask] : pkVal0) - shift;
    sumX += x;
    sumX2 += x * x;
-   peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
+   peakX2 = TA_MAX_GT(sumX2, peakX2);
    ssX = sumX2 - sumX * sumX * sp->invPeriod;
    spXY = sumXY - sumX * sp->sumY * sp->invPeriod;
    /* Re-anchor and rebuild when the shift has gone stale: the price sum of

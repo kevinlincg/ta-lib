@@ -74,7 +74,7 @@ TA_NOINLINE TA_LIB_API int TA_MAMA_Lookback( double optInFastLimit, double optIn
    /* ceil( 2*K / max(fast, slow) ) per level, in this order of operations: the
     * count is defined as this double expression, not as the real quotient.
     */
-   limit = (optInFastLimit > optInSlowLimit) ? optInFastLimit : optInSlowLimit;
+   limit = TA_MAX_GT(optInFastLimit, optInSlowLimit);
    count4 = (int)ceil(20.0 / limit);
    count8 = (int)ceil(38.0 / limit);
    /* Lookback is a fix amount + the unstable period.

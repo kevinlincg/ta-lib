@@ -227,7 +227,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DM( int    startIdx,
          diffM = prevLow - tempReal;
          /* Minus Delta */
          prevLow = tempReal;
-         plusDM1 = (diffP > 0.0) ? diffP : 0.0;
+         plusDM1 = TA_MAX_GT(diffP, 0.0);
          plusDM1 = (diffP > diffM) ? plusDM1 : 0.0;
          outReal[outIdx++] = plusDM1;
       }
@@ -281,7 +281,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DM( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
    }
    /* Now start to write the output in
     * the caller provided outReal.
@@ -303,7 +303,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DM( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       outReal[outIdx++] = prevPlusDM;
    }
    *outNBElement= outIdx;
@@ -377,7 +377,7 @@ TA_RetCode TA_S_PLUS_DM( int    startIdx,
          tempReal = (double)inLow[today];
          diffM = prevLow - tempReal;
          prevLow = tempReal;
-         plusDM1 = (diffP > 0.0) ? diffP : 0.0;
+         plusDM1 = TA_MAX_GT(diffP, 0.0);
          plusDM1 = (diffP > diffM) ? plusDM1 : 0.0;
          outReal[outIdx++] = plusDM1;
       }
@@ -419,7 +419,7 @@ TA_RetCode TA_S_PLUS_DM( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
    }
    outReal[0] = prevPlusDM;
    outIdx = 1;
@@ -436,7 +436,7 @@ TA_RetCode TA_S_PLUS_DM( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       outReal[outIdx++] = prevPlusDM;
    }
    *outNBElement= outIdx;
@@ -478,7 +478,7 @@ static void TA_PLUS_DM_StepImpl( struct TA_PLUS_DM_Stream *sp, double inHigh, do
       diffM = sp->prevLow - tempReal;
       /* Minus Delta */
       sp->prevLow = tempReal;
-      plusDM1 = (diffP > 0.0) ? diffP : 0.0;
+      plusDM1 = TA_MAX_GT(diffP, 0.0);
       plusDM1 = (diffP > diffM) ? plusDM1 : 0.0;
       *outReal= plusDM1;
       sp->cur_outReal = *outReal;
@@ -502,7 +502,7 @@ static void TA_PLUS_DM_StepImpl( struct TA_PLUS_DM_Stream *sp, double inHigh, do
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = sp->prevPlusDM - sp->prevPlusDM * sp->invPeriod;
       sp->prevPlusDM = tempReal + plusDM1;
-      sp->prevPlusDM = (tempReal > sp->prevPlusDM) ? tempReal : sp->prevPlusDM;
+      sp->prevPlusDM = TA_MAX_GT(tempReal, sp->prevPlusDM);
       *outReal= sp->prevPlusDM;
       sp->cur_outReal = *outReal;
    }
@@ -645,7 +645,7 @@ static TA_RetCode TA_PLUS_DM_OpenImpl( struct TA_PLUS_DM_Stream **stream, const 
          diffM = prevLow - tempReal;
          /* Minus Delta */
          prevLow = tempReal;
-         plusDM1 = (diffP > 0.0) ? diffP : 0.0;
+         plusDM1 = TA_MAX_GT(diffP, 0.0);
          plusDM1 = (diffP > diffM) ? plusDM1 : 0.0;
          outReal[outIdx++ * outStride] = plusDM1;
       }
@@ -811,7 +811,7 @@ static TA_RetCode TA_PLUS_DM_OpenImpl( struct TA_PLUS_DM_Stream **stream, const 
          plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
          tempReal = prevPlusDM - prevPlusDM * invPeriod;
          prevPlusDM = tempReal + plusDM1;
-         prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+         prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       }
       /* Now start to write the output in
        * the caller provided outReal.
@@ -833,7 +833,7 @@ static TA_RetCode TA_PLUS_DM_OpenImpl( struct TA_PLUS_DM_Stream **stream, const 
          plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
          tempReal = prevPlusDM - prevPlusDM * invPeriod;
          prevPlusDM = tempReal + plusDM1;
-         prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+         prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
          outReal[outIdx++ * outStride] = prevPlusDM;
       }
       *outNBElement= outIdx;
@@ -937,7 +937,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DM_Peek( const TA_PLUS_DM_Stream *stream, double i
       diffM = prevLow - tempReal;
       /* Minus Delta */
       prevLow = tempReal;
-      plusDM1 = (diffP > 0.0) ? diffP : 0.0;
+      plusDM1 = TA_MAX_GT(diffP, 0.0);
       plusDM1 = (diffP > diffM) ? plusDM1 : 0.0;
       *outReal= plusDM1;
    }
@@ -966,7 +966,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DM_Peek( const TA_PLUS_DM_Stream *stream, double i
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * sp->invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       *outReal= prevPlusDM;
    }
    return TA_SUCCESS;

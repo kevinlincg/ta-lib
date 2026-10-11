@@ -240,7 +240,7 @@ TA_LIB_API TA_RetCode TA_ROGERSSATCHELL( int    startIdx,
       periodTotal += term;
       windowTotal = periodTotal;
       windowMagnitude = fabs(windowTotal);
-      peakTotal = (windowMagnitude > peakTotal) ? windowMagnitude : peakTotal;
+      peakTotal = TA_MAX_GT(windowMagnitude, peakTotal);
       termRing_Idx++;
       if( termRing_Idx > maxIdx_termRing ) termRing_Idx = 0;
       periodTotal -= termRing[termRing_Idx];
@@ -427,7 +427,7 @@ TA_RetCode TA_S_ROGERSSATCHELL( int    startIdx,
       periodTotal += term;
       windowTotal = periodTotal;
       windowMagnitude = fabs(windowTotal);
-      peakTotal = (windowMagnitude > peakTotal) ? windowMagnitude : peakTotal;
+      peakTotal = TA_MAX_GT(windowMagnitude, peakTotal);
       termRing_Idx++;
       if( termRing_Idx > maxIdx_termRing ) termRing_Idx = 0;
       periodTotal -= termRing[termRing_Idx];
@@ -529,7 +529,7 @@ static void TA_ROGERSSATCHELL_StepImpl( struct TA_ROGERSSATCHELL_Stream *sp, dou
    sp->periodTotal += term;
    windowTotal = sp->periodTotal;
    windowMagnitude = fabs(windowTotal);
-   sp->peakTotal = (windowMagnitude > sp->peakTotal) ? windowMagnitude : sp->peakTotal;
+   sp->peakTotal = TA_MAX_GT(windowMagnitude, sp->peakTotal);
    sp->termRing_Idx = sp->termRing_Idx + 1;
    if( sp->termRing_Idx > sp->maxIdx_termRing )
    {
@@ -730,7 +730,7 @@ static TA_RetCode TA_ROGERSSATCHELL_OpenImpl( struct TA_ROGERSSATCHELL_Stream **
          periodTotal += term;
          windowTotal = periodTotal;
          windowMagnitude = fabs(windowTotal);
-         peakTotal = (windowMagnitude > peakTotal) ? windowMagnitude : peakTotal;
+         peakTotal = TA_MAX_GT(windowMagnitude, peakTotal);
          termRing_Idx++;
          if( termRing_Idx > maxIdx_termRing ) termRing_Idx = 0;
          periodTotal -= termRing[termRing_Idx];
@@ -913,7 +913,7 @@ TA_LIB_API TA_RetCode TA_ROGERSSATCHELL_Peek( const TA_ROGERSSATCHELL_Stream *st
    periodTotal += term;
    windowTotal = periodTotal;
    windowMagnitude = fabs(windowTotal);
-   peakTotal = (windowMagnitude > peakTotal) ? windowMagnitude : peakTotal;
+   peakTotal = TA_MAX_GT(windowMagnitude, peakTotal);
    termRing_Idx = termRing_Idx + 1;
    if( termRing_Idx > sp->maxIdx_termRing )
    {

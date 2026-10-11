@@ -377,7 +377,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DI( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       /* Calculate the prevTR */
       double _true_range_2;
       double range_2 = prevHigh - prevLow;
@@ -430,7 +430,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DI( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       /* Calculate the prevTR */
       double _true_range_3;
       double range_3 = prevHigh - prevLow;
@@ -620,7 +620,7 @@ TA_RetCode TA_S_PLUS_DI( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       double _true_range_2;
       double range_2 = prevHigh - prevLow;
       double tmp_2 = fabs(prevHigh - prevClose);
@@ -659,7 +659,7 @@ TA_RetCode TA_S_PLUS_DI( int    startIdx,
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       double _true_range_3;
       double range_3 = prevHigh - prevLow;
       double tmp_3 = fabs(prevHigh - prevClose);
@@ -775,7 +775,7 @@ static void TA_PLUS_DI_StepImpl( struct TA_PLUS_DI_Stream *sp, double inHigh, do
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = sp->prevPlusDM - sp->prevPlusDM * sp->invPeriod;
       sp->prevPlusDM = tempReal + plusDM1;
-      sp->prevPlusDM = (tempReal > sp->prevPlusDM) ? tempReal : sp->prevPlusDM;
+      sp->prevPlusDM = TA_MAX_GT(tempReal, sp->prevPlusDM);
       /* Calculate the prevTR */
       double _true_range_1;
       double range_1 = sp->prevHigh - sp->prevLow;
@@ -1222,7 +1222,7 @@ static TA_RetCode TA_PLUS_DI_OpenImpl( struct TA_PLUS_DI_Stream **stream, const 
          plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
          tempReal = prevPlusDM - prevPlusDM * invPeriod;
          prevPlusDM = tempReal + plusDM1;
-         prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+         prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
          /* Calculate the prevTR */
          double _true_range_4;
          double range_4 = prevHigh - prevLow;
@@ -1275,7 +1275,7 @@ static TA_RetCode TA_PLUS_DI_OpenImpl( struct TA_PLUS_DI_Stream **stream, const 
          plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
          tempReal = prevPlusDM - prevPlusDM * invPeriod;
          prevPlusDM = tempReal + plusDM1;
-         prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+         prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
          /* Calculate the prevTR */
          double _true_range_5;
          double range_5 = prevHigh - prevLow;
@@ -1463,7 +1463,7 @@ TA_LIB_API TA_RetCode TA_PLUS_DI_Peek( const TA_PLUS_DI_Stream *stream, double i
       plusDM1 = (tempReal > 0.0) ? diffP : 0.0;
       tempReal = prevPlusDM - prevPlusDM * sp->invPeriod;
       prevPlusDM = tempReal + plusDM1;
-      prevPlusDM = (tempReal > prevPlusDM) ? tempReal : prevPlusDM;
+      prevPlusDM = TA_MAX_GT(tempReal, prevPlusDM);
       /* Calculate the prevTR */
       double _true_range_7;
       double range_7 = prevHigh - prevLow;

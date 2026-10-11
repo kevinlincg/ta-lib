@@ -1744,9 +1744,9 @@ impl StatementEmitter for CStmt<'_> {
         }
         let target_str = render_assign_target(target, self.ctx, self.registry, self.helpers);
         let value_str = match running_min_max(target, &new_value, self.ctx) {
-            Some((name, r)) => format!(
+            Some((name, l, r)) => format!(
                 "{name}({}, {})",
-                target_str.trim_end(),
+                render_expr(l, self.ctx, self.registry, self.helpers),
                 render_expr(r, self.ctx, self.registry, self.helpers)
             ),
             None => render_expr(&new_value, self.ctx, self.registry, self.helpers),
@@ -2447,12 +2447,11 @@ fn running_min_max<'e>(
     target: &Expr,
     value: &'e Expr,
     ctx: &CRenderCtx,
-) -> Option<(&'static str, &'e Expr)> {
-    let Expr::Var(name) = target else { return None };
-    /* #547 probe: the wide rule -- every min/max-shaped select, carried or not. */
-    let _ = ctx;
-    let (is_max, r) = super::select_chain::running_extreme_of(name, value)?;
-    Some((if is_max { "TA_MAX_GT" } else { "TA_MIN_LT" }, r))
+) -> Option<(&'static str, &'e Expr, &'e Expr)> {
+    /* #547 probe, wide rule: the shape alone decides; target and carry do not. */
+    let _ = (target, ctx);
+    let (is_max, l, r) = super::select_chain::min_max_shaped(value)?;
+    Some((if is_max { "TA_MAX_GT" } else { "TA_MIN_LT" }, l, r))
 }
 
 fn render_expr(

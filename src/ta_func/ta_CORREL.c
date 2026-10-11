@@ -206,8 +206,8 @@ TA_LIB_API TA_RetCode TA_CORREL( int    startIdx,
       sumXY += x * y;
       sumY += y;
       sumY2 += y * y;
-      peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
-      peakY2 = (sumY2 > peakY2) ? sumY2 : peakY2;
+      peakX2 = TA_MAX_GT(sumX2, peakX2);
+      peakY2 = TA_MAX_GT(sumY2, peakY2);
       ssX = sumX2 - sumX * sumX * invPeriod;
       ssY = sumY2 - sumY * sumY * invPeriod;
       spXY = sumXY - sumX * sumY * invPeriod;
@@ -485,8 +485,8 @@ TA_RetCode TA_S_CORREL( int    startIdx,
       sumXY += x * y;
       sumY += y;
       sumY2 += y * y;
-      peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
-      peakY2 = (sumY2 > peakY2) ? sumY2 : peakY2;
+      peakX2 = TA_MAX_GT(sumX2, peakX2);
+      peakY2 = TA_MAX_GT(sumY2, peakY2);
       ssX = sumX2 - sumX * sumX * invPeriod;
       ssY = sumY2 - sumY * sumY * invPeriod;
       spXY = sumXY - sumX * sumY * invPeriod;
@@ -665,8 +665,8 @@ static void TA_CORREL_StepImpl( struct TA_CORREL_Stream *sp, double inReal0, dou
    sumXY += x * y;
    sumY += y;
    sumY2 += y * y;
-   sp->peakX2 = (sumX2 > sp->peakX2) ? sumX2 : sp->peakX2;
-   sp->peakY2 = (sumY2 > sp->peakY2) ? sumY2 : sp->peakY2;
+   sp->peakX2 = TA_MAX_GT(sumX2, sp->peakX2);
+   sp->peakY2 = TA_MAX_GT(sumY2, sp->peakY2);
    ssX = sumX2 - sumX * sumX * sp->invPeriod;
    ssY = sumY2 - sumY * sumY * sp->invPeriod;
    spXY = sumXY - sumX * sumY * sp->invPeriod;
@@ -966,8 +966,8 @@ static TA_RetCode TA_CORREL_OpenImpl( struct TA_CORREL_Stream **stream, const do
          sumXY += x * y;
          sumY += y;
          sumY2 += y * y;
-         peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
-         peakY2 = (sumY2 > peakY2) ? sumY2 : peakY2;
+         peakX2 = TA_MAX_GT(sumX2, peakX2);
+         peakY2 = TA_MAX_GT(sumY2, peakY2);
          ssX = sumX2 - sumX * sumX * invPeriod;
          ssY = sumY2 - sumY * sumY * invPeriod;
          spXY = sumXY - sumX * sumY * invPeriod;
@@ -1298,8 +1298,8 @@ TA_LIB_API TA_RetCode TA_CORREL_Peek( const TA_CORREL_Stream *stream, double inR
    sumXY += x * y;
    sumY += y;
    sumY2 += y * y;
-   peakX2 = (sumX2 > peakX2) ? sumX2 : peakX2;
-   peakY2 = (sumY2 > peakY2) ? sumY2 : peakY2;
+   peakX2 = TA_MAX_GT(sumX2, peakX2);
+   peakY2 = TA_MAX_GT(sumY2, peakY2);
    ssX = sumX2 - sumX * sumX * sp->invPeriod;
    ssY = sumY2 - sumY * sumY * sp->invPeriod;
    spXY = sumXY - sumX * sumY * sp->invPeriod;

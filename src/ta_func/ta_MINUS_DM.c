@@ -225,7 +225,7 @@ TA_LIB_API TA_RetCode TA_MINUS_DM( int    startIdx,
          diffM = prevLow - tempReal;
          /* Minus Delta */
          prevLow = tempReal;
-         minusDM1 = (diffM > 0.0) ? diffM : 0.0;
+         minusDM1 = TA_MAX_GT(diffM, 0.0);
          minusDM1 = (diffP < diffM) ? minusDM1 : 0.0;
          outReal[outIdx++] = minusDM1;
       }
@@ -279,7 +279,7 @@ TA_LIB_API TA_RetCode TA_MINUS_DM( int    startIdx,
       minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
       tempReal = prevMinusDM - prevMinusDM * invPeriod;
       prevMinusDM = tempReal + minusDM1;
-      prevMinusDM = (tempReal > prevMinusDM) ? tempReal : prevMinusDM;
+      prevMinusDM = TA_MAX_GT(tempReal, prevMinusDM);
    }
    /* Now start to write the output in
     * the caller provided outReal.
@@ -301,7 +301,7 @@ TA_LIB_API TA_RetCode TA_MINUS_DM( int    startIdx,
       minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
       tempReal = prevMinusDM - prevMinusDM * invPeriod;
       prevMinusDM = tempReal + minusDM1;
-      prevMinusDM = (tempReal > prevMinusDM) ? tempReal : prevMinusDM;
+      prevMinusDM = TA_MAX_GT(tempReal, prevMinusDM);
       outReal[outIdx++] = prevMinusDM;
    }
    *outNBElement= outIdx;
@@ -375,7 +375,7 @@ TA_RetCode TA_S_MINUS_DM( int    startIdx,
          tempReal = (double)inLow[today];
          diffM = prevLow - tempReal;
          prevLow = tempReal;
-         minusDM1 = (diffM > 0.0) ? diffM : 0.0;
+         minusDM1 = TA_MAX_GT(diffM, 0.0);
          minusDM1 = (diffP < diffM) ? minusDM1 : 0.0;
          outReal[outIdx++] = minusDM1;
       }
@@ -417,7 +417,7 @@ TA_RetCode TA_S_MINUS_DM( int    startIdx,
       minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
       tempReal = prevMinusDM - prevMinusDM * invPeriod;
       prevMinusDM = tempReal + minusDM1;
-      prevMinusDM = (tempReal > prevMinusDM) ? tempReal : prevMinusDM;
+      prevMinusDM = TA_MAX_GT(tempReal, prevMinusDM);
    }
    outReal[0] = prevMinusDM;
    outIdx = 1;
@@ -434,7 +434,7 @@ TA_RetCode TA_S_MINUS_DM( int    startIdx,
       minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
       tempReal = prevMinusDM - prevMinusDM * invPeriod;
       prevMinusDM = tempReal + minusDM1;
-      prevMinusDM = (tempReal > prevMinusDM) ? tempReal : prevMinusDM;
+      prevMinusDM = TA_MAX_GT(tempReal, prevMinusDM);
       outReal[outIdx++] = prevMinusDM;
    }
    *outNBElement= outIdx;
@@ -476,7 +476,7 @@ static void TA_MINUS_DM_StepImpl( struct TA_MINUS_DM_Stream *sp, double inHigh, 
       diffM = sp->prevLow - tempReal;
       /* Minus Delta */
       sp->prevLow = tempReal;
-      minusDM1 = (diffM > 0.0) ? diffM : 0.0;
+      minusDM1 = TA_MAX_GT(diffM, 0.0);
       minusDM1 = (diffP < diffM) ? minusDM1 : 0.0;
       *outReal= minusDM1;
       sp->cur_outReal = *outReal;
@@ -500,7 +500,7 @@ static void TA_MINUS_DM_StepImpl( struct TA_MINUS_DM_Stream *sp, double inHigh, 
       minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
       tempReal = sp->prevMinusDM - sp->prevMinusDM * sp->invPeriod;
       sp->prevMinusDM = tempReal + minusDM1;
-      sp->prevMinusDM = (tempReal > sp->prevMinusDM) ? tempReal : sp->prevMinusDM;
+      sp->prevMinusDM = TA_MAX_GT(tempReal, sp->prevMinusDM);
       *outReal= sp->prevMinusDM;
       sp->cur_outReal = *outReal;
    }
@@ -643,7 +643,7 @@ static TA_RetCode TA_MINUS_DM_OpenImpl( struct TA_MINUS_DM_Stream **stream, cons
          diffM = prevLow - tempReal;
          /* Minus Delta */
          prevLow = tempReal;
-         minusDM1 = (diffM > 0.0) ? diffM : 0.0;
+         minusDM1 = TA_MAX_GT(diffM, 0.0);
          minusDM1 = (diffP < diffM) ? minusDM1 : 0.0;
          outReal[outIdx++ * outStride] = minusDM1;
       }
@@ -809,7 +809,7 @@ static TA_RetCode TA_MINUS_DM_OpenImpl( struct TA_MINUS_DM_Stream **stream, cons
          minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
          tempReal = prevMinusDM - prevMinusDM * invPeriod;
          prevMinusDM = tempReal + minusDM1;
-         prevMinusDM = (tempReal > prevMinusDM) ? tempReal : prevMinusDM;
+         prevMinusDM = TA_MAX_GT(tempReal, prevMinusDM);
       }
       /* Now start to write the output in
        * the caller provided outReal.
@@ -831,7 +831,7 @@ static TA_RetCode TA_MINUS_DM_OpenImpl( struct TA_MINUS_DM_Stream **stream, cons
          minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
          tempReal = prevMinusDM - prevMinusDM * invPeriod;
          prevMinusDM = tempReal + minusDM1;
-         prevMinusDM = (tempReal > prevMinusDM) ? tempReal : prevMinusDM;
+         prevMinusDM = TA_MAX_GT(tempReal, prevMinusDM);
          outReal[outIdx++ * outStride] = prevMinusDM;
       }
       *outNBElement= outIdx;
@@ -935,7 +935,7 @@ TA_LIB_API TA_RetCode TA_MINUS_DM_Peek( const TA_MINUS_DM_Stream *stream, double
       diffM = prevLow - tempReal;
       /* Minus Delta */
       prevLow = tempReal;
-      minusDM1 = (diffM > 0.0) ? diffM : 0.0;
+      minusDM1 = TA_MAX_GT(diffM, 0.0);
       minusDM1 = (diffP < diffM) ? minusDM1 : 0.0;
       *outReal= minusDM1;
    }
@@ -964,7 +964,7 @@ TA_LIB_API TA_RetCode TA_MINUS_DM_Peek( const TA_MINUS_DM_Stream *stream, double
       minusDM1 = (tempReal > 0.0) ? diffM : 0.0;
       tempReal = prevMinusDM - prevMinusDM * sp->invPeriod;
       prevMinusDM = tempReal + minusDM1;
-      prevMinusDM = (tempReal > prevMinusDM) ? tempReal : prevMinusDM;
+      prevMinusDM = TA_MAX_GT(tempReal, prevMinusDM);
       *outReal= prevMinusDM;
    }
    return TA_SUCCESS;

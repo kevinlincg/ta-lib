@@ -155,7 +155,7 @@ TA_LIB_API TA_RetCode TA_RSI( int    startIdx,
       today = today + 1;
       tempValue2 = tempValue1 - prevValue;
       prevValue = tempValue1;
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta;
       prevLoss += gainDelta - tempValue2;
    }
@@ -211,7 +211,7 @@ TA_LIB_API TA_RetCode TA_RSI( int    startIdx,
          prevValue = tempValue1;
          prevLoss *= (double)(optInTimePeriod - 1);
          prevGain *= (double)(optInTimePeriod - 1);
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta;
          prevLoss += gainDelta - tempValue2;
          prevLoss *= invPeriod;
@@ -230,7 +230,7 @@ TA_LIB_API TA_RetCode TA_RSI( int    startIdx,
       prevValue = tempValue1;
       prevLoss *= (double)(optInTimePeriod - 1);
       prevGain *= (double)(optInTimePeriod - 1);
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta;
       prevLoss += gainDelta - tempValue2;
       prevLoss *= invPeriod;
@@ -311,7 +311,7 @@ TA_RetCode TA_S_RSI( int    startIdx,
       today = today + 1;
       tempValue2 = tempValue1 - prevValue;
       prevValue = tempValue1;
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta;
       prevLoss += gainDelta - tempValue2;
    }
@@ -338,7 +338,7 @@ TA_RetCode TA_S_RSI( int    startIdx,
          prevValue = tempValue1;
          prevLoss *= (double)(optInTimePeriod - 1);
          prevGain *= (double)(optInTimePeriod - 1);
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta;
          prevLoss += gainDelta - tempValue2;
          prevLoss *= invPeriod;
@@ -354,7 +354,7 @@ TA_RetCode TA_S_RSI( int    startIdx,
       prevValue = tempValue1;
       prevLoss *= (double)(optInTimePeriod - 1);
       prevGain *= (double)(optInTimePeriod - 1);
-      gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+      gainDelta = TA_MAX_GT(tempValue2, 0.0);
       prevGain += gainDelta;
       prevLoss += gainDelta - tempValue2;
       prevLoss *= invPeriod;
@@ -403,7 +403,7 @@ static void TA_RSI_StepImpl( struct TA_RSI_Stream *sp, double inReal, double *ou
    sp->prevValue = tempValue1;
    sp->prevLoss *= (double)(sp->optInTimePeriod - 1);
    sp->prevGain *= (double)(sp->optInTimePeriod - 1);
-   gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+   gainDelta = TA_MAX_GT(tempValue2, 0.0);
    sp->prevGain += gainDelta;
    sp->prevLoss += gainDelta - tempValue2;
    sp->prevLoss *= sp->invPeriod;
@@ -488,7 +488,7 @@ static TA_RetCode TA_RSI_OpenImpl( struct TA_RSI_Stream **stream, const double i
          today = today + 1;
          tempValue2 = tempValue1 - prevValue;
          prevValue = tempValue1;
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta;
          prevLoss += gainDelta - tempValue2;
       }
@@ -544,7 +544,7 @@ static TA_RetCode TA_RSI_OpenImpl( struct TA_RSI_Stream **stream, const double i
             prevValue = tempValue1;
             prevLoss *= (double)(optInTimePeriod - 1);
             prevGain *= (double)(optInTimePeriod - 1);
-            gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+            gainDelta = TA_MAX_GT(tempValue2, 0.0);
             prevGain += gainDelta;
             prevLoss += gainDelta - tempValue2;
             prevLoss *= invPeriod;
@@ -563,7 +563,7 @@ static TA_RetCode TA_RSI_OpenImpl( struct TA_RSI_Stream **stream, const double i
          prevValue = tempValue1;
          prevLoss *= (double)(optInTimePeriod - 1);
          prevGain *= (double)(optInTimePeriod - 1);
-         gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+         gainDelta = TA_MAX_GT(tempValue2, 0.0);
          prevGain += gainDelta;
          prevLoss += gainDelta - tempValue2;
          prevLoss *= invPeriod;
@@ -673,7 +673,7 @@ TA_LIB_API TA_RetCode TA_RSI_Peek( const TA_RSI_Stream *stream, double inReal, d
    prevValue = tempValue1;
    prevLoss *= (double)(sp->optInTimePeriod - 1);
    prevGain *= (double)(sp->optInTimePeriod - 1);
-   gainDelta = (tempValue2 > 0.0) ? tempValue2 : 0.0;
+   gainDelta = TA_MAX_GT(tempValue2, 0.0);
    prevGain += gainDelta;
    prevLoss += gainDelta - tempValue2;
    prevLoss *= sp->invPeriod;

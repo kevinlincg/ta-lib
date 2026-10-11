@@ -597,7 +597,7 @@ TA_LIB_API TA_RetCode TA_PERCENTILE( int    startIdx,
                 */
                sorted[lookbackTotal] = newValue;
                cur = sorted[0];
-               prv = (newValue < cur) ? newValue : cur;
+               prv = TA_MIN_LT(newValue, cur);
                k = 0;
                do
                {
@@ -605,15 +605,15 @@ TA_LIB_API TA_RetCode TA_PERCENTILE( int    startIdx,
                   nx2 = sorted[k + 2];
                   ins = (cur < oldValue) ? cur : nxt;
                   in2 = (nxt < oldValue) ? nxt : nx2;
-                  res = (newValue < ins) ? newValue : ins;
-                  sorted[k] = (prv > res) ? prv : res;
-                  res = (newValue < in2) ? newValue : in2;
-                  sorted[k + 1] = (ins > res) ? ins : res;
+                  res = TA_MIN_LT(newValue, ins);
+                  sorted[k] = TA_MAX_GT(prv, res);
+                  res = TA_MIN_LT(newValue, in2);
+                  sorted[k + 1] = TA_MAX_GT(ins, res);
                   prv = in2;
                   cur = nx2;
                   k += 2;
                } while( k < tail );
-               sorted[tail] = (prv > newValue) ? prv : newValue;
+               sorted[tail] = TA_MAX_GT(prv, newValue);
                if( rank <= lookbackTotal )
                {
                   hiV = sorted[hiRank];
@@ -1399,7 +1399,7 @@ TA_RetCode TA_S_PERCENTILE( int    startIdx,
                }
                sorted[lookbackTotal] = newValue;
                cur = sorted[0];
-               prv = (newValue < cur) ? newValue : cur;
+               prv = TA_MIN_LT(newValue, cur);
                k = 0;
                do
                {
@@ -1407,15 +1407,15 @@ TA_RetCode TA_S_PERCENTILE( int    startIdx,
                   nx2 = sorted[k + 2];
                   ins = (cur < oldValue) ? cur : nxt;
                   in2 = (nxt < oldValue) ? nxt : nx2;
-                  res = (newValue < ins) ? newValue : ins;
-                  sorted[k] = (prv > res) ? prv : res;
-                  res = (newValue < in2) ? newValue : in2;
-                  sorted[k + 1] = (ins > res) ? ins : res;
+                  res = TA_MIN_LT(newValue, ins);
+                  sorted[k] = TA_MAX_GT(prv, res);
+                  res = TA_MIN_LT(newValue, in2);
+                  sorted[k + 1] = TA_MAX_GT(ins, res);
                   prv = in2;
                   cur = nx2;
                   k += 2;
                } while( k < tail );
-               sorted[tail] = (prv > newValue) ? prv : newValue;
+               sorted[tail] = TA_MAX_GT(prv, newValue);
                if( rank <= lookbackTotal )
                {
                   hiV = sorted[hiRank];
@@ -1946,7 +1946,7 @@ static void TA_PERCENTILE_StepImpl( struct TA_PERCENTILE_Stream *sp, double inRe
              */
             sp->cb_sorted[sp->lookbackTotal] = newValue;
             cur = sp->cb_sorted[0];
-            prv = (newValue < cur) ? newValue : cur;
+            prv = TA_MIN_LT(newValue, cur);
             k = 0;
             do
             {
@@ -1954,15 +1954,15 @@ static void TA_PERCENTILE_StepImpl( struct TA_PERCENTILE_Stream *sp, double inRe
                nx2 = sp->cb_sorted[k + 2];
                ins = (cur < oldValue) ? cur : nxt;
                in2 = (nxt < oldValue) ? nxt : nx2;
-               res = (newValue < ins) ? newValue : ins;
-               sp->cb_sorted[k] = (prv > res) ? prv : res;
-               res = (newValue < in2) ? newValue : in2;
-               sp->cb_sorted[k + 1] = (ins > res) ? ins : res;
+               res = TA_MIN_LT(newValue, ins);
+               sp->cb_sorted[k] = TA_MAX_GT(prv, res);
+               res = TA_MIN_LT(newValue, in2);
+               sp->cb_sorted[k + 1] = TA_MAX_GT(ins, res);
                prv = in2;
                cur = nx2;
                k += 2;
             } while( k < sp->tail );
-            sp->cb_sorted[sp->tail] = (prv > newValue) ? prv : newValue;
+            sp->cb_sorted[sp->tail] = TA_MAX_GT(prv, newValue);
             if( sp->rank <= sp->lookbackTotal )
             {
                sp->hiV = sp->cb_sorted[sp->hiRank];
@@ -2803,7 +2803,7 @@ static TA_RetCode TA_PERCENTILE_OpenImpl( struct TA_PERCENTILE_Stream **stream, 
                    */
                   sorted[lookbackTotal] = newValue;
                   cur = sorted[0];
-                  prv = (newValue < cur) ? newValue : cur;
+                  prv = TA_MIN_LT(newValue, cur);
                   k = 0;
                   do
                   {
@@ -2811,15 +2811,15 @@ static TA_RetCode TA_PERCENTILE_OpenImpl( struct TA_PERCENTILE_Stream **stream, 
                      nx2 = sorted[k + 2];
                      ins = (cur < oldValue) ? cur : nxt;
                      in2 = (nxt < oldValue) ? nxt : nx2;
-                     res = (newValue < ins) ? newValue : ins;
-                     sorted[k] = (prv > res) ? prv : res;
-                     res = (newValue < in2) ? newValue : in2;
-                     sorted[k + 1] = (ins > res) ? ins : res;
+                     res = TA_MIN_LT(newValue, ins);
+                     sorted[k] = TA_MAX_GT(prv, res);
+                     res = TA_MIN_LT(newValue, in2);
+                     sorted[k + 1] = TA_MAX_GT(ins, res);
                      prv = in2;
                      cur = nx2;
                      k += 2;
                   } while( k < tail );
-                  sorted[tail] = (prv > newValue) ? prv : newValue;
+                  sorted[tail] = TA_MAX_GT(prv, newValue);
                   if( rank <= lookbackTotal )
                   {
                      hiV = sorted[hiRank];

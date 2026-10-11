@@ -192,7 +192,7 @@ TA_LIB_API TA_RetCode TA_RVI( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       tempReal = inReal[trailingIdx] - shift;
@@ -268,7 +268,7 @@ TA_LIB_API TA_RetCode TA_RVI( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       tempReal = inReal[trailingIdx] - shift;
@@ -353,7 +353,7 @@ TA_LIB_API TA_RetCode TA_RVI( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       tempReal = inReal[trailingIdx] - shift;
@@ -528,7 +528,7 @@ TA_RetCode TA_S_RVI( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       tempReal = (double)inReal[trailingIdx] - shift;
@@ -603,7 +603,7 @@ TA_RetCode TA_S_RVI( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       tempReal = (double)inReal[trailingIdx] - shift;
@@ -683,7 +683,7 @@ TA_RetCode TA_S_RVI( int    startIdx,
       periodTotal1 += tempReal;
       tempReal *= tempReal;
       periodTotal2 += tempReal;
-      peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+      peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
       meanValue1 = periodTotal1 * invPeriod;
       variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
       tempReal = (double)inReal[trailingIdx] - shift;
@@ -820,7 +820,7 @@ static TA_FMA_STEP_INLINE void TA_RVI_StepImpl( struct TA_RVI_Stream *sp, double
    sp->periodTotal1 += tempReal;
    tempReal *= tempReal;
    sp->periodTotal2 += tempReal;
-   sp->peakTotal2 = (sp->periodTotal2 > sp->peakTotal2) ? sp->periodTotal2 : sp->peakTotal2;
+   sp->peakTotal2 = TA_MAX_GT(sp->periodTotal2, sp->peakTotal2);
    meanValue1 = sp->periodTotal1 * sp->invPeriod;
    variance = sp->periodTotal2 * sp->invPeriod - meanValue1 * meanValue1;
    tempReal = sp->x_inReal[sp->trailingIdx & sp->xMask] - sp->shift;
@@ -1005,7 +1005,7 @@ static TA_FMA_STEP_INLINE TA_RetCode TA_RVI_OpenImpl( struct TA_RVI_Stream **str
          periodTotal1 += tempReal;
          tempReal *= tempReal;
          periodTotal2 += tempReal;
-         peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+         peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
          meanValue1 = periodTotal1 * invPeriod;
          variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
          tempReal = inReal[trailingIdx] - shift;
@@ -1081,7 +1081,7 @@ static TA_FMA_STEP_INLINE TA_RetCode TA_RVI_OpenImpl( struct TA_RVI_Stream **str
          periodTotal1 += tempReal;
          tempReal *= tempReal;
          periodTotal2 += tempReal;
-         peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+         peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
          meanValue1 = periodTotal1 * invPeriod;
          variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
          tempReal = inReal[trailingIdx] - shift;
@@ -1166,7 +1166,7 @@ static TA_FMA_STEP_INLINE TA_RetCode TA_RVI_OpenImpl( struct TA_RVI_Stream **str
          periodTotal1 += tempReal;
          tempReal *= tempReal;
          periodTotal2 += tempReal;
-         peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+         peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
          meanValue1 = periodTotal1 * invPeriod;
          variance = periodTotal2 * invPeriod - meanValue1 * meanValue1;
          tempReal = inReal[trailingIdx] - shift;
@@ -1408,7 +1408,7 @@ TA_LIB_API TA_RetCode TA_RVI_Peek( const TA_RVI_Stream *stream, double inReal, d
    periodTotal1 += tempReal;
    tempReal *= tempReal;
    periodTotal2 += tempReal;
-   peakTotal2 = (periodTotal2 > peakTotal2) ? periodTotal2 : peakTotal2;
+   peakTotal2 = TA_MAX_GT(periodTotal2, peakTotal2);
    meanValue1 = periodTotal1 * sp->invPeriod;
    variance = periodTotal2 * sp->invPeriod - meanValue1 * meanValue1;
    tempReal = (((trailingIdx & sp->xMask) != pkSlot0) ? x_inReal[trailingIdx & sp->xMask] : pkVal0) - shift;
