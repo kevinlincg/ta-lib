@@ -2449,10 +2449,8 @@ fn running_min_max<'e>(
     ctx: &CRenderCtx,
 ) -> Option<(&'static str, &'e Expr)> {
     let Expr::Var(name) = target else { return None };
-    let carried = ctx.fma.is_some_and(|f| f.running_extreme_targets.contains(fma::stream_base(name)));
-    if !carried {
-        return None;
-    }
+    /* #547 probe: the wide rule -- every min/max-shaped select, carried or not. */
+    let _ = ctx;
     let (is_max, r) = super::select_chain::running_extreme_of(name, value)?;
     Some((if is_max { "TA_MAX_GT" } else { "TA_MIN_LT" }, r))
 }

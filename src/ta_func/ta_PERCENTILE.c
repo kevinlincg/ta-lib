@@ -494,7 +494,7 @@ TA_LIB_API TA_RetCode TA_PERCENTILE( int    startIdx,
       result = newValue;
       if( rank <= lookbackTotal )
       {
-         result = (result < hiV) ? result : hiV;
+         result = TA_MIN_LT(result, hiV);
       }
       if( rank > 1 )
       {
@@ -700,7 +700,7 @@ TA_LIB_API TA_RetCode TA_PERCENTILE( int    startIdx,
                gain = (del < pos) ? pos - 1 - del : del - pos;
                seg = lookbackTotal + lookbackTotal / 4 * 3;
                saving = (saving + gain + gain > seg) ? saving + gain + gain - seg : 0;
-               saving = (saving < lookbackTotal * 16) ? saving : lookbackTotal * 16;
+               saving = TA_MIN_LT(saving, lookbackTotal * 16);
                /* The hole left by oldValue travels to newValue's place the
                 * shorter way round; going through the free slot moves head
                 * by one.
@@ -867,8 +867,8 @@ TA_LIB_API TA_RetCode TA_PERCENTILE( int    startIdx,
              */
             pos = (pos > dp) ? pos - dp : 0;
             del = (del > dq) ? del - dq : 0;
-            pos = (pos < lookbackTotal) ? pos : lookbackTotal;
-            del = (del < lookbackTotal) ? del : lookbackTotal;
+            pos = TA_MIN_LT(pos, lookbackTotal);
+            del = TA_MIN_LT(del, lookbackTotal);
             if( pendDel < pendPos )
             {
                for( k = pendDel; k < pendPos - 1; k += 1 )
@@ -1310,7 +1310,7 @@ TA_RetCode TA_S_PERCENTILE( int    startIdx,
       result = newValue;
       if( rank <= lookbackTotal )
       {
-         result = (result < hiV) ? result : hiV;
+         result = TA_MIN_LT(result, hiV);
       }
       if( rank > 1 )
       {
@@ -1496,7 +1496,7 @@ TA_RetCode TA_S_PERCENTILE( int    startIdx,
                gain = (del < pos) ? pos - 1 - del : del - pos;
                seg = lookbackTotal + lookbackTotal / 4 * 3;
                saving = (saving + gain + gain > seg) ? saving + gain + gain - seg : 0;
-               saving = (saving < lookbackTotal * 16) ? saving : lookbackTotal * 16;
+               saving = TA_MIN_LT(saving, lookbackTotal * 16);
                slot = head + del;
                if( slot >= optInTimePeriod )
                {
@@ -1651,8 +1651,8 @@ TA_RetCode TA_S_PERCENTILE( int    startIdx,
             dq = (pendOld < oldValue) ? 1 : 0;
             pos = (pos > dp) ? pos - dp : 0;
             del = (del > dq) ? del - dq : 0;
-            pos = (pos < lookbackTotal) ? pos : lookbackTotal;
-            del = (del < lookbackTotal) ? del : lookbackTotal;
+            pos = TA_MIN_LT(pos, lookbackTotal);
+            del = TA_MIN_LT(del, lookbackTotal);
             if( pendDel < pendPos )
             {
                for( k = pendDel; k < pendPos - 1; k += 1 )
@@ -1841,7 +1841,7 @@ static void TA_PERCENTILE_StepImpl( struct TA_PERCENTILE_Stream *sp, double inRe
    result = newValue;
    if( sp->rank <= sp->lookbackTotal )
    {
-      result = (result < sp->hiV) ? result : sp->hiV;
+      result = TA_MIN_LT(result, sp->hiV);
    }
    if( sp->rank > 1 )
    {
@@ -2049,7 +2049,7 @@ static void TA_PERCENTILE_StepImpl( struct TA_PERCENTILE_Stream *sp, double inRe
             gain = (del < pos) ? pos - 1 - del : del - pos;
             seg = sp->lookbackTotal + sp->lookbackTotal / 4 * 3;
             sp->saving = (sp->saving + gain + gain > seg) ? sp->saving + gain + gain - seg : 0;
-            sp->saving = (sp->saving < sp->lookbackTotal * 16) ? sp->saving : sp->lookbackTotal * 16;
+            sp->saving = TA_MIN_LT(sp->saving, sp->lookbackTotal * 16);
             /* The hole left by oldValue travels to newValue's place the
              * shorter way round; going through the free slot moves head
              * by one.
@@ -2216,8 +2216,8 @@ static void TA_PERCENTILE_StepImpl( struct TA_PERCENTILE_Stream *sp, double inRe
           */
          pos = (pos > dp) ? pos - dp : 0;
          del = (del > dq) ? del - dq : 0;
-         pos = (pos < sp->lookbackTotal) ? pos : sp->lookbackTotal;
-         del = (del < sp->lookbackTotal) ? del : sp->lookbackTotal;
+         pos = TA_MIN_LT(pos, sp->lookbackTotal);
+         del = TA_MIN_LT(del, sp->lookbackTotal);
          if( sp->pendDel < sp->pendPos )
          {
             for( k = sp->pendDel; k < sp->pendPos - 1; k += 1 )
@@ -2700,7 +2700,7 @@ static TA_RetCode TA_PERCENTILE_OpenImpl( struct TA_PERCENTILE_Stream **stream, 
          result = newValue;
          if( rank <= lookbackTotal )
          {
-            result = (result < hiV) ? result : hiV;
+            result = TA_MIN_LT(result, hiV);
          }
          if( rank > 1 )
          {
@@ -2906,7 +2906,7 @@ static TA_RetCode TA_PERCENTILE_OpenImpl( struct TA_PERCENTILE_Stream **stream, 
                   gain = (del < pos) ? pos - 1 - del : del - pos;
                   seg = lookbackTotal + lookbackTotal / 4 * 3;
                   saving = (saving + gain + gain > seg) ? saving + gain + gain - seg : 0;
-                  saving = (saving < lookbackTotal * 16) ? saving : lookbackTotal * 16;
+                  saving = TA_MIN_LT(saving, lookbackTotal * 16);
                   /* The hole left by oldValue travels to newValue's place the
                    * shorter way round; going through the free slot moves head
                    * by one.
@@ -3073,8 +3073,8 @@ static TA_RetCode TA_PERCENTILE_OpenImpl( struct TA_PERCENTILE_Stream **stream, 
                 */
                pos = (pos > dp) ? pos - dp : 0;
                del = (del > dq) ? del - dq : 0;
-               pos = (pos < lookbackTotal) ? pos : lookbackTotal;
-               del = (del < lookbackTotal) ? del : lookbackTotal;
+               pos = TA_MIN_LT(pos, lookbackTotal);
+               del = TA_MIN_LT(del, lookbackTotal);
                if( pendDel < pendPos )
                {
                   for( k = pendDel; k < pendPos - 1; k += 1 )
@@ -3262,7 +3262,7 @@ TA_LIB_API TA_RetCode TA_PERCENTILE_Peek( const TA_PERCENTILE_Stream *stream, do
    result = newValue;
    if( sp->rank <= sp->lookbackTotal )
    {
-      result = (result < sp->hiV) ? result : sp->hiV;
+      result = TA_MIN_LT(result, sp->hiV);
    }
    if( sp->rank > 1 )
    {

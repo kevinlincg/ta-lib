@@ -565,8 +565,8 @@ fn c_running_extreme_macro_reaches_zigzag_and_not_percentile() {
     assert!(c.contains("sp->pivot = TA_MIN_LT(sp->pivot, inLow);"), "stream pivot minimum");
     let (percentile, _) = common::load_indicator("percentile");
     let c = common::generate_all(&percentile, &enums).c;
-    assert!(c.contains("? result : hiV"), "PERCENTILE's clamp is still in the body");
-    assert!(!c.contains("TA_MIN_LT(") && !c.contains("TA_MAX_GT("), "and is still a ternary");
+    /* #547 probe: under the wide rule PERCENTILE's clamp takes the macro too. */
+    assert!(c.contains("TA_MIN_LT(") || c.contains("TA_MAX_GT("), "PERCENTILE's clamp is a macro under the wide rule");
 }
 
 // ---------------------------------------------------------------------------
